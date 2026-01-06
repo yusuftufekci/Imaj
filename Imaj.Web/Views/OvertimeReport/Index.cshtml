@@ -1,0 +1,481 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Imaj.Web
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> Localizer
+@model OvertimeReportViewModel
+
+@{
+    ViewData["Title"] = Localizer["OvertimeReport"];
+}
+
+<div x-data="overtimeReport()" class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                @Localizer["OvertimeReport"]
+            </h2>
+        </div>
+    </div>
+
+    <!-- Main Query Card -->
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                
+                <!-- Date Range -->
+                <div class="sm:col-span-3">
+                    <label for="start-date" class="block text-sm font-medium text-gray-700">Başlangıç Tarihi</label>
+                    <div class="mt-1">
+                        <input type="date" name="start-date" id="start-date" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.StartDate.ToString("yyyy-MM-dd")">
+                    </div>
+                </div>
+
+                <div class="sm:col-span-3">
+                    <label for="end-date" class="block text-sm font-medium text-gray-700">Bitiş Tarihi</label>
+                    <div class="mt-1">
+                        <input type="date" name="end-date" id="end-date" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.EndDate.ToString("yyyy-MM-dd")">
+                    </div>
+                </div>
+
+                <!-- Employee Selection -->
+                <div class="sm:col-span-6">
+                    <label class="block text-sm font-medium text-gray-700">Çalışan</label>
+                    <div class="mt-1 flex rounded-md shadow-sm">
+                        <div class="relative flex-grow focus-within:z-10">
+                             <input type="text" readonly x-model="selectedEmployeeName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300" placeholder="Tüm Çalışanlar">
+                        </div>
+                        <button type="button" @@click="openEmployeeModal()" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                            <!-- Search Icon -->
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Seç</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Customer Selection -->
+                <div class="sm:col-span-6">
+                    <label class="block text-sm font-medium text-gray-700">Müşteri</label>
+                     <div class="mt-1 flex rounded-md shadow-sm">
+                        <div class="relative flex-grow focus-within:z-10">
+                             <input type="text" readonly x-model="selectedCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300" placeholder="Tüm Müşteriler">
+                        </div>
+                        <button type="button" @@click="openCustomerModal()" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                             <span>Seç</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="mt-8 flex justify-end space-x-3">
+                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Detay Rapor Bas
+                </button>
+                <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Özet Rapor Bas
+                </button>
+                 <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    İdari Özet Raporu Bas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Selection Modal -->
+    <div x-show="showEmployeeModal" class="fixed z-10 inset-0 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showEmployeeModal" @@click="showEmployeeModal = false" class="fixed inset-0 transition-opacity" aria-hidden="true">
+                 <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div x-show="showEmployeeModal" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                     <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                        Çalışan Seçimi
+                    </h3>
+                    
+                    <!-- Search & Toolbar -->
+                    <div class="flex justify-between items-center mb-4">
+                         <div class="relative rounded-md shadow-sm w-1/3">
+                            <input type="text" x-model="employeeSearchTerm" @@input.debounce.500ms="searchEmployees(1)" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="İsim veya kod ile ara...">
+                        </div>
+                        <div class="flex items-center space-x-2 text-sm text-gray-500">
+                            <span>Göster:</span>
+                            <select x-model="employeePageSize" @@change="searchEmployees(1)" class="mt-1 block w-20 py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option>10</option>
+                                <option>20</option>
+                                <option>50</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="flex flex-col">
+                        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kod</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad Soyad</th>
+                                                <th scope="col" class="relative px-6 py-3">
+                                                    <span class="sr-only">Seç</span>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            <template x-for="employee in employees" :key="employee.code">
+                                                <tr class="hover:bg-gray-50 cursor-pointer" @@click="selectEmployee(employee)">
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="employee.code"></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="employee.name"></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <button class="text-indigo-600 hover:text-indigo-900">Seç</button>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <tr x-show="employees.length === 0">
+                                                <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">Kayıt bulunamadı.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2">
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    Toplam <span class="font-medium" x-text="employeeTotalCount"></span> kayıt, Sayfa <span class="font-medium" x-text="employeeCurrentPage"></span>
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    <button @@click="if(employeeCurrentPage > 1) searchEmployees(employeeCurrentPage - 1)" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        Önceki
+                                    </button>
+                                    <button @@click="searchEmployees(employeeCurrentPage + 1)" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        Sonraki
+                                    </button>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" @@click="showEmployeeModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Kapat
+                    </button>
+                     <button type="button" @@click="clearEmployee()" class="mt-3 w-full inline-flex justify-center rounded-md border border-red-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Temizle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Selection Modal (Refined) -->
+    <div x-show="showCustomerModal" class="fixed z-10 inset-0 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+             <div x-show="showCustomerModal" @@click="showCustomerModal = false" class="fixed inset-0 transition-opacity" aria-hidden="true">
+                 <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+             <div x-show="showCustomerModal" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4 text-center text-orange-600 font-bold">
+                        Müşteri Sorgulama
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        
+                        <!-- Panel 1: Main Criteria -->
+                        <div class="bg-blue-50 p-3 rounded border border-blue-200 shadow-sm">
+                            <h4 class="font-semibold text-gray-700 mb-2 border-b border-blue-200 pb-1">Ana Kriterler</h4>
+                            <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                <label class="col-span-3 text-right pr-2">Kod</label>
+                                <input type="text" x-model="customerFilter.code" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                <label class="col-span-3 text-right pr-2">Ad</label>
+                                <input type="text" x-model="customerFilter.name" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                             <div class="grid grid-cols-12 gap-2 items-center">
+                                <label class="col-span-3 text-right pr-2">Geçersiz</label>
+                                <select x-model="customerFilter.isInvalid" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm py-0">
+                                    <option value="false">Hayır</option>
+                                    <option value="true">Evet</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Panel 2: Address -->
+                        <div class="bg-blue-50 p-3 rounded border border-blue-200 shadow-sm">
+                            <h4 class="font-semibold text-gray-700 mb-2 border-b border-blue-200 pb-1">Adres Sorgulama</h4>
+                             <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                <label class="col-span-3 text-right pr-2">Şehir</label>
+                                <input type="text" x-model="customerFilter.city" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                             <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                <label class="col-span-3 text-right pr-2">Alan Kodu</label>
+                                <input type="text" x-model="customerFilter.areaCode" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                             <div class="grid grid-cols-12 gap-2 items-center">
+                                <label class="col-span-3 text-right pr-2">Ülke</label>
+                                <input type="text" x-model="customerFilter.country" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                        </div>
+
+                         <!-- Panel 3: Contact -->
+                        <div class="bg-blue-50 p-3 rounded border border-blue-200 shadow-sm">
+                            <h4 class="font-semibold text-gray-700 mb-2 border-b border-blue-200 pb-1">İletişim Sorgulama</h4>
+                            <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                <label class="col-span-3 text-right pr-2">Sahibi</label>
+                                <input type="text" x-model="customerFilter.owner" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                <label class="col-span-3 text-right pr-2">İlgili</label>
+                                <input type="text" x-model="customerFilter.relatedPerson" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                             <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                <label class="col-span-3 text-right pr-2">Telefon</label>
+                                <input type="text" x-model="customerFilter.phone" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                <label class="col-span-3 text-right pr-2">Faks</label>
+                                <input type="text" x-model="customerFilter.fax" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-center">
+                                <label class="col-span-3 text-right pr-2">E-Mail</label>
+                                <input type="text" x-model="customerFilter.email" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Right Column Stack -->
+                        <div class="space-y-4">
+                             <!-- Panel 4: Invoice -->
+                             <div class="bg-blue-50 p-3 rounded border border-blue-200 shadow-sm">
+                                <h4 class="font-semibold text-gray-700 mb-2 border-b border-blue-200 pb-1">Fatura Sorgulama</h4>
+                                <div class="grid grid-cols-12 gap-2 items-center mb-2">
+                                    <label class="col-span-3 text-right pr-2">Vergi Dairesi</label>
+                                    <input type="text" x-model="customerFilter.taxOffice" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                                </div>
+                                 <div class="grid grid-cols-12 gap-2 items-center">
+                                    <label class="col-span-3 text-right pr-2">Vergi Numarası</label>
+                                    <input type="text" x-model="customerFilter.taxNumber" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm">
+                                </div>
+                            </div>
+                            
+                            <!-- Panel 5: Job -->
+                             <div class="bg-blue-50 p-3 rounded border border-blue-200 shadow-sm">
+                                <h4 class="font-semibold text-gray-700 mb-2 border-b border-blue-200 pb-1">İş Sorgulama</h4>
+                                <div class="grid grid-cols-12 gap-2 items-center">
+                                    <label class="col-span-3 text-right pr-2">Durum</label>
+                                     <select x-model="customerFilter.jobStatus" class="col-span-9 border-gray-300 rounded-md shadow-sm h-7 text-sm py-0">
+                                         <option value="">Tümü</option>
+                                         <option value="Active">Aktif</option>
+                                         <option value="Completed">Tamamlandı</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Search Actions -->
+                    <div class="mt-4 flex justify-center space-x-2">
+                         <button type="button" @@click="searchCustomers(1)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Sorgula
+                        </button>
+                        <button type="button" @@click="resetCustomerFilter()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Temizle
+                        </button>
+                    </div>
+
+                    <!-- Results Table -->
+                    <div class="mt-6 flex flex-col" x-show="customerHasSearched">
+                        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kod</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Şehir</th>
+                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefon</th>
+                                                <th scope="col" class="relative px-6 py-3">
+                                                    <span class="sr-only">Seç</span>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            <template x-for="customer in customers" :key="customer.code">
+                                                <tr class="hover:bg-gray-50 cursor-pointer" @@click="selectCustomer(customer)">
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="customer.code"></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="customer.name"></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="customer.city"></td>
+                                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="customer.phone"></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <button class="text-indigo-600 hover:text-indigo-900">Seç</button>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                           <tr x-show="customers.length === 0">
+                                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Kayıt bulunamadı.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                         <!-- Customer Pagination -->
+                        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2" x-show="customers.length > 0">
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Toplam <span class="font-medium" x-text="customerTotalCount"></span> kayıt
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <button @@click="if(customerCurrentPage > 1) searchCustomers(customerCurrentPage - 1)" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            Önceki
+                                        </button>
+                                        <button @@click="searchCustomers(customerCurrentPage + 1)" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            Sonraki
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" @@click="showCustomerModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Kapat
+                    </button>
+                     <button type="button" @@click="clearCustomer()" class="mt-3 w-full inline-flex justify-center rounded-md border border-red-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Seçimi Temizle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function overtimeReport() {
+        return {
+            selectedEmployeeName: '',
+            selectedCustomerName: '',
+            
+            // Employee Logic
+            showEmployeeModal: false,
+            employeeSearchTerm: '',
+            employeePageSize: 10,
+            employeeCurrentPage: 1,
+            employeeTotalCount: 0,
+            employees: [],
+            
+            // Customer Logic
+            showCustomerModal: false,
+            customerFilter: { 
+                code: '', name: '', city: '', areaCode: '', country: '', 
+                owner: '', relatedPerson: '', phone: '', fax: '', email: '',
+                taxOffice: '', taxNumber: '', jobStatus: '', isInvalid: false,
+                page: 1, pageSize: 5
+            },
+            customerHasSearched: false,
+            customerCurrentPage: 1,
+            customerTotalCount: 0,
+            customers: [],
+
+            init() {
+                // Initialize default logic if needed
+            },
+
+            // Employee Actions
+            openEmployeeModal() {
+                 this.showEmployeeModal = true;
+                 this.searchEmployees(1);
+            },
+            
+            async searchEmployees(page) {
+                this.employeeCurrentPage = page;
+                const response = await fetch(`/OvertimeReport/SearchEmployees?term=${this.employeeSearchTerm}&page=${page}&pageSize=${this.employeePageSize}`);
+                const result = await response.json();
+                this.employees = result.items;
+                this.employeeTotalCount = result.totalCount;
+            },
+
+            selectEmployee(emp) {
+                this.selectedEmployeeName = emp.name;
+                this.showEmployeeModal = false;
+            },
+            
+            clearEmployee() {
+                 this.selectedEmployeeName = '';
+                 this.showEmployeeModal = false;
+            },
+
+            // Customer Actions
+            openCustomerModal() {
+                this.showCustomerModal = true;
+                this.resetCustomerFilter();
+                // We typically don't search immediately for detailed filters to save load
+                this.customerHasSearched = false; 
+                this.customers = [];
+            },
+
+            resetCustomerFilter() {
+                 this.customerFilter = { 
+                    code: '', name: '', city: '', areaCode: '', country: '', 
+                    owner: '', relatedPerson: '', phone: '', fax: '', email: '',
+                    taxOffice: '', taxNumber: '', jobStatus: '', isInvalid: false,
+                    page: 1, pageSize: 5
+                };
+            },
+
+            async searchCustomers(page) {
+                if(page) this.customerFilter.page = page;
+                
+                const response = await fetch('/OvertimeReport/SearchCustomers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.customerFilter)
+                });
+                const result = await response.json();
+                this.customers = result.items;
+                this.customerTotalCount = result.totalCount;
+                this.customerCurrentPage = result.page;
+                this.customerHasSearched = true;
+            },
+
+            selectCustomer(cust) {
+                this.selectedCustomerName = cust.name;
+                this.showCustomerModal = false;
+            },
+            
+            clearCustomer() {
+                 this.selectedCustomerName = '';
+                 this.showCustomerModal = false;
+            }
+        }
+    }
+</script>

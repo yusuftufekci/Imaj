@@ -62,19 +62,19 @@
                             @{
                                 var menuItems = new[] 
                                 { 
-                                    new { Key = "Home", Label = Localizer["Home"] },
-                                    new { Key = "Calendar", Label = Localizer["Calendar"] },
-                                    new { Key = "Customer", Label = Localizer["Customer"] },
-                                    new { Key = "Reservation", Label = Localizer["Reservation"] },
-                                    new { Key = "Job", Label = Localizer["Job"] },
-                                    new { Key = "Invoice", Label = Localizer["Invoice"] },
-                                    new { Key = "OvertimeReport", Label = Localizer["OvertimeReport"] },
-                                    new { Key = "ProductReport", Label = Localizer["ProductReport"] }
+                                    new { Key = "Home", Label = Localizer["Home"], Url = "/" },
+                                    new { Key = "Calendar", Label = Localizer["Calendar"], Url = "#" },
+                                    new { Key = "Customer", Label = Localizer["Customer"], Url = "#" },
+                                    new { Key = "Reservation", Label = Localizer["Reservation"], Url = "#" },
+                                    new { Key = "Job", Label = Localizer["Job"], Url = "#" },
+                                    new { Key = "Invoice", Label = Localizer["Invoice"], Url = "#" },
+                                    new { Key = "OvertimeReport", Label = Localizer["OvertimeReport"], Url = "/OvertimeReport" },
+                                    new { Key = "ProductReport", Label = Localizer["ProductReport"], Url = "#" }
                                 };
                             }
                             @foreach (var item in menuItems)
                             {
-                                <a href="#" class="inline-flex items-center px-4 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-600 hover:text-red-600 hover:border-red-600 transition-all duration-200">
+                                <a href="@item.Url" class="inline-flex items-center px-4 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-600 hover:text-red-600 hover:border-red-600 transition-all duration-200">
                                     @item.Label
                                 </a>
                             }
