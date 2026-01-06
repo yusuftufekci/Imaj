@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="Home" xml:space="preserve">
+    <value>Ana Sayfa</value>
+  </data>
+  <data name="Calendar" xml:space="preserve">
+    <value>Takvim</value>
+  </data>
+  <data name="Customer" xml:space="preserve">
+    <value>Müşteri</value>
+  </data>
+  <data name="Reservation" xml:space="preserve">
+    <value>Rezervasyon</value>
+  </data>
+  <data name="Job" xml:space="preserve">
+    <value>İş</value>
+  </data>
+  <data name="Invoice" xml:space="preserve">
+    <value>Fatura</value>
+  </data>
+  <data name="OvertimeReport" xml:space="preserve">
+    <value>Mesai Raporu</value>
+  </data>
+  <data name="ProductReport" xml:space="preserve">
+    <value>Ürün Raporu</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Giriş</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Çıkış</value>
+  </data>
+  <data name="Welcome" xml:space="preserve">
+    <value>Hoş Geldiniz</value>
+  </data>
+  <data name="SystemStatus" xml:space="preserve">
+    <value>Sistem Durumu</value>
+  </data>
+  <data name="ActiveProjects" xml:space="preserve">
+    <value>Aktif Projeler</value>
+  </data>
+  <data name="PendingTasks" xml:space="preserve">
+    <value>Bekleyen İşler</value>
+  </data>
+  <data name="CompletedTasksThisMonth" xml:space="preserve">
+    <value>Tamamlanan İşler (Bu Ay)</value>
+  </data>
+  <data name="TodaysDate" xml:space="preserve">
+    <value>Bugünün Tarihi</value>
+  </data>
+  <data name="Customers" xml:space="preserve">
+    <value>Müşteriler</value>
+  </data>
+  <data name="Reservations" xml:space="preserve">
+    <value>Rezervasyonlar</value>
+  </data>
+  <data name="JobTracking" xml:space="preserve">
+    <value>İş Takibi</value>
+  </data>
+  <data name="CalendarDesc" xml:space="preserve">
+    <value>Günlük ve haftalık iş planınızı görüntüleyin.</value>
+  </data>
+  <data name="CustomerDesc" xml:space="preserve">
+    <value>Müşteri veritabanını ve iletişim kayıtlarını yönetin.</value>
+  </data>
+  <data name="ReservationDesc" xml:space="preserve">
+    <value>Stüdyo ve ekipman rezervasyonlarını takip edin.</value>
+  </data>
+  <data name="JobDesc" xml:space="preserve">
+    <value>Devam eden projeleri ve iş emri durumlarını inceleyin.</value>
+  </data>
+  <data name="PanelTitle" xml:space="preserve">
+    <value>Imaj Post-Prodüksiyon Hizmetleri Bilgi Sistemi Yönetim Paneli</value>
+  </data>
+  <data name="ServiceQuality" xml:space="preserve">
+    <value>Hizmet kalitesi ve teknolojik altyapıda öncü.</value>
+  </data>
+  <data name="InformationSystem" xml:space="preserve">
+    <value>Imaj Bilgi Sistemi</value>
+  </data>
+</root>

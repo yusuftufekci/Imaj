@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imaj.Core", "Imaj.Core\Imaj.Core.csproj", "{B10DFEB6-D114-4E5F-B12E-D69C316077EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imaj.Data", "Imaj.Data\Imaj.Data.csproj", "{27CC2C08-14C9-4F94-A598-CD4BB5D1107E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imaj.Service", "Imaj.Service\Imaj.Service.csproj", "{86B09B72-C92D-4441-8B12-30ADCAF28A3C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imaj.Web", "Imaj.Web\Imaj.Web.csproj", "{EA25D940-910D-46E6-8535-512E4BF5646D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B10DFEB6-D114-4E5F-B12E-D69C316077EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B10DFEB6-D114-4E5F-B12E-D69C316077EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B10DFEB6-D114-4E5F-B12E-D69C316077EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B10DFEB6-D114-4E5F-B12E-D69C316077EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27CC2C08-14C9-4F94-A598-CD4BB5D1107E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27CC2C08-14C9-4F94-A598-CD4BB5D1107E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27CC2C08-14C9-4F94-A598-CD4BB5D1107E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27CC2C08-14C9-4F94-A598-CD4BB5D1107E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86B09B72-C92D-4441-8B12-30ADCAF28A3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86B09B72-C92D-4441-8B12-30ADCAF28A3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86B09B72-C92D-4441-8B12-30ADCAF28A3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86B09B72-C92D-4441-8B12-30ADCAF28A3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA25D940-910D-46E6-8535-512E4BF5646D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA25D940-910D-46E6-8535-512E4BF5646D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA25D940-910D-46E6-8535-512E4BF5646D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA25D940-910D-46E6-8535-512E4BF5646D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
