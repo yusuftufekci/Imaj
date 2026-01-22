@@ -62,14 +62,14 @@
                             @{
                                 var menuItems = new[] 
                                 { 
-                                    new { Key = "Home", Label = Localizer["Home"], Url = "/" },
-                                    new { Key = "Calendar", Label = Localizer["Calendar"], Url = "#" },
-                                    new { Key = "Customer", Label = Localizer["Customer"], Url = "/Customer" },
-                                    new { Key = "Reservation", Label = Localizer["Reservation"], Url = "#" },
-                                    new { Key = "Job", Label = Localizer["Job"], Url = "#" },
-                                    new { Key = "Invoice", Label = Localizer["Invoice"], Url = "#" },
-                                    new { Key = "OvertimeReport", Label = Localizer["OvertimeReport"], Url = "/OvertimeReport" },
-                                    new { Key = "ProductReport", Label = Localizer["ProductReport"], Url = "#" }
+                                    new { Key = "Home", Label = Localizer["Home"].Value, Url = "/" },
+                                    new { Key = "Calendar", Label = Localizer["Calendar"].Value, Url = "#" },
+                                    new { Key = "Customer", Label = Localizer["Customer"].Value, Url = "/Customer" },
+                                    new { Key = "Reservation", Label = Localizer["Reservation"].Value, Url = "#" },
+                                    new { Key = "Job", Label = Localizer["Job"].Value, Url = "#" },
+                                    new { Key = "Invoice", Label = Localizer["Invoice"].Value, Url = "#" },
+                                    new { Key = "OvertimeReport", Label = Localizer["OvertimeReport"].Value, Url = "/OvertimeReport" },
+                                    new { Key = "ProductReport", Label = "Ürün Raporu", Url = "/ProductReport" }
                                 };
                             }
                             @foreach (var item in menuItems)
