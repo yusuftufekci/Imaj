@@ -11,7 +11,7 @@ namespace Imaj.Web.Models
         public DateTime EndDate { get; set; } = DateTime.Now.AddDays(7);
 
         public string SelectedEmployeeName { get; set; }
-        public string SelectedEmployeeCode { get; set; }
+        public List<string> SelectedEmployeeCodes { get; set; } = new List<string>();
 
         public string SelectedCustomerName { get; set; }
         public string SelectedCustomerCode { get; set; }
