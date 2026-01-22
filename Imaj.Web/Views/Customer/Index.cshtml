@@ -1,0 +1,208 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Imaj.Web.Models
+@model CustomerFilterModel
+
+@{
+    ViewData["Title"] = "Müşteri Sorgulama";
+}
+
+<div x-data="customerIndex()" class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                Müşteri İşlemleri
+            </h2>
+        </div>
+    </div>
+
+    <!-- Müşteri Sorgulama Bölümü -->
+    <form action="/Customer/List" method="get" class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 text-center border-b pb-2">
+                Müşteri Sorgulama
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                <!-- Sol Kolon -->
+                <div class="space-y-6">
+                    <!-- Ana Kriterler -->
+                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">Ana Kriterler</h4>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Kod</label>
+                                <input type="text" name="Code" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Ad</label>
+                                <input type="text" name="Name" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Geçersiz</label>
+                                <select name="IsInvalid" class="col-span-2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="false">Hayır</option>
+                                    <option value="true">Evet</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- İletişim Sorgulama -->
+                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">İletişim Sorgulama</h4>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Sahibi</label>
+                                <input type="text" name="Owner" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">İlgili</label>
+                                <input type="text" name="RelatedPerson" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Telefon</label>
+                                <input type="text" name="Phone" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Faks</label>
+                                <input type="text" name="Fax" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">E-Mail</label>
+                                <input type="text" name="Email" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sağ Kolon -->
+                <div class="space-y-6">
+                    <!-- Adres Sorgulama -->
+                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">Adres Sorgulama</h4>
+                        <div class="space-y-2">
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Şehir</label>
+                                <input type="text" name="City" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Alan Kodu</label>
+                                <input type="text" name="AreaCode" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Ülke</label>
+                                <input type="text" name="Country" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fatura Sorgulama -->
+                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">Fatura Sorgulama</h4>
+                        <div class="space-y-2">
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Vergi Dairesi</label>
+                                <input type="text" name="TaxOffice" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Vergi Numarası</label>
+                                <input type="text" name="TaxNumber" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- İş Sorgulama -->
+                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">İş Sorgulama</h4>
+                        <div class="space-y-2">
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700 text-right">Durum</label>
+                                <select name="JobStatus" class="col-span-2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">Tümü</option>
+                                    <option value="Active">Aktif</option>
+                                    <option value="Completed">Tamamlandı</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Butonlar -->
+             <div class="mt-8 flex justify-center space-x-3">
+                 <div class="flex items-center space-x-2 mr-4">
+                     <span class="text-sm text-gray-500">İlk</span>
+                     <input type="number" name="Page" value="1" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
+                     <span class="text-sm text-gray-500">Sayfa Boyu</span>
+                     <input type="number" name="PageSize" value="20" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
+                 </div>
+
+                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Sorgula
+                </button>
+                <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Temizle
+                </button>
+            </div>
+            
+        </div>
+    </form>
+
+    <!-- Müşteri Yaratma -->
+    <div class="bg-white shadow sm:rounded-lg mt-6">
+        <div class="px-4 py-5 sm:p-6 text-center">
+             <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 border-b pb-2">
+                Müşteri Yaratma
+            </h3>
+            
+            <a href="/Customer/Create" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Yeni Müşteri Yarat
+            </a>
+        </div>
+    </div>
+
+    <!-- Müşteri Raporları -->
+    <div class="bg-white shadow sm:rounded-lg mt-6 text-center">
+         <div class="px-4 py-5 sm:p-6">
+             <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 border-b pb-2">
+                Müşteri Raporları
+            </h3>
+            <button type="button" @@click="printReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Rapor Bas
+            </button>
+         </div>
+    </div>
+
+</div>
+
+<script>
+    function customerIndex() {
+        return {
+            newCustomerCode: '',
+            async createCustomer() {
+                if(!this.newCustomerCode) {
+                    alert('Lütfen bir müşteri kodu giriniz.');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/Customer/Create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code: this.newCustomerCode })
+                    });
+                    const result = await response.json();
+                    alert(result.message);
+                    this.newCustomerCode = '';
+                } catch(e) {
+                     alert('Yaratma işlemi sırasında hata oluştu.');
+                }
+            },
+
+            printReport() {
+                alert('Rapor basma işlemi başlatıldı.');
+            }
+        }
+    }
+</script>

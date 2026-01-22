@@ -1,0 +1,152 @@
+@using Imaj.Web.Models
+@model CustomerViewModel
+
+@{
+    ViewData["Title"] = "Yeni Müşteri Yarat";
+}
+
+<div x-data="{ autoAdvance: false }" class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-indigo-600 sm:text-3xl sm:truncate text-center w-full">
+                Müşteri
+            </h2>
+        </div>
+    </div>
+
+    <form action="/Customer/Create" method="post" class="bg-white shadow sm:rounded-lg">
+        
+        <div class="px-4 py-5 sm:p-6">
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 
+                 <!-- Sol Kolon -->
+                 <div class="space-y-6">
+                     <!-- Tanım -->
+                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">Tanım</h4>
+                         <div class="space-y-3">
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Kod</label>
+                                 <input type="text" name="Code" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="TEST">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Ad</label>
+                                 <input type="text" name="Name" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-start">
+                                 <label class="text-sm font-medium text-gray-700 text-right mt-1">Notlar</label>
+                                 <textarea name="Notes" rows="3" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Geçersiz</label>
+                                 <div class="col-span-2">
+                                     <input type="checkbox" name="IsInvalid" value="true" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+
+                     <!-- İletişim -->
+                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">İletişim</h4>
+                         <div class="space-y-3">
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Sahibi</label>
+                                 <input type="text" name="Owner" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">İlgili</label>
+                                 <input type="text" name="RelatedPerson" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Telefon</label>
+                                 <input type="text" name="Phone" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Faks</label>
+                                 <input type="text" name="Fax" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">E-Mail</label>
+                                 <input type="text" name="Email" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- Sağ Kolon -->
+                 <div class="space-y-6">
+                     <!-- Adres -->
+                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">Adres</h4>
+                         <div class="space-y-3">
+                             <div class="grid grid-cols-3 gap-4 items-start">
+                                 <label class="text-sm font-medium text-gray-700 text-right mt-1">Adres</label>
+                                 <textarea name="Address" rows="2" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Şehir</label>
+                                 <input type="text" name="City" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Alan Kodu</label>
+                                 <input type="text" name="AreaCode" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Ülke</label>
+                                 <input type="text" name="Country" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                         </div>
+                     </div>
+
+                     <!-- Fatura -->
+                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">Fatura</h4>
+                         <div class="space-y-3">
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Fatura Adı</label>
+                                  <input type="text" name="InvoiceName" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Vergi Dairesi</label>
+                                 <input type="text" name="TaxOffice" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                             <div class="grid grid-cols-3 gap-4 items-center">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Vergi Numarası</label>
+                                 <input type="text" name="TaxNumber" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+             </div>
+             
+             <!-- Ürün Kategorisi Placeholder -->
+             <div class="bg-blue-200 mt-6 p-2 rounded-t-md border-b border-blue-300">
+                 <h4 class="text-sm font-bold text-gray-800">Ürün Kategorisi (0)</h4>
+             </div>
+             <div class="bg-white border border-t-0 border-blue-300 p-4 rounded-b-md">
+                  <div class="flex items-center space-x-2">
+                     <span class="text-sm text-gray-700">Sayfa Boyu</span>
+                     <input type="number" value="16" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
+                     <a href="#" class="text-sm font-bold text-blue-800 hover:text-blue-600 underline">Ekle</a>
+                 </div>
+             </div>
+
+
+        </div>
+        
+        <!-- Actions -->
+        <div class="px-4 py-3 bg-gray-50 text-center sm:px-6 space-y-3">
+             <div class="flex justify-center space-x-3">
+                <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Kaydet
+                </button>
+                <a href="/Customer" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Vazgeç
+                </a>
+             </div>
+        </div>
+    </form>
+</div>

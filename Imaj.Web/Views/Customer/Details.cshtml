@@ -1,0 +1,134 @@
+@using Imaj.Web.Models
+@model CustomerViewModel
+
+@{
+    ViewData["Title"] = "Müşteri Detayları";
+}
+
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                Müşteri Detayları: <span class="text-indigo-600">@Model.Code - @Model.Name</span>
+            </h2>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+             <a href="javascript:history.back()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Geri Dön
+            </a>
+            <a href="/Customer/Edit/@Model.Code" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Düzenle
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 
+                 <!-- Sol Kolon -->
+                 <div class="space-y-6">
+                     <!-- Ana Bilgiler -->
+                     <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2">Ana Bilgiler</h4>
+                         <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Kod</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.Code</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Ad</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.Name</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Geçersiz</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@(Model.IsInvalid ? "Evet" : "Hayır")</dd>
+                             </div>
+                         </dl>
+                     </div>
+
+                     <!-- İletişim Bilgileri -->
+                     <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2">İletişim Bilgileri</h4>
+                         <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Sahibi</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.Owner</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">İlgili</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.RelatedPerson</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Telefon</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.Phone</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Faks</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.Fax</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">E-Mail</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.Email</dd>
+                             </div>
+                         </dl>
+                     </div>
+                 </div>
+
+                 <!-- Sağ Kolon -->
+                 <div class="space-y-6">
+                     <!-- Adres Bilgileri -->
+                     <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2">Adres Bilgileri</h4>
+                         <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Şehir</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.City</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Alan Kodu</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.AreaCode</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Ülke</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.Country</dd>
+                             </div>
+                         </dl>
+                     </div>
+
+                     <!-- Fatura Bilgileri -->
+                     <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2">Fatura Bilgileri</h4>
+                         <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Vergi Dairesi</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.TaxOffice</dd>
+                             </div>
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Vergi Numarası</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">@Model.TaxNumber</dd>
+                             </div>
+                         </dl>
+                     </div>
+
+                     <!-- İş Bilgileri -->
+                     <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
+                         <h4 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2">İş Bilgileri</h4>
+                         <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                             <div class="sm:col-span-1">
+                                 <dt class="text-sm font-medium text-gray-500">Durum</dt>
+                                 <dd class="mt-1 text-sm text-gray-900">
+                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                         @Model.JobStatus
+                                     </span>
+                                 </dd>
+                             </div>
+                         </dl>
+                     </div>
+                 </div>
+
+             </div>
+        </div>
+    </div>
+</div>
