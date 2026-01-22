@@ -10,6 +10,39 @@ namespace Imaj.Web.Controllers
             return View(new CustomerFilterModel());
         }
 
+        [HttpPost]
+        public IActionResult Search([FromBody] CustomerFilterModel? filter)
+        {
+            var customers = GenerateMockCustomers();
+
+            var f = filter ?? new CustomerFilterModel();
+
+            if (!string.IsNullOrWhiteSpace(f.Code))
+                customers = customers.Where(c => c.Code != null && c.Code.Contains(f.Code, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if (!string.IsNullOrWhiteSpace(f.Name))
+                customers = customers.Where(c => c.Name != null && c.Name.Contains(f.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            if (!string.IsNullOrWhiteSpace(f.City))
+                customers = customers.Where(c => c.City != null && c.City.Contains(f.City, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            var totalCount = customers.Count;
+            var items = customers
+                .Skip((f.Page - 1) * f.PageSize)
+                .Take(f.PageSize)
+                .Select(c => new CustomerSearchResult 
+                { 
+                    Code = c.Code, 
+                    Name = c.Name, 
+                    City = c.City, 
+                    Phone = c.Phone, 
+                    Email = c.Email 
+                })
+                .ToList();
+
+            return Json(new { items, totalCount, page = f.Page, pageSize = f.PageSize });
+        }
+
         [HttpGet]
         public IActionResult List(CustomerFilterModel filter)
         {
@@ -17,15 +50,17 @@ namespace Imaj.Web.Controllers
             var allCustomers = GenerateMockCustomers();
             var query = allCustomers.AsQueryable();
 
+            var f = filter ?? new CustomerFilterModel();
+
             if (filter != null)
             {
-               if(!string.IsNullOrWhiteSpace(filter.Code))
-                    query = query.Where(c => c.Code.Contains(filter.Code, StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(filter.Code))
+                    query = query.Where(c => c.Code != null && c.Code.Contains(filter.Code, StringComparison.OrdinalIgnoreCase));
 
-               if(!string.IsNullOrWhiteSpace(filter.Name))
-                    query = query.Where(c => c.Name.Contains(filter.Name, StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(filter.Name))
+                    query = query.Where(c => c.Name != null && c.Name.Contains(filter.Name, StringComparison.OrdinalIgnoreCase));
                
-               if(!string.IsNullOrWhiteSpace(filter.City))
+                if (!string.IsNullOrWhiteSpace(filter.City))
                     query = query.Where(c => c.City != null && c.City.Contains(filter.City, StringComparison.OrdinalIgnoreCase));
                 
                // Add other filters as needed...
@@ -33,17 +68,17 @@ namespace Imaj.Web.Controllers
             
             var totalCount = query.Count();
             var items = query
-                .Skip((filter.Page - 1) * filter.PageSize)
-                .Take(filter.PageSize)
+                .Skip((f.Page - 1) * f.PageSize)
+                .Take(f.PageSize)
                 .ToList();
 
             var model = new CustomerListViewModel
             {
                 Items = items,
-                Page = filter.Page,
-                PageSize = filter.PageSize,
+                Page = f.Page,
+                PageSize = f.PageSize,
                 TotalCount = totalCount,
-                Filter = filter
+                Filter = f
             };
 
             return View(model);

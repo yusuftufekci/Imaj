@@ -12,21 +12,21 @@ namespace Imaj.Web.Models
         [Display(Name = "End Date")]
         public DateTime EndDate { get; set; } = DateTime.Now.AddDays(7);
 
-        public string SelectedProductCode { get; set; }
-        public string SelectedProductName { get; set; }
+        public string? SelectedProductCode { get; set; }
+        public string? SelectedProductName { get; set; }
 
-        public string SelectedCustomerCode { get; set; } // Reusing for Customer selection
-        public string SelectedCustomerName { get; set; }
+        public string? SelectedCustomerCode { get; set; } // Reusing for Customer selection
+        public string? SelectedCustomerName { get; set; }
 
-        public string ProductGroup { get; set; } // For the dropdown on main page
+        public string? ProductGroup { get; set; } // For the dropdown on main page
     }
 
     public class ProductFilterModel
     {
-        public string Code { get; set; }
-        public string Category { get; set; } // Ürün Kategorisi
-        public string ProductGroup { get; set; } // Ürün Grubu
-        public string Function { get; set; } // Fonksiyon
+        public string? Code { get; set; }
+        public string? Category { get; set; } // Ürün Kategorisi
+        public string? ProductGroup { get; set; } // Ürün Grubu
+        public string? Function { get; set; } // Fonksiyon
         public bool IsInvalid { get; set; }
         
         public int Page { get; set; } = 1;
@@ -35,9 +35,9 @@ namespace Imaj.Web.Models
 
     public class ProductSearchResult
     {
-        public string Code { get; set; }
-        public string Name { get; set; } // Ad / Tanım
-        public string Category { get; set; }
-        public string ProductGroup { get; set; }
+        public string? Code { get; set; }
+        public string? Name { get; set; } // Ad / Tanım
+        public string? Category { get; set; }
+        public string? ProductGroup { get; set; }
     }
 }

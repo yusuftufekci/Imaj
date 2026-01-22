@@ -9,29 +9,28 @@ namespace Imaj.Web.Controllers
     public class ProductController : Controller
     {
         [HttpPost]
-        public IActionResult Search([FromBody] ProductFilterModel filter)
+        public IActionResult Search([FromBody] ProductFilterModel? filter)
         {
             var products = GenerateMockProducts();
 
-            if (filter != null)
-            {
-                if (!string.IsNullOrWhiteSpace(filter.Code))
-                    products = products.Where(p => p.Code.Contains(filter.Code, StringComparison.OrdinalIgnoreCase)).ToList();
+            var f = filter ?? new ProductFilterModel();
 
-                // Add other filters logic if needed for more realistic mock behavior
-                if (filter.IsInvalid)
-                {
-                    // Filter logic for invalid...
-                }
+            if (!string.IsNullOrWhiteSpace(f.Code))
+                 products = products.Where(p => p.Code != null && p.Code.Contains(f.Code, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Add other filters logic if needed for more realistic mock behavior
+            if (f.IsInvalid)
+            {
+                // Filter logic for invalid...
             }
 
             var totalCount = products.Count;
             var items = products
-                .Skip((filter.Page - 1) * filter.PageSize)
-                .Take(filter.PageSize)
+                .Skip((f.Page - 1) * f.PageSize)
+                .Take(f.PageSize)
                 .ToList();
 
-            return Json(new { items, totalCount, page = filter.Page, pageSize = filter.PageSize });
+            return Json(new { items, totalCount, page = f.Page, pageSize = f.PageSize });
         }
 
         private List<ProductSearchResult> GenerateMockProducts()

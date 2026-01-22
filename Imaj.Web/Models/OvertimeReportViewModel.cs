@@ -10,38 +10,38 @@ namespace Imaj.Web.Models
         [Display(Name = "End Date")]
         public DateTime EndDate { get; set; } = DateTime.Now.AddDays(7);
 
-        public string SelectedEmployeeName { get; set; }
+        public string? SelectedEmployeeName { get; set; }
         public List<string> SelectedEmployeeCodes { get; set; } = new List<string>();
 
-        public string SelectedCustomerName { get; set; }
-        public string SelectedCustomerCode { get; set; }
+        public string? SelectedCustomerName { get; set; }
+        public string? SelectedCustomerCode { get; set; }
     }
 
     public class CustomerFilterModel
     {
         // Main Criteria
-        public string Code { get; set; }
-        public string Name { get; set; }
+        public string? Code { get; set; }
+        public string? Name { get; set; }
         public bool IsInvalid { get; set; }
 
         // Address
-        public string City { get; set; }
-        public string AreaCode { get; set; }
-        public string Country { get; set; }
+        public string? City { get; set; }
+        public string? AreaCode { get; set; }
+        public string? Country { get; set; }
 
         // Contact
-        public string Owner { get; set; }
-        public string RelatedPerson { get; set; }
-        public string Phone { get; set; }
-        public string Fax { get; set; }
-        public string Email { get; set; }
+        public string? Owner { get; set; }
+        public string? RelatedPerson { get; set; }
+        public string? Phone { get; set; }
+        public string? Fax { get; set; }
+        public string? Email { get; set; }
 
         // Invoice
-        public string TaxOffice { get; set; }
-        public string TaxNumber { get; set; }
+        public string? TaxOffice { get; set; }
+        public string? TaxNumber { get; set; }
 
         // Job
-        public string JobStatus { get; set; }
+        public string? JobStatus { get; set; }
         
         // Paging
         public int Page { get; set; } = 1;
@@ -50,15 +50,15 @@ namespace Imaj.Web.Models
 
     public class CustomerSearchResult
     {
-        public string Code { get; set; }
-        public string Name { get; set; }
-        public string City { get; set; }
-        public string Phone { get; set; }
-        public string Email { get; set; }
+        public string? Code { get; set; }
+        public string? Name { get; set; }
+        public string? City { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
     }
     public class EmployeeSearchResult
     {
-        public string Code { get; set; }
-        public string Name { get; set; }
+        public string? Code { get; set; }
+        public string? Name { get; set; }
     }
 }

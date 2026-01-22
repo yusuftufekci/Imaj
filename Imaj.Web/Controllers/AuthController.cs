@@ -49,7 +49,7 @@ namespace Imaj.Web.Controllers
                 principal,
                 authProperties);
 
-            return Json(ServiceResult<object>.Success(null));
+            return Json(ServiceResult<object>.Success(default!));
         }
 
         public async Task<IActionResult> Logout()

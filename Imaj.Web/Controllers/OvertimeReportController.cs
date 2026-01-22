@@ -20,8 +20,8 @@ namespace Imaj.Web.Controllers
             if (!string.IsNullOrWhiteSpace(term))
             {
                 employees = employees.Where(e => 
-                    e.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || 
-                    e.Code.Contains(term, StringComparison.OrdinalIgnoreCase)).ToList();
+                    (e.Name != null && e.Name.Contains(term, StringComparison.OrdinalIgnoreCase)) || 
+                    (e.Code != null && e.Code.Contains(term, StringComparison.OrdinalIgnoreCase))).ToList();
             }
 
             var totalCount = employees.Count;
@@ -34,35 +34,34 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult SearchCustomers([FromBody] CustomerFilterModel filter)
+        public IActionResult SearchCustomers([FromBody] CustomerFilterModel? filter)
         {
             // Mock dataset
             var customers = GenerateMockCustomers();
 
-            if (filter != null)
-            {
-               if(!string.IsNullOrWhiteSpace(filter.Code))
-                    customers = customers.Where(c => c.Code.Contains(filter.Code, StringComparison.OrdinalIgnoreCase)).ToList();
+            var f = filter ?? new CustomerFilterModel();
 
-               if(!string.IsNullOrWhiteSpace(filter.Name))
-                    customers = customers.Where(c => c.Name.Contains(filter.Name, StringComparison.OrdinalIgnoreCase)).ToList();
-               
-               if(!string.IsNullOrWhiteSpace(filter.City))
-                    customers = customers.Where(c => c.City.Contains(filter.City, StringComparison.OrdinalIgnoreCase)).ToList();
-                
-                // Add more filters as needed for mock...
-            }
+            if(!string.IsNullOrWhiteSpace(f.Code))
+                customers = customers.Where(c => c.Code != null && c.Code.Contains(f.Code, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if(!string.IsNullOrWhiteSpace(f.Name))
+                customers = customers.Where(c => c.Name != null && c.Name.Contains(f.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            if(!string.IsNullOrWhiteSpace(f.City))
+                customers = customers.Where(c => c.City != null && c.City.Contains(f.City, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            // Add more filters as needed for mock...
             
             var totalCount = customers.Count;
             // Assuming simplified paging for customers similar to employees if needed, 
             // otherwise returning all filtered results if logic requires.
             // But let's apply paging to be consistent with large datasets.
             var items = customers
-                .Skip((filter.Page - 1) * filter.PageSize)
-                .Take(filter.PageSize)
+                .Skip((f.Page - 1) * f.PageSize)
+                .Take(f.PageSize)
                 .ToList();
 
-            return Json(new { items, totalCount, page = filter.Page, pageSize = filter.PageSize });
+            return Json(new { items, totalCount, page = f.Page, pageSize = f.PageSize });
         }
 
         private List<EmployeeSearchResult> GenerateMockEmployees()
