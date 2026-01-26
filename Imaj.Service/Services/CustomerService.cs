@@ -2,116 +2,108 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Imaj.Core.Entities;
+using Imaj.Core.Guards;
 using Imaj.Core.Interfaces.Repositories;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Service.Options;
 using Imaj.Service.Results;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Imaj.Service.Services
 {
+    /// <summary>
+    /// Müşteri işlemleri için business service.
+    /// </summary>
     public class CustomerService : ICustomerService
     {
         private readonly ICustomerRepository _customerRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly CustomerSettings _settings;
+        private readonly ILogger<CustomerService> _logger;
 
-        public CustomerService(ICustomerRepository customerRepository, IUnitOfWork unitOfWork)
+        public CustomerService(
+            ICustomerRepository customerRepository, 
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            IOptions<CustomerSettings> options,
+            ILogger<CustomerService> logger)
         {
             _customerRepository = customerRepository;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _settings = options.Value;
+            _logger = logger;
         }
 
         public async Task<ServiceResult> AddAsync(CustomerDto customerDto)
         {
+            // Guard clauses ile parametre doğrulama
+            Guard.AgainstNull(customerDto, nameof(customerDto));
+            Guard.AgainstNullOrEmpty(customerDto.Code, nameof(customerDto.Code));
+            Guard.AgainstNullOrEmpty(customerDto.Name, nameof(customerDto.Name));
+
             using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
-                // Lock / Concurrency safety depends on Isolation Level, typically ReadCommitted or higher.
-                // Since we rely on Max(ID) + 1, serialization is best but expensive.
-                // However, transaction ensures atomicity. If 2 threads read same MaxID, one might fail on unique key constraint (if Id is PK).
-                // Retry logic or Serialized transaction would be better for high concurrency.
-                // For this app scope, atomic Commit is sufficient step up.
+                _logger.LogInformation("Yeni müşteri ekleniyor: {CustomerCode}", customerDto.Code);
 
                 var nextId = await _customerRepository.GetNextIdAsync();
-                var customer = new Customer
-                {
-                    Id = nextId,
-                    Code = customerDto.Code ?? string.Empty,
-                    Name = customerDto.Name ?? string.Empty,
-                    City = customerDto.City ?? string.Empty,
-                    Phone = customerDto.Phone ?? string.Empty,
-                    EMail = customerDto.Email ?? string.Empty,
-                    Contact = customerDto.Contact ?? string.Empty,
-                    TaxOffice = customerDto.TaxOffice ?? string.Empty,
-                    TaxNumber = customerDto.TaxNumber ?? string.Empty,
-                    Country = customerDto.Country ?? string.Empty,
-                    Address = customerDto.Address ?? string.Empty,
-                    Notes = customerDto.Notes ?? string.Empty,
-                    Owner = customerDto.Owner ?? string.Empty,
-                    SelectFlag = customerDto.SelectFlag,
-                    InvoName = customerDto.InvoiceName ?? string.Empty,
-                    Zip = customerDto.AreaCode ?? string.Empty,
-                    Fax = customerDto.Fax ?? string.Empty,
-                    Stamp = 0, // Default for short
-                    CompanyID = 7 // Default static 7 per user request
-                };
+                
+                // AutoMapper ile DTO'dan Entity'ye dönüşüm
+                var customer = _mapper.Map<Customer>(customerDto);
+                customer.Id = nextId;
+                customer.CompanyID = _settings.DefaultCompanyId; // Options'dan alınıyor
+                customer.Stamp = 0;
 
                 await _customerRepository.AddAsync(customer);
                 await _unitOfWork.CommitAsync();
                 await transaction.CommitAsync();
 
+                _logger.LogInformation("Müşteri başarıyla eklendi: {CustomerId}", nextId);
                 return ServiceResult.Success("Müşteri başarıyla eklendi.");
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                
-                // Generic error handler
-                // In production, check for Duplicate Key exceptions (SqlException Number 2601/2627)
+                _logger.LogError(ex, "Müşteri eklenirken hata oluştu: {CustomerCode}", customerDto.Code);
                 return ServiceResult.Fail($"Müşteri eklenirken bir hata oluştu: {ex.Message}");
             }
         }
 
         public async Task<ServiceResult> UpdateAsync(CustomerDto dto)
         {
+            Guard.AgainstNull(dto, nameof(dto));
+            Guard.AgainstZeroOrNegative(dto.Id, nameof(dto.Id));
+
             try
             {
+                _logger.LogInformation("Müşteri güncelleniyor: {CustomerId}", dto.Id);
+
                 var customer = await _customerRepository.GetByIdAsync(dto.Id);
                 if (customer == null)
                 {
-                     // Try finding by code if ID is missing or 0? 
-                     // But usually ID is passed.
-                     return ServiceResult.Fail("Müşteri bulunamadı.");
+                    _logger.LogWarning("Müşteri bulunamadı: {CustomerId}", dto.Id);
+                    return ServiceResult.Fail("Müşteri bulunamadı.");
                 }
 
-                // Update fields
-                customer.Code = dto.Code ?? string.Empty;
-                customer.Name = dto.Name ?? string.Empty;
-                customer.City = dto.City ?? string.Empty;
-                customer.Phone = dto.Phone ?? string.Empty;
-                customer.EMail = dto.Email ?? string.Empty;
-                customer.Contact = dto.Contact ?? string.Empty;
-                customer.TaxOffice = dto.TaxOffice ?? string.Empty;
-                customer.TaxNumber = dto.TaxNumber ?? string.Empty;
-                customer.Country = dto.Country ?? string.Empty;
-                customer.Address = dto.Address ?? string.Empty;
-                customer.Notes = dto.Notes ?? string.Empty;
-                customer.Owner = dto.Owner ?? string.Empty;
-                customer.SelectFlag = dto.SelectFlag;
-                customer.InvoName = dto.InvoiceName ?? string.Empty;
-                customer.Zip = dto.AreaCode ?? string.Empty;
-                customer.Fax = dto.Fax ?? string.Empty;
-                
-                // Do not update ID or CompanyID usually, unless required.
+                // AutoMapper ile güncelleme (mevcut entity'yi günceller)
+                _mapper.Map(dto, customer);
 
-                _customerRepository.Update(customer); // Mark as modified
+                _customerRepository.Update(customer);
                 await _unitOfWork.CommitAsync();
 
+                _logger.LogInformation("Müşteri başarıyla güncellendi: {CustomerId}", dto.Id);
                 return ServiceResult.Success("Müşteri başarıyla güncellendi.");
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Müşteri güncellenirken hata oluştu: {CustomerId}", dto.Id);
                 return ServiceResult.Fail($"Müşteri güncellenirken bir hata oluştu: {ex.Message}");
             }
         }
@@ -119,17 +111,20 @@ namespace Imaj.Service.Services
         public async Task<ServiceResult<List<CustomerDto>>> GetAllAsync()
         {
             var customers = await _customerRepository.GetAllAsync();
-            var dtos = customers.Select(MapToDto).ToList();
+            var dtos = _mapper.Map<List<CustomerDto>>(customers);
             return ServiceResult<List<CustomerDto>>.Success(dtos);
         }
 
         public async Task<ServiceResult<PagedResult<CustomerDto>>> GetByFilterAsync(CustomerFilterDto filter)
         {
-            // Use Query() to delay execution (IQueryable) - Performance Optimization
+            Guard.AgainstNull(filter, nameof(filter));
+
+            // IQueryable ile gecikmeli sorgu
             var query = _customerRepository.Query();
 
+            // Dinamik filtreleme
             if (!string.IsNullOrWhiteSpace(filter.Code))
-                query = query.Where(c => c.Code != null && c.Code.Contains(filter.Code)); // EF Core translates Contains to SQL LIKE
+                query = query.Where(c => c.Code != null && c.Code.Contains(filter.Code));
 
             if (!string.IsNullOrWhiteSpace(filter.Name))
                 query = query.Where(c => c.Name != null && c.Name.Contains(filter.Name));
@@ -138,7 +133,7 @@ namespace Imaj.Service.Services
                 query = query.Where(c => c.City != null && c.City.Contains(filter.City));
 
             if (!string.IsNullOrWhiteSpace(filter.AreaCode))
-                 query = query.Where(c => c.Zip != null && c.Zip.Contains(filter.AreaCode));
+                query = query.Where(c => c.Zip != null && c.Zip.Contains(filter.AreaCode));
 
             if (!string.IsNullOrWhiteSpace(filter.Country))
                 query = query.Where(c => c.Country != null && c.Country.Contains(filter.Country));
@@ -169,106 +164,61 @@ namespace Imaj.Service.Services
                 if (filter.JobStatus.Equals("Active", StringComparison.OrdinalIgnoreCase))
                     query = query.Where(c => c.SelectFlag == true);
                 else if (filter.JobStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
-                     query = query.Where(c => c.SelectFlag == false);
+                    query = query.Where(c => c.SelectFlag == false);
             }
 
-            if (filter.IsInvalid.HasValue && filter.IsInvalid.Value)
+            if (filter.IsInvalid.HasValue)
             {
-                 query = query.Where(c => c.Invisible == true);
-            }
-            else
-            {
-                 if (filter.IsInvalid == false) 
-                    query = query.Where(c => c.Invisible == false);
+                query = query.Where(c => c.Invisible == filter.IsInvalid.Value);
             }
 
-            // Total Count (Efficient SQL Count)
-            var totalCount = await query.CountAsync(); 
+            // Toplam kayıt sayısı (SQL COUNT)
+            var totalCount = await query.CountAsync();
 
-            // Pagination (SQL OFFSET/FETCH)
+            // Sayfalama ve sıralama
+            var pageSize = filter.PageSize > 0 ? filter.PageSize : _settings.DefaultPageSize;
             var items = await query
-                .OrderByDescending(c => c.Id) // Ensure deterministic ordering
-                .Skip((filter.Page - 1) * filter.PageSize)
-                .Take(filter.PageSize)
-                .Select(c => new CustomerDto 
-                { 
-                    // Projection to DTO (Only select columns needed? For now select all to be safe)
-                    // If we want "Select *", we can just do ToListAsync then map. 
-                    // But EF Core projection runs in SQL if we do new CustomerDto { ... } inside Select.
-                    // However, MapToDto is a private method, so we can't use it in LINQ to Entities easily.
-                    // We can either:
-                    // 1. Fetch Entities then Map (simpler logic) -> Items are small page size only.
-                    // 2. Project manually here.
-                    // Option 1 is fine since we are paging (e.g. 10 items).
-                   Id = c.Id,
-                   Code = c.Code,
-                   Name = c.Name,
-                   City = c.City,
-                   Phone = c.Phone,
-                   Email = c.EMail,
-                   Contact = c.Contact,
-                   TaxOffice = c.TaxOffice,
-                   TaxNumber = c.TaxNumber,
-                   Country = c.Country,
-                   Address = c.Address,
-                   Notes = c.Notes,
-                   Owner = c.Owner,
-                   SelectFlag = c.SelectFlag,
-                   InvoiceName = c.InvoName,
-                   AreaCode = c.Zip,
-                   Fax = c.Fax
-                })
+                .OrderByDescending(c => c.Id)
+                .Skip((filter.Page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            // AutoMapper ile projection
+            var dtos = _mapper.Map<List<CustomerDto>>(items);
 
             var result = new PagedResult<CustomerDto>
             {
-                Items = items,
+                Items = dtos,
                 TotalCount = totalCount,
                 PageNumber = filter.Page,
-                PageSize = filter.PageSize
+                PageSize = pageSize
             };
-            
+
             return ServiceResult<PagedResult<CustomerDto>>.Success(result);
         }
 
         public async Task<ServiceResult<CustomerDto>> GetByIdAsync(decimal id)
         {
-             var customer = await _customerRepository.GetByIdAsync(id);
-             if (customer == null) return ServiceResult<CustomerDto>.Fail("Müşteri bulunamadı.");
-             
-             return ServiceResult<CustomerDto>.Success(MapToDto(customer));
+            Guard.AgainstZeroOrNegative(id, nameof(id));
+
+            var customer = await _customerRepository.GetByIdAsync(id);
+            if (customer == null) 
+                return ServiceResult<CustomerDto>.Fail("Müşteri bulunamadı.");
+
+            var dto = _mapper.Map<CustomerDto>(customer);
+            return ServiceResult<CustomerDto>.Success(dto);
         }
 
         public async Task<ServiceResult<CustomerDto>> GetByCodeAsync(string code)
         {
-             var customer = await _customerRepository.SingleOrDefaultAsync(c => c.Code == code);
-             if (customer == null) return ServiceResult<CustomerDto>.Fail("Müşteri bulunamadı.");
-             
-             return ServiceResult<CustomerDto>.Success(MapToDto(customer));
-        }
+            Guard.AgainstNullOrEmpty(code, nameof(code));
 
-        private CustomerDto MapToDto(Customer c)
-        {
-            return new CustomerDto
-            {
-                Id = c.Id,
-                Code = c.Code,
-                Name = c.Name,
-                City = c.City,
-                Phone = c.Phone,
-                Email = c.EMail, // Note casing
-                Contact = c.Contact,
-                TaxOffice = c.TaxOffice,
-                TaxNumber = c.TaxNumber,
-                Country = c.Country,
-                Address = c.Address,
-                Notes = c.Notes,
-                Owner = c.Owner,
-                SelectFlag = c.SelectFlag,
-                InvoiceName = c.InvoName,
-                AreaCode = c.Zip,
-                Fax = c.Fax
-            };
+            var customer = await _customerRepository.SingleOrDefaultAsync(c => c.Code == code);
+            if (customer == null) 
+                return ServiceResult<CustomerDto>.Fail("Müşteri bulunamadı.");
+
+            var dto = _mapper.Map<CustomerDto>(customer);
+            return ServiceResult<CustomerDto>.Success(dto);
         }
     }
 }

@@ -1,74 +1,83 @@
-using Imaj.Core.Interfaces.Repositories;
-using Imaj.Service.Interfaces;
-using Imaj.Data.Context;
-using Imaj.Data.Repositories;
-using Imaj.Service.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
+using Imaj.Data.Extensions;
+using Imaj.Service.Extensions;
+using Imaj.Web.Extensions;
 using Imaj.Web.Middlewares;
 using Microsoft.AspNetCore.Localization;
+using Serilog;
 using System.Globalization;
-using Microsoft.AspNetCore.Mvc.Razor;
 
-var builder = WebApplication.CreateBuilder(args);
+// Serilog bootstrap logger (uygulama başlamadan önce)
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-// Add services to the container.
-builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
-builder.Services.AddControllersWithViews()
-    .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
-    .AddDataAnnotationsLocalization();
+try
+{
+    Log.Information("Uygulama başlatılıyor...");
+    
+    var builder = WebApplication.CreateBuilder(args);
 
-// DbContext
-builder.Services.AddDbContext<ImajDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    // Serilog - appsettings.json'dan konfigürasyon
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
 
-// Repositories & UoW
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+    // Localization servisleri (AddControllersWithViews burada)
+    builder.Services.AddLocalizationServices();
 
-// Services
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+    // Data katmanı servisleri (DbContext, Repositories, UoW)
+    builder.Services.AddDataServices(builder.Configuration);
 
-// Authentication
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+    // Application servisleri (Options, Services, AutoMapper, FluentValidation)
+    builder.Services.AddApplicationServices(builder.Configuration);
+
+    // Web servisleri (Authentication)
+    builder.Services.AddWebServices();
+
+    var app = builder.Build();
+
+    // Exception middleware
+    app.UseMiddleware<ExceptionMiddleware>();
+
+    // HTTP pipeline konfigürasyonu
+    if (!app.Environment.IsDevelopment())
     {
-        options.LoginPath = "/Auth/Login";
-        options.LogoutPath = "/Auth/Logout";
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+        app.UseHsts();
+    }
+
+    app.UseHttpsRedirection();
+    app.UseStaticFiles();
+
+    // Localization middleware
+    var supportedCultures = new[] { new CultureInfo("tr-TR"), new CultureInfo("en-US") };
+    app.UseRequestLocalization(new RequestLocalizationOptions
+    {
+        DefaultRequestCulture = new RequestCulture("tr-TR"),
+        SupportedCultures = supportedCultures,
+        SupportedUICultures = supportedCultures
     });
 
-var app = builder.Build();
+    app.UseRouting();
 
-app.UseMiddleware<ExceptionMiddleware>();
+    app.UseAuthentication();
+    app.UseAuthorization();
 
-// Configure the HTTP request pipeline.
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts();
+    // Serilog request logging
+    app.UseSerilogRequestLogging();
+
+    app.MapControllerRoute(
+        name: "default",
+        pattern: "{controller=Home}/{action=Index}/{id?}");
+
+    Log.Information("Uygulama başlatıldı.");
+    app.Run();
 }
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-var supportedCultures = new[] { new CultureInfo("tr-TR"), new CultureInfo("en-US") };
-app.UseRequestLocalization(new RequestLocalizationOptions
+catch (Exception ex)
 {
-    DefaultRequestCulture = new RequestCulture("tr-TR"),
-    SupportedCultures = supportedCultures,
-    SupportedUICultures = supportedCultures
-});
-
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.Run();
+    Log.Fatal(ex, "Uygulama beklenmeyen bir hata ile sonlandı.");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

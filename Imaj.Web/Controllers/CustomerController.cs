@@ -1,18 +1,26 @@
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Web.Controllers.Base;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
 {
-    public class CustomerController : Controller
+    /// <summary>
+    /// Müşteri (Customer) CRUD işlemleri için controller.
+    /// </summary>
+    public class CustomerController : BaseController
     {
         private readonly ICustomerService _customerService;
 
-        public CustomerController(ICustomerService customerService)
+        public CustomerController(
+            ICustomerService customerService,
+            ILogger<CustomerController> logger) : base(logger)
         {
             _customerService = customerService;
         }
+
 
         public IActionResult Index()
         {
