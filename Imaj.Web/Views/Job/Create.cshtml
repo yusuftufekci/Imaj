@@ -1,0 +1,324 @@
+@model JobCreateViewModel
+
+@{
+    ViewData["Title"] = "Yeni İş Yarat";
+}
+
+<div x-data="jobCreate()" 
+     @@customer-selected.window="handleCustomer($event.detail)"
+     @@employee-selected.window="addEmployee($event.detail)"
+     @@product-selected.window="addProduct($event.detail)"
+     class="space-y-6 pb-20">
+
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
+        <div class="flex-1 min-w-0">
+             <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
+                İş Yaratma
+            </h2>
+        </div>
+    </div>
+
+    <form method="post" action="/Job/Create">
+        
+        <!-- TOP SECTION: Basic Info & Notes -->
+        <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">
+             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left: Form Fields -->
+                <div class="space-y-4">
+                    <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2 text-sm bg-blue-50 px-2 rounded">Temel Bilgiler</h3>
+                    
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">Fonksiyon</label>
+                        <div class="col-span-9 text-sm text-gray-900 font-medium">@Model.Function</div>
+                    </div>
+                     <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">Referans</label>
+                        <div class="col-span-9 text-sm text-gray-500 italic">Otomatik Verilecek</div>
+                    </div>
+
+                    <!-- Customer Select -->
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">Müşteri</label>
+                        <div class="col-span-9 flex items-center space-x-2">
+                             <input type="hidden" name="CustomerCode" x-model="form.customerCode">
+                             <span x-text="form.customerName || '-'" class="font-bold text-gray-900"></span>
+                             <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'createJob' })" class="text-blue-600 font-bold hover:underline text-sm">Seç</button>
+                        </div>
+                    </div>
+
+                    <!-- Ad -->
+                     <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">Ad</label>
+                        <div class="col-span-9">
+                            <input type="text" name="Name" x-model="form.name" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+                     <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">İlgili</label>
+                        <div class="col-span-9">
+                            <input type="text" name="RelatedPerson" x-model="form.relatedPerson" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+
+                    <!-- Dates -->
+                     <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">Başlangıç</label>
+                        <div class="col-span-5">
+                            <input type="datetime-local" name="StartDate" x-model="form.startDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+                     <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">Bitiş</label>
+                        <div class="col-span-5">
+                            <input type="datetime-local" name="EndDate" x-model="form.endDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">Durum</label>
+                        <div class="col-span-9 text-sm text-gray-900">Açık</div>
+                    </div>
+                     <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-bold text-blue-900">Diğer</label>
+                         <div class="col-span-9 flex space-x-4">
+                             <label class="inline-flex items-center">
+                                 <input type="checkbox" name="IsEmailSent" class="form-checkbox text-blue-600">
+                                 <span class="ml-2 text-sm text-gray-700">E-Posta Yollandı</span>
+                             </label>
+                              <label class="inline-flex items-center">
+                                 <input type="checkbox" name="IsEvaluated" class="form-checkbox text-blue-600">
+                                 <span class="ml-2 text-sm text-gray-700">Değerlendirildi</span>
+                             </label>
+                         </div>
+                    </div>
+
+                </div>
+
+                <!-- Right: Notes -->
+                 <div class="space-y-4">
+                    <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                         <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">İdari Notlar</h3>
+                         <textarea name="AdminNotes" rows="4" class="w-full text-sm border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+                     <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                         <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">Müşteri Notları</h3>
+                         <textarea name="CustomerNotes" rows="4" class="w-full text-sm border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+                </div>
+             </div>
+        </div>
+
+        <!-- OVERTIME SECTION -->
+        <div class="mt-8">
+            <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-sm">Mesai (<span x-text="overtimes.length"></span>)</h3>
+            </div>
+             <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-yellow-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-gray-700">Sil</th>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-gray-700 w-20">Kod</th>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
+                             <th class="px-4 py-2 text-left text-xs font-bold text-gray-700">Görev Tipi</th>
+                             <th class="px-4 py-2 text-left text-xs font-bold text-gray-700">Mesai Tipi</th>
+                             <th class="px-4 py-2 text-right text-xs font-bold text-gray-700 w-20">Miktar</th>
+                             <th class="px-4 py-2 text-right text-xs font-bold text-gray-700 w-24">Tutar</th>
+                             <th class="px-4 py-2 text-left text-xs font-bold text-gray-700">Notlar</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="(item, index) in overtimes" :key="index">
+                            <tr>
+                                <td class="px-4 py-2">
+                                    <button type="button" @@click="removeOvertime(index)" class="text-red-600 hover:text-red-900 text-xs font-bold">Sil</button>
+                                </td>
+                                <td class="px-4 py-2 text-xs font-bold text-gray-900" x-text="item.code"></td>
+                                <td class="px-4 py-2 text-xs text-gray-900" x-text="item.name"></td>
+                                <td class="px-4 py-2">
+                                     <select x-model="item.taskType" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
+                                         <option value="Personel">Personel</option>
+                                         <option value="Diğer">Diğer</option>
+                                     </select>
+                                </td>
+                                 <td class="px-4 py-2">
+                                     <select x-model="item.overtimeType" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
+                                         <option value="Normal">Normal</option>
+                                         <option value="Haftasonu">Haftasonu</option>
+                                     </select>
+                                </td>
+                                <td class="px-4 py-2">
+                                    <input type="number" x-model="item.quantity" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
+                                </td>
+                                <td class="px-4 py-2">
+                                     <input type="number" x-model="item.amount" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
+                                </td>
+                                <td class="px-4 py-2">
+                                    <input type="text" x-model="item.notes" class="w-full text-xs border-gray-300 rounded shadow-sm py-1">
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                 </table>
+                 <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                      <div class="flex space-x-2">
+                          <button type="button" class="text-red-600 font-bold hover:underline text-sm">Sil</button>
+                          <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'overtimeAdd', isMultiSelect: true })" class="text-blue-600 font-bold hover:underline text-sm">Ekle</button>
+                      </div>
+                      <div class="text-sm font-bold text-gray-900">
+                          Toplam: <span x-text="calculateOvertimeTotal()"></span>
+                      </div>
+                 </div>
+             </div>
+        </div>
+
+        <!-- PRODUCT SECTION -->
+        <div class="mt-8">
+            <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-sm">Ürün (<span x-text="products.length"></span>)</h3>
+            </div>
+             <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-yellow-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-gray-700">Sil</th>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-gray-700 w-20">Kod</th>
+                            <th class="px-4 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
+                             <th class="px-4 py-2 text-right text-xs font-bold text-gray-700 w-20">Miktar</th>
+                             <th class="px-4 py-2 text-right text-xs font-bold text-gray-700 w-24">Fiyat</th>
+                             <th class="px-4 py-2 text-right text-xs font-bold text-gray-700 w-24">Ara Tutar</th>
+                             <th class="px-4 py-2 text-right text-xs font-bold text-gray-700 w-24">Net Tutar</th>
+                             <th class="px-4 py-2 text-left text-xs font-bold text-gray-700">Notlar</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <template x-for="(item, index) in products" :key="index">
+                            <tr>
+                                <td class="px-4 py-2">
+                                     <button type="button" @@click="removeProduct(index)" class="text-red-600 hover:text-red-900 text-xs font-bold">Sil</button>
+                                </td>
+                                <td class="px-4 py-2 text-xs font-bold text-gray-900" x-text="item.code"></td>
+                                <td class="px-4 py-2 text-xs text-gray-900" x-text="item.name"></td>
+                                <td class="px-4 py-2">
+                                    <input type="number" x-model="item.quantity" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
+                                </td>
+                                 <td class="px-4 py-2">
+                                    <input type="number" x-model="item.price" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
+                                </td>
+                                 <td class="px-4 py-2 text-right text-xs font-bold bg-gray-50" x-text="(item.quantity * item.price).toFixed(2)"></td>
+                                 <td class="px-4 py-2 text-right text-xs font-bold bg-gray-50 text-indigo-700" x-text="(item.quantity * item.price).toFixed(2)"></td>
+                                <td class="px-4 py-2">
+                                    <input type="text" x-model="item.notes" class="w-full text-xs border-gray-300 rounded shadow-sm py-1">
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                 <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                      <div class="flex space-x-2">
+                          <button type="button" class="text-red-600 font-bold hover:underline text-sm">Sil</button>
+                          <button type="button" @@click="$dispatch('product-select-open', { targetId: 'productAdd', isMultiSelect: true })" class="text-blue-600 font-bold hover:underline text-sm">Seçerek Ekle</button>
+                      </div>
+                      <div class="text-sm font-bold text-gray-900">
+                          Toplam: <span x-text="calculateProductTotal()"></span>
+                      </div>
+                 </div>
+            </div>
+        </div>
+        
+        <!-- FOOTER -->
+        <div class="mt-8 flex justify-center space-x-4">
+             <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                Kaydet
+            </button>
+             <button type="button" onclick="history.back()" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none">
+                Vazgeç
+            </button>
+        </div>
+
+    </form>
+    
+    <!-- Shared Modals -->
+    <partial name="_CustomerSelectModal" />
+    <partial name="_ProductSelectModal" />
+    <partial name="_EmployeeSelectModal" />
+</div>
+
+<script>
+    function jobCreate() {
+        return {
+            form: {
+                customerCode: '',
+                customerName: '',
+                name: '',
+                relatedPerson: '',
+                startDate: new Date().toISOString().slice(0, 16),
+                endDate: new Date().toISOString().slice(0, 16)
+            },
+            overtimes: [],
+            products: [],
+
+            handleCustomer(detail) {
+                if(detail.targetId === 'createJob') {
+                    this.form.customerCode = detail.customer.code;
+                    this.form.customerName = detail.customer.name;
+                }
+            },
+            
+            addEmployee(detail) {
+                if(detail.targetId === 'overtimeAdd') {
+                     // Check for multi-select payload first
+                     const employees = detail.employees || (detail.employee ? [detail.employee] : []);
+                     
+                     employees.forEach(emp => {
+                         // Check dupe if needed, but allowing for now.
+                         this.overtimes.push({
+                             code: emp.code,
+                             name: emp.name,
+                             taskType: 'Personel',
+                             overtimeType: 'Normal', // Default
+                             quantity: 1,
+                             amount: 0,
+                             notes: ''
+                         });
+                     });
+                }
+            },
+            
+            removeOvertime(index) {
+                this.overtimes.splice(index, 1);
+            },
+            
+            calculateOvertimeTotal() {
+                // Assuming Total here means Sum of Amount
+                // Or Quantity * Amount ?? The screenshot shows Total at bottom right of amount col
+                 return this.overtimes.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0).toFixed(2);
+            },
+
+            addProduct(detail) {
+                if(detail.targetId === 'productAdd') {
+                    const products = detail.products || (detail.product ? [detail.product] : []);
+                    
+                    products.forEach(prod => {
+                        this.products.push({
+                            code: prod.code,
+                            name: prod.name,
+                            quantity: 1,
+                            price: 100, // Mock default price
+                            notes: ''
+                        });
+                    });
+                }
+            },
+            
+            removeProduct(index) {
+                 this.products.splice(index, 1);
+            },
+            
+            calculateProductTotal() {
+                return this.products.reduce((sum, item) => sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)), 0).toFixed(2);
+            }
+        }
+    }
+</script>

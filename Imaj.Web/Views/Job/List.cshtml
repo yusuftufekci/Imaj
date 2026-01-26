@@ -1,0 +1,132 @@
+@model JobViewModel
+
+@{
+    ViewData["Title"] = "İşler";
+}
+
+<div x-data="jobList()" class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-orange-600">
+                İşler
+            </h2>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <form id="resultsForm" method="post" action="/Job/Detail">
+        <div class="flex flex-col mt-6">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-blue-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left">
+                                        <!-- Select All Checkbox -->
+                                        <div class="flex items-center">
+                                            <input type="checkbox" @@click="toggleAll" x-model="allSelected" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2">
+                                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer" @@click="toggleAll(); allSelected = !allSelected">Seç</span>
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fonksiyon</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Referans</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Başlangıç Tarihi</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Müşteri</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Durum</th>
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">E-Posta</th>
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Değerlendirildi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <!-- Bind to selectedIds array -->
+                                            <input type="checkbox" name="selectedIds" value="@item.Code" x-model="selectedIds" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.Function</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">
+                                            <a href="/Job/Detail?id=@item.Code" class="text-blue-600 hover:text-blue-900 underline">@item.Code</a>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            @item.StartDate.ToString("dd/MM/yyyy HH:mm") <br/>
+                                            @item.EndDate?.ToString("dd/MM/yyyy HH:mm")
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.CustomerName</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.Name</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.Status</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <input type="checkbox" disabled @(item.IsEmailSent ? "checked" : "") class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <input type="checkbox" disabled @(item.IsEvaluated ? "checked" : "") class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="mt-4 flex flex-col items-center space-y-2">
+             <!-- Pagination (Mock) -->
+             <div class="flex space-x-2 text-sm text-blue-800">
+                 <a href="#" class="hover:underline">First</a>
+                 <a href="#" class="hover:underline">Prev</a>
+                 <span>1</span>
+                 <a href="#" class="hover:underline">Next</a>
+                 <a href="#" class="hover:underline">Last</a>
+                 <span> / 7 (100+) </span>
+             </div>
+
+             <div class="flex space-x-2">
+                 <!-- Must submit to use selectedIds -->
+                 <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                    Görüntüle
+                </button>
+                 <button type="button" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                    E-Posta Gönder
+                </button>
+             </div>
+        </div>
+        
+        <!-- Pass the first selected ID as 'id' logic will be handled by controller or JS override if needed, 
+             but Detail controller expects 'id' (single) AND 'selectedIds'. 
+             We can trick it by setting the first item as 'id' or handle in controller. 
+             Ideally the controller should check 'selectedIds' if 'id' is missing. -->
+    </form>
+</div>
+
+<script>
+    function jobList() {
+        return {
+            selectedIds: [],
+            allSelected: false,
+            // We need the list of all IDs on the current page to implement Select All properly
+            // Serialize all codes to a JS array
+            allPageIds: [@Html.Raw(string.Join(",", Model.Items.Select(x => $"'{x.Code}'")))],
+
+            toggleAll() {
+                // If allSelected is currently true (before click), we are unchecking.
+                // However, x-model updates after click. 
+                // Let's rely on the bound state or just simple logic.
+                
+                // Wait for tick or handle manually. simpler:
+                this.allSelected = !this.allSelected;
+                
+                if (this.allSelected) {
+                    this.selectedIds = [...this.allPageIds];
+                } else {
+                    this.selectedIds = [];
+                }
+            }
+        }
+    }
+</script>

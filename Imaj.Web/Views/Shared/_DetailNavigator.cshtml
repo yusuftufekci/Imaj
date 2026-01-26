@@ -1,0 +1,56 @@
+@model Imaj.Web.Models.DetailNavigatorViewModel
+
+<div class="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+    
+    <div class="flex items-center shadow-sm rounded-md">
+        <!-- First -->
+        <a href="@Model.FirstUrl" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+            <span class="sr-only">İlk</span>
+            <!-- Heroicon name: solid/chevrons-left -->
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+        </a>
+        
+        <!-- Previous -->
+        <a href="@Model.PreviousUrl" class="-ml-px relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+            <span class="sr-only">Önceki</span>
+            <!-- Heroicon name: solid/chevron-left -->
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L8.414 10l4.293 4.293a1 1 0 01-1.414 1.414l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+        </a>
+
+        <!-- Counter / Input -->
+        <div class="relative inline-flex items-center px-4 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-700">
+             <form action="@Model.FormAction" method="get" class="flex items-center space-x-1">
+                 @foreach(var id in Model.SelectedIds) {
+                     <input type="hidden" name="selectedIds" value="@id" />
+                 }
+                <span class="mr-1">Kayıt:</span>
+                <input type="text" name="currentIndex" value="@(Model.CurrentIndex + 1)" 
+                       class="w-12 p-0 text-center border-none focus:ring-0 text-indigo-600 font-bold" />
+                <span class="text-gray-400">/ @Model.TotalCount</span>
+                <button type="submit" class="hidden">Git</button> <!-- Enter key support -->
+            </form>
+        </div>
+
+        <!-- Next -->
+        <a href="@Model.NextUrl" class="-ml-px relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+            <span class="sr-only">Sonraki</span>
+            <!-- Heroicon name: solid/chevron-right -->
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L11.586 10 7.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+        </a>
+        
+        <!-- Last -->
+        <a href="@Model.LastUrl" class="-ml-px relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+            <span class="sr-only">Son</span>
+            <!-- Heroicon name: solid/chevrons-right -->
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L15.586 10l-5.293-5.293a1 1 0 010-1.414zm-6 0a1 1 0 011.414 0l-6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L9.586 10 4.293 4.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </a>
+    </div>
+</div>

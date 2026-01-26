@@ -8,7 +8,7 @@
     ViewData["Title"] = "Ürün Raporu";
 }
 
-<div x-data="productReport()" @@customer-selected.window="handleCustomerSelection($event.detail)" class="space-y-6">
+<div x-data="productReport()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@product-selected.window="handleProductSelection($event.detail)" class="space-y-6">
     <!-- Header -->
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
@@ -58,7 +58,7 @@
                         <div class="relative flex-grow focus-within:z-10">
                              <input type="text" readonly x-model="selectedProductName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300" placeholder="Tüm Ürünler">
                         </div>
-                        <button type="button" @@click="openProductModal()" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                        <button type="button" @@click="$dispatch('product-select-open', { targetId: 'mainProduct' })" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                             <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                             </svg>
@@ -97,149 +97,8 @@
         </div>
     </div>
 
-    <!-- Product Selection Modal -->
-    <div x-show="showProductModal" class="fixed z-10 inset-0 overflow-y-auto" style="display: none;">
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-             <div x-show="showProductModal" @@click="showProductModal = false" class="fixed inset-0 transition-opacity" aria-hidden="true">
-                 <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-             <div x-show="showProductModal" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                        Ürün Sorgulama
-                    </h3>
-                    
-                    <!-- Search Criteria Box -->
-                    <div class="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                             <div class="flex flex-col">
-                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Kod</label>
-                                <input type="text" x-model="productFilter.code" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-
-                            <div class="flex flex-col">
-                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Ürün Kategorisi</label>
-                                <select x-model="productFilter.category" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="">Tümü</option>
-                                    <option value="Post-Prodüksiyon">Post-Prodüksiyon</option>
-                                    <option value="Ses">Ses</option>
-                                    <option value="VFX">VFX</option>
-                                </select>
-                            </div>
-
-                             <div class="flex flex-col">
-                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Ürün Grubu</label>
-                                <select x-model="productFilter.productGroup" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="">Tümü</option>
-                                    <option value="Video Kurgu">Video Kurgu</option>
-                                    <option value="Dublaj">Dublaj</option>
-                                </select>
-                            </div>
-
-                             <div class="flex flex-col">
-                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Fonksiyon</label>
-                                <select x-model="productFilter.function" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="">Tümü</option>
-                                    <option value="Func1">Fonksiyon 1</option>
-                                </select>
-                            </div>
-
-                             <div class="flex flex-col">
-                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Geçersiz</label>
-                                <select x-model="productFilter.isInvalid" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="false">Hayır</option>
-                                    <option value="true">Evet</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Search Buttons -->
-                        <div class="mt-4 flex justify-end space-x-2">
-                            <button type="button" @@click="searchProducts(1)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Sorgula
-                            </button>
-                             <button type="button" @@click="resetProductFilter()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Temizle
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Product List Table -->
-                    <div class="flex flex-col">
-                         <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                             <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                                 <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                                     <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kod</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad / Tanım</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grup</th>
-                                                <th scope="col" class="relative px-6 py-3">
-                                                    <span class="sr-only">Seç</span>
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="bg-white divide-y divide-gray-200">
-                                            <template x-for="prod in products" :key="prod.code">
-                                                <tr class="hover:bg-gray-50 cursor-pointer" @@click="selectProduct(prod)">
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="prod.code"></td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="prod.name"></td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="prod.category"></td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="prod.productGroup"></td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        <button class="text-indigo-600 hover:text-indigo-900">Seç</button>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                            <tr x-show="products.length === 0">
-                                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
-                                                    <span x-show="!productHasSearched">Arama yapmak için 'Sorgula' butonuna basınız.</span>
-                                                    <span x-show="productHasSearched">Kayıt bulunamadı.</span>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                     <!-- Pagination -->
-                     <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2">
-                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    Toplam <span class="font-medium" x-text="productTotalCount"></span> kayıt
-                                </p>
-                            </div>
-                            <div>
-                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                    <button @@click="if(productCurrentPage > 1) searchProducts(productCurrentPage - 1)" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        Önceki
-                                    </button>
-                                    <button @@click="searchProducts(productCurrentPage + 1)" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        Sonraki
-                                    </button>
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                     <button type="button" @@click="showProductModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Kapat
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Using Shared Customer Modal -->
+    <!-- Product And Customer Modals -->
+    <partial name="_ProductSelectModal" />
     <partial name="_CustomerSelectModal" />
 </div>
 
@@ -252,67 +111,29 @@
             selectedCustomerName: '',
             selectedCustomerCode: '',
 
-            // Product Modal Logic
-            showProductModal: false,
             productFilter: {
-                code: '', category: '', productGroup: '', function: '', isInvalid: false,
-                page: 1, pageSize: 16
+                // Just keeping any local filter state if needed for the main page, though mostly handled in modal
+                productGroup: ''
             },
-            productHasSearched: false,
-            productCurrentPage: 1,
-            productTotalCount: 0,
-            products: [],
-
-            // Customer Logic handled by shared component
             
             init() {
                 // Init
             },
             
-            // Shared Modal Handler
+            // Shared Modal Handlers
             handleCustomerSelection(detail) {
                  if(detail.targetId === 'main') {
                     this.selectedCustomerName = detail.customer.name;
                     this.selectedCustomerCode = detail.customer.code;
                  }
             },
-
-            // --- Product Functions ---
-            openProductModal() {
-                this.showProductModal = true;
-                this.resetProductFilter();
-                this.products = [];
-                this.productHasSearched = false;
-            },
             
-            resetProductFilter() {
-                this.productFilter = {
-                    code: '', category: '', productGroup: '', function: '', isInvalid: false,
-                    page: 1, pageSize: 16
-                };
-            },
-
-            async searchProducts(page) {
-                if(page) this.productFilter.page = page;
-                
-                const response = await fetch('/Product/Search', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.productFilter)
-                });
-                
-                const result = await response.json();
-                this.products = result.items;
-                this.productTotalCount = result.totalCount;
-                this.productCurrentPage = result.page;
-                this.productHasSearched = true;
-            },
-
-            selectProduct(prod) {
-                this.selectedProductName = prod.name;
-                this.selectedProductCode = prod.code;
-                this.showProductModal = false;
-            },
+            handleProductSelection(detail) {
+                if(detail.targetId === 'mainProduct') {
+                    this.selectedProductName = detail.product.name;
+                    this.selectedProductCode = detail.product.code;
+                }
+            }
         }
     }
 </script>
