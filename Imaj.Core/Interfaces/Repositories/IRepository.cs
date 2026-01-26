@@ -8,7 +8,7 @@ namespace Imaj.Core.Interfaces.Repositories
 {
     public interface IRepository<T> where T : BaseEntity
     {
-        Task<T?> GetByIdAsync(int id);
+        Task<T?> GetByIdAsync(decimal id);
         Task<IEnumerable<T>> GetAllAsync();
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
         Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> predicate);

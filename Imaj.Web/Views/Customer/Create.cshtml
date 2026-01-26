@@ -18,6 +18,11 @@
     <form action="/Customer/Create" method="post" class="bg-white shadow sm:rounded-lg">
         
         <div class="px-4 py-5 sm:p-6">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div asp-validation-summary="All" class="text-red-600 font-medium p-4 bg-red-50 rounded-md border border-red-200 mb-6"></div>
+            }
+
              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                  
                  <!-- Sol Kolon -->
@@ -27,11 +32,11 @@
                          <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">Tanım</h4>
                          <div class="space-y-3">
                              <div class="grid grid-cols-3 gap-4 items-center">
-                                 <label class="text-sm font-medium text-gray-700 text-right">Kod</label>
+                                 <label class="text-sm font-medium text-gray-700 text-right">Kod <span class="text-red-500">*</span></label>
                                  <input type="text" name="Code" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="TEST">
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
-                                 <label class="text-sm font-medium text-gray-700 text-right">Ad</label>
+                                 <label class="text-sm font-medium text-gray-700 text-right">Ad <span class="text-red-500">*</span></label>
                                  <input type="text" name="Name" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-start">
@@ -61,15 +66,15 @@
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
                                  <label class="text-sm font-medium text-gray-700 text-right">Telefon</label>
-                                 <input type="text" name="Phone" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                 <input type="tel" name="Phone" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
                                  <label class="text-sm font-medium text-gray-700 text-right">Faks</label>
-                                 <input type="text" name="Fax" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                 <input type="tel" name="Fax" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
                                  <label class="text-sm font-medium text-gray-700 text-right">E-Mail</label>
-                                 <input type="text" name="Email" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                 <input type="email" name="Email" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                          </div>
                      </div>
@@ -82,11 +87,11 @@
                          <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">Adres</h4>
                          <div class="space-y-3">
                              <div class="grid grid-cols-3 gap-4 items-start">
-                                 <label class="text-sm font-medium text-gray-700 text-right mt-1">Adres</label>
+                                 <label class="text-sm font-medium text-gray-700 text-right mt-1">Adres <span class="text-red-500">*</span></label>
                                  <textarea name="Address" rows="2" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
-                                 <label class="text-sm font-medium text-gray-700 text-right">Şehir</label>
+                                 <label class="text-sm font-medium text-gray-700 text-right">Şehir <span class="text-red-500">*</span></label>
                                  <input type="text" name="City" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
@@ -94,7 +99,7 @@
                                  <input type="text" name="AreaCode" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
-                                 <label class="text-sm font-medium text-gray-700 text-right">Ülke</label>
+                                 <label class="text-sm font-medium text-gray-700 text-right">Ülke <span class="text-red-500">*</span></label>
                                  <input type="text" name="Country" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                          </div>
@@ -109,12 +114,12 @@
                                   <input type="text" name="InvoiceName" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
-                                 <label class="text-sm font-medium text-gray-700 text-right">Vergi Dairesi</label>
+                                 <label class="text-sm font-medium text-gray-700 text-right">Vergi Dairesi <span class="text-red-500">*</span></label>
                                  <input type="text" name="TaxOffice" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                              <div class="grid grid-cols-3 gap-4 items-center">
-                                 <label class="text-sm font-medium text-gray-700 text-right">Vergi Numarası</label>
-                                 <input type="text" name="TaxNumber" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                 <label class="text-sm font-medium text-gray-700 text-right">Vergi Numarası <span class="text-red-500">*</span></label>
+                                 <input type="text" inputmode="numeric" name="TaxNumber" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                              </div>
                          </div>
                      </div>
@@ -148,5 +153,21 @@
                 </a>
              </div>
         </div>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var hasErrors = @((!ViewData.ModelState.IsValid).ToString().ToLower());
+            if (hasErrors) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Hata!',
+                    text: 'Lütfen zorunlu alanları kontrol ediniz.',
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Tamam'
+                });
+            }
+        });
+    </script>
+}
     </form>
 </div>
