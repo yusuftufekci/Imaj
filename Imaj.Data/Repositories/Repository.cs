@@ -55,5 +55,10 @@ namespace Imaj.Data.Repositories
         {
             _dbSet.Update(entity);
         }
+
+        public IQueryable<T> Query()
+        {
+            return _dbSet.AsQueryable();
+        }
     }
 }

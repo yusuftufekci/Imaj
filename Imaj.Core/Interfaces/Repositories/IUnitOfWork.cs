@@ -8,5 +8,6 @@ namespace Imaj.Core.Interfaces.Repositories
     {
         IRepository<T> Repository<T>() where T : BaseEntity;
         Task<int> CommitAsync();
+        Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync();
     }
 }

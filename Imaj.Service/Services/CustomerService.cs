@@ -24,8 +24,15 @@ namespace Imaj.Service.Services
 
         public async Task<ServiceResult> AddAsync(CustomerDto customerDto)
         {
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
+                // Lock / Concurrency safety depends on Isolation Level, typically ReadCommitted or higher.
+                // Since we rely on Max(ID) + 1, serialization is best but expensive.
+                // However, transaction ensures atomicity. If 2 threads read same MaxID, one might fail on unique key constraint (if Id is PK).
+                // Retry logic or Serialized transaction would be better for high concurrency.
+                // For this app scope, atomic Commit is sufficient step up.
+
                 var nextId = await _customerRepository.GetNextIdAsync();
                 var customer = new Customer
                 {
@@ -52,12 +59,16 @@ namespace Imaj.Service.Services
 
                 await _customerRepository.AddAsync(customer);
                 await _unitOfWork.CommitAsync();
+                await transaction.CommitAsync();
 
                 return ServiceResult.Success("Müşteri başarıyla eklendi.");
             }
             catch (Exception ex)
             {
-                // In a real app, log the error
+                await transaction.RollbackAsync();
+                
+                // Generic error handler
+                // In production, check for Duplicate Key exceptions (SqlException Number 2601/2627)
                 return ServiceResult.Fail($"Müşteri eklenirken bir hata oluştu: {ex.Message}");
             }
         }
@@ -114,44 +125,44 @@ namespace Imaj.Service.Services
 
         public async Task<ServiceResult<PagedResult<CustomerDto>>> GetByFilterAsync(CustomerFilterDto filter)
         {
-            var customers = await _customerRepository.GetAllAsync();
-            var query = customers.AsQueryable();
+            // Use Query() to delay execution (IQueryable) - Performance Optimization
+            var query = _customerRepository.Query();
 
             if (!string.IsNullOrWhiteSpace(filter.Code))
-                query = query.Where(c => c.Code != null && c.Code.Contains(filter.Code, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Code != null && c.Code.Contains(filter.Code)); // EF Core translates Contains to SQL LIKE
 
             if (!string.IsNullOrWhiteSpace(filter.Name))
-                query = query.Where(c => c.Name != null && c.Name.Contains(filter.Name, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Name != null && c.Name.Contains(filter.Name));
 
             if (!string.IsNullOrWhiteSpace(filter.City))
-                query = query.Where(c => c.City != null && c.City.Contains(filter.City, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.City != null && c.City.Contains(filter.City));
 
             if (!string.IsNullOrWhiteSpace(filter.AreaCode))
-                 query = query.Where(c => c.Zip != null && c.Zip.Contains(filter.AreaCode, StringComparison.OrdinalIgnoreCase));
+                 query = query.Where(c => c.Zip != null && c.Zip.Contains(filter.AreaCode));
 
             if (!string.IsNullOrWhiteSpace(filter.Country))
-                query = query.Where(c => c.Country != null && c.Country.Contains(filter.Country, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Country != null && c.Country.Contains(filter.Country));
 
             if (!string.IsNullOrWhiteSpace(filter.Owner))
-                query = query.Where(c => c.Owner != null && c.Owner.Contains(filter.Owner, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Owner != null && c.Owner.Contains(filter.Owner));
 
             if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
-                query = query.Where(c => c.Contact != null && c.Contact.Contains(filter.RelatedPerson, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Contact != null && c.Contact.Contains(filter.RelatedPerson));
 
             if (!string.IsNullOrWhiteSpace(filter.Phone))
-                query = query.Where(c => c.Phone != null && c.Phone.Contains(filter.Phone, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Phone != null && c.Phone.Contains(filter.Phone));
 
             if (!string.IsNullOrWhiteSpace(filter.Fax))
-                query = query.Where(c => c.Fax != null && c.Fax.Contains(filter.Fax, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.Fax != null && c.Fax.Contains(filter.Fax));
 
             if (!string.IsNullOrWhiteSpace(filter.Email))
-                query = query.Where(c => c.EMail != null && c.EMail.Contains(filter.Email, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.EMail != null && c.EMail.Contains(filter.Email));
 
             if (!string.IsNullOrWhiteSpace(filter.TaxOffice))
-                query = query.Where(c => c.TaxOffice != null && c.TaxOffice.Contains(filter.TaxOffice, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.TaxOffice != null && c.TaxOffice.Contains(filter.TaxOffice));
 
             if (!string.IsNullOrWhiteSpace(filter.TaxNumber))
-                query = query.Where(c => c.TaxNumber != null && c.TaxNumber.Contains(filter.TaxNumber, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(c => c.TaxNumber != null && c.TaxNumber.Contains(filter.TaxNumber));
 
             if (!string.IsNullOrWhiteSpace(filter.JobStatus))
             {
@@ -171,17 +182,47 @@ namespace Imaj.Service.Services
                     query = query.Where(c => c.Invisible == false);
             }
 
-            var totalCount = query.Count(); 
+            // Total Count (Efficient SQL Count)
+            var totalCount = await query.CountAsync(); 
 
-            var pagedItems = query
+            // Pagination (SQL OFFSET/FETCH)
+            var items = await query
+                .OrderByDescending(c => c.Id) // Ensure deterministic ordering
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize)
-                .Select(MapToDto)
-                .ToList();
+                .Select(c => new CustomerDto 
+                { 
+                    // Projection to DTO (Only select columns needed? For now select all to be safe)
+                    // If we want "Select *", we can just do ToListAsync then map. 
+                    // But EF Core projection runs in SQL if we do new CustomerDto { ... } inside Select.
+                    // However, MapToDto is a private method, so we can't use it in LINQ to Entities easily.
+                    // We can either:
+                    // 1. Fetch Entities then Map (simpler logic) -> Items are small page size only.
+                    // 2. Project manually here.
+                    // Option 1 is fine since we are paging (e.g. 10 items).
+                   Id = c.Id,
+                   Code = c.Code,
+                   Name = c.Name,
+                   City = c.City,
+                   Phone = c.Phone,
+                   Email = c.EMail,
+                   Contact = c.Contact,
+                   TaxOffice = c.TaxOffice,
+                   TaxNumber = c.TaxNumber,
+                   Country = c.Country,
+                   Address = c.Address,
+                   Notes = c.Notes,
+                   Owner = c.Owner,
+                   SelectFlag = c.SelectFlag,
+                   InvoiceName = c.InvoName,
+                   AreaCode = c.Zip,
+                   Fax = c.Fax
+                })
+                .ToListAsync();
 
             var result = new PagedResult<CustomerDto>
             {
-                Items = pagedItems,
+                Items = items,
                 TotalCount = totalCount,
                 PageNumber = filter.Page,
                 PageSize = filter.PageSize

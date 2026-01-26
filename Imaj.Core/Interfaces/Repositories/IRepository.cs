@@ -15,5 +15,6 @@ namespace Imaj.Core.Interfaces.Repositories
         Task AddAsync(T entity);
         void Remove(T entity);
         void Update(T entity);
+        IQueryable<T> Query();
     }
 }
