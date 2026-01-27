@@ -1,16 +1,23 @@
 using System.Net;
 using System.Text.Json;
 using Imaj.Service.Results;
+using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Middlewares
 {
+    /// <summary>
+    /// Global exception handling middleware.
+    /// Tüm yakalanmamış hataları loglar ve uygun response döner.
+    /// </summary>
     public class ExceptionMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionMiddleware> _logger;
 
-        public ExceptionMiddleware(RequestDelegate next)
+        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext httpContext)
@@ -21,14 +28,15 @@ namespace Imaj.Web.Middlewares
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Something went wrong: {ex}");
+                // Structured logging ile hata kaydet
+                _logger.LogError(ex, "Beklenmeyen bir hata oluştu. Path: {Path}", httpContext.Request.Path);
                 await HandleExceptionAsync(httpContext, ex);
             }
         }
 
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            // Check if request expects JSON (API/AJAX)
+            // AJAX/API isteği mi kontrol et
             bool isJsonRequest = context.Request.Headers["Accept"].ToString().Contains("application/json") ||
                                  context.Request.Headers["X-Requested-With"] == "XMLHttpRequest";
 
@@ -44,9 +52,10 @@ namespace Imaj.Web.Middlewares
             }
             else
             {
-                // Redirect to Error page for browser requests
+                // Browser istekleri için Error sayfasına yönlendir
                 context.Response.Redirect("/Home/Error");
             }
         }
     }
 }
+

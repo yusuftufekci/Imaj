@@ -75,3 +75,7 @@ yarn-error.log
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# Logs (Serilog)
+logs/
+*.log

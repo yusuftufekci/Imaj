@@ -2,20 +2,28 @@ using System.Threading.Tasks;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
+using Imaj.Web.Controllers.Base;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
 {
-    public class AuthController : Controller
+    /// <summary>
+    /// Kimlik doğrulama (Authentication) işlemleri için controller.
+    /// </summary>
+    public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(
+            IAuthService authService,
+            ILogger<AuthController> logger) : base(logger)
         {
             _authService = authService;
         }
+
 
         [HttpGet]
         public IActionResult Login()

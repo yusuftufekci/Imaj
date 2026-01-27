@@ -1,0 +1,43 @@
+using FluentValidation;
+using Imaj.Service.Interfaces;
+using Imaj.Service.Mapping;
+using Imaj.Service.Options;
+using Imaj.Service.Services;
+using Imaj.Service.Validators;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Imaj.Service.Extensions
+{
+    /// <summary>
+    /// Service katmanı için DI extension metodları.
+    /// Options, Services, AutoMapper ve FluentValidation kayıtlarını içerir.
+    /// </summary>
+    public static class ServiceCollectionExtensions
+    {
+        /// <summary>
+        /// Service katmanı servislerini DI container'a ekler.
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <param name="configuration">Uygulama konfigürasyonu</param>
+        /// <returns>Service collection (fluent interface için)</returns>
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
+        {
+            // Options Pattern - Configuration binding
+            services.Configure<CustomerSettings>(configuration.GetSection(CustomerSettings.SectionName));
+            services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.SectionName));
+
+            // Business Services
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ICustomerService, CustomerService>();
+
+            // AutoMapper - Assembly scan ile profil bulma
+            services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
+            // FluentValidation - Assembly scan ile validator bulma
+            services.AddValidatorsFromAssemblyContaining<CustomerDtoValidator>();
+
+            return services;
+        }
+    }
+}
