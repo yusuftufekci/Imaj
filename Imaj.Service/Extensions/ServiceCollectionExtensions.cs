@@ -30,6 +30,7 @@ namespace Imaj.Service.Extensions
             // Business Services
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<IEmployeeService, EmployeeService>();
 
             // AutoMapper - Assembly scan ile profil bulma
             services.AddAutoMapper(typeof(MappingProfile).Assembly);

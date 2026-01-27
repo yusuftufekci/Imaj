@@ -10,14 +10,26 @@ function employeeSelectModal() {
         isMultiSelect: false,
 
         // Arama ve sayfalama
-        searchTerm: '',
-        pageSize: 10,
+        filter: {
+            code: '',
+            name: '',
+            functionId: '',
+            status: '1', // Default: Sadece geçerli
+            page: 1,
+            pageSize: 10
+        },
+
         currentPage: 1,
         totalCount: 0,
         items: [],
+        functions: [], // Fonksiyon listesi
 
         // Multi-select için seçilen öğeler
         selectedItems: [],
+
+        init() {
+            this.getFunctions();
+        },
 
         /**
          * Modal'ı açar
@@ -27,6 +39,15 @@ function employeeSelectModal() {
             this.targetId = detail.targetId;
             this.isMultiSelect = detail.isMultiSelect || false;
             this.selectedItems = [];
+
+            // Filtreyi sıfırla
+            this.clearFilter();
+
+            // Eğer fonksiyonlar yüklenmediyse yükle
+            if (this.functions.length === 0) {
+                this.getFunctions();
+            }
+
             this.search(1);
         },
 
@@ -38,16 +59,48 @@ function employeeSelectModal() {
         },
 
         /**
+         * Filtreleri temizler
+         */
+        clearFilter() {
+            this.filter.code = '';
+            this.filter.name = '';
+            this.filter.functionId = '';
+            this.filter.status = '1';
+            this.filter.page = 1;
+            this.filter.pageSize = 10;
+        },
+
+        /**
+         * Fonksiyon listesini çeker
+         */
+        async getFunctions() {
+            try {
+                const result = await API.get('/api/Employee/functions');
+                this.functions = result || [];
+            } catch (error) {
+                console.error('Fonksiyon listesi hatası:', error);
+            }
+        },
+
+        /**
          * Çalışan araması yapar
          */
         async search(page) {
             this.currentPage = page;
+            this.filter.page = page;
+
             try {
-                const result = await API.get('/OvertimeReport/SearchEmployees', {
-                    term: this.searchTerm,
-                    page: page,
-                    pageSize: this.pageSize
-                });
+                // filter objesini query string'e çevir
+                const params = {
+                    code: this.filter.code,
+                    name: this.filter.name,
+                    functionID: this.filter.functionId,
+                    status: this.filter.status,
+                    page: this.filter.page,
+                    pageSize: this.filter.pageSize
+                };
+
+                const result = await API.get('/api/Employee/search', params);
                 this.items = result.items || [];
                 this.totalCount = result.totalCount || 0;
             } catch (error) {
