@@ -9,11 +9,11 @@ namespace Imaj.Web.Models
         // This can serve as the Detail/Edit model too
         [Required(ErrorMessage = "Kod alanı zorunludur.")]
         [StringLength(8, ErrorMessage = "Kod en fazla 8 karakter olabilir.")]
-        public string? Code { get; set; }
+        public string Code { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Ad alanı zorunludur.")]
         [StringLength(32, ErrorMessage = "Ad en fazla 32 karakter olabilir.")]
-        public string? Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         public bool IsInvalid { get; set; }
 

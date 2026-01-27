@@ -72,8 +72,14 @@ namespace Imaj.Service.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Müşteri eklenirken hata oluştu: {CustomerCode}", customerDto.Code);
-                return ServiceResult.Fail($"Müşteri eklenirken bir hata oluştu: {ex.Message}");
+                
+                // Inner exception varsa onu da logla (asıl hata genellikle burada)
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                _logger.LogError(ex, "Müşteri eklenirken hata oluştu: {CustomerCode}. Detay: {ErrorDetail}", 
+                    customerDto.Code, innerMessage);
+                
+                // Kullanıcıya teknik detay gösterme, genel mesaj döndür
+                return ServiceResult.Fail("Müşteri eklenirken bir hata oluştu. Lütfen bilgileri kontrol edip tekrar deneyin.");
             }
         }
 
@@ -104,8 +110,10 @@ namespace Imaj.Service.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Müşteri güncellenirken hata oluştu: {CustomerId}", dto.Id);
-                return ServiceResult.Fail($"Müşteri güncellenirken bir hata oluştu: {ex.Message}");
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                _logger.LogError(ex, "Müşteri güncellenirken hata oluştu: {CustomerId}. Detay: {ErrorDetail}", 
+                    dto.Id, innerMessage);
+                return ServiceResult.Fail("Müşteri güncellenirken bir hata oluştu. Lütfen tekrar deneyin.");
             }
         }
 
