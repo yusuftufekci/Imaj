@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Imaj.Core.Entities;
+using Imaj.Core.Extensions;
 using Imaj.Core.Guards;
 using Imaj.Core.Interfaces.Repositories;
 using Imaj.Service.DTOs;
@@ -71,8 +72,14 @@ namespace Imaj.Service.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Müşteri eklenirken hata oluştu: {CustomerCode}", customerDto.Code);
-                return ServiceResult.Fail($"Müşteri eklenirken bir hata oluştu: {ex.Message}");
+                
+                // Inner exception varsa onu da logla (asıl hata genellikle burada)
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                _logger.LogError(ex, "Müşteri eklenirken hata oluştu: {CustomerCode}. Detay: {ErrorDetail}", 
+                    customerDto.Code, innerMessage);
+                
+                // Kullanıcıya teknik detay gösterme, genel mesaj döndür
+                return ServiceResult.Fail("Müşteri eklenirken bir hata oluştu. Lütfen bilgileri kontrol edip tekrar deneyin.");
             }
         }
 
@@ -103,8 +110,10 @@ namespace Imaj.Service.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Müşteri güncellenirken hata oluştu: {CustomerId}", dto.Id);
-                return ServiceResult.Fail($"Müşteri güncellenirken bir hata oluştu: {ex.Message}");
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                _logger.LogError(ex, "Müşteri güncellenirken hata oluştu: {CustomerId}. Detay: {ErrorDetail}", 
+                    dto.Id, innerMessage);
+                return ServiceResult.Fail("Müşteri güncellenirken bir hata oluştu. Lütfen tekrar deneyin.");
             }
         }
 
@@ -119,58 +128,23 @@ namespace Imaj.Service.Services
         {
             Guard.AgainstNull(filter, nameof(filter));
 
-            // IQueryable ile gecikmeli sorgu
-            var query = _customerRepository.Query();
-
-            // Dinamik filtreleme
-            if (!string.IsNullOrWhiteSpace(filter.Code))
-                query = query.Where(c => c.Code != null && c.Code.Contains(filter.Code));
-
-            if (!string.IsNullOrWhiteSpace(filter.Name))
-                query = query.Where(c => c.Name != null && c.Name.Contains(filter.Name));
-
-            if (!string.IsNullOrWhiteSpace(filter.City))
-                query = query.Where(c => c.City != null && c.City.Contains(filter.City));
-
-            if (!string.IsNullOrWhiteSpace(filter.AreaCode))
-                query = query.Where(c => c.Zip != null && c.Zip.Contains(filter.AreaCode));
-
-            if (!string.IsNullOrWhiteSpace(filter.Country))
-                query = query.Where(c => c.Country != null && c.Country.Contains(filter.Country));
-
-            if (!string.IsNullOrWhiteSpace(filter.Owner))
-                query = query.Where(c => c.Owner != null && c.Owner.Contains(filter.Owner));
-
-            if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
-                query = query.Where(c => c.Contact != null && c.Contact.Contains(filter.RelatedPerson));
-
-            if (!string.IsNullOrWhiteSpace(filter.Phone))
-                query = query.Where(c => c.Phone != null && c.Phone.Contains(filter.Phone));
-
-            if (!string.IsNullOrWhiteSpace(filter.Fax))
-                query = query.Where(c => c.Fax != null && c.Fax.Contains(filter.Fax));
-
-            if (!string.IsNullOrWhiteSpace(filter.Email))
-                query = query.Where(c => c.EMail != null && c.EMail.Contains(filter.Email));
-
-            if (!string.IsNullOrWhiteSpace(filter.TaxOffice))
-                query = query.Where(c => c.TaxOffice != null && c.TaxOffice.Contains(filter.TaxOffice));
-
-            if (!string.IsNullOrWhiteSpace(filter.TaxNumber))
-                query = query.Where(c => c.TaxNumber != null && c.TaxNumber.Contains(filter.TaxNumber));
-
-            if (!string.IsNullOrWhiteSpace(filter.JobStatus))
-            {
-                if (filter.JobStatus.Equals("Active", StringComparison.OrdinalIgnoreCase))
-                    query = query.Where(c => c.SelectFlag == true);
-                else if (filter.JobStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
-                    query = query.Where(c => c.SelectFlag == false);
-            }
-
-            if (filter.IsInvalid.HasValue)
-            {
-                query = query.Where(c => c.Invisible == filter.IsInvalid.Value);
-            }
+            // IQueryable ile gecikmeli sorgu + WhereIfNotEmpty ile temiz filtreleme
+            var query = _customerRepository.Query()
+                .WhereIfNotEmpty(filter.Code, c => c.Code != null && c.Code.Contains(filter.Code!))
+                .WhereIfNotEmpty(filter.Name, c => c.Name != null && c.Name.Contains(filter.Name!))
+                .WhereIfNotEmpty(filter.City, c => c.City != null && c.City.Contains(filter.City!))
+                .WhereIfNotEmpty(filter.AreaCode, c => c.Zip != null && c.Zip.Contains(filter.AreaCode!))
+                .WhereIfNotEmpty(filter.Country, c => c.Country != null && c.Country.Contains(filter.Country!))
+                .WhereIfNotEmpty(filter.Owner, c => c.Owner != null && c.Owner.Contains(filter.Owner!))
+                .WhereIfNotEmpty(filter.RelatedPerson, c => c.Contact != null && c.Contact.Contains(filter.RelatedPerson!))
+                .WhereIfNotEmpty(filter.Phone, c => c.Phone != null && c.Phone.Contains(filter.Phone!))
+                .WhereIfNotEmpty(filter.Fax, c => c.Fax != null && c.Fax.Contains(filter.Fax!))
+                .WhereIfNotEmpty(filter.Email, c => c.EMail != null && c.EMail.Contains(filter.Email!))
+                .WhereIfNotEmpty(filter.TaxOffice, c => c.TaxOffice != null && c.TaxOffice.Contains(filter.TaxOffice!))
+                .WhereIfNotEmpty(filter.TaxNumber, c => c.TaxNumber != null && c.TaxNumber.Contains(filter.TaxNumber!))
+                .WhereIf(filter.JobStatus == "Active", c => c.SelectFlag == true)
+                .WhereIf(filter.JobStatus == "Completed", c => c.SelectFlag == false)
+                .WhereIfHasValue(filter.IsInvalid, c => c.Invisible == filter.IsInvalid!.Value);
 
             // Toplam kayıt sayısı (SQL COUNT)
             var totalCount = await query.CountAsync();
@@ -179,8 +153,7 @@ namespace Imaj.Service.Services
             var pageSize = filter.PageSize > 0 ? filter.PageSize : _settings.DefaultPageSize;
             var items = await query
                 .OrderByDescending(c => c.Id)
-                .Skip((filter.Page - 1) * pageSize)
-                .Take(pageSize)
+                .Paginate(filter.Page, pageSize)
                 .ToListAsync();
 
             // AutoMapper ile projection
