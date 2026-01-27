@@ -4,35 +4,36 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Imaj.Data.Configurations
 {
-    /// <summary>
-    /// User entity için EF Core konfigürasyonu.
-    /// </summary>
     public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            // Tablo adı
-            builder.ToTable("Users");
-            
-            // Primary Key
+            builder.ToTable("User");
             builder.HasKey(e => e.Id);
+            builder.Property(e => e.Id).HasColumnName("ID").HasColumnType("decimal(6, 0)");
             
-            // Property konfigürasyonları
-            builder.Property(e => e.Username)
-                .IsRequired()
-                .HasMaxLength(50);
-            
-            builder.Property(e => e.Email)
-                .HasMaxLength(100);
-            
-            builder.Property(e => e.FullName)
-                .HasMaxLength(100);
-            
-            builder.Property(e => e.Role)
-                .HasMaxLength(50);
-            
-            builder.Property(e => e.PasswordHash)
-                .HasMaxLength(256);
+            builder.Ignore(e => e.CreatedDate);
+            builder.Ignore(e => e.IsActive);
+
+            builder.Property(e => e.LanguageID).HasColumnType("decimal(2, 0)").IsRequired();
+            builder.Property(e => e.CompanyID).HasColumnType("decimal(4, 0)");
+            builder.Property(e => e.Code).HasMaxLength(16).IsRequired();
+            builder.Property(e => e.Name).HasMaxLength(48).IsRequired();
+            builder.Property(e => e.Password).HasMaxLength(32).IsRequired();
+            builder.Property(e => e.AllEmployee).IsRequired();
+            builder.Property(e => e.Invisible).IsRequired();
+            builder.Property(e => e.SelectFlag).IsRequired();
+            builder.Property(e => e.Stamp).HasColumnType("smallint").IsRequired();
+
+            builder.HasOne(d => d.Language)
+                .WithMany()
+                .HasForeignKey(d => d.LanguageID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.CompanyID)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

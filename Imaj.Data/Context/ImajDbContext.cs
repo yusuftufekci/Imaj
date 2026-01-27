@@ -13,7 +13,7 @@ namespace Imaj.Data.Context
         {
         }
 
-        public DbSet<User> Users { get; set; }
+
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Employee> Employees { get; set; }
@@ -46,6 +46,62 @@ namespace Imaj.Data.Context
         public DbSet<Reserve> Reserves { get; set; }
         public DbSet<Match> Matches { get; set; }
         public DbSet<Allocate> Allocates { get; set; }
+        
+        // Batch 4 (X Tables & References)
+        public DbSet<XWorkType> XWorkTypes { get; set; }
+        public DbSet<XFunction> XFunctions { get; set; }
+        public DbSet<XProduct> XProducts { get; set; }
+        public DbSet<XInterval> XIntervals { get; set; }
+        public DbSet<XProdGrp> XProdGrps { get; set; }
+        public DbSet<XProdCat> XProdCats { get; set; }
+        public DbSet<XReason> XReasons { get; set; }
+        public DbSet<XReasonCat> XReasonCats { get; set; }
+        public DbSet<XResoCat> XResoCats { get; set; }
+        public DbSet<XResource> XResources { get; set; }
+        public DbSet<XSort> XSorts { get; set; }
+        public DbSet<Sort> Sorts { get; set; }
+        public DbSet<XState> XStates { get; set; }
+        public DbSet<XTaxType> XTaxTypes { get; set; }
+        public DbSet<XTimeType> XTimeTypes { get; set; }
+        public DbSet<XTrans> XTranses { get; set; }
+        public DbSet<Trans> Transes { get; set; }
+        public DbSet<TransCat> TransCats { get; set; }
+        public DbSet<TransType> TransTypes { get; set; }
+        public DbSet<XTriplet> XTriplets { get; set; }
+        public DbSet<Triplet> Triplets { get; set; }
+        public DbSet<XLogAction> XLogActions { get; set; }
+        public DbSet<LogAction> LogActions { get; set; }
+
+        // Batch 5 & 6 (User, Role, Func, Invo Details, Logs)
+        public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<UserEmp> UserEmps { get; set; }
+        public DbSet<UserFunc> UserFuncs { get; set; }
+        
+        public DbSet<RoleCont> RoleConts { get; set; }
+        public DbSet<BaseCont> BaseConts { get; set; }
+        public DbSet<RoleIntf> RoleIntfs { get; set; }
+        public DbSet<BaseIntf> BaseIntfs { get; set; }
+        public DbSet<RoleMenu> RoleMenus { get; set; }
+        public DbSet<BaseMenu> BaseMenus { get; set; }
+        public DbSet<RoleMeth> RoleMeths { get; set; }
+        public DbSet<BaseMeth> BaseMeths { get; set; }
+        public DbSet<RoleProp> RoleProps { get; set; }
+        public DbSet<BaseProp> BaseProps { get; set; }
+
+        public DbSet<FuncRule> FuncRules { get; set; }
+        public DbSet<FuncProd> FuncProds { get; set; }
+        public DbSet<FuncReso> FuncResos { get; set; }
+
+        public DbSet<InvoJob> InvoJobs { get; set; }
+        public DbSet<InvoProdCat> InvoProdCats { get; set; }
+        public DbSet<InvoTax> InvoTaxes { get; set; }
+
+        public DbSet<JobLog> JobLogs { get; set; }
+        public DbSet<InvoiceLog> InvoiceLogs { get; set; }
+        public DbSet<ReserveLog> ReserveLogs { get; set; }
+        public DbSet<MsgLog> MsgLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

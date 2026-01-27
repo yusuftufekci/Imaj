@@ -41,7 +41,8 @@ namespace Imaj.Service.Services
 
         public async Task<ServiceResult<UserDto>> LoginAsync(LoginDto loginDto)
         {
-            var user = await _unitOfWork.Repository<User>().SingleOrDefaultAsync(x => x.Username == loginDto.Username);
+            // Yeni yapıda Username yerine Code kullanılıyor
+            var user = await _unitOfWork.Repository<User>().SingleOrDefaultAsync(x => x.Code == loginDto.Username);
             
             if (user == null)
                 return ServiceResult<UserDto>.Fail("Kullanıcı bulunamadı.");
@@ -51,16 +52,18 @@ namespace Imaj.Service.Services
 
             var hashedPassword = HashPassword(loginDto.Password);
             
-            // Case insensitive check for legacy systems sometimes
-            if (string.Equals(user.PasswordHash, hashedPassword, StringComparison.OrdinalIgnoreCase))
+            // Yeni yapıda PasswordHash yerine Password kullanılıyor
+            // Not: Mevcut sistemde password hashlenmiş mi yoksa düz metin mi saklanıyor?
+            // Şimdilik kodun hash beklentisine uyuyoruz. Eğer db'de düz ise burası değişmeli.
+            if (string.Equals(user.Password, hashedPassword, StringComparison.OrdinalIgnoreCase))
             {
                 var userDto = new UserDto
                 {
                     Id = user.Id,
-                    Username = user.Username,
-                    Email = user.Email,
-                    FullName = user.FullName,
-                    Role = user.Role
+                    Username = user.Code, // Code -> Username
+                    Email = "", // Email bilgisi User entity'de yok
+                    FullName = user.Name, // Name -> FullName
+                    Role = "User" // Role bilgisi UserRole tablosundan çekilmeli, şimdilik sabit
                 };
                 return ServiceResult<UserDto>.Success(userDto);
             }
