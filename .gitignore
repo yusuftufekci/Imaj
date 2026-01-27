@@ -71,6 +71,10 @@ FxCopReport.xml
 node_modules/
 npm-debug.log
 yarn-error.log
+package-lock.json
+
+# Tailwind Build Output (optional - generated file)
+# wwwroot/css/tailwind.output.css
 
 # JetBrains Rider
 .idea/
