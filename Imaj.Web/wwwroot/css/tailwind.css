@@ -26,17 +26,40 @@
         @apply text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1;
     }
 
-    /* Form Input Group */
+    /* Form Input Group - Mobile: vertical, Tablet+: horizontal */
     .form-group {
-        @apply grid grid-cols-3 gap-4 items-center;
+        @apply flex flex-col gap-1 sm:grid sm:grid-cols-3 sm:gap-4 sm:items-center;
     }
 
+    /* Form Label - Mobile: left aligned, Tablet+: right aligned */
     .form-label {
-        @apply text-sm font-medium text-gray-700 text-right;
+        @apply text-sm font-medium text-gray-700 sm:text-right;
     }
 
     .form-input {
-        @apply col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md;
+        @apply sm:col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-sm border-gray-300 rounded-md;
+    }
+
+    /* Date Range - Mobile: vertical stack, Tablet+: horizontal */
+    .date-range {
+        @apply flex flex-col gap-2 sm:flex-row sm:gap-2 sm:col-span-2;
+    }
+
+    .date-range input {
+        @apply shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-sm border-gray-300 rounded-md;
+    }
+
+    /* Select Modal Picker - with button */
+    .picker-group {
+        @apply flex flex-col gap-1 sm:flex-row sm:gap-2 sm:col-span-2;
+    }
+
+    .picker-input {
+        @apply flex-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full text-sm border-gray-300 rounded-md bg-gray-50;
+    }
+
+    .picker-button {
+        @apply text-blue-600 font-bold hover:underline text-sm whitespace-nowrap;
     }
 
     /* Buttons */
