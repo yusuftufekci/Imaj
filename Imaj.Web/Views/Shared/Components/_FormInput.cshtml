@@ -1,0 +1,57 @@
+@* 
+    Form Input Component
+    Tekrar eden form input pattern'i için partial view
+    
+    Kullanım:
+    <partial name="Components/_FormInput" model="new FormInputModel { Label = \"Ad\", Name = \"Name\", Type = \"text\" }" />
+*@
+
+@model Imaj.Web.Models.Components.FormInputModel
+
+<div class="grid grid-cols-3 gap-4 items-center">
+    <label class="text-sm font-medium text-gray-700 text-right" for="@Model.Name">@Model.Label</label>
+    
+    @if (Model.Type == "select" && Model.Options != null)
+    {
+        <select id="@Model.Name" 
+                name="@Model.Name" 
+                class="col-span-2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                @(Model.IsRequired ? "required" : "")>
+            @if (!string.IsNullOrEmpty(Model.Placeholder))
+            {
+                <option value="">@Model.Placeholder</option>
+            }
+            @foreach (var option in Model.Options)
+            {
+                if (Model.Value == option.Value)
+                {
+                    <option value="@option.Value" selected>@option.Text</option>
+                }
+                else
+                {
+                    <option value="@option.Value">@option.Text</option>
+                }
+            }
+        </select>
+    }
+    else if (Model.Type == "textarea")
+    {
+        <textarea id="@Model.Name" 
+                  name="@Model.Name" 
+                  rows="@(Model.Rows > 0 ? Model.Rows : 3)"
+                  placeholder="@Model.Placeholder"
+                  class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  @(Model.IsRequired ? "required" : "")>@Model.Value</textarea>
+    }
+    else
+    {
+        <input type="@Model.Type" 
+               id="@Model.Name" 
+               name="@Model.Name" 
+               value="@Model.Value"
+               placeholder="@Model.Placeholder"
+               class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md @(Model.IsReadOnly ? "bg-gray-50" : "")"
+               @(Model.IsRequired ? "required" : "")
+               @(Model.IsReadOnly ? "readonly" : "") />
+    }
+</div>

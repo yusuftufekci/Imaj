@@ -1,0 +1,21 @@
+@*
+    Form Panel Component
+    Mavi arka planlı filtre/form grupları için reusable partial view
+    
+    Kullanım:
+    <partial name="Components/_FormPanel">
+        <parameter name="Title" value="Ana Kriterler" />
+        <parameter name="Content">
+            ... içerik ...
+        </parameter>
+    </partial>
+*@
+
+@model Imaj.Web.Models.Components.FormPanelModel
+
+<div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+    <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Model.Title</h4>
+    <div class="space-y-2">
+        @Html.Raw(Model.Content)
+    </div>
+</div>
