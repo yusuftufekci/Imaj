@@ -33,5 +33,8 @@ namespace Imaj.Service.DTOs
         public string? Notes { get; set; }
         public string? Owner { get; set; }
         public bool SelectFlag { get; set; }
+        public bool Invisible { get; set; } // IsInvalid mapping
+
+        public List<ProductCategoryDto> ProductCategories { get; set; } = new List<ProductCategoryDto>();
     }
 }

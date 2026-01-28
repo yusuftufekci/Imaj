@@ -22,7 +22,7 @@ namespace Imaj.Web.Models
         // Main Criteria
         public string? Code { get; set; }
         public string? Name { get; set; }
-        public bool IsInvalid { get; set; }
+        public bool? IsInvalid { get; set; } // Nullable: Tümü seçeneği için null olabilir
 
         // Address
         public string? City { get; set; }

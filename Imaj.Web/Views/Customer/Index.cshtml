@@ -41,6 +41,7 @@
                             <div class="form-group">
                                 <label class="form-label">Geçersiz</label>
                                 <select name="IsInvalid" class="form-input">
+                                    <option value="">Tümü</option>
                                     <option value="false">Hayır</option>
                                     <option value="true">Evet</option>
                                 </select>
@@ -118,10 +119,16 @@
                         <div class="space-y-2">
                              <div class="form-group">
                                 <label class="form-label">Durum</label>
+                                @{
+                                    // ViewBag'den State listesini al
+                                    var states = ViewBag.States as List<Imaj.Service.DTOs.StateDto> ?? new List<Imaj.Service.DTOs.StateDto>();
+                                }
                                 <select name="JobStatus" class="col-span-2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Tümü</option>
-                                    <option value="Active">Aktif</option>
-                                    <option value="Completed">Tamamlandı</option>
+                                    @foreach (var state in states)
+                                    {
+                                        <option value="@state.Id">@state.Name</option>
+                                    }
                                 </select>
                             </div>
                         </div>

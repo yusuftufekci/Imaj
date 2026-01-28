@@ -96,6 +96,7 @@ namespace Imaj.Data.Context
 
         public DbSet<InvoJob> InvoJobs { get; set; }
         public DbSet<InvoProdCat> InvoProdCats { get; set; }
+        public DbSet<CustProdCat> CustProdCats { get; set; }
         public DbSet<InvoTax> InvoTaxes { get; set; }
 
         public DbSet<JobLog> JobLogs { get; set; }
@@ -110,6 +111,9 @@ namespace Imaj.Data.Context
             // Tüm entity konfigürasyonlarını bu assembly'den otomatik yükle
             // (Configurations klasöründeki IEntityTypeConfiguration implementasyonları)
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ImajDbContext).Assembly);
+
+            // Explicit Mapping (Garanti Çözüm)
+            modelBuilder.Entity<CustProdCat>().ToTable("CustProdCat");
         }
     }
 }

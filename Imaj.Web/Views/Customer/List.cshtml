@@ -87,7 +87,7 @@
                     if (!string.IsNullOrEmpty(Model.Filter.Code)) query.Add("Code", Model.Filter.Code);
                     if (!string.IsNullOrEmpty(Model.Filter.Name)) query.Add("Name", Model.Filter.Name);
                     if (!string.IsNullOrEmpty(Model.Filter.City)) query.Add("City", Model.Filter.City);
-                    if (Model.Filter.IsInvalid) query.Add("IsInvalid", "true");
+                    if (Model.Filter.IsInvalid == true) query.Add("IsInvalid", "true");
                     // Add other filters...
                 }
                 

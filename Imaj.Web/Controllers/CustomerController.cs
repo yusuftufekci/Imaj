@@ -22,9 +22,25 @@ namespace Imaj.Web.Controllers
         }
 
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            // State listesini veritabanından al ve ViewBag'e ekle
+            var statesResult = await _customerService.GetStatesAsync();
+            ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<Imaj.Service.DTOs.StateDto>();
+            
             return View(new CustomerFilterModel());
+        }
+
+        [HttpGet]
+        [Route("Customer/GetProductCategories")]
+        public async Task<IActionResult> GetProductCategories()
+        {
+            var result = await _customerService.GetProductCategoriesAsync();
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+            return BadRequest(result.Message);
         }
 
         [HttpPost]
@@ -183,7 +199,13 @@ namespace Imaj.Web.Controllers
                  Owner = c.Owner,
                  JobStatus = c.SelectFlag ? "Active" : "Passive",
                  Address = c.Address,
-                 Notes = c.Notes
+                 Notes = c.Notes,
+                 ProductCategories = c.ProductCategories.Select(pc => new ProductCategoryViewModel 
+                 {
+                     Id = pc.Id,
+                     Name = pc.Name,
+                     Discount = pc.Discount 
+                 }).ToList()
              };
         }
 
@@ -215,7 +237,12 @@ namespace Imaj.Web.Controllers
                 AreaCode = model.AreaCode,
                 Fax = model.Fax,
                 Contact = model.RelatedPerson,
-                SelectFlag = !model.IsInvalid
+                SelectFlag = !model.IsInvalid,
+                ProductCategories = model.ProductCategories.Select(pc => new ProductCategoryDto 
+                {
+                    Id = pc.Id,
+                    Discount = pc.Discount
+                }).ToList()
             };
 
             var result = await _customerService.UpdateAsync(dto);
@@ -264,9 +291,14 @@ namespace Imaj.Web.Controllers
                 AreaCode = model.AreaCode,
                 Fax = model.Fax,
                 Contact = model.RelatedPerson,
-                SelectFlag = !model.IsInvalid // If IsInvalid is true, SelectFlag is false (Passive)? Logic needs to be consistent.
+                SelectFlag = !model.IsInvalid, // If IsInvalid is true, SelectFlag is false (Passive)? Logic needs to be consistent.
                 // Actually, if IsInvalid is "Geçersiz", usually it means "Inactive" or "Hidden".
                 // I'll assume IsInvalid == true => SelectFlag = false.
+                ProductCategories = model.ProductCategories.Select(pc => new ProductCategoryDto 
+                {
+                    Id = pc.Id,
+                    Discount = pc.Discount
+                }).ToList()
             };
 
             var result = await _customerService.AddAsync(dto);

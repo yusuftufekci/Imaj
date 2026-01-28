@@ -59,6 +59,15 @@ namespace Imaj.Web.Models
 
         public string? JobStatus { get; set; }
         public string? Notes { get; set; } // ntext
+
+        public List<ProductCategoryViewModel> ProductCategories { get; set; } = new List<ProductCategoryViewModel>();
+    }
+
+    public class ProductCategoryViewModel
+    {
+        public decimal Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public decimal Discount { get; set; }
     }
 
     public class CustomerListViewModel

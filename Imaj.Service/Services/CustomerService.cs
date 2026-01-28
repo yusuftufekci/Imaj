@@ -63,6 +63,32 @@ namespace Imaj.Service.Services
                 customer.Stamp = 0;
 
                 await _customerRepository.AddAsync(customer);
+
+                // Ürün Kategorilerini Ekle (CustProdCat)
+                if (customerDto.ProductCategories != null && customerDto.ProductCategories.Any())
+                {
+                    var custProdCatRepo = _unitOfWork.Repository<CustProdCat>();
+                    
+                    // Manuel ID Üretimi (Max + 1)
+                    var currentMaxId = await custProdCatRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0;
+
+                    foreach (var cat in customerDto.ProductCategories)
+                    {
+                        currentMaxId++;
+                        var custProdCat = new CustProdCat
+                        {
+                            Id = currentMaxId, // Manuel ID ataması
+                            CustomerID = nextId,
+                            ProdCatID = cat.Id,
+                            Discount = cat.Discount,
+                            SelectFlag = false,
+                            Stamp = 1,
+                            Deleted = 0
+                        };
+                        await custProdCatRepo.AddAsync(custProdCat);
+                    }
+                }
+
                 await _unitOfWork.CommitAsync();
                 await transaction.CommitAsync();
 
@@ -103,6 +129,48 @@ namespace Imaj.Service.Services
                 _mapper.Map(dto, customer);
 
                 _customerRepository.Update(customer);
+
+                // Ürün Kategorilerini Güncelle (CustProdCat)
+                // Strateji: Mevcut hesaplanmış kayıtları sil, yenilerini ekle (Full Replace)
+                var custProdCatRepo = _unitOfWork.Repository<CustProdCat>();
+                
+                // Mevcut kayıtları bul (Navigation property olmadığı için Query ile)
+                // Mevcut AKTİF kayıtları bul
+                var existingCats = await custProdCatRepo.Query()
+                    .Where(x => x.CustomerID == customer.Id && x.Deleted == 0)
+                    .ToListAsync();
+                
+                // Soft Delete (Deleted = 1)
+                foreach (var existing in existingCats)
+                {
+                    existing.Deleted = 1;
+                    custProdCatRepo.Update(existing);
+                }
+
+                // Yenileri ekle
+                if (dto.ProductCategories != null && dto.ProductCategories.Any())
+                {
+                    // Manuel ID Üretimi (Max + 1)
+                    var currentMaxId = await custProdCatRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0;
+
+                    foreach (var cat in dto.ProductCategories)
+                    {
+                        currentMaxId++;
+                        var custProdCat = new CustProdCat
+                        {
+                            Id = currentMaxId, // Manuel ID ataması
+                            CustomerID = customer.Id,
+                            ProdCatID = cat.Id,
+                            Discount = cat.Discount,
+                            SelectFlag = false,
+                            Stamp = 1,
+                            Deleted = 0
+                        };
+                        await custProdCatRepo.AddAsync(custProdCat);
+                    }
+                }
+
+
                 await _unitOfWork.CommitAsync();
 
                 _logger.LogInformation("Müşteri başarıyla güncellendi: {CustomerId}", dto.Id);
@@ -179,6 +247,10 @@ namespace Imaj.Service.Services
                 return ServiceResult<CustomerDto>.NotFound("Müşteri bulunamadı.");
 
             var dto = _mapper.Map<CustomerDto>(customer);
+
+            // Ürün kategorilerini yükle
+            await LoadProductCategoriesAsync(dto);
+
             return ServiceResult<CustomerDto>.Success(dto);
         }
 
@@ -191,7 +263,112 @@ namespace Imaj.Service.Services
                 return ServiceResult<CustomerDto>.NotFound("Müşteri bulunamadı.");
 
             var dto = _mapper.Map<CustomerDto>(customer);
+            
+            // Ürün kategorilerini yükle
+            await LoadProductCategoriesAsync(dto);
+            
             return ServiceResult<CustomerDto>.Success(dto);
+        }
+
+        /// <summary>
+        /// State (Durum) listesini veritabanından getirir.
+        /// State tablosunda Category='Job' olan kayıtların XState'teki Türkçe isimlerini çeker.
+        /// </summary>
+        public async Task<ServiceResult<List<StateDto>>> GetStatesAsync()
+        {
+            try
+            {
+                // Önce State tablosundan Category='Job' olan ID'leri al
+                var jobStateIds = await _unitOfWork.Repository<State>()
+                    .Query()
+                    .Where(s => s.Category == "Job")
+                    .Select(s => s.Id)
+                    .ToListAsync();
+
+                // Sonra bu ID'lere karşılık gelen XState kayıtlarından Türkçe isimleri al
+                var states = await _unitOfWork.Repository<XState>()
+                    .Query()
+                    .Where(x => x.LanguageID == 1 && jobStateIds.Contains(x.StateID))
+                    .OrderBy(x => x.Name)
+                    .Select(x => new StateDto
+                    {
+                        Id = x.StateID,
+                        Name = x.Name
+                    })
+                    .ToListAsync();
+
+                return ServiceResult<List<StateDto>>.Success(states);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "State listesi alınırken hata oluştu");
+                return ServiceResult<List<StateDto>>.Fail("Durum listesi yüklenirken hata oluştu.");
+            }
+        }
+
+        /// <summary>
+        /// Ürün Kategorilerini getirir.
+        /// Filtre: TaxTypeID = 6
+        /// Join: ProdCat -> XProdCat (Ad) -> TaxType (Kod) -> XTaxType (Vergi Adı)
+        /// </summary>
+        public async Task<ServiceResult<List<ProductCategoryDto>>> GetProductCategoriesAsync()
+        {
+            try
+            {
+                // LINQ Query Syntax ile daha okunaklı join işlemi
+                var query = from pc in _unitOfWork.Repository<ProdCat>().Query()
+                            join xpc in _unitOfWork.Repository<XProdCat>().Query() on pc.Id equals xpc.ProdCatID
+                            join tt in _unitOfWork.Repository<TaxType>().Query() on pc.TaxTypeID equals tt.Id
+                            join xtt in _unitOfWork.Repository<XTaxType>().Query() on tt.Id equals xtt.TaxTypeID
+                            where pc.TaxTypeID == 6 
+                                  && xpc.LanguageID == 1 // Türkçe Kategori Adı
+                                  && xtt.LanguageID == 1 // Türkçe Vergi Adı
+                                  && pc.Invisible == false // Görünür olanlar
+                            orderby pc.Sequence
+                            select new ProductCategoryDto
+                            {
+                                Id = pc.Id,
+                                Name = xpc.Name,
+                                TaxTypeId = pc.TaxTypeID,
+                                TaxCode = tt.Code,
+                                TaxName = xtt.Name,
+                                Sequence = pc.Sequence
+                            };
+
+                var categories = await query.ToListAsync();
+
+                return ServiceResult<List<ProductCategoryDto>>.Success(categories);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ürün kategorileri yüklenirken hata oluştu");
+                return ServiceResult<List<ProductCategoryDto>>.Fail("Ürün kategorileri yüklenirken hata oluştu.");
+            }
+        }
+
+        private async Task LoadProductCategoriesAsync(CustomerDto dto)
+        {
+            var catsQuery = from cpc in _unitOfWork.Repository<CustProdCat>().Query()
+                           join pc in _unitOfWork.Repository<ProdCat>().Query() on cpc.ProdCatID equals pc.Id
+                           join xpc in _unitOfWork.Repository<XProdCat>().Query() on pc.Id equals xpc.ProdCatID
+                           join tt in _unitOfWork.Repository<TaxType>().Query() on pc.TaxTypeID equals tt.Id
+                           join xtt in _unitOfWork.Repository<XTaxType>().Query() on tt.Id equals xtt.TaxTypeID
+                           where cpc.CustomerID == dto.Id && cpc.Deleted == 0
+                                 && xpc.LanguageID == 1
+                                 && xtt.LanguageID == 1
+                           select new ProductCategoryDto
+                           {
+                               Id = pc.Id,
+                               Name = xpc.Name,
+                               TaxTypeId = pc.TaxTypeID,
+                               TaxCode = tt.Code,
+                               TaxName = xtt.Name,
+                               Sequence = pc.Sequence,
+                               Discount = cpc.Discount,
+                               IsSelected = true
+                           };
+
+            dto.ProductCategories = await catsQuery.ToListAsync();
         }
     }
 }
