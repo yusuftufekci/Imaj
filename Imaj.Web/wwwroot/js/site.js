@@ -6,20 +6,20 @@
 // ============================================
 // Mobile Menu Toggle
 // ============================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const mobileMenuButton = document.querySelector('[aria-controls="mobile-menu"]');
     const mobileMenu = document.getElementById('mobile-menu');
 
     if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', function() {
+        mobileMenuButton.addEventListener('click', function () {
             const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
-            
+
             // Toggle menu visibility
             mobileMenu.classList.toggle('hidden');
-            
+
             // Update aria-expanded attribute
             mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
-            
+
             // Toggle hamburger/close icon
             const icons = mobileMenuButton.querySelectorAll('svg');
             icons.forEach(icon => icon.classList.toggle('hidden'));
@@ -41,17 +41,17 @@ const API = {
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(data)
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('API Error:', error);
@@ -67,20 +67,29 @@ const API = {
      */
     async get(url, params = {}) {
         try {
-            const queryString = new URLSearchParams(params).toString();
+            // Null veya undefined değerleri temizle
+            const cleanParams = {};
+            Object.keys(params).forEach(key => {
+                const value = params[key];
+                if (value !== null && value !== undefined && value !== '') {
+                    cleanParams[key] = value;
+                }
+            });
+
+            const queryString = new URLSearchParams(cleanParams).toString();
             const fullUrl = queryString ? `${url}?${queryString}` : url;
-            
+
             const response = await fetch(fullUrl, {
                 method: 'GET',
-                headers: { 
+                headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('API Error:', error);
