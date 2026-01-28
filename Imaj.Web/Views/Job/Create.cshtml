@@ -164,7 +164,7 @@
                  <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                       <div class="flex space-x-2">
                           <button type="button" class="text-red-600 font-bold hover:underline text-sm">Sil</button>
-                          <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'overtimeAdd', isMultiSelect: true })" class="text-blue-600 font-bold hover:underline text-sm">Ekle</button>
+                          <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'overtimeAdd', isMultiSelect: false })" class="text-blue-600 font-bold hover:underline text-sm">Ekle</button>
                       </div>
                       <div class="text-sm font-bold text-gray-900">
                           Toplam: <span x-text="calculateOvertimeTotal()"></span>
