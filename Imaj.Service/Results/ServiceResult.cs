@@ -1,12 +1,11 @@
 namespace Imaj.Service.Results
 {
     /// <summary>
-    /// Generic service result wrapper.
-    /// Tüm service method'ları bu yapı ile dönüş yapar.
+    /// Tüm service result sınıfları için base class.
+    /// Ortak property ve metodları içerir.
     /// </summary>
-    public class ServiceResult<T>
+    public abstract class ServiceResultBase
     {
-        public T? Data { get; set; }
         public bool IsSuccess { get; set; }
         public string? Message { get; set; }
         
@@ -19,6 +18,15 @@ namespace Imaj.Service.Results
         /// HTTP status code (Controller'da kullanılabilir)
         /// </summary>
         public int StatusCode { get; set; } = 200;
+    }
+
+    /// <summary>
+    /// Generic service result wrapper.
+    /// Tüm service method'ları bu yapı ile dönüş yapar.
+    /// </summary>
+    public class ServiceResult<T> : ServiceResultBase
+    {
+        public T? Data { get; set; }
 
         /// <summary>
         /// Başarılı sonuç döner
@@ -87,18 +95,12 @@ namespace Imaj.Service.Results
             };
         }
     }
-    
 
     /// <summary>
     /// Data içermeyen service result.
     /// </summary>
-    public class ServiceResult
+    public class ServiceResult : ServiceResultBase
     {
-        public bool IsSuccess { get; set; }
-        public string? Message { get; set; }
-        public List<string> Errors { get; set; } = new();
-        public int StatusCode { get; set; } = 200;
-
         public static ServiceResult Success(string? message = null)
         {
             return new ServiceResult

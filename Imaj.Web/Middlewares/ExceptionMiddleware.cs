@@ -45,7 +45,8 @@ namespace Imaj.Web.Middlewares
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-                var result = ServiceResult<string>.Fail("Bir hata oluştu: " + exception.Message);
+                // Güvenlik: Exception detaylarını client'a gösterme, sadece logla
+                var result = ServiceResult<string>.Fail("Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.");
                 var json = JsonSerializer.Serialize(result);
 
                 await context.Response.WriteAsync(json);

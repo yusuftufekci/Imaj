@@ -96,7 +96,7 @@ namespace Imaj.Service.Services
                 if (customer == null)
                 {
                     _logger.LogWarning("Müşteri bulunamadı: {CustomerId}", dto.Id);
-                    return ServiceResult.Fail("Müşteri bulunamadı.");
+                    return ServiceResult.NotFound("Müşteri bulunamadı.");
                 }
 
                 // AutoMapper ile güncelleme (mevcut entity'yi günceller)
@@ -176,7 +176,7 @@ namespace Imaj.Service.Services
 
             var customer = await _customerRepository.GetByIdAsync(id);
             if (customer == null) 
-                return ServiceResult<CustomerDto>.Fail("Müşteri bulunamadı.");
+                return ServiceResult<CustomerDto>.NotFound("Müşteri bulunamadı.");
 
             var dto = _mapper.Map<CustomerDto>(customer);
             return ServiceResult<CustomerDto>.Success(dto);
@@ -188,7 +188,7 @@ namespace Imaj.Service.Services
 
             var customer = await _customerRepository.SingleOrDefaultAsync(c => c.Code == code);
             if (customer == null) 
-                return ServiceResult<CustomerDto>.Fail("Müşteri bulunamadı.");
+                return ServiceResult<CustomerDto>.NotFound("Müşteri bulunamadı.");
 
             var dto = _mapper.Map<CustomerDto>(customer);
             return ServiceResult<CustomerDto>.Success(dto);

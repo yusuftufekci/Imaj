@@ -17,6 +17,9 @@ namespace Imaj.Data.Repositories
         
         // Repository cache - her tip için tek instance
         private readonly Dictionary<Type, object> _repositories = new();
+        
+        // Dispose edilip edilmediğini takip et
+        private bool _disposed;
 
         public UnitOfWork(ImajDbContext context)
         {
@@ -31,11 +34,6 @@ namespace Imaj.Data.Repositories
         public async Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync()
         {
             return await _context.Database.BeginTransactionAsync();
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
 
         /// <summary>
@@ -57,6 +55,33 @@ namespace Imaj.Data.Repositories
             _repositories[type] = newRepository;
             return newRepository;
         }
+
+        /// <summary>
+        /// IDisposable pattern implementasyonu.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Protected dispose metodu.
+        /// Türetilmiş sınıflar bu metodu override edebilir.
+        /// </summary>
+        /// <param name="disposing">Managed kaynaklar da temizlensin mi</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // Managed kaynakları temizle
+                    _context.Dispose();
+                }
+                
+                _disposed = true;
+            }
+        }
     }
 }
-
