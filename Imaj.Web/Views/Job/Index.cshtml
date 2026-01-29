@@ -49,6 +49,7 @@
                             <label class="col-span-4 text-right text-sm font-medium text-gray-700">Müşteri</label>
                             <div class="col-span-8 flex space-x-2">
                                 <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
+                                <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
                                 <input type="text" readonly x-model="customerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="Tümü">
                                 <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter' })" class="text-blue-600 font-bold hover:underline text-sm">Seç</button>
                             </div>
@@ -287,7 +288,7 @@
         return {
             filter: {
                 function: '',
-                customerCode: '',
+                customerCode: '', customerId: '',
                 referenceStart: '', referenceEnd: '', referenceList: '',
                 jobName: '', relatedPerson: '',
                 startDateStart: '@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")',
@@ -311,6 +312,7 @@
             handleCustomerSelection(detail) {
                 if (detail.targetId === 'jobFilter') {
                     this.filter.customerCode = detail.customer.code;
+                    this.filter.customerId = detail.customer.id;
                     this.customerName = detail.customer.name;
                 }
             },

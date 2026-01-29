@@ -17,6 +17,7 @@ namespace Imaj.Web.Models
         // Job Criteria (İş Kriteri)
         public string? Function { get; set; }
         public string? CustomerCode { get; set; }
+        public decimal? CustomerId { get; set; } // Added for ID binding
         public string? CustomerName { get; set; }
         
         public string? ReferenceStart { get; set; }

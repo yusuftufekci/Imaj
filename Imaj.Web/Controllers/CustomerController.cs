@@ -74,6 +74,7 @@ namespace Imaj.Web.Controllers
             var items = result.IsSuccess && result.Data != null 
                 ? result.Data.Items.Select(c => new CustomerSearchResult 
                 { 
+                    Id = c.Id,
                     Code = c.Code, 
                     Name = c.Name, 
                     City = c.City, 

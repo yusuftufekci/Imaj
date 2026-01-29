@@ -50,6 +50,7 @@ namespace Imaj.Web.Models
 
     public class CustomerSearchResult
     {
+        public decimal Id { get; set; }
         public string? Code { get; set; }
         public string? Name { get; set; }
         public string? City { get; set; }
