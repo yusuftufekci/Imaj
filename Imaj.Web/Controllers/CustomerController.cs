@@ -63,6 +63,7 @@ namespace Imaj.Web.Controllers
                 TaxOffice = f.TaxOffice,
                 TaxNumber = f.TaxNumber,
                 JobStatus = f.JobStatus,
+                JobStateId = decimal.TryParse(f.JobStatus, out var stateId) ? stateId : null,
                 IsInvalid = f.IsInvalid,
                 Page = f.Page,
                 PageSize = f.PageSize > 0 ? f.PageSize : 10
@@ -106,6 +107,7 @@ namespace Imaj.Web.Controllers
                 TaxOffice = f.TaxOffice,
                 TaxNumber = f.TaxNumber,
                 JobStatus = f.JobStatus,
+                JobStateId = decimal.TryParse(f.JobStatus, out var stateId) ? stateId : null,
                 IsInvalid = f.IsInvalid,
                 Page = f.Page,
                 PageSize = f.PageSize > 0 ? f.PageSize : 20

@@ -212,6 +212,7 @@ namespace Imaj.Service.Services
                 .WhereIfNotEmpty(filter.TaxNumber, c => c.TaxNumber != null && c.TaxNumber.Contains(filter.TaxNumber!))
                 .WhereIf(filter.JobStatus == "Active", c => c.SelectFlag == true)
                 .WhereIf(filter.JobStatus == "Completed", c => c.SelectFlag == false)
+                .WhereIfHasValue(filter.JobStateId, c => _unitOfWork.Repository<Job>().Query().Any(j => j.CustomerID == c.Id && j.StateID == filter.JobStateId!.Value))
                 .WhereIfHasValue(filter.IsInvalid, c => c.Invisible == filter.IsInvalid!.Value);
 
             // Toplam kayıt sayısı (SQL COUNT)

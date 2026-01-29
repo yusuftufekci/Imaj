@@ -15,6 +15,7 @@ namespace Imaj.Service.DTOs
         public string? TaxOffice { get; set; }
         public string? TaxNumber { get; set; }
         public string? JobStatus { get; set; } // Active, Completed
+        public decimal? JobStateId { get; set; } // Job State ID filter
         public bool? IsInvalid { get; set; } // Maps to Invisible or !IsActive
         
         public int Page { get; set; } = 1;
