@@ -138,14 +138,24 @@
                                 <td class="px-4 py-2 text-xs text-gray-900" x-text="item.name"></td>
                                 <td class="px-4 py-2">
                                      <select x-model="item.taskType" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
-                                         <option value="Personel">Personel</option>
-                                         <option value="Diğer">Diğer</option>
+                                         @if (ViewBag.WorkTypes != null)
+                                         {
+                                             @foreach (var wt in ViewBag.WorkTypes)
+                                             {
+                                                 <option value="@wt.Id">@wt.Name</option>
+                                             }
+                                         }
                                      </select>
                                 </td>
                                  <td class="px-4 py-2">
                                      <select x-model="item.overtimeType" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
-                                         <option value="Normal">Normal</option>
-                                         <option value="Haftasonu">Haftasonu</option>
+                                         @if (ViewBag.TimeTypes != null)
+                                         {
+                                             @foreach (var tt in ViewBag.TimeTypes)
+                                             {
+                                                 <option value="@tt.Id">@tt.Name</option>
+                                             }
+                                         }
                                      </select>
                                 </td>
                                 <td class="px-4 py-2">

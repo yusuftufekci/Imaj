@@ -1,3 +1,4 @@
+using Imaj.Service.Interfaces;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -5,6 +6,8 @@ namespace Imaj.Web.Controllers
 {
     public class JobController : Controller
     {
+        private readonly IJobService _jobService;
+
         // Static mock data to ensure consistency between List and Detail pages
         // In a real application, this would be replaced by a Service/Repository call.
         private static List<JobSearchResult> _mockData = new List<JobSearchResult>();
@@ -31,8 +34,20 @@ namespace Imaj.Web.Controllers
             }
         }
 
-        public IActionResult Index()
+        public JobController(IJobService jobService)
         {
+            _jobService = jobService;
+        }
+
+        /// <summary>
+        /// İş sorgulama sayfası.
+        /// Dropdown verileri veritabanından yüklenir.
+        /// </summary>
+        public async Task<IActionResult> Index()
+        {
+            // Dropdown verilerini backend'den al
+            await LoadDropdownDataAsync();
+
             var model = new JobViewModel();
             model.Filter.StartDateStart = DateTime.Now.AddMonths(-1);
             model.Filter.StartDateEnd = DateTime.Now;
@@ -40,8 +55,11 @@ namespace Imaj.Web.Controllers
         }
 
         [AcceptVerbs("GET", "POST")]
-        public IActionResult List(JobViewModel model)
+        public async Task<IActionResult> List(JobViewModel model)
         {
+            // Dropdown verilerini backend'den al (geri dönüşlerde gerekli)
+            await LoadDropdownDataAsync();
+
             // Return the shared mock data
             // On a GET (Back button), model will be empty but we want to show the list again.
             // Since _mockData is static, we can just reassign it.
@@ -128,8 +146,15 @@ namespace Imaj.Web.Controllers
             return View(model);
         }
 
-        public IActionResult Create()
+        /// <summary>
+        /// Yeni iş yaratma sayfası.
+        /// Dropdown verileri veritabanından yüklenir.
+        /// </summary>
+        public async Task<IActionResult> Create()
         {
+            // Dropdown verilerini backend'den al
+            await LoadDropdownDataAsync();
+
             var model = new JobCreateViewModel();
             model.StartDate = DateTime.Now;
             model.EndDate = DateTime.Now;
@@ -143,6 +168,29 @@ namespace Imaj.Web.Controllers
             // Redirect to List or Detail of new ID
             // For now back to Index
             return RedirectToAction("Index");
+        }
+
+        /// <summary>
+        /// Dropdown verilerini veritabanından yükler ve ViewBag'e ekler.
+        /// States, Functions, WorkTypes, TimeTypes
+        /// </summary>
+        private async Task LoadDropdownDataAsync()
+        {
+            // Durum listesi
+            var statesResult = await _jobService.GetStatesAsync();
+            ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<Imaj.Service.DTOs.StateDto>();
+
+            // Fonksiyon listesi
+            var functionsResult = await _jobService.GetFunctionsAsync();
+            ViewBag.Functions = functionsResult.IsSuccess ? functionsResult.Data : new List<Imaj.Service.DTOs.FunctionDto>();
+
+            // Görev Tipi listesi
+            var workTypesResult = await _jobService.GetWorkTypesAsync();
+            ViewBag.WorkTypes = workTypesResult.IsSuccess ? workTypesResult.Data : new List<Imaj.Service.DTOs.WorkTypeDto>();
+
+            // Mesai Tipi listesi
+            var timeTypesResult = await _jobService.GetTimeTypesAsync();
+            ViewBag.TimeTypes = timeTypesResult.IsSuccess ? timeTypesResult.Data : new List<Imaj.Service.DTOs.TimeTypeDto>();
         }
     }
 }
