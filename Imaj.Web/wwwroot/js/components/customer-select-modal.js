@@ -22,6 +22,7 @@ function customerSelectModal() {
             taxOffice: '',
             taxNumber: '',
             jobStatus: '',
+            jobStateId: null, // Dinamik durum filtresi
             isInvalid: false,
             page: 1,
             pageSize: 5
@@ -32,6 +33,20 @@ function customerSelectModal() {
         totalCount: 0,
         hasSearched: false,
         page: 1,
+
+        // Dropdown verileri
+        jobStatuses: [],
+
+        async init() {
+            try {
+                const response = await fetch('/Customer/GetJobStates');
+                if (response.ok) {
+                    this.jobStatuses = await response.json();
+                }
+            } catch (error) {
+                console.error('Durum listesi yüklenemedi:', error);
+            }
+        },
 
         /**
          * Modal'ı açar
@@ -47,7 +62,16 @@ function customerSelectModal() {
 
         /**
          * Modal'ı kapatır
+         * @param {object} customer - Seçilen müşteri
          */
+        select(customer) {
+            this.$dispatch('customer-selected', {
+                customer: customer,
+                targetId: this.targetId
+            });
+            this.closeModal();
+        },
+
         closeModal() {
             this.showModal = false;
             this.targetId = null;
@@ -71,6 +95,7 @@ function customerSelectModal() {
                 taxOffice: '',
                 taxNumber: '',
                 jobStatus: '',
+                jobStateId: null,
                 isInvalid: false,
                 page: 1,
                 pageSize: 5

@@ -100,10 +100,11 @@
                             <h4 class="font-semibold text-gray-700 mb-2 border-b border-blue-200 pb-1">İş Sorgulama</h4>
                             <div class="grid grid-cols-12 gap-2 items-center">
                                 <label class="col-span-3 text-right pr-2">Durum</label>
-                                 <select x-model="filter.jobStatus" class="col-span-9 border-gray-400 rounded-md shadow-sm h-7 text-sm py-0">
+                                 <select x-model="filter.jobStateId" class="col-span-9 border-gray-400 rounded-md shadow-sm h-7 text-sm py-0">
                                      <option value="">Tümü</option>
-                                     <option value="Active">Aktif</option>
-                                     <option value="Completed">Tamamlandı</option>
+                                     <template x-for="status in jobStatuses" :key="status.id">
+                                         <option :value="status.id" x-text="status.name"></option>
+                                     </template>
                                 </select>
                             </div>
                         </div>

@@ -32,5 +32,11 @@ namespace Imaj.Service.Interfaces
         /// XTimeType tablosundan LanguageID=1 olanları çeker.
         /// </summary>
         Task<ServiceResult<List<TimeTypeDto>>> GetTimeTypesAsync();
+
+        /// <summary>
+        /// İş kayıtlarını filtreleyerek getirir.
+        /// Sayfalama destekli.
+        /// </summary>
+        Task<ServiceResult<PagedResult<JobDto>>> GetByFilterAsync(JobFilterDto filter);
     }
 }

@@ -43,6 +43,18 @@ namespace Imaj.Web.Controllers
             return BadRequest(result.Message);
         }
 
+        [HttpGet]
+        [Route("Customer/GetJobStates")]
+        public async Task<IActionResult> GetJobStates()
+        {
+            var result = await _customerService.GetStatesAsync();
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Search([FromBody] CustomerFilterModel? filter)
         {
