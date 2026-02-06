@@ -9,6 +9,7 @@ document.addEventListener('alpine:init', () => {
         isOpen: false,
         targetId: '',
         isMultiSelect: false,
+        showFilter: false, // Control flag for filter UI
 
         // Arama ve sayfalama
         filter: {
@@ -42,6 +43,7 @@ document.addEventListener('alpine:init', () => {
             this.isOpen = true;
             this.targetId = detail.targetId;
             this.isMultiSelect = detail.isMultiSelect || false;
+            this.showFilter = detail.showFilter || false;
             this.selectedItems = [];
 
             this.clearFilter();

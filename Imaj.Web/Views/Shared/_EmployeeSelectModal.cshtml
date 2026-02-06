@@ -69,7 +69,51 @@
                 </button>
             </div>
             
-            <!-- Filter Panel REMOVED -->
+            <!-- Filter Panel (Conditional) -->
+            <div x-show="$store.employeeModal.showFilter" class="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Kod -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kod</label>
+                        <input type="text" x-model="$store.employeeModal.filter.code" x-on:keyup.enter="$store.employeeModal.search(1)" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    
+                    <!-- Ad -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ad</label>
+                        <input type="text" x-model="$store.employeeModal.filter.name" x-on:keyup.enter="$store.employeeModal.search(1)" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    
+                    <!-- Fonksiyon -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fonksiyon</label>
+                        <select x-model="$store.employeeModal.filter.functionId" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <option value="">Tümü</option>
+                            <template x-for="func in $store.employeeModal.functions" :key="func.id">
+                                <option :value="func.id" x-text="func.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    
+                    <!-- Durum -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Durum</label>
+                        <select x-model="$store.employeeModal.filter.status" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <option value="0">Tümü</option>
+                            <option value="1">Sadece Geçerli</option>
+                            <option value="2">Sadece Geçersiz</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button x-on:click="$store.employeeModal.clearFilter()" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                        Temizle
+                    </button>
+                    <button x-on:click="$store.employeeModal.search(1)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                        Sorgula
+                    </button>
+                </div>
+            </div>
             
             <!-- Table -->
             <div class="flex flex-col">

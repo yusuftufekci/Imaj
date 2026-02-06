@@ -161,7 +161,7 @@
                                 <div class="col-span-8 flex space-x-2">
                                     <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
                                     <input type="text" readonly x-model="filter.employeeName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="Tümü">
-                                    <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee' })" class="text-blue-600 font-bold hover:underline text-sm">Seç</button>
+                                    <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="text-blue-600 font-bold hover:underline text-sm">Seç</button>
                                 </div>
                             </div>
                             
