@@ -13,15 +13,11 @@ using Imaj.Service.Results; // Added this
 
 namespace Imaj.Service.Services
 {
-    public class ProductService : IProductService
+    public class ProductService : BaseService, IProductService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<ProductService> _logger;
-
-        public ProductService(IUnitOfWork unitOfWork, ILogger<ProductService> logger)
+        public ProductService(IUnitOfWork unitOfWork, ILogger<ProductService> logger, Microsoft.Extensions.Configuration.IConfiguration configuration)
+            : base(unitOfWork, logger, configuration)
         {
-            _unitOfWork = unitOfWork;
-            _logger = logger;
         }
 
         public async Task<ServiceResult<PagedResult<ProductDto>>> GetByFilterAsync(ProductFilterDto filter)
@@ -98,84 +94,36 @@ namespace Imaj.Service.Services
 
         public async Task<ServiceResult<List<ProductCategoryDto>>> GetCategoriesAsync()
         {
-            try
-            {
-                var query = from pc in _unitOfWork.Repository<ProdCat>().Query()
-                            join xpc in _unitOfWork.Repository<XProdCat>().Query() on pc.Id equals xpc.ProdCatID
-                            where xpc.LanguageID == 1 // Türkçe
-                                  && pc.Invisible == false
-                                  && pc.CompanyID == 7 // Added Company Filter
-                            orderby pc.Sequence
-                            select new ProductCategoryDto
-                            {
-                                Id = pc.Id,
-                                Name = xpc.Name,
-                                TaxTypeId = pc.TaxTypeID,
-                                Sequence = pc.Sequence
-                            };
-
-                var categories = await query.ToListAsync();
-
-                return ServiceResult<List<ProductCategoryDto>>.Success(categories);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ürün kategorileri getirilirken hata oluştu.");
-                return ServiceResult<List<ProductCategoryDto>>.Fail("Ürün kategorileri getirilirken hata oluştu.");
-            }
+            return await GetTranslatedListAsync<ProdCat, XProdCat, ProductCategoryDto>(
+                pc => pc.Id,
+                xpc => xpc.ProdCatID,
+                (pc, xpc) => new ProductCategoryDto
+                {
+                    Id = pc.Id,
+                    Name = xpc.Name,
+                    TaxTypeId = pc.TaxTypeID,
+                    Sequence = pc.Sequence
+                },
+                orderBySelector: dto => dto.Sequence
+            );
         }
 
         public async Task<ServiceResult<List<ProductGroupDto>>> GetProductGroupsAsync()
         {
-            try
-            {
-                var query = from pg in _unitOfWork.Repository<ProdGrp>().Query()
-                            join xpg in _unitOfWork.Repository<XProdGrp>().Query() on pg.Id equals xpg.ProdGrpID
-                            where xpg.LanguageID == 1 // Türkçe
-                                  && pg.CompanyID == 7 // Added Company Filter
-                            orderby xpg.Name
-                            select new ProductGroupDto
-                            {
-                                Id = pg.Id,
-                                Name = xpg.Name
-                            };
-
-                var groups = await query.ToListAsync();
-
-                return ServiceResult<List<ProductGroupDto>>.Success(groups);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ürün grupları getirilirken hata oluştu.");
-                return ServiceResult<List<ProductGroupDto>>.Fail("Ürün grupları getirilirken hata oluştu.");
-            }
+            return await GetTranslatedListAsync<ProdGrp, XProdGrp, ProductGroupDto>(
+                pg => pg.Id,
+                xpg => xpg.ProdGrpID,
+                (pg, xpg) => new ProductGroupDto { Id = pg.Id, Name = xpg.Name }
+            );
         }
 
         public async Task<ServiceResult<List<FunctionDto>>> GetFunctionsAsync()
         {
-            try
-            {
-                var query = from f in _unitOfWork.Repository<Function>().Query()
-                            join xf in _unitOfWork.Repository<XFunction>().Query() on f.Id equals xf.FunctionID
-                            where xf.LanguageID == 1 // Türkçe
-                                  && f.CompanyID == 7 // Added Company Filter
-                                  && f.Invisible == false
-                            orderby xf.Name
-                            select new FunctionDto
-                            {
-                                Id = f.Id,
-                                Name = xf.Name
-                            };
-
-                var functions = await query.ToListAsync();
-
-                return ServiceResult<List<FunctionDto>>.Success(functions);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fonksiyonlar getirilirken hata oluştu.");
-                return ServiceResult<List<FunctionDto>>.Fail("Fonksiyonlar getirilirken hata oluştu.");
-            }
+            return await GetTranslatedListAsync<Function, XFunction, FunctionDto>(
+                f => f.Id,
+                xf => xf.FunctionID,
+                (f, xf) => new FunctionDto { Id = f.Id, Name = xf.Name }
+            );
         }
     }
 }

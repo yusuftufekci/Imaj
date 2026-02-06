@@ -14,15 +14,7 @@ namespace Imaj.Web.Controllers
             _jobService = jobService;
         }
 
-        /// <summary>
-        /// DEBUG: JobLog tablosunun kolonlarını gösterir.
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> DebugSchema()
-        {
-            var columns = await _jobService.GetTableColumnsAsync("JobLog");
-            return Ok(columns);
-        }
+
 
         /// <summary>
         /// İş geçmişini tam sayfa olarak görüntüler.

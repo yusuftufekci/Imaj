@@ -13,17 +13,11 @@ namespace Imaj.Service.Services
     /// İş (Job) işlemleri için business service.
     /// Dropdown verilerini veritabanından sağlar.
     /// </summary>
-    public class JobService : IJobService
+    public class JobService : BaseService, IJobService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<JobService> _logger;
-        private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
-
-        public JobService(IUnitOfWork unitOfWork, ILogger<JobService> logger, Microsoft.Extensions.Configuration.IConfiguration configuration)
+        public JobService(IUnitOfWork unitOfWork, ILogger<JobService> logger, IConfiguration configuration)
+            : base(unitOfWork, logger, configuration)
         {
-            _unitOfWork = unitOfWork;
-            _logger = logger;
-            _configuration = configuration;
         }
 
         /// <summary>
@@ -32,34 +26,12 @@ namespace Imaj.Service.Services
         /// </summary>
         public async Task<ServiceResult<List<StateDto>>> GetStatesAsync()
         {
-            try
-            {
-                // State tablosundan Category='Job' olan ID'leri al
-                var jobStateIds = await _unitOfWork.Repository<State>()
-                    .Query()
-                    .Where(s => s.Category == "Job")
-                    .Select(s => s.Id)
-                    .ToListAsync();
-
-                // Bu ID'lere karşılık gelen XState kayıtlarından Türkçe isimleri al
-                var states = await _unitOfWork.Repository<XState>()
-                    .Query()
-                    .Where(x => x.LanguageID == 1 && jobStateIds.Contains(x.StateID))
-                    .OrderBy(x => x.Name)
-                    .Select(x => new StateDto
-                    {
-                        Id = x.StateID,
-                        Name = x.Name
-                    })
-                    .ToListAsync();
-
-                return ServiceResult<List<StateDto>>.Success(states);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "State listesi alınırken hata oluştu");
-                return ServiceResult<List<StateDto>>.Fail("Durum listesi yüklenirken hata oluştu.");
-            }
+            return await GetTranslatedListAsync<State, XState, StateDto>(
+                s => s.Id,
+                xs => xs.StateID,
+                (s, xs) => new StateDto { Id = s.Id, Name = xs.Name },
+                additionalFilter: s => s.Category == "Job"
+            );
         }
 
         /// <summary>
@@ -72,27 +44,11 @@ namespace Imaj.Service.Services
         /// </summary>
         public async Task<ServiceResult<List<FunctionDto>>> GetFunctionsAsync()
         {
-            try
-            {
-                var functions = await (from f in _unitOfWork.Repository<Function>().Query()
-                                       join xf in _unitOfWork.Repository<XFunction>().Query() on f.Id equals xf.FunctionID
-                                       where xf.LanguageID == 1 // Türkçe
-                                             && f.CompanyID == 7 // Company Filter
-                                             && f.Invisible == false // Active only
-                                       orderby xf.Name
-                                       select new FunctionDto
-                                       {
-                                           Id = f.Id,
-                                           Name = xf.Name
-                                       }).ToListAsync();
-
-                return ServiceResult<List<FunctionDto>>.Success(functions);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fonksiyon listesi alınırken hata oluştu");
-                return ServiceResult<List<FunctionDto>>.Fail("Fonksiyon listesi yüklenirken hata oluştu.");
-            }
+            return await GetTranslatedListAsync<Function, XFunction, FunctionDto>(
+                f => f.Id,
+                xf => xf.FunctionID,
+                (f, xf) => new FunctionDto { Id = f.Id, Name = xf.Name }
+            );
         }
 
         /// <summary>
@@ -101,27 +57,11 @@ namespace Imaj.Service.Services
         /// </summary>
         public async Task<ServiceResult<List<WorkTypeDto>>> GetWorkTypesAsync()
         {
-            try
-            {
-                var workTypes = await (from wt in _unitOfWork.Repository<WorkType>().Query()
-                                       join xwt in _unitOfWork.Repository<XWorkType>().Query() on wt.Id equals xwt.WorkTypeID
-                                       where xwt.LanguageID == 1 // Türkçe
-                                             && wt.CompanyID == 7 // Company Filter
-                                             && wt.Invisible == false // Active only
-                                       orderby xwt.Name
-                                       select new WorkTypeDto
-                                       {
-                                           Id = wt.Id,
-                                           Name = xwt.Name
-                                       }).ToListAsync();
-
-                return ServiceResult<List<WorkTypeDto>>.Success(workTypes);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "WorkType listesi alınırken hata oluştu");
-                return ServiceResult<List<WorkTypeDto>>.Fail("Görev tipi listesi yüklenirken hata oluştu.");
-            }
+            return await GetTranslatedListAsync<WorkType, XWorkType, WorkTypeDto>(
+                wt => wt.Id,
+                xwt => xwt.WorkTypeID,
+                (wt, xwt) => new WorkTypeDto { Id = wt.Id, Name = xwt.Name }
+            );
         }
 
         /// <summary>
@@ -130,27 +70,11 @@ namespace Imaj.Service.Services
         /// </summary>
         public async Task<ServiceResult<List<TimeTypeDto>>> GetTimeTypesAsync()
         {
-            try
-            {
-                var timeTypes = await (from tt in _unitOfWork.Repository<TimeType>().Query()
-                                       join xtt in _unitOfWork.Repository<XTimeType>().Query() on tt.Id equals xtt.TimeTypeID
-                                       where xtt.LanguageID == 1 // Türkçe
-                                             && tt.CompanyID == 7 // Company Filter
-                                             && tt.Invisible == false // Active only
-                                       orderby xtt.Name
-                                       select new TimeTypeDto
-                                       {
-                                           Id = tt.Id,
-                                           Name = xtt.Name
-                                       }).ToListAsync();
-
-                return ServiceResult<List<TimeTypeDto>>.Success(timeTypes);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "TimeType listesi alınırken hata oluştu");
-                return ServiceResult<List<TimeTypeDto>>.Fail("Mesai tipi listesi yüklenirken hata oluştu.");
-            }
+            return await GetTranslatedListAsync<TimeType, XTimeType, TimeTypeDto>(
+                tt => tt.Id,
+                xtt => xtt.TimeTypeID,
+                (tt, xtt) => new TimeTypeDto { Id = tt.Id, Name = xtt.Name }
+            );
         }
 
         /// <summary>
