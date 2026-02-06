@@ -1,10 +1,12 @@
 /**
- * Product Select Modal Component
+ * Product Select Modal Component (v2 - Using BaseSelectModal patterns)
  * Ürün seçim modal'ı için Alpine.js component fonksiyonu
  * Single ve Multi-select desteği var
  */
+
 function productSelectModal() {
     return {
+        // Modal State
         isOpen: false,
         targetId: '',
         isMultiSelect: false,
@@ -23,7 +25,7 @@ function productSelectModal() {
         // Dropdown verileri
         categories: [],
         productGroups: [],
-        functions: [], // Added functions array
+        functions: [],
 
         // Sonuç verileri
         items: [],
@@ -34,11 +36,21 @@ function productSelectModal() {
         // Multi-select için seçilen öğeler
         selectedItems: [],
 
+        /**
+         * Component başlatma - Dropdown verilerini yükler
+         */
         async init() {
+            await this.loadDropdowns();
+        },
+
+        /**
+         * Tüm dropdown verilerini paralel yükler
+         */
+        async loadDropdowns() {
             await Promise.all([
                 this.loadCategories(),
                 this.loadProductGroups(),
-                this.loadFunctions() // Added loadFunctions call
+                this.loadFunctions()
             ]);
         },
 
@@ -114,17 +126,14 @@ function productSelectModal() {
          * Ürün araması yapar
          */
         async search(page) {
-            // Arama başladığında listeyi temizle (istenildiği gibi boş gözüksün)
             this.items = [];
-            this.hasSearched = false; // Reset to hide "No records found" message initially
+            this.hasSearched = false;
 
             this.filter.page = page;
             this.page = page;
 
-            // Clone filter and fix boolean types
+            // Filter temizleme
             const payload = { ...this.filter };
-
-            // Handle IsInvalid: "" -> null, "true" -> true, "false" -> false
             if (this.filter.isInvalid === "") {
                 payload.isInvalid = null;
             } else {
@@ -183,8 +192,16 @@ function productSelectModal() {
                 targetId: this.targetId
             });
             this.closeModal();
+        },
+
+        /**
+         * Toplam sayfa sayısını hesaplar
+         */
+        get totalPages() {
+            return Math.ceil(this.totalCount / this.filter.pageSize);
         }
     }
 }
 
+// Global scope'a ekle
 window.productSelectModal = productSelectModal;

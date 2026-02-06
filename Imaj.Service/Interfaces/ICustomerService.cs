@@ -5,6 +5,10 @@ using Imaj.Service.Results;
 
 namespace Imaj.Service.Interfaces
 {
+    /// <summary>
+    /// Müşteri CRUD işlemleri için service interface.
+    /// NOTE: Dropdown verileri (States, ProductCategories) artık ILookupService'den alınıyor.
+    /// </summary>
     public interface ICustomerService
     {
         Task<ServiceResult<List<CustomerDto>>> GetAllAsync();
@@ -13,11 +17,5 @@ namespace Imaj.Service.Interfaces
         Task<ServiceResult<CustomerDto>> GetByCodeAsync(string code);
         Task<ServiceResult> AddAsync(CustomerDto customerDto);
         Task<ServiceResult> UpdateAsync(CustomerDto customerDto);
-        
-        // State (Durum) listesini veritabanından getir
-        Task<ServiceResult<List<StateDto>>> GetStatesAsync();
-
-        // Ürün Kategorilerini getir (TaxTypeID=6 ve XProdCat/TaxType ilişkili)
-        Task<ServiceResult<List<ProductCategoryDto>>> GetProductCategoriesAsync();
     }
 }

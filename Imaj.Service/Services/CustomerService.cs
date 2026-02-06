@@ -272,81 +272,9 @@ namespace Imaj.Service.Services
         }
 
         /// <summary>
-        /// State (Durum) listesini veritabanından getirir.
-        /// State tablosunda Category='Job' olan kayıtların XState'teki Türkçe isimlerini çeker.
+        /// Müşteriye ait ürün kategorilerini veritabanından yükler.
+        /// CustProdCat ilişki tablosundan mevcut seçimleri getirir.
         /// </summary>
-        public async Task<ServiceResult<List<StateDto>>> GetStatesAsync()
-        {
-            try
-            {
-                // Önce State tablosundan Category='Job' olan ID'leri al
-                var jobStateIds = await _unitOfWork.Repository<State>()
-                    .Query()
-                    .Where(s => s.Category == "Job")
-                    .Select(s => s.Id)
-                    .ToListAsync();
-
-                // Sonra bu ID'lere karşılık gelen XState kayıtlarından Türkçe isimleri al
-                var states = await _unitOfWork.Repository<XState>()
-                    .Query()
-                    .Where(x => x.LanguageID == 1 && jobStateIds.Contains(x.StateID))
-                    .OrderBy(x => x.Name)
-                    .Select(x => new StateDto
-                    {
-                        Id = x.StateID,
-                        Name = x.Name
-                    })
-                    .ToListAsync();
-
-                return ServiceResult<List<StateDto>>.Success(states);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "State listesi alınırken hata oluştu");
-                return ServiceResult<List<StateDto>>.Fail("Durum listesi yüklenirken hata oluştu.");
-            }
-        }
-
-        /// <summary>
-        /// Ürün Kategorilerini getirir.
-        /// Filtre: TaxTypeID = 6
-        /// Join: ProdCat -> XProdCat (Ad) -> TaxType (Kod) -> XTaxType (Vergi Adı)
-        /// </summary>
-        public async Task<ServiceResult<List<ProductCategoryDto>>> GetProductCategoriesAsync()
-        {
-            try
-            {
-                // LINQ Query Syntax ile daha okunaklı join işlemi
-                var query = from pc in _unitOfWork.Repository<ProdCat>().Query()
-                            join xpc in _unitOfWork.Repository<XProdCat>().Query() on pc.Id equals xpc.ProdCatID
-                            join tt in _unitOfWork.Repository<TaxType>().Query() on pc.TaxTypeID equals tt.Id
-                            join xtt in _unitOfWork.Repository<XTaxType>().Query() on tt.Id equals xtt.TaxTypeID
-                            where pc.TaxTypeID == 6 
-                                  && xpc.LanguageID == 1 // Türkçe Kategori Adı
-                                  && xtt.LanguageID == 1 // Türkçe Vergi Adı
-                                  && pc.Invisible == false // Görünür olanlar
-                            orderby pc.Sequence
-                            select new ProductCategoryDto
-                            {
-                                Id = pc.Id,
-                                Name = xpc.Name,
-                                TaxTypeId = pc.TaxTypeID,
-                                TaxCode = tt.Code,
-                                TaxName = xtt.Name,
-                                Sequence = pc.Sequence
-                            };
-
-                var categories = await query.ToListAsync();
-
-                return ServiceResult<List<ProductCategoryDto>>.Success(categories);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ürün kategorileri yüklenirken hata oluştu");
-                return ServiceResult<List<ProductCategoryDto>>.Fail("Ürün kategorileri yüklenirken hata oluştu.");
-            }
-        }
-
         private async Task LoadProductCategoriesAsync(CustomerDto dto)
         {
             var catsQuery = from cpc in _unitOfWork.Repository<CustProdCat>().Query()

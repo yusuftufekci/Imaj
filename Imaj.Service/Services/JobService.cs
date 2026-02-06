@@ -11,70 +11,14 @@ namespace Imaj.Service.Services
 {
     /// <summary>
     /// İş (Job) işlemleri için business service.
-    /// Dropdown verilerini veritabanından sağlar.
+    /// CRUD ve iş-spesifik operasyonları sağlar.
+    /// NOTE: Dropdown verileri (States, Functions vb.) artık LookupService'den alınıyor.
     /// </summary>
     public class JobService : BaseService, IJobService
     {
         public JobService(IUnitOfWork unitOfWork, ILogger<JobService> logger, IConfiguration configuration)
             : base(unitOfWork, logger, configuration)
         {
-        }
-
-        /// <summary>
-        /// State (Durum) listesini veritabanından getirir.
-        /// State tablosunda Category='Job' olan kayıtların XState'teki Türkçe isimlerini çeker.
-        /// </summary>
-        public async Task<ServiceResult<List<StateDto>>> GetStatesAsync()
-        {
-            return await GetTranslatedListAsync<State, XState, StateDto>(
-                s => s.Id,
-                xs => xs.StateID,
-                (s, xs) => new StateDto { Id = s.Id, Name = xs.Name },
-                additionalFilter: s => s.Category == "Job"
-            );
-        }
-
-        /// <summary>
-        /// Fonksiyon listesini veritabanından getirir.
-        /// XFunction tablosundan LanguageID=1 olanları çeker.
-        /// </summary>
-        /// <summary>
-        /// Fonksiyon listesini veritabanından getirir.
-        /// XFunction ve Function tablolarını birleştirerek CompanyID=7 ve Invisible=false olanları çeker.
-        /// </summary>
-        public async Task<ServiceResult<List<FunctionDto>>> GetFunctionsAsync()
-        {
-            return await GetTranslatedListAsync<Function, XFunction, FunctionDto>(
-                f => f.Id,
-                xf => xf.FunctionID,
-                (f, xf) => new FunctionDto { Id = f.Id, Name = xf.Name }
-            );
-        }
-
-        /// <summary>
-        /// Görev Tipi (WorkType) listesini veritabanından getirir.
-        /// XWorkType ve WorkType tablolarını birleştirerek CompanyID=7 ve Invisible=false olanları çeker.
-        /// </summary>
-        public async Task<ServiceResult<List<WorkTypeDto>>> GetWorkTypesAsync()
-        {
-            return await GetTranslatedListAsync<WorkType, XWorkType, WorkTypeDto>(
-                wt => wt.Id,
-                xwt => xwt.WorkTypeID,
-                (wt, xwt) => new WorkTypeDto { Id = wt.Id, Name = xwt.Name }
-            );
-        }
-
-        /// <summary>
-        /// Mesai Tipi (TimeType) listesini veritabanından getirir.
-        /// XTimeType ve TimeType tablolarını birleştirerek CompanyID=7 ve Invisible=false olanları çeker.
-        /// </summary>
-        public async Task<ServiceResult<List<TimeTypeDto>>> GetTimeTypesAsync()
-        {
-            return await GetTranslatedListAsync<TimeType, XTimeType, TimeTypeDto>(
-                tt => tt.Id,
-                xtt => xtt.TimeTypeID,
-                (tt, xtt) => new TimeTypeDto { Id = tt.Id, Name = xtt.Name }
-            );
         }
 
         /// <summary>
