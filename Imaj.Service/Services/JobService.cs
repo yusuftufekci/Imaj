@@ -286,6 +286,57 @@ namespace Imaj.Service.Services
                     query = query.Where(x => matchingJobIds.Contains(x.Job.Id));
                 }
 
+                // ============ MESAİ KRİTERİ FİLTRELERİ ============
+                // Bu filtreler JobWork tablosuyla ilişkili Job'ları getirir
+                // NOT: Memory'e çekmeden doğrudan SQL subquery kullanıyoruz (OPENJSON sorunu için)
+
+                // Çalışan filtresi - EmployeeCode'a göre JobWork tablosundan ilgili Job'ları getir
+                if (!string.IsNullOrWhiteSpace(filter.EmployeeCode))
+                {
+                    _logger.LogInformation("Çalışan filtresi uygulanıyor. EmployeeCode: {EmployeeCode}", filter.EmployeeCode);
+                    
+                    // Subquery olarak Employee ve JobWork tablolarını birleştir
+                    var jobWorkRepo = _unitOfWork.Repository<JobWork>();
+                    var employeeRepo = _unitOfWork.Repository<Employee>();
+                    
+                    // Subquery: Bu çalışanın mesai kaydı olan Job ID'leri
+                    var jobIdsWithEmployee = from jw in jobWorkRepo.Query()
+                                              join e in employeeRepo.Query() on jw.EmployeeID equals e.Id
+                                              where e.Code == filter.EmployeeCode && jw.Deleted == 0
+                                              select jw.JobID;
+                    
+                    // Ana sorguya subquery ile filtre uygula
+                    query = query.Where(x => jobIdsWithEmployee.Contains(x.Job.Id));
+                }
+
+                // Görev Tipi (WorkType) filtresi
+                if (filter.WorkTypeId.HasValue)
+                {
+                    _logger.LogInformation("Görev Tipi filtresi uygulanıyor. WorkTypeId: {WorkTypeId}", filter.WorkTypeId.Value);
+                    
+                    // Subquery: Bu görev tipiyle mesai kaydı olan Job ID'leri
+                    var jobIdsWithWorkType = _unitOfWork.Repository<JobWork>().Query()
+                        .Where(jw => jw.WorkTypeID == filter.WorkTypeId.Value && jw.Deleted == 0)
+                        .Select(jw => jw.JobID);
+                    
+                    // Ana sorguya subquery ile filtre uygula
+                    query = query.Where(x => jobIdsWithWorkType.Contains(x.Job.Id));
+                }
+
+                // Mesai Tipi (TimeType) filtresi
+                if (filter.TimeTypeId.HasValue)
+                {
+                    _logger.LogInformation("Mesai Tipi filtresi uygulanıyor. TimeTypeId: {TimeTypeId}", filter.TimeTypeId.Value);
+                    
+                    // Subquery: Bu mesai tipiyle kayıt olan Job ID'leri
+                    var jobIdsWithTimeType = _unitOfWork.Repository<JobWork>().Query()
+                        .Where(jw => jw.TimeTypeID == filter.TimeTypeId.Value && jw.Deleted == 0)
+                        .Select(jw => jw.JobID);
+                    
+                    // Ana sorguya subquery ile filtre uygula
+                    query = query.Where(x => jobIdsWithTimeType.Contains(x.Job.Id));
+                }
+
                 // Toplam kayıt sayısı
                 var totalCount = await query.CountAsync();
 
@@ -451,6 +502,30 @@ namespace Imaj.Service.Services
             using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
+                // ============ VALİDASYON KONTROLLERI ============
+                
+                // Müşteri kontrolü - zorunlu alan
+                if (jobDto.CustomerId <= 0)
+                {
+                    return ServiceResult<JobDto>.Fail("Müşteri seçimi zorunludur.");
+                }
+                
+                // Müşterinin veritabanında var olup olmadığını kontrol et
+                var customerRepo = _unitOfWork.Repository<Customer>();
+                var customerExists = await customerRepo.Query().AnyAsync(x => x.Id == jobDto.CustomerId);
+                if (!customerExists)
+                {
+                    return ServiceResult<JobDto>.Fail($"Seçilen müşteri (ID: {jobDto.CustomerId}) veritabanında bulunamadı.");
+                }
+                
+                // İş adı kontrolü
+                if (string.IsNullOrWhiteSpace(jobDto.Name))
+                {
+                    return ServiceResult<JobDto>.Fail("İş adı zorunludur.");
+                }
+                
+                // ============ İŞ OLUŞTURMA ============
+                
                 // 1. Yeni Job ID ve Reference belirle
                 var jobRepo = _unitOfWork.Repository<Job>();
                 var nextJobId = (await jobRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;

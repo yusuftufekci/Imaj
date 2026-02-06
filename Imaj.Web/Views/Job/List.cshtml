@@ -75,24 +75,30 @@
         </div>
 
         <!-- Footer Actions -->
-        <div class="mt-4 flex flex-col items-center space-y-2">
-             <!-- Pagination (Mock) -->
-             <div class="flex space-x-2 text-sm text-blue-800">
-                 <a href="#" class="hover:underline">First</a>
-                 <a href="#" class="hover:underline">Prev</a>
-                 <span>1</span>
-                 <a href="#" class="hover:underline">Next</a>
-                 <a href="#" class="hover:underline">Last</a>
-                 <span> / 7 (100+) </span>
-             </div>
+        <div class="mt-4 space-y-4">
+             <!-- Pagination - Ortak pagination componenti kullanılıyor -->
+             @if (Model.TotalCount > 0)
+             {
+                 <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel 
+                 { 
+                     CurrentPage = Model.Page, 
+                     TotalCount = Model.TotalCount, 
+                     PageSize = Model.PageSize,
+                     BaseUrl = @"/Job/List"
+                 })" />
+             }
+             else
+             {
+                 <p class="text-center text-gray-500 text-sm">Sonuç bulunamadı.</p>
+             }
 
-             <div class="flex space-x-2">
+             <div class="flex justify-center space-x-2">
                  <!-- Must submit to use selectedIds -->
-                 <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Görüntüle
                 </button>
-                 <button type="button" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                    E-Posta Gönder
+                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Değiştir
                 </button>
              </div>
         </div>

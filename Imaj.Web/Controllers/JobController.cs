@@ -91,10 +91,22 @@ namespace Imaj.Web.Controllers
         /// <summary>
         /// İş listesi sorgulaması.
         /// Veritabanından filtreleme ile getirir.
+        /// page ve pageSize URL query string'den ayrı alınabilir (pagination linkleri için)
         /// </summary>
         [AcceptVerbs("GET", "POST")]
-        public async Task<IActionResult> List(JobViewModel model)
+        public async Task<IActionResult> List(JobViewModel model, int? page, int? pageSize)
         {
+            // Pagination değerlerini URL'den gelen değerlerle override et
+            // Bu sayede /Job/List?page=2&pageSize=10 şeklinde linkler çalışır
+            if (page.HasValue && page.Value > 0)
+            {
+                model.Filter.Page = page.Value;
+            }
+            if (pageSize.HasValue && pageSize.Value > 0)
+            {
+                model.Filter.PageSize = pageSize.Value;
+            }
+            
             // Dropdown verilerini backend'den al (geri dönüşlerde gerekli)
             await LoadDropdownDataAsync();
 
@@ -141,6 +153,11 @@ namespace Imaj.Web.Controllers
                 
                 // Ürün filtresi
                 ProductId = model.Filter.ProductId,
+                
+                // Mesai Kriteri filtreleri
+                EmployeeCode = model.Filter.EmployeeCode,
+                WorkTypeId = decimal.TryParse(model.Filter.TaskType, out var workTypeId) ? workTypeId : null,
+                TimeTypeId = decimal.TryParse(model.Filter.OvertimeType, out var timeTypeId) ? timeTypeId : null,
                 
                 // Sayfalama
                 Page = model.Filter.Page > 0 ? model.Filter.Page : 1,
@@ -333,8 +350,22 @@ namespace Imaj.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(JobCreateViewModel model)
         {
+            // AJAX isteği kontrolü
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
             if (!ModelState.IsValid)
             {
+                if (isAjax)
+                {
+                    // Validasyon hatalarını topla
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                        
+                    return Json(new { success = false, message = "Lütfen form alanlarını kontrol ediniz.", errors = errors });
+                }
+
                 await LoadDropdownDataAsync();
                 return View(model);
             }
@@ -359,9 +390,6 @@ namespace Imaj.Web.Controllers
                 JobWorks = model.Overtimes?.Select(x => new JobWorkDto
                 {
                     EmployeeId = x.EmployeeId,
-                    // If EmployeeId is 0 (fallback), use Code? Service logic relies on EmployeeId.
-                    // If ID is missing, Service will fail or insert 0.
-                    // We rely on JS binding the ID.
                     WorkTypeId = x.WorkTypeId,
                     TimeTypeId = x.TimeTypeId,
                     Quantity = x.Quantity,
@@ -383,6 +411,11 @@ namespace Imaj.Web.Controllers
             
             if (result.IsSuccess && result.Data != null)
             {
+                if (isAjax)
+                {
+                    return Json(new { success = true, message = $"İş başarıyla oluşturuldu. Referans No: {result.Data.Reference}", redirectUrl = Url.Action("Detail", new { id = result.Data.Reference }) });
+                }
+
                 // Başarılı: TempData ile success mesajı set et
                 TempData["SuccessMessage"] = $"İş başarıyla oluşturuldu. Referans No: {result.Data.Reference}";
                 
@@ -390,7 +423,13 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Detail", new { id = result.Data.Reference });
             }
             
-            // Başarısız: TempData ile error mesajı set et
+            // Başarısız
+            if (isAjax)
+            {
+                return Json(new { success = false, message = result.Message ?? "Kayıt sırasında bir hata oluştu." });
+            }
+
+            // TempData ile error mesajı set et
             TempData["ErrorMessage"] = result.Message ?? "Kayıt sırasında bir hata oluştu.";
             ModelState.AddModelError("", result.Message ?? "Kayıt sırasında bir hata oluştu.");
             await LoadDropdownDataAsync();
