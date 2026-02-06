@@ -45,6 +45,7 @@ namespace Imaj.Web.Models
         public string? OvertimeType { get; set; } // Mesai Tipi
 
         // Product Criteria (Ürün Kriteri)
+        public decimal? ProductId { get; set; }
         public string? ProductCode { get; set; }
         public string? ProductName { get; set; }
 
@@ -95,9 +96,11 @@ namespace Imaj.Web.Models
         // Collections
         public List<JobOvertimeItem> Overtimes { get; set; } = new List<JobOvertimeItem>();
         public List<JobProductItem> Products { get; set; } = new List<JobProductItem>();
-        public List<string> ProductCategories { get; set; } = new List<string>();
+        public List<JobCategorySummaryItem> ProductCategories { get; set; } = new List<JobCategorySummaryItem>();
         
         public decimal TotalOvertimeAmount { get; set; }
+        public decimal TotalProductAmount { get; set; }
+        public decimal TotalCategoryAmount { get; set; }
     }
     
     public class JobOvertimeItem 
@@ -117,13 +120,21 @@ namespace Imaj.Web.Models
          public string? Code { get; set; }
          public string? Name { get; set; }
          
-         // Add missing fields for calculation
          public decimal Quantity { get; set; }
          public decimal Price { get; set; }
-         public decimal SubTotal { get; set; }
-         public decimal NetTotal { get; set; }
+         public decimal SubTotal { get; set; } // Ara Tutar (Gross)
+         public decimal NetTotal { get; set; } // Net
          public string? Notes { get; set; }
          public bool IsSelected { get; set; }
+    }
+
+    public class JobCategorySummaryItem
+    {
+        public string? Name { get; set; }
+        public decimal SubTotal { get; set; }
+        public decimal Discount { get; set; } // Oran?
+        public decimal DiscountAmount { get; set; }
+        public decimal NetTotal { get; set; }
     }
 
     public class DetailNavigatorViewModel
@@ -145,6 +156,7 @@ namespace Imaj.Web.Models
         public string? Reference { get; set; } // Generated or Input
         public string? PageSize { get; set; } = "16";
 
+        public decimal CustomerId { get; set; } // New
         public string? CustomerCode { get; set; }
         public string? CustomerName { get; set; }
 
@@ -161,7 +173,30 @@ namespace Imaj.Web.Models
         public string? AdminNotes { get; set; }
         public string? CustomerNotes { get; set; }
 
-        public List<JobOvertimeItem> Overtimes { get; set; } = new List<JobOvertimeItem>();
-        public List<JobProductItem> Products { get; set; } = new List<JobProductItem>();
+        public List<JobOvertimeInput> Overtimes { get; set; } = new List<JobOvertimeInput>();
+        public List<JobProductInput> Products { get; set; } = new List<JobProductInput>();
+    }
+
+    public class JobOvertimeInput
+    {
+        public decimal EmployeeId { get; set; } // New
+        public string? EmployeeCode { get; set; }
+        public string? EmployeeName { get; set; }
+        public decimal WorkTypeId { get; set; } // TaskType
+        public decimal TimeTypeId { get; set; } // OvertimeType
+        public decimal Quantity { get; set; }
+        public decimal Amount { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class JobProductInput
+    {
+        public decimal ProductId { get; set; } // New
+        public string? Code { get; set; } // To find ProductId
+        public string? Name { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Price { get; set; }
+        // Amount calculated?
+        public string? Notes { get; set; }
     }
 }

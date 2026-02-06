@@ -38,5 +38,23 @@ namespace Imaj.Service.Interfaces
         /// Sayfalama destekli.
         /// </summary>
         Task<ServiceResult<PagedResult<JobDto>>> GetByFilterAsync(JobFilterDto filter);
+
+        /// <summary>
+        /// Referans numarasına göre tekil iş detayını getirir.
+        /// JobWorks (Mesai) ve diğer detayları içerir.
+        /// </summary>
+        Task<ServiceResult<JobDto>> GetByReferenceAsync(int reference);
+
+        /// <summary>
+        /// Yeni iş kaydı oluşturur.
+        /// Mesai ve Ürün detayları ile birlikte.
+        /// </summary>
+        Task<ServiceResult<JobDto>> AddAsync(JobDto jobDto);
+
+        /// <summary>
+        /// İş geçmişini (loglarını) getirir.
+        /// </summary>
+        Task<ServiceResult<List<JobLogDto>>> GetJobHistoryAsync(decimal jobId);
+        Task<List<string>> GetTableColumnsAsync(string tableName);
     }
 }

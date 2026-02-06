@@ -1,53 +1,55 @@
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Imaj.Service.Interfaces;
+using Imaj.Service.DTOs;
 
 namespace Imaj.Web.Controllers
 {
     public class ProductController : Controller
     {
-        [HttpPost]
-        public IActionResult Search([FromBody] ProductFilterModel? filter)
+        private readonly IProductService _productService;
+
+        public ProductController(IProductService productService)
         {
-            var products = GenerateMockProducts();
-
-            var f = filter ?? new ProductFilterModel();
-
-            if (!string.IsNullOrWhiteSpace(f.Code))
-                 products = products.Where(p => p.Code != null && p.Code.Contains(f.Code, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            // Add other filters logic if needed for more realistic mock behavior
-            if (f.IsInvalid)
-            {
-                // Filter logic for invalid...
-            }
-
-            var totalCount = products.Count;
-            var items = products
-                .Skip((f.Page - 1) * f.PageSize)
-                .Take(f.PageSize)
-                .ToList();
-
-            return Json(new { items, totalCount, page = f.Page, pageSize = f.PageSize });
+            _productService = productService;
         }
 
-        private List<ProductSearchResult> GenerateMockProducts()
+        [HttpPost]
+        public async Task<IActionResult> Search([FromBody] ProductFilterModel? filter)
         {
-            var list = new List<ProductSearchResult>();
-            list.Add(new ProductSearchResult { Code = "PRD001", Name = "Kurgu Hizmeti", Category = "Post-Prodüksiyon", ProductGroup = "Video Kurgu" });
-            list.Add(new ProductSearchResult { Code = "PRD002", Name = "Ses Miksaj", Category = "Ses", ProductGroup = "Dublaj & Miks" });
-            list.Add(new ProductSearchResult { Code = "PRD003", Name = "Renk Düzenleme", Category = "Post-Prodüksiyon", ProductGroup = "Color Grading" });
-            list.Add(new ProductSearchResult { Code = "PRD004", Name = "VFX Kompoziting", Category = "VFX", ProductGroup = "Görsel Efekt" });
-            list.Add(new ProductSearchResult { Code = "PRD005", Name = "Altyazı Çeviri", Category = "Lokalizasyon", ProductGroup = "Çeviri" });
-
-            for (int i = 6; i <= 35; i++)
+            var f = filter ?? new ProductFilterModel();
+            
+            var filterDto = new ProductFilterDto
             {
-                list.Add(new ProductSearchResult { Code = $"PRD{i:000}", Name = $"Hizmet {i}", Category = "Genel", ProductGroup = "Standart İşlem" });
+                Code = f.Code,
+                Category = f.Category == "Tümü" ? null : f.Category, // Handle "Tümü" from frontend dropdown
+                ProductGroup = f.ProductGroup == "Tümü" ? null : f.ProductGroup,
+                Function = f.Function == "Tümü" ? null : f.Function,
+                IsInvalid = f.IsInvalid,
+                Page = f.Page,
+                PageSize = f.PageSize > 0 ? f.PageSize : 10
+            };
+
+            var result = await _productService.GetByFilterAsync(filterDto);
+            
+            if (!result.IsSuccess || result.Data == null)
+            {
+                 return Json(new { items = new List<ProductSearchResult>(), totalCount = 0, page = f.Page, pageSize = f.PageSize });
             }
 
-            return list;
+            var items = result.Data.Items.Select(p => new ProductSearchResult
+            {
+                Id = p.Id,
+                Code = p.Code,
+                Name = p.Name,
+                Category = p.CategoryName,
+                ProductGroup = p.GroupName,
+                Price = p.Price
+            }).ToList();
+
+            return Json(new { items, totalCount = result.Data.TotalCount, page = f.Page, pageSize = f.PageSize });
         }
     }
 }

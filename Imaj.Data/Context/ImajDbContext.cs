@@ -43,6 +43,7 @@ namespace Imaj.Data.Context
         public DbSet<InvoLine> InvoLines { get; set; }
         public DbSet<Job> Jobs { get; set; }
         public DbSet<JobProd> JobProds { get; set; }
+        public DbSet<JobWork> JobWorks { get; set; }
         public DbSet<Reserve> Reserves { get; set; }
         public DbSet<Match> Matches { get; set; }
         public DbSet<Allocate> Allocates { get; set; }

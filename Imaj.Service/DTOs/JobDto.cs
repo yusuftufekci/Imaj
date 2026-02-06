@@ -23,5 +23,8 @@ namespace Imaj.Service.DTOs
         public decimal? InvoLineId { get; set; }
         public string? IntNotes { get; set; }
         public string? ExtNotes { get; set; }
+        
+        public List<JobWorkDto> JobWorks { get; set; } = new List<JobWorkDto>();
+        public List<JobProdDto> JobProds { get; set; } = new List<JobProdDto>();
     }
 }

@@ -35,6 +35,7 @@ namespace Imaj.Service.DTOs
         public decimal? TimeTypeId { get; set; }
         
         // Ürün Kriteri
+        public decimal? ProductId { get; set; }
         public string? ProductCode { get; set; }
         
         // Sayfalama

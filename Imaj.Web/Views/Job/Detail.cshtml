@@ -124,7 +124,7 @@
                     {
                          <tr>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                <input type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                <input type="checkbox" disabled @(ot.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeCode</td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeName</td>
@@ -136,6 +136,13 @@
                         </tr>
                     }
                 </tbody>
+                <tfoot class="bg-yellow-50">
+                    <tr>
+                        <td colspan="6" class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                        <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalOvertimeAmount.ToString("N2")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
              </table>
         </div>
     </div>
@@ -145,10 +152,87 @@
         <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
              <h3 class="font-bold text-gray-800 text-sm">Ürün (@Model.Products.Count)</h3>
         </div>
-        <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg p-4 text-center text-sm text-gray-500">
-             @if(Model.Products.Count == 0) {
-                 <span>Kayıt Bulunamadı.</span>
-             }
+        <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+             <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-yellow-50">
+                    <tr>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Seçili</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Kod</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Miktar</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Fiyat</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Ara Tutar</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Net Tutar</th>
+                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Notlar</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var prod in Model.Products)
+                    {
+                         <tr>
+                            <td class="px-6 py-2 whitespace-nowrap">
+                                <input type="checkbox" disabled @(prod.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Code</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Name</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.Quantity</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.Price.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.SubTotal.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.NetTotal.ToString("N2")</td>
+                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Notes</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="bg-yellow-50">
+                    <tr>
+                         <td colspan="5" class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.Products.Sum(x => x.SubTotal).ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalProductAmount.ToString("N2")</td>
+                         <td></td>
+                    </tr>
+                </tfoot>
+             </table>
+        </div>
+    </div>
+
+     <!-- Product Category Section -->
+    <div class="mt-6">
+        <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+             <h3 class="font-bold text-gray-800 text-sm">Ürün Kategorisi (@Model.ProductCategories.Count)</h3>
+        </div>
+        <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+             <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-yellow-50">
+                    <tr>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Ara Tutar</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">İndirim</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">İndirim Tutarı</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Net Tutar</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var cat in Model.ProductCategories)
+                    {
+                         <tr>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@cat.Name</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.SubTotal.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.Discount.ToString("N0")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.DiscountAmount.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.NetTotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="bg-yellow-50">
+                    <tr>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.ProductCategories.Sum(x => x.SubTotal).ToString("N2")</td>
+                         <td></td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.ProductCategories.Sum(x => x.DiscountAmount).ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalCategoryAmount.ToString("N2")</td>
+                    </tr>
+                </tfoot>
+             </table>
         </div>
     </div>
     
@@ -174,9 +258,13 @@
             <button class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                 Değerlendirmeyi Geri Al
             </button>
-             <button class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-               Geçmiş Görüntüle
-            </button>
+             <a href="/Job/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                Geçmiş Görüntüle
+            </a>
          </div>
     </div>
 </div>
+
+@section Scripts {
+    <!-- Scripts buraya gelebilir -->
+}

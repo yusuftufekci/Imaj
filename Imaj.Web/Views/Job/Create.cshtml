@@ -41,6 +41,7 @@
                     <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-bold text-blue-900">Müşteri</label>
                         <div class="col-span-9 flex items-center space-x-2">
+                             <input type="hidden" name="CustomerId" :value="form.customerId">
                              <input type="hidden" name="CustomerCode" x-model="form.customerCode">
                              <span x-text="form.customerName || '-'" class="font-bold text-gray-900"></span>
                              <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'createJob' })" class="text-blue-600 font-bold hover:underline text-sm">Seç</button>
@@ -134,10 +135,17 @@
                                 <td class="px-4 py-2">
                                     <button type="button" @@click="removeOvertime(index)" class="text-red-600 hover:text-red-900 text-xs font-bold">Sil</button>
                                 </td>
-                                <td class="px-4 py-2 text-xs font-bold text-gray-900" x-text="item.code"></td>
-                                <td class="px-4 py-2 text-xs text-gray-900" x-text="item.name"></td>
+                                <td class="px-4 py-2 text-xs font-bold text-gray-900">
+                                    <span x-text="item.code"></span>
+                                    <input type="hidden" :name="'Overtimes[' + index + '].EmployeeId'" :value="item.id">
+                                    <input type="hidden" :name="'Overtimes[' + index + '].EmployeeCode'" :value="item.code">
+                                </td>
+                                <td class="px-4 py-2 text-xs text-gray-900">
+                                    <span x-text="item.name"></span>
+                                    <input type="hidden" :name="'Overtimes[' + index + '].EmployeeName'" :value="item.name">
+                                </td>
                                 <td class="px-4 py-2">
-                                     <select x-model="item.taskType" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
+                                     <select x-model="item.taskType" :name="'Overtimes[' + index + '].WorkTypeId'" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
                                          @if (ViewBag.WorkTypes != null)
                                          {
                                              @foreach (var wt in ViewBag.WorkTypes)
@@ -148,7 +156,7 @@
                                      </select>
                                 </td>
                                  <td class="px-4 py-2">
-                                     <select x-model="item.overtimeType" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
+                                     <select x-model="item.overtimeType" :name="'Overtimes[' + index + '].TimeTypeId'" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
                                          @if (ViewBag.TimeTypes != null)
                                          {
                                              @foreach (var tt in ViewBag.TimeTypes)
@@ -159,18 +167,18 @@
                                      </select>
                                 </td>
                                 <td class="px-4 py-2">
-                                    <input type="number" x-model="item.quantity" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
+                                    <input type="number" x-model="item.quantity" :name="'Overtimes[' + index + '].Quantity'" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
                                 </td>
                                 <td class="px-4 py-2">
-                                     <input type="number" x-model="item.amount" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
+                                     <input type="number" x-model="item.amount" :name="'Overtimes[' + index + '].Amount'" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
                                 </td>
                                 <td class="px-4 py-2">
-                                    <input type="text" x-model="item.notes" class="w-full text-xs border-gray-300 rounded shadow-sm py-1">
+                                    <input type="text" x-model="item.notes" :name="'Overtimes[' + index + '].Notes'" class="w-full text-xs border-gray-300 rounded shadow-sm py-1">
                                 </td>
                             </tr>
                         </template>
                     </tbody>
-                 </table>
+                </table>
                  <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                       <div class="flex space-x-2">
                           <button type="button" class="text-red-600 font-bold hover:underline text-sm">Sil</button>
@@ -208,18 +216,25 @@
                                 <td class="px-4 py-2">
                                      <button type="button" @@click="removeProduct(index)" class="text-red-600 hover:text-red-900 text-xs font-bold">Sil</button>
                                 </td>
-                                <td class="px-4 py-2 text-xs font-bold text-gray-900" x-text="item.code"></td>
-                                <td class="px-4 py-2 text-xs text-gray-900" x-text="item.name"></td>
+                                <td class="px-4 py-2 text-xs font-bold text-gray-900">
+                                    <span x-text="item.code"></span>
+                                    <input type="hidden" :name="'Products[' + index + '].ProductId'" :value="item.id">
+                                    <input type="hidden" :name="'Products[' + index + '].Code'" :value="item.code">
+                                </td>
+                                <td class="px-4 py-2 text-xs text-gray-900">
+                                    <span x-text="item.name"></span>
+                                    <input type="hidden" :name="'Products[' + index + '].Name'" :value="item.name">
+                                </td>
                                 <td class="px-4 py-2">
-                                    <input type="number" x-model="item.quantity" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
+                                    <input type="number" x-model="item.quantity" :name="'Products[' + index + '].Quantity'" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
                                 </td>
                                  <td class="px-4 py-2">
-                                    <input type="number" x-model="item.price" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
+                                    <input type="number" x-model="item.price" :name="'Products[' + index + '].Price'" class="w-full text-xs text-right border-gray-300 rounded shadow-sm py-1">
                                 </td>
                                  <td class="px-4 py-2 text-right text-xs font-bold bg-gray-50" x-text="(item.quantity * item.price).toFixed(2)"></td>
                                  <td class="px-4 py-2 text-right text-xs font-bold bg-gray-50 text-indigo-700" x-text="(item.quantity * item.price).toFixed(2)"></td>
                                 <td class="px-4 py-2">
-                                    <input type="text" x-model="item.notes" class="w-full text-xs border-gray-300 rounded shadow-sm py-1">
+                                    <input type="text" x-model="item.notes" :name="'Products[' + index + '].Notes'" class="w-full text-xs border-gray-300 rounded shadow-sm py-1">
                                 </td>
                             </tr>
                         </template>
@@ -258,7 +273,11 @@
 <script>
     function jobCreate() {
         return {
+            defaultWorkTypeId: @((ViewBag.WorkTypes != null && ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).Count > 0) ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes)[0].Id : 0),
+            defaultTimeTypeId: @((ViewBag.TimeTypes != null && ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes).Count > 0) ? ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes)[0].Id : 0),
+            
             form: {
+                customerId: 0,
                 customerCode: '',
                 customerName: '',
                 name: '',
@@ -271,6 +290,7 @@
 
             handleCustomer(detail) {
                 if(detail.targetId === 'createJob') {
+                    this.form.customerId = detail.customer.id || 0;
                     this.form.customerCode = detail.customer.code;
                     this.form.customerName = detail.customer.name;
                 }
@@ -284,10 +304,11 @@
                      employees.forEach(emp => {
                          // Check dupe if needed, but allowing for now.
                          this.overtimes.push({
+                             id: emp.id || 0,
                              code: emp.code,
                              name: emp.name,
-                             taskType: 'Personel',
-                             overtimeType: 'Normal', // Default
+                             taskType: this.defaultWorkTypeId,
+                             overtimeType: this.defaultTimeTypeId,
                              quantity: 1,
                              amount: 0,
                              notes: ''
@@ -312,10 +333,11 @@
                     
                     products.forEach(prod => {
                         this.products.push({
+                            id: prod.id || 0,
                             code: prod.code,
                             name: prod.name,
                             quantity: 1,
-                            price: 100, // Mock default price
+                            price: prod.price || 0,
                             notes: ''
                         });
                     });

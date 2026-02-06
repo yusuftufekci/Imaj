@@ -15,6 +15,66 @@ namespace Imaj.Web.Controllers
         }
 
         /// <summary>
+        /// DEBUG: JobLog tablosunun kolonlarını gösterir.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> DebugSchema()
+        {
+            var columns = await _jobService.GetTableColumnsAsync("JobLog");
+            return Ok(columns);
+        }
+
+        /// <summary>
+        /// İş geçmişini tam sayfa olarak görüntüler.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetHistory(int id)
+        {
+            // If id is Reference:
+            var reference = id; 
+            var jobResult = await _jobService.GetByReferenceAsync(reference);
+
+            if (!jobResult.IsSuccess || jobResult.Data == null)
+            {
+                return RedirectToAction("List");
+            }
+            
+            var job = jobResult.Data;
+            
+            // Now get history using the actual Job.Id (PK)
+            var historyResult = await _jobService.GetJobHistoryAsync(job.Id);
+
+            var model = new JobHistoryViewModel
+            {
+                JobId = job.Id, // PK
+                Reference = job.Reference.ToString(),
+                Function = job.FunctionName,
+                CustomerName = job.CustomerName,
+                RelatedPerson = job.Contact, // "İlgili"
+                ContactName = job.Name, // "Ad" (Job.Name kişi adı gibi kullanılıyor screenshotta)
+                StartDate = job.StartDate,
+                EndDate = job.EndDate,
+                Status = job.StatusName,
+                IsEmailSent = job.IsEmailSent,
+                IsEvaluated = job.IsEvaluated,
+                InvoiceStatus = job.InvoLineId.HasValue ? "Faturalandı" : "-",
+                AdminNotes = job.IntNotes,
+                CustomerNotes = job.ExtNotes,
+                
+                Items = historyResult.IsSuccess ? historyResult.Data.Select(x => new JobHistoryItem
+                {
+                    Date = x.LogDate,
+                    UserCode = x.UserCode,
+                    UserName = x.UserName,
+                    UserEmail = x.UserEmail,
+                    Action = x.ActionName
+                }).ToList() : new List<JobHistoryItem>()
+            };
+
+            return View("History", model);
+        }
+
+        /// <summary>
         /// İş sorgulama sayfası.
         /// Dropdown verileri veritabanından yüklenir.
         /// </summary>
@@ -78,6 +138,9 @@ namespace Imaj.Web.Controllers
                     "false" => false,
                     _ => null
                 },
+                
+                // Ürün filtresi
+                ProductId = model.Filter.ProductId,
                 
                 // Sayfalama
                 Page = model.Filter.Page > 0 ? model.Filter.Page : 1,
@@ -152,22 +215,16 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
             
-            // Veritabanından getir
-            var filter = new JobFilterDto
-            {
-                ReferenceStart = reference,
-                ReferenceEnd = reference,
-                PageSize = 1
-            };
+            // Veritabanından getir (Referans ve Detaylı)
+            var result = await _jobService.GetByReferenceAsync(reference);
             
-            var result = await _jobService.GetByFilterAsync(filter);
-            
-            if (!result.IsSuccess || result.Data == null || !result.Data.Items.Any())
+            if (!result.IsSuccess || result.Data == null)
             {
+                // İş bulunamazsa listeye dön
                 return RedirectToAction("List");
             }
             
-            var job = result.Data.Items.First();
+            var job = result.Data;
 
             // Map to Detail ViewModel
             var model = new JobDetailViewModel
@@ -184,14 +241,76 @@ namespace Imaj.Web.Controllers
                 IsEvaluated = job.IsEvaluated,
                 InvoiceStatus = job.InvoLineId.HasValue ? "Faturalandı" : "-",
                 
+                // Mapped Notes
+                AdminNotes = job.IntNotes,
+                CustomerNotes = job.ExtNotes,
+                
                 // Navigation state
                 SelectedIds = selectedIds?.ToList() ?? new List<string> { id },
                 CurrentIndex = currentIndex,
                 TotalSelected = selectedIds?.Length ?? 1
             };
 
-            // TODO: Mesai ve Ürün detayları ayrı bir servisten gelecek
-            // Şimdilik boş bırakıyoruz
+            // Mesai (JobWork) Detaylarını Map Et
+            if (job.JobWorks != null && job.JobWorks.Any())
+            {
+                model.Overtimes = job.JobWorks.Select(jw => new JobOvertimeItem
+                {
+                    IsSelected = jw.SelectFlag,
+                    EmployeeCode = jw.EmployeeCode,
+                    EmployeeName = jw.EmployeeName,
+                    TaskType = jw.WorkTypeName,
+                    OvertimeType = jw.TimeTypeName,
+                    Quantity = jw.Quantity,
+                    Amount = jw.Amount,
+                    Notes = jw.Notes
+                }).ToList();
+
+                // Toplam Tutar Hesapla
+                model.TotalOvertimeAmount = model.Overtimes.Sum(x => x.Amount);
+            }
+
+            // Ürün Detayları (JobProd)
+            if (job.JobProds != null && job.JobProds.Any())
+            {
+                // 1. Ürün Listesi Mapping
+                model.Products = job.JobProds.Select(jp => new JobProductItem
+                {
+                    IsSelected = jp.SelectFlag,
+                    Code = jp.ProductCode,
+                    Name = jp.ProductName,
+                    Quantity = jp.Quantity,
+                    Price = jp.Price,
+                    SubTotal = jp.GrossAmount,
+                    NetTotal = jp.NetAmount,
+                    Notes = jp.Notes
+                }).ToList();
+
+                model.TotalProductAmount = model.Products.Sum(x => x.NetTotal);
+
+                // 2. Kategori Özeti (Summary)
+                model.ProductCategories = job.JobProds
+                    .GroupBy(jp => new { jp.CategoryId, jp.CategoryName })
+                    .Select(g => 
+                    {
+                        // Eğer ürünün birim fiyatı 0 ise (Hizmet, Mesai vb.), Ara Tutar olarak Net Tutar'ı baz alıyoruz.
+                        // Aksi takdirde (Ürün vb.) Ara Tutar olarak Gross Tutar'ı (Miktar * Fiyat) alıyoruz.
+                        var subTotal = g.Sum(x => x.Price == 0 ? x.NetAmount : x.GrossAmount);
+                        var netTotal = g.Sum(x => x.NetAmount);
+
+                        return new JobCategorySummaryItem
+                        {
+                            Name = g.Key.CategoryName,
+                            SubTotal = subTotal, 
+                            NetTotal = netTotal,
+                            DiscountAmount = subTotal - netTotal,
+                            Discount = subTotal > 0 ? ((subTotal - netTotal) / subTotal) * 100 : 0
+                        };
+                    })
+                    .ToList();
+
+                model.TotalCategoryAmount = model.ProductCategories.Sum(x => x.NetTotal);
+            }
 
             return View(model);
         }
@@ -212,11 +331,70 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(JobCreateViewModel model)
+        public async Task<IActionResult> Create(JobCreateViewModel model)
         {
-            // TODO: Gerçek kaydetme işlemi
-            // Şimdilik Index'e yönlendir
-            return RedirectToAction("Index");
+            if (!ModelState.IsValid)
+            {
+                await LoadDropdownDataAsync();
+                return View(model);
+            }
+
+            // Map View Model to DTO
+            var jobDto = new JobDto
+            {
+                CustomerId = model.CustomerId,
+                Name = model.Name,
+                Contact = model.RelatedPerson,
+                // Function Handling
+                FunctionId = decimal.TryParse(model.Function, out var fId) ? fId : 1m,
+                
+                StartDate = model.StartDate,
+                EndDate = model.EndDate,
+                IsEmailSent = model.IsEmailSent,
+                IsEvaluated = model.IsEvaluated,
+                IntNotes = model.AdminNotes,
+                ExtNotes = model.CustomerNotes,
+                
+                // Map Overtimes
+                JobWorks = model.Overtimes?.Select(x => new JobWorkDto
+                {
+                    EmployeeId = x.EmployeeId,
+                    // If EmployeeId is 0 (fallback), use Code? Service logic relies on EmployeeId.
+                    // If ID is missing, Service will fail or insert 0.
+                    // We rely on JS binding the ID.
+                    WorkTypeId = x.WorkTypeId,
+                    TimeTypeId = x.TimeTypeId,
+                    Quantity = x.Quantity,
+                    Amount = x.Amount,
+                    Notes = x.Notes
+                }).ToList() ?? new List<JobWorkDto>(),
+                
+                // Map Products
+                JobProds = model.Products?.Select(x => new JobProdDto
+                {
+                    ProductId = x.ProductId,
+                    Quantity = x.Quantity,
+                    Price = x.Price,
+                    Notes = x.Notes
+                }).ToList() ?? new List<JobProdDto>()
+            };
+
+            var result = await _jobService.AddAsync(jobDto);
+            
+            if (result.IsSuccess && result.Data != null)
+            {
+                // Başarılı: TempData ile success mesajı set et
+                TempData["SuccessMessage"] = $"İş başarıyla oluşturuldu. Referans No: {result.Data.Reference}";
+                
+                // Redirect to Detail
+                return RedirectToAction("Detail", new { id = result.Data.Reference });
+            }
+            
+            // Başarısız: TempData ile error mesajı set et
+            TempData["ErrorMessage"] = result.Message ?? "Kayıt sırasında bir hata oluştu.";
+            ModelState.AddModelError("", result.Message ?? "Kayıt sırasında bir hata oluştu.");
+            await LoadDropdownDataAsync();
+            return View(model);
         }
 
         /// <summary>

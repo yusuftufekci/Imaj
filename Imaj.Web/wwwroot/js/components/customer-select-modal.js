@@ -23,7 +23,7 @@ function customerSelectModal() {
             taxNumber: '',
             jobStatus: '',
             jobStateId: null, // Dinamik durum filtresi
-            isInvalid: false,
+            isInvalid: null, // null = Tümü, false = Hayır, true = Evet (Customer sayfasıyla aynı)
             page: 1,
             pageSize: 5
         },
@@ -96,7 +96,7 @@ function customerSelectModal() {
                 taxNumber: '',
                 jobStatus: '',
                 jobStateId: null,
-                isInvalid: false,
+                isInvalid: null, // null = Tümü (Customer sayfasıyla aynı)
                 page: 1,
                 pageSize: 5
             };
@@ -109,8 +109,13 @@ function customerSelectModal() {
         async search(page) {
             if (page) this.filter.page = page;
 
+            // API'ye göndermeden önce boş değerleri null'a çevir
+            const filterToSend = { ...this.filter };
+            if (filterToSend.isInvalid === "") filterToSend.isInvalid = null;
+            if (filterToSend.jobStateId === "") filterToSend.jobStateId = null;
+
             try {
-                const result = await API.post('/Customer/Search', this.filter);
+                const result = await API.post('/Customer/Search', filterToSend);
                 this.items = result.items || [];
                 this.totalCount = result.totalCount || 0;
                 this.page = result.page || 1;
