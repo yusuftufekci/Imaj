@@ -21,9 +21,14 @@
     <!-- Section 1: Invoice Inquiry (Fatura Sorgulama) -->
     <div class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-             <h3 class="text-lg leading-6 font-medium text-gray-900">
-                Fatura Sorgulama
-            </h3>
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Fatura Sorgulama
+                </h3>
+                <div class="text-xs text-gray-500">
+                    Son 30 gün varsayılan
+                </div>
+            </div>
         </div>
         <div class="px-4 py-5 sm:p-6">
             <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
@@ -89,8 +94,8 @@
                 <div class="sm:col-span-3">
                     <label class="block text-sm font-medium text-gray-700">Kesilme Tarihi</label>
                     <div class="mt-1 flex space-x-2">
-                         <input type="date" x-model="filter.issueDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md" value="@Model.IssueDateStart?.ToString("yyyy-MM-dd")">
-                         <input type="date" x-model="filter.issueDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md" value="@Model.IssueDateEnd?.ToString("yyyy-MM-dd")">
+                         <input type="date" x-model="filter.issueDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
+                         <input type="date" x-model="filter.issueDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                     </div>
                 </div>
                 
@@ -100,8 +105,13 @@
                     <div class="mt-1">
                         <select x-model="filter.status" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                             <option value="">Tümü</option>
-                            <option value="Paid">Ödendi</option>
-                            <option value="Pending">Bekliyor</option>
+                            @{
+                                var invoiceStates = ViewBag.InvoiceStates as List<Imaj.Service.DTOs.StateDto> ?? new List<Imaj.Service.DTOs.StateDto>();
+                            }
+                            @foreach (var state in invoiceStates)
+                            {
+                                <option value="@state.Id">@state.Name</option>
+                            }
                         </select>
                     </div>
                 </div>
@@ -112,8 +122,8 @@
                     <div class="mt-1">
                         <select x-model="filter.evaluated" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                             <option value="">Tümü</option>
-                            <option value="Yes">Evet</option>
-                            <option value="No">Hayır</option>
+                            <option value="true">Evet</option>
+                            <option value="false">Hayır</option>
                         </select>
                     </div>
                 </div>
@@ -121,19 +131,25 @@
             </div>
             
             <!-- Actions -->
-             <div class="mt-6 flex justify-center space-x-3 border-t border-gray-200 pt-4">
+             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between border-t border-gray-200 pt-4 gap-4">
                  <div class="flex items-center space-x-2">
                     <label class="text-sm text-gray-500">İlk</label>
-                    <input type="number" x-model="filter.page" value="100" class="w-16 shadow-sm border-gray-400 rounded-md sm:text-sm">
+                    <input type="number" x-model="filter.page" class="w-16 shadow-sm border-gray-400 rounded-md sm:text-sm">
                      <label class="text-sm text-gray-500">Sayfa Boyu</label>
                     <select x-model="filter.pageSize" class="shadow-sm border-gray-400 rounded-md sm:text-sm">
-                        <option>10</option>
-                        <option>50</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
                     </select>
                  </div>
-                 <button type="button" @@click="searchInvoices()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Sorgula
-                </button>
+                 <div class="flex items-center space-x-3">
+                    <button type="button" @@click="resetFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Temizle
+                    </button>
+                    <button type="button" @@click="searchInvoices()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Sorgula
+                    </button>
+                 </div>
             </div>
              <div class="mt-4 flex justify-center space-x-3">
                 <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -142,6 +158,66 @@
                 <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Özet Fatura Raporu Bas
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 1b: Search Results -->
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Faturalar
+                </h3>
+                <div class="text-sm text-gray-500" x-text="results.summary"></div>
+            </div>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Referans</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">İş Müşterisi</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fatura Müşterisi</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ad</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kesilme Tarihi</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Durum</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Tutar</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Değerlendirildi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" x-show="results.items.length" x-cloak>
+                        <template x-for="item in results.items" :key="item.reference + '-' + (item.issueDate || '')">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 text-sm font-medium text-indigo-600" x-text="item.reference"></td>
+                                <td class="px-4 py-3 text-sm text-gray-900" x-text="item.jobCustomer"></td>
+                                <td class="px-4 py-3 text-sm text-gray-900" x-text="item.invoiceCustomer"></td>
+                                <td class="px-4 py-3 text-sm text-gray-900" x-text="item.name"></td>
+                                <td class="px-4 py-3 text-sm text-gray-700" x-text="item.issueDateText"></td>
+                                <td class="px-4 py-3 text-sm text-gray-700" x-text="item.status"></td>
+                                <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="item.amountText"></td>
+                                <td class="px-4 py-3 text-sm text-gray-700">
+                                    <span x-show="item.evaluated" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Evet</span>
+                                    <span x-show="!item.evaluated" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Hayır</span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="py-6 text-center text-sm text-gray-500" x-show="!results.items.length && !results.loading" x-cloak>
+                Sonuç bulunamadı.
+            </div>
+            <div class="py-6 text-center text-sm text-gray-500" x-show="results.loading" x-cloak>
+                Yükleniyor...
+            </div>
+            <div class="mt-4 flex items-center justify-between">
+                <div class="text-sm text-gray-500" x-text="results.pageInfo"></div>
+                <div class="flex items-center space-x-2">
+                    <button type="button" @@click="prevPage()" :disabled="results.page <= 1 || results.loading" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Geri</button>
+                    <button type="button" @@click="nextPage()" :disabled="!results.hasMore || results.loading" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">İleri</button>
+                </div>
             </div>
         </div>
     </div>
@@ -199,13 +275,25 @@
             filter: {
                  referenceStart: '', referenceEnd: '',
                  name: '', relatedPerson: '',
-                 issueDateStart: '', issueDateEnd: '',
+                 issueDateStart: '@Model.IssueDateStart?.ToString("yyyy-MM-dd")', issueDateEnd: '@Model.IssueDateEnd?.ToString("yyyy-MM-dd")',
                  status: '', evaluated: '',
                  page: 1, pageSize: 10
             },
 
+            results: {
+                items: [],
+                totalCount: 0,
+                page: 1,
+                pageSize: 10,
+                hasMore: false,
+                loading: false,
+                summary: '',
+                pageInfo: ''
+            },
+
             init() {
-                // Init
+                this.results.page = this.filter.page;
+                this.results.pageSize = this.filter.pageSize;
             },
             
             handleSelection(detail) {
@@ -224,9 +312,98 @@
                 }
             },
 
-            searchInvoices() {
-                // Placeholder
-                console.log('Searching invoices...');
+            async searchInvoices() {
+                this.results.loading = true;
+                this.results.items = [];
+
+                const payload = {
+                    jobCustomerCode: this.jobCustomerCode,
+                    jobCustomerName: this.jobCustomerName,
+                    invoiceCustomerCode: this.invoiceCustomerCode,
+                    invoiceCustomerName: this.invoiceCustomerName,
+                    referenceStart: this.filter.referenceStart,
+                    referenceEnd: this.filter.referenceEnd,
+                    name: this.filter.name,
+                    relatedPerson: this.filter.relatedPerson,
+                    issueDateStart: this.filter.issueDateStart,
+                    issueDateEnd: this.filter.issueDateEnd,
+                    status: this.filter.status,
+                    evaluated: this.filter.evaluated,
+                    page: this.filter.page,
+                    pageSize: this.filter.pageSize
+                };
+
+                try {
+                    const response = await fetch('/Invoice/Search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Sorgu başarısız.');
+                    }
+
+                    const data = await response.json();
+                    const items = data.items || [];
+
+                    this.results.totalCount = data.totalCount || 0;
+                    this.results.page = data.page || this.filter.page;
+                    this.results.pageSize = data.pageSize || this.filter.pageSize;
+                    this.results.hasMore = (this.results.page * this.results.pageSize) < this.results.totalCount;
+
+                    this.results.items = items.map(item => ({
+                        ...item,
+                        reference: item.reference ?? '-',
+                        jobCustomer: item.jobCustomer ?? '-',
+                        invoiceCustomer: item.invoiceCustomer ?? '-',
+                        name: item.name ?? '-',
+                        status: item.status ?? '-',
+                        issueDateText: item.issueDate ? new Date(item.issueDate).toLocaleDateString('tr-TR') : '-',
+                        amountText: typeof item.amount === 'number'
+                            ? item.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : '0,00'
+                    }));
+
+                    const start = this.results.totalCount === 0 ? 0 : ((this.results.page - 1) * this.results.pageSize) + 1;
+                    const end = Math.min(this.results.page * this.results.pageSize, this.results.totalCount);
+                    this.results.summary = `${this.results.totalCount} kayıt`;
+                    this.results.pageInfo = `${start}-${end} / ${this.results.totalCount}`;
+                } catch (e) {
+                    console.error('Fatura sorgulama hatası:', e);
+                    this.results.summary = 'Sorgu sırasında hata oluştu.';
+                } finally {
+                    this.results.loading = false;
+                }
+            },
+
+            resetFilters() {
+                this.jobCustomerCode = '';
+                this.jobCustomerName = '';
+                this.invoiceCustomerCode = '';
+                this.invoiceCustomerName = '';
+                this.filter.referenceStart = '';
+                this.filter.referenceEnd = '';
+                this.filter.name = '';
+                this.filter.relatedPerson = '';
+                this.filter.issueDateStart = '@Model.IssueDateStart?.ToString("yyyy-MM-dd")';
+                this.filter.issueDateEnd = '@Model.IssueDateEnd?.ToString("yyyy-MM-dd")';
+                this.filter.status = '';
+                this.filter.evaluated = '';
+                this.filter.page = 1;
+                this.filter.pageSize = 10;
+            },
+
+            prevPage() {
+                if (this.results.page <= 1) return;
+                this.filter.page = this.results.page - 1;
+                this.searchInvoices();
+            },
+
+            nextPage() {
+                if (!this.results.hasMore) return;
+                this.filter.page = this.results.page + 1;
+                this.searchInvoices();
             },
 
             createInvoice() {

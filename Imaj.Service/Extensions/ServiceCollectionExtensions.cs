@@ -31,6 +31,7 @@ namespace Imaj.Service.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<IInvoiceService, InvoiceService>();
             services.AddScoped<IJobService, JobService>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ILookupService, LookupService>();
