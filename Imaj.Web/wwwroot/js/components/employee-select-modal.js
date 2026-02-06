@@ -46,6 +46,11 @@ document.addEventListener('alpine:init', () => {
 
             this.clearFilter();
 
+            // Context-specific filtering
+            if (detail.functionId) {
+                this.filter.functionId = detail.functionId;
+            }
+
             if (!this.functions || this.functions.length === 0) {
                 this.getFunctions();
             }
