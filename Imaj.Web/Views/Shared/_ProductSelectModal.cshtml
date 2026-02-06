@@ -1,6 +1,6 @@
 
 <!-- Product Selection Modal -->
-<div x-data="productSelectModal()" @@product-select-open.window="openModal($event.detail)" x-show="isOpen" class="fixed z-10 inset-0 overflow-y-auto" style="display: none;">
+<div x-data="productSelectModal()" x-init="init()" @@product-select-open.window="openModal($event.detail)" x-show="isOpen" class="fixed z-10 inset-0 overflow-y-auto" style="display: none;">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="isOpen" @@click="closeModal()" class="fixed inset-0 transition-opacity" aria-hidden="true">
                 <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -26,9 +26,9 @@
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Ürün Kategorisi</label>
                             <select x-model="filter.category" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="">Tümü</option>
-                                <option value="Post-Prodüksiyon">Post-Prodüksiyon</option>
-                                <option value="Ses">Ses</option>
-                                <option value="VFX">VFX</option>
+                                <template x-for="cat in categories" :key="cat.id">
+                                    <option :value="cat.name" x-text="cat.name"></option>
+                                </template>
                             </select>
                         </div>
 
@@ -36,8 +36,9 @@
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Ürün Grubu</label>
                             <select x-model="filter.productGroup" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="">Tümü</option>
-                                <option value="Video Kurgu">Video Kurgu</option>
-                                <option value="Dublaj">Dublaj</option>
+                                <template x-for="grp in productGroups" :key="grp.id">
+                                    <option :value="grp.name" x-text="grp.name"></option>
+                                </template>
                             </select>
                         </div>
 
@@ -45,13 +46,16 @@
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Fonksiyon</label>
                             <select x-model="filter.function" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 <option value="">Tümü</option>
-                                <option value="Func1">Fonksiyon 1</option>
+                                <template x-for="func in functions" :key="func.id">
+                                    <option :value="func.name" x-text="func.name"></option>
+                                </template>
                             </select>
                         </div>
 
                             <div class="flex flex-col">
                             <label class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Geçersiz</label>
                             <select x-model="filter.isInvalid" class="border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">Tümü</option>
                                 <option value="false">Hayır</option>
                                 <option value="true">Evet</option>
                             </select>
@@ -153,5 +157,20 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Note: Assuming logic is external via product-select-modal.js, but since I don't see that file, 
+    // I am assuming the logic needs to be injected here it is expected to be in a separate file.
+    // However, the original file had * JavaScript artık wwwroot/js/components/product-select-modal.js dosyasından yükleniyor "
+    // which suggests the JS is indeed external.
+    // I need to modify THAT external file if I want to add fetch logic.
+    // BUT, I can inject the fetch logic here if I can't reach that file easily or if I just overload `init`.
+    // Let's assume I should edit the external file if possible, or override here.
+    // Wait, the view_file of `_ProductSelectModal` showed:
+    // 157: @* JavaScript artık wwwroot/js/components/product-select-modal.js dosyasından yükleniyor *@
+    // So the JS is NOT in this file. It is in `wwwroot/js/components/product-select-modal.js`.
+    // I should check that file first!
+    // I will return to modify that file instead of this one if possible.
+</script>
 
 @* JavaScript artık wwwroot/js/components/product-select-modal.js dosyasından yükleniyor *@

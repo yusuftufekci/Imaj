@@ -43,13 +43,7 @@ namespace Imaj.Service.Services
                                 on pg.Id equals xpg.ProdGrpID
                             
                             // Filter IsInvalid (Geçersiz) logic:
-                            // If IsInvalid is true, show only invisible? Or show both?
-                            // Based on typical UI: 'Geçersiz' checkbox usually means "Include Invalid" or "Show Only Invalid".
-                            // If IsInvalid is false (default), we only show valid (Invisible == false).
-                            // If IsInvalid true, maybe show only Invalid?
-                            // Let's assume IsInvalid filter means "Match Invisible column". 
-                            // If user says IsInvalid=true, they want Invalid products.
-                            where p.Invisible == filter.IsInvalid
+                            where (!filter.IsInvalid.HasValue || p.Invisible == filter.IsInvalid.Value)
 
                             select new ProductDto
                             {
@@ -99,6 +93,88 @@ namespace Imaj.Service.Services
             {
                 _logger.LogError(ex, "Ürünler listelenirken hata oluştu.");
                 return ServiceResult<PagedResult<ProductDto>>.Fail("Ürünler listelenirken hata oluştu.");
+            }
+        }
+
+        public async Task<ServiceResult<List<ProductCategoryDto>>> GetCategoriesAsync()
+        {
+            try
+            {
+                var query = from pc in _unitOfWork.Repository<ProdCat>().Query()
+                            join xpc in _unitOfWork.Repository<XProdCat>().Query() on pc.Id equals xpc.ProdCatID
+                            where xpc.LanguageID == 1 // Türkçe
+                                  && pc.Invisible == false
+                                  && pc.CompanyID == 7 // Added Company Filter
+                            orderby pc.Sequence
+                            select new ProductCategoryDto
+                            {
+                                Id = pc.Id,
+                                Name = xpc.Name,
+                                TaxTypeId = pc.TaxTypeID,
+                                Sequence = pc.Sequence
+                            };
+
+                var categories = await query.ToListAsync();
+
+                return ServiceResult<List<ProductCategoryDto>>.Success(categories);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ürün kategorileri getirilirken hata oluştu.");
+                return ServiceResult<List<ProductCategoryDto>>.Fail("Ürün kategorileri getirilirken hata oluştu.");
+            }
+        }
+
+        public async Task<ServiceResult<List<ProductGroupDto>>> GetProductGroupsAsync()
+        {
+            try
+            {
+                var query = from pg in _unitOfWork.Repository<ProdGrp>().Query()
+                            join xpg in _unitOfWork.Repository<XProdGrp>().Query() on pg.Id equals xpg.ProdGrpID
+                            where xpg.LanguageID == 1 // Türkçe
+                                  && pg.CompanyID == 7 // Added Company Filter
+                            orderby xpg.Name
+                            select new ProductGroupDto
+                            {
+                                Id = pg.Id,
+                                Name = xpg.Name
+                            };
+
+                var groups = await query.ToListAsync();
+
+                return ServiceResult<List<ProductGroupDto>>.Success(groups);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ürün grupları getirilirken hata oluştu.");
+                return ServiceResult<List<ProductGroupDto>>.Fail("Ürün grupları getirilirken hata oluştu.");
+            }
+        }
+
+        public async Task<ServiceResult<List<FunctionDto>>> GetFunctionsAsync()
+        {
+            try
+            {
+                var query = from f in _unitOfWork.Repository<Function>().Query()
+                            join xf in _unitOfWork.Repository<XFunction>().Query() on f.Id equals xf.FunctionID
+                            where xf.LanguageID == 1 // Türkçe
+                                  && f.CompanyID == 7 // Added Company Filter
+                                  && f.Invisible == false
+                            orderby xf.Name
+                            select new FunctionDto
+                            {
+                                Id = f.Id,
+                                Name = xf.Name
+                            };
+
+                var functions = await query.ToListAsync();
+
+                return ServiceResult<List<FunctionDto>>.Success(functions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fonksiyonlar getirilirken hata oluştu.");
+                return ServiceResult<List<FunctionDto>>.Fail("Fonksiyonlar getirilirken hata oluştu.");
             }
         }
     }

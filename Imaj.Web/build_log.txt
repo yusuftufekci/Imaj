@@ -1,0 +1,30 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Imaj.Core -> /Users/yusuf.tufekci/Desktop/Imaj/Imaj.Core/bin/Debug/net10.0/Imaj.Core.dll
+  Imaj.Data -> /Users/yusuf.tufekci/Desktop/Imaj/Imaj.Data/bin/Debug/net10.0/Imaj.Data.dll
+  Imaj.Service -> /Users/yusuf.tufekci/Desktop/Imaj/Imaj.Service/bin/Debug/net10.0/Imaj.Service.dll
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(51,28): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(52,32): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(53,33): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(54,31): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(57,26): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(61,30): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(62,33): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(64,51): warning CS8604: Possible null reference argument for parameter 'source' in 'IEnumerable<JobHistoryItem> Enumerable.Select<JobLogDto, JobHistoryItem>(IEnumerable<JobLogDto> source, Func<JobLogDto, JobHistoryItem> selector)'. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Views/Job/Create.cshtml(251,50): error CS0103: The name 'click' does not exist in the current context [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+
+Build FAILED.
+
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(51,28): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(52,32): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(53,33): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(54,31): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(57,26): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(61,30): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(62,33): warning CS8601: Possible null reference assignment. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Controllers/JobController.cs(64,51): warning CS8604: Possible null reference argument for parameter 'source' in 'IEnumerable<JobHistoryItem> Enumerable.Select<JobLogDto, JobHistoryItem>(IEnumerable<JobLogDto> source, Func<JobLogDto, JobHistoryItem> selector)'. [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Views/Job/Create.cshtml(251,50): error CS0103: The name 'click' does not exist in the current context [/Users/yusuf.tufekci/Desktop/Imaj/Imaj.Web/Imaj.Web.csproj]
+    8 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.97

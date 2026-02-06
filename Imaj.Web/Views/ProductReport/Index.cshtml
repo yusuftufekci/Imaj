@@ -44,9 +44,9 @@
                     <div class="mt-1">
                         <select id="product-group" name="product-group" x-model="productFilter.productGroup" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             <option value="">Seçiniz</option>
-                            <option value="Group1">Video Kurgu</option>
-                            <option value="Group2">Ses & Miksaj</option>
-                            <option value="Group3">Color Grading</option>
+                            <template x-for="grp in productGroups" :key="grp.id">
+                                <option :value="grp.name" x-text="grp.name"></option>
+                            </template>
                         </select>
                     </div>
                 </div>
@@ -111,13 +111,22 @@
             selectedCustomerName: '',
             selectedCustomerCode: '',
 
+            productGroups: [],
+
             productFilter: {
                 // Just keeping any local filter state if needed for the main page, though mostly handled in modal
                 productGroup: ''
             },
             
-            init() {
-                // Init
+            async init() {
+                try {
+                    const response = await fetch('/Product/GetProductGroups');
+                    if (response.ok) {
+                        this.productGroups = await response.json();
+                    }
+                } catch (e) {
+                    console.error('Ürün grupları yüklenirken hata:', e);
+                }
             },
             
             // Shared Modal Handlers

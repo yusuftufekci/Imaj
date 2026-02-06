@@ -51,5 +51,42 @@ namespace Imaj.Web.Controllers
 
             return Json(new { items, totalCount = result.Data.TotalCount, page = f.Page, pageSize = f.PageSize });
         }
+
+
+        [HttpGet]
+        [Route("Product/GetCategories")]
+        public async Task<IActionResult> GetCategories()
+        {
+            var result = await _productService.GetCategoriesAsync();
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
+
+        [HttpGet]
+        [Route("Product/GetProductGroups")]
+        public async Task<IActionResult> GetProductGroups()
+        {
+            var result = await _productService.GetProductGroupsAsync();
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
+
+        [HttpGet]
+        [Route("Product/GetFunctions")]
+        public async Task<IActionResult> GetFunctions()
+        {
+            var result = await _productService.GetFunctionsAsync();
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+            return BadRequest(result.Message);
+        }
     }
 }

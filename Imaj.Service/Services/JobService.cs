@@ -66,20 +66,25 @@ namespace Imaj.Service.Services
         /// Fonksiyon listesini veritabanından getirir.
         /// XFunction tablosundan LanguageID=1 olanları çeker.
         /// </summary>
+        /// <summary>
+        /// Fonksiyon listesini veritabanından getirir.
+        /// XFunction ve Function tablolarını birleştirerek CompanyID=7 ve Invisible=false olanları çeker.
+        /// </summary>
         public async Task<ServiceResult<List<FunctionDto>>> GetFunctionsAsync()
         {
             try
             {
-                var functions = await _unitOfWork.Repository<XFunction>()
-                    .Query()
-                    .Where(x => x.LanguageID == 1)
-                    .OrderBy(x => x.Name)
-                    .Select(x => new FunctionDto
-                    {
-                        Id = x.FunctionID,
-                        Name = x.Name
-                    })
-                    .ToListAsync();
+                var functions = await (from f in _unitOfWork.Repository<Function>().Query()
+                                       join xf in _unitOfWork.Repository<XFunction>().Query() on f.Id equals xf.FunctionID
+                                       where xf.LanguageID == 1 // Türkçe
+                                             && f.CompanyID == 7 // Company Filter
+                                             && f.Invisible == false // Active only
+                                       orderby xf.Name
+                                       select new FunctionDto
+                                       {
+                                           Id = f.Id,
+                                           Name = xf.Name
+                                       }).ToListAsync();
 
                 return ServiceResult<List<FunctionDto>>.Success(functions);
             }
@@ -92,22 +97,23 @@ namespace Imaj.Service.Services
 
         /// <summary>
         /// Görev Tipi (WorkType) listesini veritabanından getirir.
-        /// XWorkType tablosundan LanguageID=1 olanları çeker.
+        /// XWorkType ve WorkType tablolarını birleştirerek CompanyID=7 ve Invisible=false olanları çeker.
         /// </summary>
         public async Task<ServiceResult<List<WorkTypeDto>>> GetWorkTypesAsync()
         {
             try
             {
-                var workTypes = await _unitOfWork.Repository<XWorkType>()
-                    .Query()
-                    .Where(x => x.LanguageID == 1)
-                    .OrderBy(x => x.Name)
-                    .Select(x => new WorkTypeDto
-                    {
-                        Id = x.WorkTypeID,
-                        Name = x.Name
-                    })
-                    .ToListAsync();
+                var workTypes = await (from wt in _unitOfWork.Repository<WorkType>().Query()
+                                       join xwt in _unitOfWork.Repository<XWorkType>().Query() on wt.Id equals xwt.WorkTypeID
+                                       where xwt.LanguageID == 1 // Türkçe
+                                             && wt.CompanyID == 7 // Company Filter
+                                             && wt.Invisible == false // Active only
+                                       orderby xwt.Name
+                                       select new WorkTypeDto
+                                       {
+                                           Id = wt.Id,
+                                           Name = xwt.Name
+                                       }).ToListAsync();
 
                 return ServiceResult<List<WorkTypeDto>>.Success(workTypes);
             }
@@ -120,22 +126,23 @@ namespace Imaj.Service.Services
 
         /// <summary>
         /// Mesai Tipi (TimeType) listesini veritabanından getirir.
-        /// XTimeType tablosundan LanguageID=1 olanları çeker.
+        /// XTimeType ve TimeType tablolarını birleştirerek CompanyID=7 ve Invisible=false olanları çeker.
         /// </summary>
         public async Task<ServiceResult<List<TimeTypeDto>>> GetTimeTypesAsync()
         {
             try
             {
-                var timeTypes = await _unitOfWork.Repository<XTimeType>()
-                    .Query()
-                    .Where(x => x.LanguageID == 1)
-                    .OrderBy(x => x.Name)
-                    .Select(x => new TimeTypeDto
-                    {
-                        Id = x.TimeTypeID,
-                        Name = x.Name
-                    })
-                    .ToListAsync();
+                var timeTypes = await (from tt in _unitOfWork.Repository<TimeType>().Query()
+                                       join xtt in _unitOfWork.Repository<XTimeType>().Query() on tt.Id equals xtt.TimeTypeID
+                                       where xtt.LanguageID == 1 // Türkçe
+                                             && tt.CompanyID == 7 // Company Filter
+                                             && tt.Invisible == false // Active only
+                                       orderby xtt.Name
+                                       select new TimeTypeDto
+                                       {
+                                           Id = tt.Id,
+                                           Name = xtt.Name
+                                       }).ToListAsync();
 
                 return ServiceResult<List<TimeTypeDto>>.Success(timeTypes);
             }

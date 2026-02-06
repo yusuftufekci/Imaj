@@ -20,6 +20,11 @@ function productSelectModal() {
             pageSize: 10
         },
 
+        // Dropdown verileri
+        categories: [],
+        productGroups: [],
+        functions: [], // Added functions array
+
         // Sonuç verileri
         items: [],
         totalCount: 0,
@@ -28,6 +33,47 @@ function productSelectModal() {
 
         // Multi-select için seçilen öğeler
         selectedItems: [],
+
+        async init() {
+            await Promise.all([
+                this.loadCategories(),
+                this.loadProductGroups(),
+                this.loadFunctions() // Added loadFunctions call
+            ]);
+        },
+
+        async loadCategories() {
+            try {
+                const response = await fetch('/Product/GetCategories');
+                if (response.ok) {
+                    this.categories = await response.json();
+                }
+            } catch (e) {
+                console.error('Kategoriler yüklenirken hata:', e);
+            }
+        },
+
+        async loadProductGroups() {
+            try {
+                const response = await fetch('/Product/GetProductGroups');
+                if (response.ok) {
+                    this.productGroups = await response.json();
+                }
+            } catch (e) {
+                console.error('Ürün grupları yüklenirken hata:', e);
+            }
+        },
+
+        async loadFunctions() {
+            try {
+                const response = await fetch('/Product/GetFunctions');
+                if (response.ok) {
+                    this.functions = await response.json();
+                }
+            } catch (e) {
+                console.error('Fonksiyonlar yüklenirken hata:', e);
+            }
+        },
 
         /**
          * Modal'ı açar
@@ -68,11 +114,25 @@ function productSelectModal() {
          * Ürün araması yapar
          */
         async search(page) {
+            // Arama başladığında listeyi temizle (istenildiği gibi boş gözüksün)
+            this.items = [];
+            this.hasSearched = false; // Reset to hide "No records found" message initially
+
             this.filter.page = page;
             this.page = page;
 
+            // Clone filter and fix boolean types
+            const payload = { ...this.filter };
+
+            // Handle IsInvalid: "" -> null, "true" -> true, "false" -> false
+            if (this.filter.isInvalid === "") {
+                payload.isInvalid = null;
+            } else {
+                payload.isInvalid = String(this.filter.isInvalid) === 'true';
+            }
+
             try {
-                const result = await API.post('/Product/Search', this.filter);
+                const result = await API.post('/Product/Search', payload);
                 this.items = result.items || [];
                 this.totalCount = result.totalCount || 0;
                 this.hasSearched = true;
