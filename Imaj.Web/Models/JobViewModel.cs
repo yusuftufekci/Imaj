@@ -1,5 +1,11 @@
+using Imaj.Web.Models.Components;
+
 namespace Imaj.Web.Models
 {
+    /// <summary>
+    /// İş listeleme sayfası için ViewModel.
+    /// ViewBag yerine typed Dropdowns property kullanır.
+    /// </summary>
     public class JobViewModel
     {
         public JobFilterModel Filter { get; set; } = new JobFilterModel();
@@ -7,6 +13,11 @@ namespace Imaj.Web.Models
         public int TotalCount { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+        
+        /// <summary>
+        /// Dropdown verileri - ViewBag yerine typed property
+        /// </summary>
+        public DropdownData Dropdowns { get; set; } = new DropdownData();
         
         // Helper for Dropdowns (could be populated from controller)
         public string? SelectedFunction { get; set; } 

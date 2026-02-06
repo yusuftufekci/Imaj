@@ -1,13 +1,15 @@
 /**
- * Customer Select Modal Component
- * Müşteri seçim modal'ı için Alpine.js component fonksiyonu
+ * Customer Select Modal Component (v2 - Using BaseSelectModal patterns)
+ * Alpine.js component fonksiyonu - BaseSelectModal pattern'lerini kullanır.
  */
+
 function customerSelectModal() {
     return {
+        // Modal State
         showModal: false,
-        targetId: null,  // Çağıran component'in ID'si
+        targetId: null,
 
-        // Filtre alanları
+        // Filtre alanları - Customer'a özel geniş filtre
         filter: {
             code: '',
             name: '',
@@ -22,8 +24,8 @@ function customerSelectModal() {
             taxOffice: '',
             taxNumber: '',
             jobStatus: '',
-            jobStateId: null, // Dinamik durum filtresi
-            isInvalid: null, // null = Tümü, false = Hayır, true = Evet (Customer sayfasıyla aynı)
+            jobStateId: null,
+            isInvalid: null, // null = Tümü, false = Hayır, true = Evet
             page: 1,
             pageSize: 5
         },
@@ -37,7 +39,17 @@ function customerSelectModal() {
         // Dropdown verileri
         jobStatuses: [],
 
+        /**
+         * Component başlatma - Dropdown verilerini yükler
+         */
         async init() {
+            await this.loadDropdowns();
+        },
+
+        /**
+         * Dropdown verilerini yükler
+         */
+        async loadDropdowns() {
             try {
                 const response = await fetch('/Customer/GetJobStates');
                 if (response.ok) {
@@ -50,7 +62,7 @@ function customerSelectModal() {
 
         /**
          * Modal'ı açar
-         * @param {object} detail - Event detail (targetId içerir)
+         * @param {Object} detail - Event detail (targetId içerir)
          */
         openModal(detail) {
             this.targetId = detail.targetId;
@@ -62,16 +74,7 @@ function customerSelectModal() {
 
         /**
          * Modal'ı kapatır
-         * @param {object} customer - Seçilen müşteri
          */
-        select(customer) {
-            this.$dispatch('customer-selected', {
-                customer: customer,
-                targetId: this.targetId
-            });
-            this.closeModal();
-        },
-
         closeModal() {
             this.showModal = false;
             this.targetId = null;
@@ -96,7 +99,7 @@ function customerSelectModal() {
                 taxNumber: '',
                 jobStatus: '',
                 jobStateId: null,
-                isInvalid: null, // null = Tümü (Customer sayfasıyla aynı)
+                isInvalid: null,
                 page: 1,
                 pageSize: 5
             };
@@ -108,8 +111,9 @@ function customerSelectModal() {
          */
         async search(page) {
             if (page) this.filter.page = page;
+            this.page = this.filter.page;
 
-            // API'ye göndermeden önce boş değerleri null'a çevir
+            // Boş değerleri null'a çevir
             const filterToSend = { ...this.filter };
             if (filterToSend.isInvalid === "") filterToSend.isInvalid = null;
             if (filterToSend.jobStateId === "") filterToSend.jobStateId = null;
@@ -128,7 +132,7 @@ function customerSelectModal() {
 
         /**
          * Müşteri seçer ve event dispatch eder
-         * @param {object} customer - Seçilen müşteri
+         * @param {Object} customer - Seçilen müşteri
          */
         select(customer) {
             this.$dispatch('customer-selected', {
@@ -136,6 +140,13 @@ function customerSelectModal() {
                 targetId: this.targetId
             });
             this.closeModal();
+        },
+
+        /**
+         * Toplam sayfa sayısını hesaplar
+         */
+        get totalPages() {
+            return Math.ceil(this.totalCount / this.filter.pageSize);
         }
     }
 }

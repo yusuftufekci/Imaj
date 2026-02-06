@@ -1,3 +1,4 @@
+using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Controllers.Base;
@@ -9,23 +10,27 @@ namespace Imaj.Web.Controllers
 {
     /// <summary>
     /// Müşteri (Customer) CRUD işlemleri için controller.
+    /// NOTE: Dropdown verileri (States, ProductCategories) artık ILookupService'den alınıyor.
     /// </summary>
     public class CustomerController : BaseController
     {
         private readonly ICustomerService _customerService;
+        private readonly ILookupService _lookupService;
 
         public CustomerController(
             ICustomerService customerService,
+            ILookupService lookupService,
             ILogger<CustomerController> logger) : base(logger)
         {
             _customerService = customerService;
+            _lookupService = lookupService;
         }
 
 
         public async Task<IActionResult> Index()
         {
-            // State listesini veritabanından al ve ViewBag'e ekle
-            var statesResult = await _customerService.GetStatesAsync();
+            // State listesini LookupService'den al (StateCategories constant kullanılıyor)
+            var statesResult = await _lookupService.GetStatesAsync(StateCategories.Job);
             ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<Imaj.Service.DTOs.StateDto>();
             
             return View(new CustomerFilterModel());
@@ -35,7 +40,7 @@ namespace Imaj.Web.Controllers
         [Route("Customer/GetProductCategories")]
         public async Task<IActionResult> GetProductCategories()
         {
-            var result = await _customerService.GetProductCategoriesAsync();
+            var result = await _lookupService.GetProductCategoriesAsync();
             if (result.IsSuccess)
             {
                 return Json(result.Data);
@@ -47,7 +52,7 @@ namespace Imaj.Web.Controllers
         [Route("Customer/GetJobStates")]
         public async Task<IActionResult> GetJobStates()
         {
-            var result = await _customerService.GetStatesAsync();
+            var result = await _lookupService.GetStatesAsync(StateCategories.Job);
             if (result.IsSuccess)
             {
                 return Json(result.Data);

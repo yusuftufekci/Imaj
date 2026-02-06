@@ -1,3 +1,4 @@
+using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Models;
@@ -8,10 +9,12 @@ namespace Imaj.Web.Controllers
     public class JobController : Controller
     {
         private readonly IJobService _jobService;
+        private readonly ILookupService _lookupService;
 
-        public JobController(IJobService jobService)
+        public JobController(IJobService jobService, ILookupService lookupService)
         {
             _jobService = jobService;
+            _lookupService = lookupService;
         }
 
 
@@ -429,25 +432,25 @@ namespace Imaj.Web.Controllers
         }
 
         /// <summary>
-        /// Dropdown verilerini veritabanından yükler ve ViewBag'e ekler.
+        /// Dropdown verilerini LookupService üzerinden yükler ve ViewBag'e ekler.
         /// States, Functions, WorkTypes, TimeTypes
         /// </summary>
         private async Task LoadDropdownDataAsync()
         {
-            // Durum listesi
-            var statesResult = await _jobService.GetStatesAsync();
+            // Durum listesi - Job kategorisi (StateCategories constant kullanılıyor)
+            var statesResult = await _lookupService.GetStatesAsync(StateCategories.Job);
             ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<StateDto>();
 
             // Fonksiyon listesi
-            var functionsResult = await _jobService.GetFunctionsAsync();
+            var functionsResult = await _lookupService.GetFunctionsAsync();
             ViewBag.Functions = functionsResult.IsSuccess ? functionsResult.Data : new List<FunctionDto>();
 
             // Görev Tipi listesi
-            var workTypesResult = await _jobService.GetWorkTypesAsync();
+            var workTypesResult = await _lookupService.GetWorkTypesAsync();
             ViewBag.WorkTypes = workTypesResult.IsSuccess ? workTypesResult.Data : new List<WorkTypeDto>();
 
             // Mesai Tipi listesi
-            var timeTypesResult = await _jobService.GetTimeTypesAsync();
+            var timeTypesResult = await _lookupService.GetTimeTypesAsync();
             ViewBag.TimeTypes = timeTypesResult.IsSuccess ? timeTypesResult.Data : new List<TimeTypeDto>();
         }
     }
