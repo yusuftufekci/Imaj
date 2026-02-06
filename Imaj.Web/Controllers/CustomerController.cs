@@ -1,3 +1,4 @@
+using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Controllers.Base;
@@ -28,8 +29,8 @@ namespace Imaj.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            // State listesini LookupService'den al ve ViewBag'e ekle
-            var statesResult = await _lookupService.GetStatesAsync("Job");
+            // State listesini LookupService'den al (StateCategories constant kullanılıyor)
+            var statesResult = await _lookupService.GetStatesAsync(StateCategories.Job);
             ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<Imaj.Service.DTOs.StateDto>();
             
             return View(new CustomerFilterModel());
@@ -51,7 +52,7 @@ namespace Imaj.Web.Controllers
         [Route("Customer/GetJobStates")]
         public async Task<IActionResult> GetJobStates()
         {
-            var result = await _lookupService.GetStatesAsync("Job");
+            var result = await _lookupService.GetStatesAsync(StateCategories.Job);
             if (result.IsSuccess)
             {
                 return Json(result.Data);

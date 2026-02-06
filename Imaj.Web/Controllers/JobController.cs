@@ -1,3 +1,4 @@
+using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Models;
@@ -436,8 +437,8 @@ namespace Imaj.Web.Controllers
         /// </summary>
         private async Task LoadDropdownDataAsync()
         {
-            // Durum listesi - Job kategorisi
-            var statesResult = await _lookupService.GetStatesAsync("Job");
+            // Durum listesi - Job kategorisi (StateCategories constant kullanılıyor)
+            var statesResult = await _lookupService.GetStatesAsync(StateCategories.Job);
             ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<StateDto>();
 
             // Fonksiyon listesi
