@@ -16,7 +16,7 @@ namespace Imaj.Data.Configurations
             builder.Ignore(e => e.IsActive);
 
             builder.Property(e => e.InvoiceID).HasColumnType("decimal(10, 0)").IsRequired();
-            builder.Property(e => e.LogDT).HasColumnType("smalldatetime").IsRequired();
+            builder.Property(e => e.LogDT).HasColumnName("ActionDT").HasColumnType("smalldatetime").IsRequired();
             builder.Property(e => e.LogActionID).HasColumnType("decimal(4, 0)").IsRequired();
             builder.Property(e => e.UserID).HasColumnType("decimal(6, 0)").IsRequired();
             builder.Property(e => e.Machine).HasMaxLength(32).IsRequired();

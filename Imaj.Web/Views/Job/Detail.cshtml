@@ -1,3 +1,4 @@
+@using System.Net
 @model JobDetailViewModel
 
 @{
@@ -14,7 +15,12 @@
         var nextId = Model.SelectedIds[index];
         var idsQuery = string.Join("&selectedIds=", Model.SelectedIds);
         
-        return $"/Job/Detail?id={nextId}&currentIndex={index}&selectedIds={idsQuery}";
+        var url = $"/Job/Detail?id={nextId}&currentIndex={index}&selectedIds={idsQuery}";
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+        return url;
     }
 }
 
@@ -248,11 +254,12 @@
              NextUrl = BuildNavUrl(Model.CurrentIndex + 1),
              LastUrl = BuildNavUrl(Model.SelectedIds.Count - 1),
              FormAction = "/Job/Detail",
-             SelectedIds = Model.SelectedIds
+             SelectedIds = Model.SelectedIds,
+             ReturnUrl = Model.ReturnUrl
          })" />
          
          <div class="flex space-x-2">
-             <a href="/Job/List" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+             <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/Job/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                 Geri
             </a>
             <button class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">

@@ -194,7 +194,7 @@ namespace Imaj.Web.Controllers
         // Action to view detail. Supports navigation if multiple ids passed
         // Accepted via POST from List or GET from navigation links
         [AcceptVerbs("GET", "POST")]
-        public async Task<IActionResult> Detail(string? id, string[]? selectedIds = null, int currentIndex = 0)
+        public async Task<IActionResult> Detail(string? id, string[]? selectedIds = null, int currentIndex = 0, string? returnUrl = null)
         {
             // Dropdown verilerini backend'den al
             await LoadDropdownDataAsync();
@@ -260,7 +260,8 @@ namespace Imaj.Web.Controllers
                 // Navigation state
                 SelectedIds = selectedIds?.ToList() ?? new List<string> { id },
                 CurrentIndex = currentIndex,
-                TotalSelected = selectedIds?.Length ?? 1
+                TotalSelected = selectedIds?.Length ?? 1,
+                ReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/Job/List" : returnUrl
             };
 
             // Mesai (JobWork) Detaylarını Map Et
@@ -299,11 +300,37 @@ namespace Imaj.Web.Controllers
                 }).ToList();
 
                 model.TotalProductAmount = model.Products.Sum(x => x.NetTotal);
+            }
 
-                // 2. Kategori Özeti (Summary)
+            // 2. Kategori Özeti (JobProdCat öncelikli)
+            if (job.JobProdCats != null && job.JobProdCats.Any())
+            {
+                model.ProductCategories = job.JobProdCats
+                    .GroupBy(jp => new { jp.CategoryId, jp.CategoryName })
+                    .Select(g =>
+                    {
+                        var subTotal = g.Sum(x => x.GrossAmount);
+                        var netTotal = g.Sum(x => x.NetAmount);
+                        var discAmount = g.Sum(x => x.DiscAmount);
+                        var discPercentage = subTotal > 0 ? (discAmount / subTotal) * 100 : 0;
+                        return new JobCategorySummaryItem
+                        {
+                            Name = g.Key.CategoryName,
+                            SubTotal = subTotal,
+                            NetTotal = netTotal,
+                            DiscountAmount = discAmount,
+                            Discount = discPercentage
+                        };
+                    })
+                    .ToList();
+
+                model.TotalCategoryAmount = model.ProductCategories.Sum(x => x.NetTotal);
+            }
+            else if (job.JobProds != null && job.JobProds.Any())
+            {
                 model.ProductCategories = job.JobProds
                     .GroupBy(jp => new { jp.CategoryId, jp.CategoryName })
-                    .Select(g => 
+                    .Select(g =>
                     {
                         // Eğer ürünün birim fiyatı 0 ise (Hizmet, Mesai vb.), Ara Tutar olarak Net Tutar'ı baz alıyoruz.
                         // Aksi takdirde (Ürün vb.) Ara Tutar olarak Gross Tutar'ı (Miktar * Fiyat) alıyoruz.
@@ -313,7 +340,7 @@ namespace Imaj.Web.Controllers
                         return new JobCategorySummaryItem
                         {
                             Name = g.Key.CategoryName,
-                            SubTotal = subTotal, 
+                            SubTotal = subTotal,
                             NetTotal = netTotal,
                             DiscountAmount = subTotal - netTotal,
                             Discount = subTotal > 0 ? ((subTotal - netTotal) / subTotal) * 100 : 0

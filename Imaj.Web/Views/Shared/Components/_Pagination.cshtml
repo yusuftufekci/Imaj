@@ -20,6 +20,10 @@
     var showPrevious = Model.CurrentPage > 1;
     var showNext = Model.CurrentPage < totalPages;
     var showLast = Model.CurrentPage < totalPages;
+
+    var queryString = string.IsNullOrWhiteSpace(Model.QueryString) ? string.Empty : "?" + Model.QueryString;
+    var separator = string.IsNullOrWhiteSpace(Model.QueryString) ? "?" : "&";
+    string BuildUrl(int page) => $"{Model.BaseUrl}{queryString}{separator}page={page}&pageSize={Model.PageSize}";
 }
 
 <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
@@ -27,28 +31,28 @@
     <div class="flex-1 flex justify-between sm:hidden">
         @if (showFirst)
         {
-            <a href="@Model.BaseUrl?page=1&pageSize=@Model.PageSize" 
+            <a href="@BuildUrl(1)" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 İlk
             </a>
         }
         @if (showPrevious)
         {
-            <a href="@Model.BaseUrl?page=@(Model.CurrentPage - 1)&pageSize=@Model.PageSize" 
+            <a href="@BuildUrl(Model.CurrentPage - 1)" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 Önceki
             </a>
         }
         @if (showNext)
         {
-            <a href="@Model.BaseUrl?page=@(Model.CurrentPage + 1)&pageSize=@Model.PageSize" 
+            <a href="@BuildUrl(Model.CurrentPage + 1)" 
                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 Sonraki
             </a>
         }
         @if (showLast)
         {
-            <a href="@Model.BaseUrl?page=@totalPages&pageSize=@Model.PageSize" 
+            <a href="@BuildUrl(totalPages)" 
                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 Son
             </a>
@@ -72,7 +76,7 @@
                 @* İlk Sayfa Butonu *@
                 @if (showFirst)
                 {
-                    <a href="@Model.BaseUrl?page=1&pageSize=@Model.PageSize" 
+                    <a href="@BuildUrl(1)" 
                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                        title="İlk Sayfa">
                         <span class="sr-only">İlk</span>
@@ -94,7 +98,7 @@
                 @* Önceki Sayfa Butonu *@
                 @if (showPrevious)
                 {
-                    <a href="@Model.BaseUrl?page=@(Model.CurrentPage - 1)&pageSize=@Model.PageSize" 
+                    <a href="@BuildUrl(Model.CurrentPage - 1)" 
                        class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                        title="Önceki Sayfa">
                         <span class="sr-only">Önceki</span>
@@ -117,7 +121,7 @@
                     // Sayfa 1 her zaman göster
                     if (Model.CurrentPage > 3)
                     {
-                        <a href="@Model.BaseUrl?page=1&pageSize=@Model.PageSize" 
+                        <a href="@BuildUrl(1)" 
                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                             1
                         </a>
@@ -142,7 +146,7 @@
                         }
                         else
                         {
-                            <a href="@Model.BaseUrl?page=@i&pageSize=@Model.PageSize" 
+                            <a href="@BuildUrl(i)" 
                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                                 @i
                             </a>
@@ -160,7 +164,7 @@
                             </span>
                         }
                         
-                        <a href="@Model.BaseUrl?page=@totalPages&pageSize=@Model.PageSize" 
+                        <a href="@BuildUrl(totalPages)" 
                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                             @totalPages
                         </a>
@@ -170,7 +174,7 @@
                 @* Sonraki Sayfa Butonu *@
                 @if (showNext)
                 {
-                    <a href="@Model.BaseUrl?page=@(Model.CurrentPage + 1)&pageSize=@Model.PageSize" 
+                    <a href="@BuildUrl(Model.CurrentPage + 1)" 
                        class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                        title="Sonraki Sayfa">
                         <span class="sr-only">Sonraki</span>
@@ -191,7 +195,7 @@
                 @* Son Sayfa Butonu *@
                 @if (showLast)
                 {
-                    <a href="@Model.BaseUrl?page=@totalPages&pageSize=@Model.PageSize" 
+                    <a href="@BuildUrl(totalPages)" 
                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                        title="Son Sayfa">
                         <span class="sr-only">Son</span>

@@ -4,9 +4,11 @@ namespace Imaj.Core.Entities
     {
         public decimal InvoiceID { get; set; }
         public decimal TaxTypeID { get; set; }
-        public decimal Amount { get; set; }
+        public decimal GrossAmount { get; set; }
+        public short TaxPercentage { get; set; }
+        public decimal TaxAmount { get; set; }
+        public decimal NetAmount { get; set; }
         public decimal Deleted { get; set; }
-        public bool SelectFlag { get; set; }
         public short Stamp { get; set; }
 
         public virtual Invoice? Invoice { get; set; }

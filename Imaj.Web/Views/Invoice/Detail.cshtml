@@ -1,0 +1,296 @@
+@using System.Net
+@model InvoiceDisplayViewModel
+
+@{
+    ViewData["Title"] = "Fatura Detay";
+    var invoice = Model.Invoices.FirstOrDefault();
+    var lineTotal = invoice?.Lines.Sum(x => x.Amount) ?? 0m;
+    var taxTotal = invoice?.Taxes.Sum(x => x.TaxAmount) ?? 0m;
+    var netTotal = invoice?.Taxes.Sum(x => x.NetTotal) ?? 0m;
+    var returnUrl = string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/Invoice/Results" : Model.ReturnUrl;
+    var queryParts = new List<string>();
+    if (Model.SelectedReferences.Any())
+    {
+        queryParts.AddRange(Model.SelectedReferences.Select(x => "selectedReferences=" + WebUtility.UrlEncode(x)));
+    }
+    if (!string.IsNullOrWhiteSpace(returnUrl))
+    {
+        queryParts.Add("returnUrl=" + WebUtility.UrlEncode(returnUrl));
+    }
+    var queryString = string.Join("&", queryParts);
+    var currentUrl = "/Invoice/Detail?reference=" + invoice?.Reference + "&page=" + (Model.CurrentIndex + 1) + (string.IsNullOrWhiteSpace(queryString) ? string.Empty : "&" + queryString);
+}
+
+<div class="space-y-8">
+    @if (invoice == null)
+    {
+        <div class="bg-white border border-gray-200 shadow sm:rounded-lg p-6 text-center text-sm text-gray-500">
+            Fatura bulunamadı.
+        </div>
+    }
+    else
+    {
+        <div class="space-y-6">
+            <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
+                <div class="flex-1 min-w-0">
+                    <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
+                        Fatura
+                    </h2>
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm">
+                        <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">Temel Bilgiler</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <span class="font-bold text-right text-blue-900">Referans</span>
+                            <span class="col-span-2 text-gray-900">@invoice.Reference</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <span class="font-bold text-right text-blue-900">İş Müşterisi</span>
+                            <span class="col-span-2 text-gray-900">@invoice.JobCustomer</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <span class="font-bold text-right text-blue-900">Fatura Müşterisi</span>
+                            <span class="col-span-2 text-gray-900">@invoice.InvoiceCustomer</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <span class="font-bold text-right text-blue-900">Ad</span>
+                            <span class="col-span-2 text-gray-900">@invoice.Name</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <span class="font-bold text-right text-blue-900">İlgili</span>
+                            <span class="col-span-2 text-gray-900">@invoice.RelatedPerson</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <span class="font-bold text-right text-blue-900">Kesilme Tarihi</span>
+                            <span class="col-span-2 text-gray-900">@invoice.IssueDate?.ToString("dd/MM/yyyy dddd") ?? "-"</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <span class="font-bold text-right text-blue-900">Durum</span>
+                            <span class="col-span-2 text-gray-900">@invoice.Status</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <span class="font-bold text-right text-blue-900">Değerlendirildi</span>
+                            <span class="col-span-2">
+                                <input type="checkbox" disabled @(invoice.Evaluated ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                            <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">Notlar</h3>
+                            <div class="w-full text-sm border border-gray-300 rounded bg-white px-3 py-2">@invoice.Notes</div>
+                        </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                            <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">Dipnot</h3>
+                            <div class="w-full text-sm border border-gray-300 rounded bg-white px-3 py-2">@invoice.FooterNote</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-800 text-sm">Satır (@invoice.Lines.Count)</h3>
+                </div>
+                <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-yellow-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left font-bold text-gray-700">Seçili</th>
+                                <th class="px-4 py-2 text-left font-bold text-gray-700">Sıra</th>
+                                <th class="px-4 py-2 text-left font-bold text-gray-700">Notlar</th>
+                                <th class="px-4 py-2 text-right font-bold text-gray-700">Miktar</th>
+                                <th class="px-4 py-2 text-right font-bold text-gray-700">Fiyat</th>
+                                <th class="px-4 py-2 text-right font-bold text-gray-700">Tutar</th>
+                                <th class="px-4 py-2 text-left font-bold text-gray-700">Vergi Tipi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @for (var i = 0; i < invoice.Lines.Count; i++)
+                            {
+                                var line = invoice.Lines[i];
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-2">
+                                        <input type="checkbox" disabled @(line.Selected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    </td>
+                                    <td class="px-4 py-2 text-gray-900">@line.LineNo</td>
+                                    <td class="px-4 py-2 text-gray-900">@line.Notes</td>
+                                    <td class="px-4 py-2 text-right text-gray-900">@line.Quantity</td>
+                                    <td class="px-4 py-2 text-right text-gray-900">@line.Price.ToString("N2")</td>
+                                    <td class="px-4 py-2 text-right text-gray-900">@line.Amount.ToString("N2")</td>
+                                    <td class="px-4 py-2 text-gray-900">@line.TaxType</td>
+                                </tr>
+
+                                if (i == 0 && (invoice.WorkItems.Any() || invoice.ProductCategories.Any()))
+                                {
+                                    <tr class="bg-blue-50">
+                                        <td colspan="7" class="px-4 py-4">
+                                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                <div class="border border-blue-200 rounded">
+                                                    <div class="bg-blue-100 px-3 py-2 text-sm font-bold text-gray-800">İş (@invoice.WorkItems.Count)</div>
+                                                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                                        <thead class="bg-white">
+                                                            <tr>
+                                                                <th class="px-3 py-2 text-left font-bold text-gray-700">Seçili</th>
+                                                                <th class="px-3 py-2 text-left font-bold text-gray-700">Referans</th>
+                                                                <th class="px-3 py-2 text-left font-bold text-gray-700">Ad</th>
+                                                                <th class="px-3 py-2 text-right font-bold text-gray-700">Tutar</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="bg-white divide-y divide-gray-200">
+                                                            @foreach (var work in invoice.WorkItems)
+                                                            {
+                                                                <tr>
+                                                                    <td class="px-3 py-2">
+                                                                        <input type="checkbox" disabled @(work.Selected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                                                    </td>
+                                                                <td class="px-3 py-2 text-gray-900">
+                                                                    <a href="/Job/Detail?id=@work.Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="text-blue-600 hover:text-blue-900 underline">
+                                                                        @work.Reference
+                                                                    </a>
+                                                                </td>
+                                                                    <td class="px-3 py-2 text-gray-900">@work.Name</td>
+                                                                    <td class="px-3 py-2 text-right text-gray-900">@work.Amount.ToString("N2")</td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                        <tfoot class="bg-yellow-50">
+                                                            <tr>
+                                                                <td colspan="3" class="px-3 py-2 text-right font-bold text-gray-900">Toplam</td>
+                                                                <td class="px-3 py-2 text-right font-bold text-gray-900">@invoice.WorkItems.Sum(x => x.Amount).ToString("N2")</td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                                <div class="border border-blue-200 rounded">
+                                                    <div class="bg-blue-100 px-3 py-2 text-sm font-bold text-gray-800">Ürün Kategorileri (@invoice.ProductCategories.Count)</div>
+                                                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                                        <thead class="bg-white">
+                                                            <tr>
+                                                                <th class="px-3 py-2 text-left font-bold text-gray-700">Ürün Kategorisi</th>
+                                                                <th class="px-3 py-2 text-right font-bold text-gray-700">Ara Tutar</th>
+                                                                <th class="px-3 py-2 text-right font-bold text-gray-700">Net Tutar</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="bg-white divide-y divide-gray-200">
+                                                            @foreach (var cat in invoice.ProductCategories)
+                                                            {
+                                                                <tr>
+                                                                <td class="px-3 py-2 text-gray-900">@cat.Name</td>
+                                                                <td class="px-3 py-2 text-right text-gray-900">@cat.SubTotal.ToString("N2")</td>
+                                                                <td class="px-3 py-2 text-right text-gray-900">@cat.NetTotal.ToString("N2")</td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                        <tfoot class="bg-yellow-50">
+                                                            <tr>
+                                                                <td class="px-3 py-2 text-right font-bold text-gray-900">Toplam</td>
+                                                                <td class="px-3 py-2 text-right font-bold text-gray-900">@invoice.ProductCategories.Sum(x => x.SubTotal).ToString("N2")</td>
+                                                                <td class="px-3 py-2 text-right font-bold text-gray-900">@invoice.ProductCategories.Sum(x => x.NetTotal).ToString("N2")</td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot class="bg-yellow-50">
+                            <tr>
+                                <td colspan="5" class="px-4 py-2 text-right font-bold text-gray-900">Toplam</td>
+                                <td class="px-4 py-2 text-right font-bold text-gray-900">@lineTotal.ToString("N2")</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            @if (invoice.WorkItems.Any())
+            {
+                <div class="px-2">
+                    <a href="/Job/Detail?id=@invoice.WorkItems.First().Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="text-blue-600 hover:text-blue-900 underline text-sm">
+                        İş Görüntüle
+                    </a>
+                </div>
+            }
+
+            <div>
+                <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-800 text-sm">Vergi (@invoice.Taxes.Count)</h3>
+                </div>
+                <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-yellow-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left font-bold text-gray-700">Kod</th>
+                                <th class="px-4 py-2 text-left font-bold text-gray-700">Ad</th>
+                                <th class="px-4 py-2 text-right font-bold text-gray-700">Ara Tutar</th>
+                                <th class="px-4 py-2 text-right font-bold text-gray-700">Yüzde</th>
+                                <th class="px-4 py-2 text-right font-bold text-gray-700">Vergi Tutarı</th>
+                                <th class="px-4 py-2 text-right font-bold text-gray-700">Net Tutar</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach (var tax in invoice.Taxes)
+                            {
+                                <tr>
+                                    <td class="px-4 py-2 text-gray-900">@tax.Code</td>
+                                    <td class="px-4 py-2 text-gray-900">@tax.Name</td>
+                                    <td class="px-4 py-2 text-right text-gray-900">@tax.SubTotal.ToString("N2")</td>
+                                    <td class="px-4 py-2 text-right text-gray-900">@tax.Rate.ToString("N0")</td>
+                                    <td class="px-4 py-2 text-right text-gray-900">@tax.TaxAmount.ToString("N2")</td>
+                                    <td class="px-4 py-2 text-right text-gray-900">@tax.NetTotal.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="bg-yellow-50">
+                            <tr>
+                                <td colspan="2" class="px-4 py-2 text-right font-bold text-gray-900">Toplam</td>
+                                <td class="px-4 py-2 text-right font-bold text-gray-900">@invoice.Taxes.Sum(x => x.SubTotal).ToString("N2")</td>
+                                <td class="px-4 py-2 text-right font-bold text-gray-900"></td>
+                                <td class="px-4 py-2 text-right font-bold text-gray-900">@taxTotal.ToString("N2")</td>
+                                <td class="px-4 py-2 text-right font-bold text-gray-900">@netTotal.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            @if (Model.SelectedReferences.Count > 1)
+            {
+                <div class="mt-4">
+                    <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel
+                    {
+                        CurrentPage = Model.CurrentIndex + 1,
+                        TotalCount = Model.SelectedReferences.Count,
+                        PageSize = 1,
+                        BaseUrl = "/Invoice/Detail",
+                        QueryString = queryString
+                    })" />
+                </div>
+            }
+
+            <div class="flex justify-center space-x-2">
+                <a href="@returnUrl" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Geri
+                </a>
+                <a href="/Invoice/Summary?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Özet Görüntüle
+                </a>
+                <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Değerlendirmeyi Geri Al
+                </button>
+                <a href="/Invoice/History?reference=@invoice.Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Geçmiş Görüntüle
+                </a>
+            </div>
+        </div>
+    }
+</div>

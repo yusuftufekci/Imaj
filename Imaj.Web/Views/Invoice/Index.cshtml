@@ -162,66 +162,6 @@
         </div>
     </div>
 
-    <!-- Section 1b: Search Results -->
-    <div class="bg-white shadow sm:rounded-lg">
-        <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">
-                    Faturalar
-                </h3>
-                <div class="text-sm text-gray-500" x-text="results.summary"></div>
-            </div>
-        </div>
-        <div class="px-4 py-5 sm:p-6">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Referans</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">İş Müşterisi</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fatura Müşterisi</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ad</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kesilme Tarihi</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Durum</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Tutar</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Değerlendirildi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200" x-show="results.items.length" x-cloak>
-                        <template x-for="item in results.items" :key="item.reference + '-' + (item.issueDate || '')">
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 text-sm font-medium text-indigo-600" x-text="item.reference"></td>
-                                <td class="px-4 py-3 text-sm text-gray-900" x-text="item.jobCustomer"></td>
-                                <td class="px-4 py-3 text-sm text-gray-900" x-text="item.invoiceCustomer"></td>
-                                <td class="px-4 py-3 text-sm text-gray-900" x-text="item.name"></td>
-                                <td class="px-4 py-3 text-sm text-gray-700" x-text="item.issueDateText"></td>
-                                <td class="px-4 py-3 text-sm text-gray-700" x-text="item.status"></td>
-                                <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="item.amountText"></td>
-                                <td class="px-4 py-3 text-sm text-gray-700">
-                                    <span x-show="item.evaluated" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Evet</span>
-                                    <span x-show="!item.evaluated" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Hayır</span>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-            <div class="py-6 text-center text-sm text-gray-500" x-show="!results.items.length && !results.loading" x-cloak>
-                Sonuç bulunamadı.
-            </div>
-            <div class="py-6 text-center text-sm text-gray-500" x-show="results.loading" x-cloak>
-                Yükleniyor...
-            </div>
-            <div class="mt-4 flex items-center justify-between">
-                <div class="text-sm text-gray-500" x-text="results.pageInfo"></div>
-                <div class="flex items-center space-x-2">
-                    <button type="button" @@click="prevPage()" :disabled="results.page <= 1 || results.loading" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Geri</button>
-                    <button type="button" @@click="nextPage()" :disabled="!results.hasMore || results.loading" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">İleri</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Section 2: Invoice Creation (Fatura Yaratma) -->
      <div class="bg-white shadow sm:rounded-lg mt-8">
         <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
@@ -280,22 +220,6 @@
                  page: 1, pageSize: 10
             },
 
-            results: {
-                items: [],
-                totalCount: 0,
-                page: 1,
-                pageSize: 10,
-                hasMore: false,
-                loading: false,
-                summary: '',
-                pageInfo: ''
-            },
-
-            init() {
-                this.results.page = this.filter.page;
-                this.results.pageSize = this.filter.pageSize;
-            },
-            
             handleSelection(detail) {
                 const cust = detail.customer;
                 const target = detail.targetId;
@@ -313,68 +237,25 @@
             },
 
             async searchInvoices() {
-                this.results.loading = true;
-                this.results.items = [];
+                const params = new URLSearchParams();
 
-                const payload = {
-                    jobCustomerCode: this.jobCustomerCode,
-                    jobCustomerName: this.jobCustomerName,
-                    invoiceCustomerCode: this.invoiceCustomerCode,
-                    invoiceCustomerName: this.invoiceCustomerName,
-                    referenceStart: this.filter.referenceStart,
-                    referenceEnd: this.filter.referenceEnd,
-                    name: this.filter.name,
-                    relatedPerson: this.filter.relatedPerson,
-                    issueDateStart: this.filter.issueDateStart,
-                    issueDateEnd: this.filter.issueDateEnd,
-                    status: this.filter.status,
-                    evaluated: this.filter.evaluated,
-                    page: this.filter.page,
-                    pageSize: this.filter.pageSize
-                };
+                if (this.jobCustomerCode) params.set('JobCustomerCode', this.jobCustomerCode);
+                if (this.jobCustomerName) params.set('JobCustomerName', this.jobCustomerName);
+                if (this.invoiceCustomerCode) params.set('InvoiceCustomerCode', this.invoiceCustomerCode);
+                if (this.invoiceCustomerName) params.set('InvoiceCustomerName', this.invoiceCustomerName);
+                if (this.filter.referenceStart) params.set('ReferenceStart', this.filter.referenceStart);
+                if (this.filter.referenceEnd) params.set('ReferenceEnd', this.filter.referenceEnd);
+                if (this.filter.name) params.set('Name', this.filter.name);
+                if (this.filter.relatedPerson) params.set('RelatedPerson', this.filter.relatedPerson);
+                if (this.filter.issueDateStart) params.set('IssueDateStart', this.filter.issueDateStart);
+                if (this.filter.issueDateEnd) params.set('IssueDateEnd', this.filter.issueDateEnd);
+                if (this.filter.status) params.set('Status', this.filter.status);
+                if (this.filter.evaluated) params.set('Evaluated', this.filter.evaluated);
+                if (this.filter.page) params.set('Page', this.filter.page);
+                if (this.filter.pageSize) params.set('PageSize', this.filter.pageSize);
 
-                try {
-                    const response = await fetch('/Invoice/Search', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Sorgu başarısız.');
-                    }
-
-                    const data = await response.json();
-                    const items = data.items || [];
-
-                    this.results.totalCount = data.totalCount || 0;
-                    this.results.page = data.page || this.filter.page;
-                    this.results.pageSize = data.pageSize || this.filter.pageSize;
-                    this.results.hasMore = (this.results.page * this.results.pageSize) < this.results.totalCount;
-
-                    this.results.items = items.map(item => ({
-                        ...item,
-                        reference: item.reference ?? '-',
-                        jobCustomer: item.jobCustomer ?? '-',
-                        invoiceCustomer: item.invoiceCustomer ?? '-',
-                        name: item.name ?? '-',
-                        status: item.status ?? '-',
-                        issueDateText: item.issueDate ? new Date(item.issueDate).toLocaleDateString('tr-TR') : '-',
-                        amountText: typeof item.amount === 'number'
-                            ? item.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                            : '0,00'
-                    }));
-
-                    const start = this.results.totalCount === 0 ? 0 : ((this.results.page - 1) * this.results.pageSize) + 1;
-                    const end = Math.min(this.results.page * this.results.pageSize, this.results.totalCount);
-                    this.results.summary = `${this.results.totalCount} kayıt`;
-                    this.results.pageInfo = `${start}-${end} / ${this.results.totalCount}`;
-                } catch (e) {
-                    console.error('Fatura sorgulama hatası:', e);
-                    this.results.summary = 'Sorgu sırasında hata oluştu.';
-                } finally {
-                    this.results.loading = false;
-                }
+                const query = params.toString();
+                window.location.href = '/Invoice/Results' + (query ? '?' + query : '');
             },
 
             resetFilters() {
@@ -392,18 +273,6 @@
                 this.filter.evaluated = '';
                 this.filter.page = 1;
                 this.filter.pageSize = 10;
-            },
-
-            prevPage() {
-                if (this.results.page <= 1) return;
-                this.filter.page = this.results.page - 1;
-                this.searchInvoices();
-            },
-
-            nextPage() {
-                if (!this.results.hasMore) return;
-                this.filter.page = this.results.page + 1;
-                this.searchInvoices();
             },
 
             createInvoice() {
