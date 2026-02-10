@@ -1,0 +1,149 @@
+@using System.Text.Json
+@using System.Net
+@model InvoiceViewModel
+
+@{
+    ViewData["Title"] = "Fatura Listesi";
+
+    var query = new Dictionary<string, string>();
+    if (!string.IsNullOrWhiteSpace(Model.JobCustomerCode)) query.Add("JobCustomerCode", Model.JobCustomerCode);
+    if (!string.IsNullOrWhiteSpace(Model.JobCustomerName)) query.Add("JobCustomerName", Model.JobCustomerName);
+    if (!string.IsNullOrWhiteSpace(Model.InvoiceCustomerCode)) query.Add("InvoiceCustomerCode", Model.InvoiceCustomerCode);
+    if (!string.IsNullOrWhiteSpace(Model.InvoiceCustomerName)) query.Add("InvoiceCustomerName", Model.InvoiceCustomerName);
+    if (!string.IsNullOrWhiteSpace(Model.ReferenceStart)) query.Add("ReferenceStart", Model.ReferenceStart);
+    if (!string.IsNullOrWhiteSpace(Model.ReferenceEnd)) query.Add("ReferenceEnd", Model.ReferenceEnd);
+    if (!string.IsNullOrWhiteSpace(Model.Name)) query.Add("Name", Model.Name);
+    if (!string.IsNullOrWhiteSpace(Model.RelatedPerson)) query.Add("RelatedPerson", Model.RelatedPerson);
+    if (Model.IssueDateStart.HasValue) query.Add("IssueDateStart", Model.IssueDateStart.Value.ToString("yyyy-MM-dd"));
+    if (Model.IssueDateEnd.HasValue) query.Add("IssueDateEnd", Model.IssueDateEnd.Value.ToString("yyyy-MM-dd"));
+    if (!string.IsNullOrWhiteSpace(Model.Status)) query.Add("Status", Model.Status);
+    if (!string.IsNullOrWhiteSpace(Model.Evaluated)) query.Add("Evaluated", Model.Evaluated);
+
+    var queryString = string.Join("&", query.Select(x => x.Key + "=" + WebUtility.UrlEncode(x.Value)));
+    var returnUrl = "/Invoice/Results" + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : string.Empty);
+    var allRefs = Model.Items.Select(x => x.Reference ?? string.Empty).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+}
+
+<div x-data="invoiceResults()" class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                Fatura Listesi
+            </h2>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            <a href="/Invoice" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Yeni Sorgu
+            </a>
+        </div>
+    </div>
+
+    <form method="get" action="/Invoice/Detail">
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+        <div class="flex flex-col">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-blue-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left">
+                                        <div class="flex items-center">
+                                            <input type="checkbox" @@click="toggleAll" x-model="allSelected" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2">
+                                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer" @@click="toggleAll(); allSelected = !allSelected">Seç</span>
+                                        </div>
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Referans</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">İş Müşterisi</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fatura Müşterisi</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kesilme Tarihi</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Durum</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Tutar</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Değerlendirildi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @if (Model.Items.Any())
+                                {
+                                    foreach (var item in Model.Items)
+                                    {
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <input type="checkbox" name="selectedReferences" value="@item.Reference" x-model="selectedReferences" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">
+                                                <a href="/Invoice/Detail?reference=@item.Reference&returnUrl=@WebUtility.UrlEncode(returnUrl)" class="text-blue-600 hover:text-blue-900 underline">@item.Reference</a>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.JobCustomer</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.InvoiceCustomer</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.Name</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">@item.IssueDate?.ToString("dd/MM/yyyy")</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">@item.Status</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">@item.Amount.ToString("N2")</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                @if (item.Evaluated)
+                                                {
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Evet</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Hayır</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">Sonuç bulunamadı.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            @if (Model.TotalCount > 0)
+            {
+                <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel 
+                { 
+                    CurrentPage = Model.Page, 
+                    TotalCount = Model.TotalCount, 
+                    PageSize = Model.PageSize,
+                    BaseUrl = @"/Invoice/Results",
+                    QueryString = queryString
+                })" />
+            }
+        </div>
+
+        <div class="mt-4 flex justify-center space-x-2">
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50" :disabled="selectedReferences.length === 0">
+                Detay Görüntüle
+            </button>
+            <button type="submit" formaction="/Invoice/Summary" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50" :disabled="selectedReferences.length === 0">
+                Özet Görüntüle
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function invoiceResults() {
+        return {
+            selectedReferences: [],
+            allSelected: false,
+            allPageReferences: @Html.Raw(JsonSerializer.Serialize(allRefs)),
+
+            toggleAll() {
+                this.allSelected = !this.allSelected;
+                this.selectedReferences = this.allSelected ? [...this.allPageReferences] : [];
+            }
+        }
+    }
+</script>

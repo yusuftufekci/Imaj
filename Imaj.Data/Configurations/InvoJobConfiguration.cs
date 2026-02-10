@@ -10,20 +10,20 @@ namespace Imaj.Data.Configurations
         {
             builder.ToTable("InvoJob");
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).HasColumnName("ID").HasColumnType("decimal(12, 0)");
+            builder.Property(e => e.Id).HasColumnName("ID").HasColumnType("decimal(14, 0)");
             
             builder.Ignore(e => e.CreatedDate);
             builder.Ignore(e => e.IsActive);
 
-            builder.Property(e => e.InvoiceID).HasColumnType("decimal(10, 0)").IsRequired();
+            builder.Property(e => e.InvoLineID).HasColumnType("decimal(12, 0)").IsRequired();
             builder.Property(e => e.JobID).HasColumnType("decimal(10, 0)").IsRequired();
-            builder.Property(e => e.Deleted).HasColumnType("decimal(12, 0)").IsRequired();
-            builder.Property(e => e.SelectFlag).IsRequired();
+            builder.Property(e => e.Deleted).HasColumnType("decimal(14, 0)").IsRequired();
+            builder.Property(e => e.SelectFlag).HasColumnType("bit").IsRequired();
             builder.Property(e => e.Stamp).HasColumnType("smallint").IsRequired();
 
-            builder.HasOne(d => d.Invoice)
+            builder.HasOne(d => d.InvoLine)
                 .WithMany()
-                .HasForeignKey(d => d.InvoiceID)
+                .HasForeignKey(d => d.InvoLineID)
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.HasOne(d => d.Job)

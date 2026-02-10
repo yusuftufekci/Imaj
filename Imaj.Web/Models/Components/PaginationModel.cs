@@ -25,6 +25,12 @@ namespace Imaj.Web.Models.Components
         /// Sayfa linklerinin base URL'i (örn: /Customer/List)
         /// </summary>
         public string BaseUrl { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Sayfa linklerine eklenecek query string (page/pageSize hariç)
+        /// Örn: "status=active&name=demo"
+        /// </summary>
+        public string QueryString { get; set; } = string.Empty;
         
         /// <summary>
         /// Toplam sayfa sayısını hesaplar

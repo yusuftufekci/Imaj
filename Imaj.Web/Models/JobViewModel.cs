@@ -85,6 +85,7 @@ namespace Imaj.Web.Models
         public int CurrentIndex { get; set; }
         public int TotalSelected { get; set; }
         public List<string> SelectedIds { get; set; } = new List<string>();
+        public string? ReturnUrl { get; set; }
 
         // Basic Info
         public string? Code { get; set; } // Referans
@@ -159,6 +160,7 @@ namespace Imaj.Web.Models
         public string LastUrl { get; set; } = "#";
         public string FormAction { get; set; } = "";
         public List<string> SelectedIds { get; set; } = new List<string>();
+        public string? ReturnUrl { get; set; }
     }
 
     public class JobCreateViewModel

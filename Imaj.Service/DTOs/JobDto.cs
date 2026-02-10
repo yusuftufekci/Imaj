@@ -26,5 +26,6 @@ namespace Imaj.Service.DTOs
         
         public List<JobWorkDto> JobWorks { get; set; } = new List<JobWorkDto>();
         public List<JobProdDto> JobProds { get; set; } = new List<JobProdDto>();
+        public List<JobProdCatDto> JobProdCats { get; set; } = new List<JobProdCatDto>();
     }
 }

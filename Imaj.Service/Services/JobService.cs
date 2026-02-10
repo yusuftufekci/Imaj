@@ -361,6 +361,25 @@ namespace Imaj.Service.Services
 
                 jobDto.JobProds = await prodQuery.ToListAsync();
 
+                // 4. Ürün Kategorileri (JobProdCat) Bilgileri
+                var prodCatQuery = from jpc in _unitOfWork.Repository<JobProdCat>().Query()
+                                   where jpc.JobID == jobDto.Id && jpc.Deleted == 0
+                                   join pc in _unitOfWork.Repository<ProdCat>().Query() on jpc.ProdCatID equals pc.Id
+                                   join xpc in _unitOfWork.Repository<XProdCat>().Query().Where(x => x.LanguageID == 1)
+                                       on pc.Id equals xpc.ProdCatID into xpcGroup
+                                   from xProdCat in xpcGroup.DefaultIfEmpty()
+                                   select new JobProdCatDto
+                                   {
+                                       CategoryId = jpc.ProdCatID,
+                                       CategoryName = xProdCat != null ? xProdCat.Name : pc.Id.ToString(),
+                                       GrossAmount = jpc.GrossAmount,
+                                       DiscPercentage = jpc.DiscPercentage,
+                                       DiscAmount = jpc.DiscAmount,
+                                       NetAmount = jpc.NetAmount
+                                   };
+
+                jobDto.JobProdCats = await prodCatQuery.ToListAsync();
+
                 return ServiceResult<JobDto>.Success(jobDto);
             }
             catch (Exception ex)

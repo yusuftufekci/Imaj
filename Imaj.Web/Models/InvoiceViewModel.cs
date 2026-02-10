@@ -43,8 +43,10 @@ namespace Imaj.Web.Models
         public string? Reference { get; set; }
         public string? JobCustomer { get; set; }
         public string? InvoiceCustomer { get; set; }
-        public DateTime IssueDate { get; set; }
+        public string? Name { get; set; }
+        public DateTime? IssueDate { get; set; }
         public decimal Amount { get; set; }
         public string? Status { get; set; }
+        public bool Evaluated { get; set; }
     }
 }
