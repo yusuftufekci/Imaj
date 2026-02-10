@@ -17,6 +17,20 @@ namespace Imaj.Web.Models
         public string? SelectedCustomerCode { get; set; }
     }
 
+    public class OvertimeReportDownloadRequest
+    {
+        [Display(Name = "Start Date")]
+        public DateTime StartDate { get; set; }
+
+        [Display(Name = "End Date")]
+        public DateTime EndDate { get; set; }
+
+        public string? CustomerCode { get; set; }
+        public string? CustomerName { get; set; }
+        public string? EmployeeCodes { get; set; }
+        public string? EmployeeNames { get; set; }
+    }
+
     public class CustomerFilterModel
     {
         // Main Criteria

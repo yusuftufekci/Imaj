@@ -32,6 +32,22 @@ namespace Imaj.Service.Interfaces
         /// İş geçmişini (loglarını) getirir.
         /// </summary>
         Task<ServiceResult<List<JobLogDto>>> GetJobHistoryAsync(decimal jobId);
+
+        /// <summary>
+        /// Detaylı mesai raporu için filtrelenmiş satırları getirir.
+        /// </summary>
+        Task<ServiceResult<List<OvertimeReportRowDto>>> GetDetailedOvertimeReportAsync(OvertimeReportFilterDto filter);
+
+        /// <summary>
+        /// Özet mesai raporu için filtrelenmiş ve gruplanmış satırları getirir.
+        /// </summary>
+        Task<ServiceResult<List<OvertimeSummaryReportRowDto>>> GetSummaryOvertimeReportAsync(OvertimeReportFilterDto filter);
+
+        /// <summary>
+        /// İdari özet mesai raporu için çalışan bazlı gruplanmış satırları getirir.
+        /// </summary>
+        Task<ServiceResult<List<OvertimeAdministrativeSummaryReportRowDto>>> GetAdministrativeSummaryOvertimeReportAsync(OvertimeReportFilterDto filter);
+
         Task<List<string>> GetTableColumnsAsync(string tableName);
     }
 }

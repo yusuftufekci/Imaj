@@ -389,6 +389,180 @@ namespace Imaj.Service.Services
             }
         }
 
+        /// <summary>
+        /// Detaylı mesai raporu için filtrelenmiş satırları getirir.
+        /// </summary>
+        public async Task<ServiceResult<List<OvertimeReportRowDto>>> GetDetailedOvertimeReportAsync(OvertimeReportFilterDto filter)
+        {
+            try
+            {
+                var items = await BuildOvertimeReportBaseQuery(filter)
+                    .OrderBy(x => x.EmployeeName)
+                    .ThenBy(x => x.JobDate)
+                    .ThenBy(x => x.Reference)
+                    .Select(x => new OvertimeReportRowDto
+                    {
+                        EmployeeCode = x.EmployeeCode,
+                        EmployeeName = x.EmployeeName,
+                        TimeTypeName = x.TimeTypeName,
+                        WorkTypeName = x.WorkTypeName,
+                        Reference = x.Reference,
+                        JobDate = x.JobDate,
+                        CustomerCode = x.CustomerCode,
+                        CustomerName = x.CustomerName,
+                        JobName = x.JobName,
+                        Notes = x.Notes,
+                        Quantity = x.Quantity,
+                        Amount = x.Amount
+                    })
+                    .ToListAsync();
+
+                return ServiceResult<List<OvertimeReportRowDto>>.Success(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Detaylı mesai raporu alınırken hata oluştu.");
+                return ServiceResult<List<OvertimeReportRowDto>>.Fail("Detaylı mesai raporu alınırken bir hata oluştu.");
+            }
+        }
+
+        /// <summary>
+        /// Özet mesai raporu için filtrelenmiş ve gruplanmış satırları getirir.
+        /// </summary>
+        public async Task<ServiceResult<List<OvertimeSummaryReportRowDto>>> GetSummaryOvertimeReportAsync(OvertimeReportFilterDto filter)
+        {
+            try
+            {
+                var items = await BuildOvertimeReportBaseQuery(filter)
+                    .GroupBy(x => new { x.EmployeeCode, x.EmployeeName, x.TimeTypeName, x.WorkTypeName })
+                    .Select(g => new OvertimeSummaryReportRowDto
+                    {
+                        EmployeeCode = g.Key.EmployeeCode,
+                        EmployeeName = g.Key.EmployeeName,
+                        TimeTypeName = g.Key.TimeTypeName,
+                        WorkTypeName = g.Key.WorkTypeName,
+                        Quantity = g.Sum(x => x.Quantity),
+                        Amount = g.Sum(x => x.Amount)
+                    })
+                    .OrderBy(x => x.EmployeeName)
+                    .ThenBy(x => x.TimeTypeName)
+                    .ThenBy(x => x.WorkTypeName)
+                    .ToListAsync();
+
+                return ServiceResult<List<OvertimeSummaryReportRowDto>>.Success(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Özet mesai raporu alınırken hata oluştu.");
+                return ServiceResult<List<OvertimeSummaryReportRowDto>>.Fail("Özet mesai raporu alınırken bir hata oluştu.");
+            }
+        }
+
+        /// <summary>
+        /// İdari özet mesai raporu için çalışan bazlı gruplanmış satırları getirir.
+        /// </summary>
+        public async Task<ServiceResult<List<OvertimeAdministrativeSummaryReportRowDto>>> GetAdministrativeSummaryOvertimeReportAsync(OvertimeReportFilterDto filter)
+        {
+            try
+            {
+                var items = await BuildOvertimeReportBaseQuery(filter)
+                    .GroupBy(x => new { x.EmployeeCode, x.EmployeeName })
+                    .Select(g => new OvertimeAdministrativeSummaryReportRowDto
+                    {
+                        EmployeeCode = g.Key.EmployeeCode,
+                        EmployeeName = g.Key.EmployeeName,
+                        Quantity = g.Sum(x => x.Quantity),
+                        Amount = g.Sum(x => x.Amount)
+                    })
+                    .OrderBy(x => x.EmployeeName)
+                    .ToListAsync();
+
+                return ServiceResult<List<OvertimeAdministrativeSummaryReportRowDto>>.Success(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "İdari özet mesai raporu alınırken hata oluştu.");
+                return ServiceResult<List<OvertimeAdministrativeSummaryReportRowDto>>.Fail("İdari özet mesai raporu alınırken bir hata oluştu.");
+            }
+        }
+
+        private IQueryable<OvertimeReportBaseRow> BuildOvertimeReportBaseQuery(OvertimeReportFilterDto filter)
+        {
+            var startDate = filter.StartDate.Date;
+            var endDate = filter.EndDate.Date.AddDays(1);
+            var customerCode = filter.CustomerCode?.Trim();
+            var employeeCodes = NormalizeEmployeeCodes(filter.EmployeeCodes);
+            var languageId = filter.LanguageId > 0 ? filter.LanguageId : 1;
+
+            var query = from jw in _unitOfWork.Repository<JobWork>().Query()
+                        join j in _unitOfWork.Repository<Job>().Query() on jw.JobID equals j.Id
+                        join e in _unitOfWork.Repository<Employee>().Query() on jw.EmployeeID equals e.Id into eGroup
+                        from employee in eGroup.DefaultIfEmpty()
+                        join c in _unitOfWork.Repository<Customer>().Query() on j.CustomerID equals c.Id into cGroup
+                        from customer in cGroup.DefaultIfEmpty()
+                        join xw in _unitOfWork.Repository<XWorkType>().Query().Where(x => x.LanguageID == languageId)
+                            on jw.WorkTypeID equals xw.WorkTypeID into wGroup
+                        from workType in wGroup.DefaultIfEmpty()
+                        join xt in _unitOfWork.Repository<XTimeType>().Query().Where(x => x.LanguageID == languageId)
+                            on jw.TimeTypeID equals xt.TimeTypeID into tGroup
+                        from timeType in tGroup.DefaultIfEmpty()
+                        where jw.Deleted == 0
+                              && j.StartDT >= startDate
+                              && j.StartDT < endDate
+                        select new OvertimeReportBaseRow
+                        {
+                            EmployeeCode = employee != null ? employee.Code : string.Empty,
+                            EmployeeName = employee != null ? employee.Name : string.Empty,
+                            TimeTypeName = timeType != null ? timeType.Name : string.Empty,
+                            WorkTypeName = workType != null ? workType.Name : string.Empty,
+                            Reference = j.Reference,
+                            JobDate = j.StartDT,
+                            CustomerCode = customer != null ? customer.Code : string.Empty,
+                            CustomerName = customer != null ? customer.Name : string.Empty,
+                            JobName = j.Name,
+                            Notes = jw.Notes,
+                            Quantity = (decimal)jw.Quantity,
+                            Amount = jw.Amount
+                        };
+
+            if (!string.IsNullOrWhiteSpace(customerCode))
+            {
+                query = query.Where(x => x.CustomerCode == customerCode);
+            }
+
+            if (employeeCodes.Any())
+            {
+                query = query.Where(x => employeeCodes.Contains(x.EmployeeCode));
+            }
+
+            return query;
+        }
+
+        private static List<string> NormalizeEmployeeCodes(List<string>? employeeCodes)
+        {
+            return (employeeCodes ?? new List<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private sealed class OvertimeReportBaseRow
+        {
+            public string EmployeeCode { get; init; } = string.Empty;
+            public string EmployeeName { get; init; } = string.Empty;
+            public string TimeTypeName { get; init; } = string.Empty;
+            public string WorkTypeName { get; init; } = string.Empty;
+            public int Reference { get; init; }
+            public DateTime JobDate { get; init; }
+            public string CustomerCode { get; init; } = string.Empty;
+            public string CustomerName { get; init; } = string.Empty;
+            public string JobName { get; init; } = string.Empty;
+            public string Notes { get; init; } = string.Empty;
+            public decimal Quantity { get; init; }
+            public decimal Amount { get; init; }
+        }
+
         public async Task<ServiceResult<JobDto>> AddAsync(JobDto jobDto)
         {
             if (jobDto == null) throw new ArgumentNullException(nameof(jobDto));
