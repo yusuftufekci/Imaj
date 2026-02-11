@@ -27,14 +27,14 @@
                 <div class="sm:col-span-3">
                     <label for="start-date" class="block text-sm font-medium text-gray-700">Başlangıç Tarihi</label>
                     <div class="mt-1">
-                        <input type="date" name="start-date" id="start-date" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.StartDate.ToString("yyyy-MM-dd")">
+                        <input type="date" name="start-date" id="start-date" x-model="startDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.StartDate.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
 
                 <div class="sm:col-span-3">
                     <label for="end-date" class="block text-sm font-medium text-gray-700">Bitiş Tarihi</label>
                     <div class="mt-1">
-                        <input type="date" name="end-date" id="end-date" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.EndDate.ToString("yyyy-MM-dd")">
+                        <input type="date" name="end-date" id="end-date" x-model="endDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.EndDate.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
 
@@ -75,13 +75,13 @@
             
             <!-- Action Buttons -->
             <div class="mt-8 flex justify-end space-x-3">
-                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                 <button type="button" @@click="downloadDetailedReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Detay Rapor Bas
                 </button>
-                <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <button type="button" @@click="downloadSummaryReport()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Özet Rapor Bas
                 </button>
-                 <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                 <button type="button" @@click="downloadAdministrativeSummaryReport()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     İdari Özet Raporu Bas
                 </button>
             </div>
@@ -96,6 +96,8 @@
 <script>
     function overtimeReport() {
         return {
+            startDate: '@Model.StartDate.ToString("yyyy-MM-dd")',
+            endDate: '@Model.EndDate.ToString("yyyy-MM-dd")',
             selectedEmployeeName: '',
             selectedEmployees: [], 
             
@@ -125,6 +127,62 @@
                         this.selectedEmployeeName = '';
                     }
                 }
+            },
+
+            buildDownloadParams() {
+                if (!this.startDate || !this.endDate) {
+                    alert('Başlangıç ve bitiş tarihi zorunludur.');
+                    return null;
+                }
+
+                const employeeCodes = this.selectedEmployees
+                    .map(e => e.code)
+                    .filter(Boolean);
+
+                const employeeNames = this.selectedEmployees
+                    .map(e => e.name)
+                    .filter(Boolean);
+
+                const params = new URLSearchParams({
+                    startDate: this.startDate,
+                    endDate: this.endDate
+                });
+
+                if (this.selectedCustomerCode) {
+                    params.append('customerCode', this.selectedCustomerCode);
+                }
+                if (this.selectedCustomerName) {
+                    params.append('customerName', this.selectedCustomerName);
+                }
+                if (employeeCodes.length > 0) {
+                    params.append('employeeCodes', employeeCodes.join(','));
+                }
+                if (employeeNames.length > 0) {
+                    params.append('employeeNames', employeeNames.join(', '));
+                }
+
+                return params;
+            },
+
+            downloadReport(actionName) {
+                const params = this.buildDownloadParams();
+                if (!params) {
+                    return;
+                }
+
+                window.location.href = `/OvertimeReport/${actionName}?${params.toString()}`;
+            },
+
+            downloadDetailedReport() {
+                this.downloadReport('DownloadDetailedExcel');
+            },
+
+            downloadSummaryReport() {
+                this.downloadReport('DownloadSummaryExcel');
+            },
+
+            downloadAdministrativeSummaryReport() {
+                this.downloadReport('DownloadAdministrativeSummaryExcel');
             }
         }
     }

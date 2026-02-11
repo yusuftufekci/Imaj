@@ -21,6 +21,21 @@ namespace Imaj.Web.Models
         public string? ProductGroup { get; set; } // For the dropdown on main page
     }
 
+    public class ProductReportDownloadRequest
+    {
+        [Display(Name = "Start Date")]
+        public DateTime StartDate { get; set; }
+
+        [Display(Name = "End Date")]
+        public DateTime EndDate { get; set; }
+
+        public string? ProductGroup { get; set; }
+        public string? ProductCode { get; set; }
+        public string? ProductName { get; set; }
+        public string? CustomerCode { get; set; }
+        public string? CustomerName { get; set; }
+    }
+
     public class ProductFilterModel
     {
         public string? Code { get; set; }

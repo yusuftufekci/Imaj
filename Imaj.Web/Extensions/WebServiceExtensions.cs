@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.DependencyInjection;
+using Imaj.Web.Services.Reports;
 
 namespace Imaj.Web.Extensions
 {
@@ -26,6 +27,9 @@ namespace Imaj.Web.Extensions
                     options.LogoutPath = "/Auth/Logout";
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
                 });
+
+            services.AddScoped<IOvertimeReportExcelService, OvertimeReportExcelService>();
+            services.AddScoped<IProductReportExcelService, ProductReportExcelService>();
 
             return services;
         }
