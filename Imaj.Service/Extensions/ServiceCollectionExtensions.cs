@@ -34,6 +34,7 @@ namespace Imaj.Service.Extensions
             services.AddScoped<IInvoiceService, InvoiceService>();
             services.AddScoped<IJobService, JobService>();
             services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IProductReportService, ProductReportService>();
             services.AddScoped<ILookupService, LookupService>();
 
             // AutoMapper - Assembly scan ile profil bulma
