@@ -29,6 +29,7 @@ namespace Imaj.Web.Extensions
                 });
 
             services.AddScoped<IOvertimeReportExcelService, OvertimeReportExcelService>();
+            services.AddScoped<IProductReportExcelService, ProductReportExcelService>();
 
             return services;
         }

@@ -27,14 +27,14 @@
                 <div class="sm:col-span-3">
                     <label for="start-date" class="block text-sm font-medium text-gray-700">Başlangıç Tarihi</label>
                     <div class="mt-1">
-                        <input type="date" name="start-date" id="start-date" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.StartDate.ToString("yyyy-MM-dd")">
+                        <input type="date" name="start-date" id="start-date" x-model="startDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.StartDate.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
 
                 <div class="sm:col-span-3">
                     <label for="end-date" class="block text-sm font-medium text-gray-700">Bitiş Tarihi</label>
                     <div class="mt-1">
-                        <input type="date" name="end-date" id="end-date" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.EndDate.ToString("yyyy-MM-dd")">
+                        <input type="date" name="end-date" id="end-date" x-model="endDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.EndDate.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
 
@@ -87,7 +87,7 @@
             
             <!-- Action Buttons -->
             <div class="mt-8 flex justify-end space-x-3">
-                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                 <button type="button" @@click="downloadDetailedReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Detaylı Rapor Bas
                 </button>
                 <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -105,6 +105,8 @@
 <script>
     function productReport() {
         return {
+            startDate: '@Model.StartDate.ToString("yyyy-MM-dd")',
+            endDate: '@Model.EndDate.ToString("yyyy-MM-dd")',
             selectedProductName: '',
             selectedProductCode: '',
             
@@ -142,6 +144,36 @@
                     this.selectedProductName = detail.product.name;
                     this.selectedProductCode = detail.product.code;
                 }
+            },
+
+            downloadDetailedReport() {
+                if (!this.startDate || !this.endDate) {
+                    alert('Başlangıç ve bitiş tarihi zorunludur.');
+                    return;
+                }
+
+                const params = new URLSearchParams({
+                    startDate: this.startDate,
+                    endDate: this.endDate
+                });
+
+                if (this.productFilter.productGroup) {
+                    params.append('productGroup', this.productFilter.productGroup);
+                }
+                if (this.selectedProductCode) {
+                    params.append('productCode', this.selectedProductCode);
+                }
+                if (this.selectedProductName) {
+                    params.append('productName', this.selectedProductName);
+                }
+                if (this.selectedCustomerCode) {
+                    params.append('customerCode', this.selectedCustomerCode);
+                }
+                if (this.selectedCustomerName) {
+                    params.append('customerName', this.selectedCustomerName);
+                }
+
+                window.location.href = `/ProductReport/DownloadDetailedExcel?${params.toString()}`;
             }
         }
     }
