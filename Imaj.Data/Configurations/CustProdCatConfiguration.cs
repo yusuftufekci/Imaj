@@ -8,31 +8,30 @@ namespace Imaj.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<CustProdCat> builder)
         {
-            builder.ToTable("CustProdCat"); // Tablo adı tekil
+            builder.ToTable("CustProdCat");
             
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.Id).HasColumnName("ID").HasColumnType("decimal(18, 0)"); // ID tipi veritabanına göre ayarlandı
+            builder.Property(e => e.Id).HasColumnName("ID").HasColumnType("decimal(10, 0)");
 
             builder.Ignore(e => e.CreatedDate);
             builder.Ignore(e => e.IsActive);
 
-            builder.Property(e => e.CustomerID).HasColumnName("CustomerId").HasColumnType("decimal(18, 0)").IsRequired();
-            builder.Property(e => e.ProdCatID).HasColumnName("ProdCatId").HasColumnType("decimal(18, 0)").IsRequired();
-            builder.Property(e => e.Discount).HasColumnName("DiscPercentage").HasColumnType("tinyint").IsRequired(); // DB'den byte geliyor
-            builder.Property(e => e.SelectFlag).HasColumnName("SelectFlag").IsRequired();
-            builder.Property(e => e.Stamp).HasColumnName("Stamp").HasColumnType("smallint").IsRequired();
-            builder.Property(e => e.Deleted).HasColumnName("Deleted").HasColumnType("decimal(18, 0)").IsRequired();
+            builder.Property(e => e.CustomerID).HasColumnType("decimal(8, 0)").IsRequired();
+            builder.Property(e => e.ProdCatID).HasColumnType("decimal(6, 0)").IsRequired();
+            builder.Property(e => e.DiscPercentage).HasColumnType("tinyint").IsRequired();
+            builder.Property(e => e.Deleted).HasColumnType("decimal(10, 0)").IsRequired();
+            builder.Property(e => e.SelectFlag).IsRequired();
+            builder.Property(e => e.Stamp).HasColumnType("smallint").IsRequired();
 
-            // İlişkiler (Opsiyonel ama iyi practice)
             builder.HasOne(d => d.Customer)
                 .WithMany()
                 .HasForeignKey(d => d.CustomerID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             builder.HasOne(d => d.ProdCat)
                 .WithMany()
                 .HasForeignKey(d => d.ProdCatID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

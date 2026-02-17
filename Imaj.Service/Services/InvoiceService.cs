@@ -456,11 +456,11 @@ namespace Imaj.Service.Services
                                   join la in _unitOfWork.Repository<LogAction>().Query()
                                       on log.LogActionID equals la.Id into laGroup
                                   from logAction in laGroup.DefaultIfEmpty()
-                                  orderby log.LogDT descending
+                                  orderby log.ActionDT descending
                                   select new InvoiceLogDto
                                   {
                                       Id = log.Id,
-                                      LogDate = log.LogDT,
+                                      LogDate = log.ActionDT,
                                       UserId = log.UserID,
                                       UserCode = u.Code,
                                       UserName = u.Name,

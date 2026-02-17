@@ -86,7 +86,6 @@ namespace Imaj.Data.Context
         public DbSet<RoleIntf> RoleIntfs { get; set; }
         public DbSet<BaseIntf> BaseIntfs { get; set; }
         public DbSet<RoleMenu> RoleMenus { get; set; }
-        public DbSet<BaseMenu> BaseMenus { get; set; }
         public DbSet<RoleMeth> RoleMeths { get; set; }
         public DbSet<BaseMeth> BaseMeths { get; set; }
         public DbSet<RoleProp> RoleProps { get; set; }
@@ -105,6 +104,51 @@ namespace Imaj.Data.Context
         public DbSet<InvoiceLog> InvoiceLogs { get; set; }
         public DbSet<ReserveLog> ReserveLogs { get; set; }
         public DbSet<MsgLog> MsgLogs { get; set; }
+
+
+        // Legacy query/session/support tables
+        public DbSet<BaseContQry> BaseContQries { get; set; }
+        public DbSet<BaseIntfQry> BaseIntfQries { get; set; }
+        public DbSet<BaseMethQry> BaseMethQries { get; set; }
+        public DbSet<BasePropQry> BasePropQries { get; set; }
+        public DbSet<CompanyQry> CompanyQries { get; set; }
+        public DbSet<Counter> Counters { get; set; }
+        public DbSet<CustomerQry> CustomerQries { get; set; }
+        public DbSet<EmployeeQry> EmployeeQries { get; set; }
+        public DbSet<FunctionQry> FunctionQries { get; set; }
+        public DbSet<IDCounter> IDCounters { get; set; }
+        public DbSet<InvoiceQry> InvoiceQries { get; set; }
+        public DbSet<JobProdQry> JobProdQries { get; set; }
+        public DbSet<JobQry> JobQries { get; set; }
+        public DbSet<JobWorkQry> JobWorkQries { get; set; }
+        public DbSet<JobWorkQryEmp> JobWorkQryEmps { get; set; }
+        public DbSet<LanguageQry> LanguageQries { get; set; }
+        public DbSet<LockChild> LockChilds { get; set; }
+        public DbSet<LockMaster> LockMasters { get; set; }
+        public DbSet<MatchQry> MatchQries { get; set; }
+        public DbSet<MsgLogQry> MsgLogQries { get; set; }
+        public DbSet<PerfStat> PerfStats { get; set; }
+        public DbSet<ProdCatQry> ProdCatQries { get; set; }
+        public DbSet<ProdFunc> ProdFuncs { get; set; }
+        public DbSet<ProdGrpQry> ProdGrpQries { get; set; }
+        public DbSet<ProductQry> ProductQries { get; set; }
+        public DbSet<Query> Queries { get; set; }
+        public DbSet<ReasonQry> ReasonQries { get; set; }
+        public DbSet<ReserveQry> ReserveQries { get; set; }
+        public DbSet<ResoCatQry> ResoCatQries { get; set; }
+        public DbSet<ResourceQry> ResourceQries { get; set; }
+        public DbSet<RoleQry> RoleQries { get; set; }
+        public DbSet<Session> Sessions { get; set; }
+        public DbSet<SessionQry> SessionQries { get; set; }
+        public DbSet<SortQry> SortQries { get; set; }
+        public DbSet<StateQry> StateQries { get; set; }
+        public DbSet<TaxTypeQry> TaxTypeQries { get; set; }
+        public DbSet<TimeTypeQry> TimeTypeQries { get; set; }
+        public DbSet<TransQry> TransQries { get; set; }
+        public DbSet<Usage> Usages { get; set; }
+        public DbSet<UserQry> UserQries { get; set; }
+        public DbSet<WorkTypeQry> WorkTypeQries { get; set; }
+        public DbSet<Dtproperties> DtpropertiesSet { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

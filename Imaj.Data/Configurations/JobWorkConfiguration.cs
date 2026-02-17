@@ -15,6 +15,7 @@ namespace Imaj.Data.Configurations
             builder.Ignore(e => e.IsActive);
 
             builder.Property(e => e.Id)
+                .HasColumnName("ID")
                 .HasColumnType("decimal(12, 0)");
 
             builder.Property(e => e.JobID)

@@ -80,7 +80,7 @@ namespace Imaj.Service.Services
                             Id = currentMaxId, // Manuel ID ataması
                             CustomerID = nextId,
                             ProdCatID = cat.Id,
-                            Discount = cat.Discount,
+                            DiscPercentage = (byte)cat.Discount,
                             SelectFlag = false,
                             Stamp = 1,
                             Deleted = 0
@@ -161,7 +161,7 @@ namespace Imaj.Service.Services
                             Id = currentMaxId, // Manuel ID ataması
                             CustomerID = customer.Id,
                             ProdCatID = cat.Id,
-                            Discount = cat.Discount,
+                            DiscPercentage = (byte)cat.Discount,
                             SelectFlag = false,
                             Stamp = 1,
                             Deleted = 0
@@ -293,7 +293,7 @@ namespace Imaj.Service.Services
                                TaxCode = tt.Code,
                                TaxName = xtt.Name,
                                Sequence = pc.Sequence,
-                               Discount = cpc.Discount,
+                               Discount = cpc.DiscPercentage,
                                IsSelected = true
                            };
 

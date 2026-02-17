@@ -16,9 +16,7 @@ namespace Imaj.Data.Configurations
             builder.Ignore(e => e.IsActive);
 
             builder.Property(e => e.RoleID).HasColumnType("decimal(4, 0)").IsRequired();
-            builder.Property(e => e.BaseMenuID).HasColumnType("decimal(6, 0)").IsRequired();
-            builder.Property(e => e.Visible).IsRequired();
-            builder.Property(e => e.Enabled).IsRequired();
+            builder.Property(e => e.BaseIntfID).HasColumnType("decimal(8, 0)").IsRequired();
             builder.Property(e => e.Deleted).HasColumnType("decimal(6, 0)").IsRequired();
             builder.Property(e => e.SelectFlag).IsRequired();
             builder.Property(e => e.Stamp).HasColumnType("smallint").IsRequired();
@@ -28,9 +26,9 @@ namespace Imaj.Data.Configurations
                 .HasForeignKey(d => d.RoleID)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            builder.HasOne(d => d.BaseMenu)
+            builder.HasOne(d => d.BaseIntf)
                 .WithMany()
-                .HasForeignKey(d => d.BaseMenuID)
+                .HasForeignKey(d => d.BaseIntfID)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }
