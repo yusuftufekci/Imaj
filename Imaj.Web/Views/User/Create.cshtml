@@ -44,8 +44,13 @@
      @@employee-selected.window="handleEmployeeSelection($event.detail)"
      class="space-y-6">
 
-    <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Kullanici</h2>
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
+                Yeni Kullanıcı
+            </h2>
+        </div>
     </div>
 
     @if (!ViewData.ModelState.IsValid)

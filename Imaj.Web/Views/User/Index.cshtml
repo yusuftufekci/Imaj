@@ -3,93 +3,123 @@
 @inject IPermissionViewService PermissionViewService
 
 @{
-    ViewData["Title"] = "Kullanici Sorgulama";
+    ViewData["Title"] = "Kullanıcı İşlemleri";
     var canAdd = await PermissionViewService.CanExecuteMethodAsync(972);
 }
 
-<div class="space-y-8">
-    <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Kullanici Sorgulama</h2>
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
+                Kullanıcı Sorgulama
+            </h2>
+        </div>
     </div>
 
-    <form method="get" action="/User/List" class="bg-white border border-gray-200 shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200 max-w-4xl mx-auto">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">Kriterler</h3>
+    <div class="text-center">
+        <form method="get" action="/User/List" class="inline-block w-full max-w-4xl text-left">
+            <!-- Main Filter Card -->
+            <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- COLUMN 1: Kriterler -->
+                    <div class="lg:col-span-12 space-y-4">
+                        <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-center">Kriterler</h3>
+                        
+                        <!-- Kod -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 lg:col-start-3 text-right text-sm font-medium text-gray-700">Kod</label>
+                            <div class="col-span-8 lg:col-span-4">
+                                <input type="text" name="Code" value="@Model.Filter.Code" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Kod</label>
-                    <input type="text" name="Code" value="@Model.Filter.Code" class="md:col-span-9 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <!-- Ad -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 lg:col-start-3 text-right text-sm font-medium text-gray-700">Ad</label>
+                            <div class="col-span-8 lg:col-span-4">
+                                <input type="text" name="Name" value="@Model.Filter.Name" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
 
-                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Ad</label>
-                    <input type="text" name="Name" value="@Model.Filter.Name" class="md:col-span-9 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <!-- Geçersiz -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 lg:col-start-3 text-right text-sm font-medium text-gray-700">Geçersiz</label>
+                            <div class="col-span-8 lg:col-span-4">
+                                <select name="IsInvalid" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <option value="">Tümü</option>
+                                    @if (Model.Filter.IsInvalid == false)
+                                    {
+                                        <option value="false" selected>Hayır</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="false">Hayır</option>
+                                    }
 
-                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Gecersiz</label>
-                    <select name="IsInvalid" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">Tumu</option>
-                        @if (Model.Filter.IsInvalid == false)
-                        {
-                            <option value="false" selected>Hayir</option>
-                        }
-                        else
-                        {
-                            <option value="false">Hayir</option>
-                        }
-
-                        @if (Model.Filter.IsInvalid == true)
-                        {
-                            <option value="true" selected>Evet</option>
-                        }
-                        else
-                        {
-                            <option value="true">Evet</option>
-                        }
-                    </select>
+                                    @if (Model.Filter.IsInvalid == true)
+                                    {
+                                        <option value="true" selected>Evet</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="true">Evet</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <span class="text-sm text-blue-900 font-semibold">Ilk</span>
-                <input type="number" name="Page" value="@(Model.Filter.Page <= 0 ? 1 : Model.Filter.Page)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                <span class="text-sm text-blue-900 font-semibold">Sayfa Boyu</span>
-                <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                    Sorgula
-                </button>
-                <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    Temizle
-                </button>
+                
+                <!-- BUTTONS -->
+                <div class="mt-8 flex flex-col items-center space-y-4 border-t border-gray-200 pt-6">
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm text-blue-900 font-semibold">İlk</label>
+                        <input type="number" name="Page" value="@(Model.Filter.Page <= 0 ? 1 : Model.Filter.Page)" min="1" class="w-16 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        <label class="text-sm text-blue-900 font-semibold">Sayfa Boyu</label>
+                        <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-16 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        
+                        <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                            Sorgula
+                        </button>
+                        <button type="reset" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                            Temizle
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </form>
-
+    </div>
+    
     @if (canAdd)
     {
-        <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6 max-w-4xl mx-auto">
-                <h3 class="text-3xl font-bold text-orange-600 text-center mb-5">Kullanici Yaratma</h3>
+        <!-- User Creation Section -->
+        <div class="text-center mt-10">
+             <h2 class="text-xl font-bold text-orange-600 mb-4">Kullanıcı Yaratma</h2>
+             <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
+                 <form method="get" action="/User/Create">
+                     <div class="grid grid-cols-12 gap-4 items-center justify-center">
+                         <label class="col-span-4 text-right text-sm font-bold text-gray-700 bg-gray-200 px-2 py-1">Ön Bilgiler</label>
+                         <div class="col-span-8"></div> <!-- Spacer/Header effect -->
+                         
+                         <label class="col-span-4 text-right text-sm font-medium text-gray-700">Şirket</label>
+                         <div class="col-span-8 text-left text-sm text-gray-900 font-medium">@Model.CompanyName</div>
 
-                <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                    <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">On Bilgiler</h4>
-
-                    <form method="get" action="/User/Create" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                            <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Sirket</label>
-                            <div class="md:col-span-9 text-sm text-gray-900 font-medium">@Model.CompanyName</div>
-
-                            <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Kod</label>
-                            <input type="text" name="code" value="@Model.NewUserCode" maxlength="16" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm uppercase">
-                        </div>
-
-                        <div class="pt-2 text-center">
-                            <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                                Yeni Kullanici Yarat
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                         <label class="col-span-4 text-right text-sm font-medium text-gray-700">Kod</label>
+                         <div class="col-span-6 lg:col-span-4">
+                             <input type="text" name="code" value="@Model.NewUserCode" maxlength="16" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md uppercase">
+                         </div>
+                     </div>
+                     <div class="mt-4 flex justify-center">
+                         <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                            Yeni Kullanıcı Yarat
+                        </button>
+                     </div>
+                 </form>
+             </div>
         </div>
     }
 </div>

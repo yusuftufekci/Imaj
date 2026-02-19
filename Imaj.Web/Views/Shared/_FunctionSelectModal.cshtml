@@ -1,90 +1,164 @@
+
+<!-- Function Selection Modal (v6.0 - Full Screen Fix Compatibility) -->
+<style>
+    [x-cloak] { display: none !important; }
+    
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+    
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(107, 114, 128, 0.75);
+        z-index: 60;
+    }
+    
+    .modal-content {
+        position: relative;
+        z-index: 70;
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        width: 100%;
+        max-width: 48rem; /* max-w-3xl */
+        max-height: 90vh;
+        overflow-y: auto;
+        margin: auto;
+    }
+</style>
+
 <div x-data="functionSelectModal()"
      @@user-function-select-open.window="openModal($event.detail)"
      x-show="isOpen"
-     x-on:keydown.escape.window="closeModal()"
-     class="fixed inset-0 z-[70] overflow-y-auto p-4"
-     style="display: none;">
+     x-cloak
+     class="modal-overlay"
+     aria-labelledby="modal-title"
+     role="dialog"
+     aria-modal="true">
 
-    <div x-show="isOpen" @@click="closeModal()" class="fixed inset-0 bg-gray-500/75" aria-hidden="true"></div>
+    <div x-show="isOpen" 
+         x-on:click="closeModal()" 
+         class="modal-backdrop" 
+         aria-hidden="true"></div>
 
-    <div class="relative z-[71] min-h-full flex items-center justify-center py-6">
-        <div x-show="isOpen" class="w-full max-w-3xl bg-white rounded-lg text-left overflow-hidden shadow-xl">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 space-y-4">
-                <h3 class="text-lg font-medium text-center text-orange-600 font-bold">Fonksiyon Secimi</h3>
+    <div x-show="isOpen" class="modal-content">
+        <!-- Header -->
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 font-bold text-orange-600" id="modal-title">
+                    Fonksiyon Seçimi
+                </h3>
+                <button x-on:click="closeModal()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                    <span class="sr-only">Kapat</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
 
-                <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                        <label class="md:col-span-2 text-sm font-medium text-blue-900 md:text-right">Ad</label>
-                        <input type="text" x-model="filter.name" x-on:keyup.enter="search(1)" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm">
+            <!-- Filter Panel -->
+            <div class="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <label class="md:col-span-2 text-sm font-medium text-gray-700 md:text-right">Ad</label>
+                    <input type="text" x-model="filter.name" x-on:keyup.enter="search(1)" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
 
-                        <label class="md:col-span-2 text-sm font-medium text-blue-900 md:text-right">Gecersiz</label>
-                        <select x-model="filter.isInvalid" class="md:col-span-2 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                            <option value="">Tumu</option>
-                            <option value="false">Hayir</option>
-                            <option value="true">Evet</option>
-                        </select>
-                    </div>
-
-                    <div class="mt-3 flex justify-end gap-2">
-                        <button type="button" @@click="resetFilter()" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
-                            Temizle
-                        </button>
-                        <button type="button" @@click="search(1)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                            Sorgula
-                        </button>
-                    </div>
+                    <label class="md:col-span-2 text-sm font-medium text-gray-700 md:text-right">Geçersiz</label>
+                    <select x-model="filter.isInvalid" class="md:col-span-2 shadow-sm border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Tümü</option>
+                        <option value="false">Hayır</option>
+                        <option value="true">Evet</option>
+                    </select>
                 </div>
 
-                <div class="overflow-x-auto border border-gray-200 rounded-md">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12" x-show="isMultiSelect">Sec</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
-                                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">Gecersiz</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase" x-show="!isMultiSelect">Islem</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            <template x-for="functionItem in items" :key="functionItem.id">
-                                <tr class="hover:bg-gray-50 cursor-pointer" @@click="isMultiSelect ? toggleSelection(functionItem) : select(functionItem)">
-                                    <td class="px-4 py-2" x-show="isMultiSelect">
-                                        <input type="checkbox" :checked="isSelected(functionItem)" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                    </td>
-                                    <td class="px-4 py-2 text-sm text-gray-900" x-text="functionItem.name"></td>
-                                    <td class="px-4 py-2 text-center"><input type="checkbox" disabled :checked="functionItem.invisible" class="h-4 w-4 text-gray-400 border-gray-300 rounded"></td>
-                                    <td class="px-4 py-2 text-right text-sm" x-show="!isMultiSelect">
-                                        <button type="button" class="text-indigo-600 hover:text-indigo-900">Sec</button>
-                                    </td>
-                                </tr>
-                            </template>
-                            <tr x-show="items.length === 0">
-                                <td colspan="4" class="px-4 py-8 text-sm text-gray-500 text-center">Kayit bulunamadi.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button type="button" @@click="resetFilter()" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                        Temizle
+                    </button>
+                    <button type="button" @@click="search(1)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                        Sorgula
+                    </button>
                 </div>
+            </div>
 
-                <div class="flex items-center justify-between text-sm">
-                    <div class="text-gray-600">
-                        Toplam <span class="font-semibold" x-text="totalCount"></span> kayit
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button type="button" @@click="search(page - 1)" :disabled="page <= 1" class="px-3 py-1 border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Onceki</button>
-                        <span class="text-gray-700">Sayfa <span x-text="page"></span></span>
-                        <button type="button" @@click="search(page + 1)" :disabled="!hasMore" class="px-3 py-1 border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Sonraki</button>
+            <!-- Table -->
+            <div class="flex flex-col">
+                <div class="overflow-x-auto">
+                    <div class="inline-block min-w-full align-middle">
+                        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left" x-show="isMultiSelect">
+                                            <span class="sr-only">Seç</span>
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad</th>
+                                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Geçersiz</th>
+                                        <th scope="col" class="relative px-6 py-3" x-show="!isMultiSelect">
+                                            <span class="sr-only">Seç</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="functionItem in items" :key="functionItem.id">
+                                        <tr class="hover:bg-gray-50 cursor-pointer" :class="{'bg-red-50': functionItem.invisible}" @@click="isMultiSelect ? toggleSelection(functionItem) : select(functionItem)">
+                                            <td class="px-6 py-4 whitespace-nowrap" x-show="isMultiSelect">
+                                                <input type="checkbox" :checked="isSelected(functionItem)" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="functionItem.name"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                                <input type="checkbox" disabled :checked="functionItem.invisible" class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" x-show="!isMultiSelect">
+                                                <button class="text-indigo-600 hover:text-indigo-900">Seç</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="items.length === 0">
+                                        <td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">Kayıt bulunamadı.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200">
-                <button x-show="isMultiSelect" type="button" @@click="submitMultiSelection()" class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto">
-                    Secilenleri Ekle (<span x-text="selectedItems.length"></span>)
-                </button>
-                <button type="button" @@click="closeModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto">
-                    Kapat
-                </button>
+            <!-- Pagination -->
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2">
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-start">
+                    <p class="text-sm text-gray-700">
+                        Toplam <span class="font-medium" x-text="totalCount"></span> kayıt, Sayfa <span class="font-medium" x-text="page"></span>
+                    </p>
+                </div>
+                <div>
+                   <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button type="button" @@click="search(page - 1)" :disabled="page <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                            Önceki
+                        </button>
+                        <button type="button" @@click="search(page + 1)" :disabled="!hasMore" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                            Sonraki
+                        </button>
+                   </nav>
+                </div>
             </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200">
+            <button x-show="isMultiSelect" type="button" @@click="submitMultiSelection()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                Seçilenleri Ekle (<span x-text="selectedItems.length"></span>)
+            </button>
+            <button type="button" @@click="closeModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                Kapat
+            </button>
         </div>
     </div>
 </div>
