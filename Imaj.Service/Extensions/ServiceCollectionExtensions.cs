@@ -42,6 +42,7 @@ namespace Imaj.Service.Extensions
             services.AddScoped<IResoCatService, ResoCatService>();
             services.AddScoped<IFunctionService, FunctionService>();
             services.AddScoped<IResourceService, ResourceService>();
+            services.AddScoped<IReasonService, ReasonService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILookupService, LookupService>();
 
