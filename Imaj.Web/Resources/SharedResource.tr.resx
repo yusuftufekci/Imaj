@@ -21,6 +21,9 @@
   <data name="WorkType" xml:space="preserve">
     <value>Görev Tipi</value>
   </data>
+  <data name="TimeType" xml:space="preserve">
+    <value>Mesai Tipi</value>
+  </data>
   <data name="Resource" xml:space="preserve">
     <value>Kaynak</value>
   </data>
