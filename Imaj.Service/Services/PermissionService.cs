@@ -284,13 +284,16 @@ namespace Imaj.Service.Services
                 var anyGlobalPropWrite = activeRoles.Any(x => x.AllPropWrite);
 
                 var baseMethQuery = _unitOfWork.Repository<BaseMeth>().Query();
-                if (methodContainerIds.Count > 0)
+                if (!anyGlobalMethRead && !anyGlobalMethWrite)
                 {
-                    baseMethQuery = baseMethQuery.Where(x => methodContainerIds.Contains(x.BaseContID));
-                }
-                else if (!anyGlobalMethRead && !anyGlobalMethWrite)
-                {
-                    baseMethQuery = baseMethQuery.Where(_ => false);
+                    if (methodContainerIds.Count > 0)
+                    {
+                        baseMethQuery = baseMethQuery.Where(x => methodContainerIds.Contains(x.BaseContID));
+                    }
+                    else
+                    {
+                        baseMethQuery = baseMethQuery.Where(_ => false);
+                    }
                 }
 
                 var baseMethods = await baseMethQuery
@@ -362,13 +365,16 @@ namespace Imaj.Service.Services
                 AddTrace(snapshot, "METHOD_ACCESS", "ALLOW", $"MethodPermissionCount={snapshot.Methods.Count}, ExplicitRoleMeth={explicitMethodIds.Count}");
 
                 var basePropQuery = _unitOfWork.Repository<BaseProp>().Query();
-                if (methodContainerIds.Count > 0)
+                if (!anyGlobalPropRead && !anyGlobalPropWrite)
                 {
-                    basePropQuery = basePropQuery.Where(x => methodContainerIds.Contains(x.BaseContID));
-                }
-                else if (!anyGlobalPropRead && !anyGlobalPropWrite)
-                {
-                    basePropQuery = basePropQuery.Where(_ => false);
+                    if (methodContainerIds.Count > 0)
+                    {
+                        basePropQuery = basePropQuery.Where(x => methodContainerIds.Contains(x.BaseContID));
+                    }
+                    else
+                    {
+                        basePropQuery = basePropQuery.Where(_ => false);
+                    }
                 }
 
                 var baseProps = await basePropQuery

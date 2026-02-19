@@ -9,6 +9,9 @@
   <data name="Customer" xml:space="preserve">
     <value>Customer</value>
   </data>
+  <data name="User" xml:space="preserve">
+    <value>User</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Reservation</value>
   </data>

@@ -1,0 +1,497 @@
+@using System.Net
+@using System.Text.Json
+@model UserEditViewModel
+
+@{
+    ViewData["Title"] = "Kullanici";
+
+    var initialState = new
+    {
+        roles = Model.Roles.Select(x => new
+        {
+            roleId = x.RoleId,
+            name = x.Name,
+            invisible = x.Invisible,
+            global = x.Global,
+            allMenu = x.AllMenu
+        }),
+        functions = Model.Functions.Select(x => new
+        {
+            functionId = x.FunctionId,
+            name = x.Name,
+            invisible = x.Invisible
+        }),
+        employees = Model.Employees.Select(x => new
+        {
+            employeeId = x.EmployeeId,
+            code = x.Code,
+            name = x.Name,
+            invisible = x.Invisible
+        }),
+        form = new
+        {
+            name = Model.Name,
+            languageId = Model.LanguageId,
+            allEmployee = Model.AllEmployee,
+            isInvalid = Model.IsInvalid,
+            automaticForward = Model.AutomaticForward
+        }
+    };
+
+    string BuildEditUrl(int index)
+    {
+        if (Model.SelectedIds == null || Model.SelectedIds.Count == 0)
+        {
+            return "#";
+        }
+
+        if (index < 0)
+        {
+            index = 0;
+        }
+
+        if (index >= Model.SelectedIds.Count)
+        {
+            index = Model.SelectedIds.Count - 1;
+        }
+
+        var selected = Model.SelectedIds[index];
+        var idsQuery = string.Join("&selectedIds=", Model.SelectedIds.Select(WebUtility.UrlEncode));
+        var url = $"/User/Edit?id={WebUtility.UrlEncode(selected)}&currentIndex={index}&selectedIds={idsQuery}";
+
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+
+        return url;
+    }
+
+    string BuildDetailUrl()
+    {
+        var url = $"/User/Detail?id={WebUtility.UrlEncode(Model.Code)}";
+        if (Model.SelectedIds != null && Model.SelectedIds.Count > 0)
+        {
+            var idsQuery = string.Join("&selectedIds=", Model.SelectedIds.Select(WebUtility.UrlEncode));
+            url += $"&currentIndex={Model.CurrentIndex}&selectedIds={idsQuery}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+
+        return url;
+    }
+}
+
+<div x-data='userEditPage(@Html.Raw(JsonSerializer.Serialize(initialState)))'
+     @@role-selected.window="handleRoleSelection($event.detail)"
+     @@user-function-selected.window="handleFunctionSelection($event.detail)"
+     @@employee-selected.window="handleEmployeeSelection($event.detail)"
+     class="space-y-6">
+
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">Kullanici</h2>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="rounded-md bg-red-50 border border-red-200 p-4">
+            <div asp-validation-summary="All" class="text-sm text-red-700"></div>
+        </div>
+    }
+
+    <form method="post" action="/User/Update" class="space-y-4">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <input type="hidden" name="CompanyId" value="@Model.CompanyId" />
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+        @foreach (var selectedId in Model.SelectedIds)
+        {
+            <input type="hidden" name="SelectedIds" value="@selectedId" />
+        }
+
+        <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6 max-w-4xl mx-auto">
+                <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">Kullanici</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Sirket</label>
+                        <div class="md:col-span-9 text-gray-900">@Model.CompanyName</div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Kod</label>
+                        <div class="md:col-span-3">
+                            <input type="text" name="Code" value="@Model.Code" readonly class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm bg-gray-100">
+                        </div>
+                        <div class="md:col-span-6">
+                            <a href="#" class="text-blue-700 font-semibold hover:underline" @@click.prevent="showPasswordInfo()">Sifre Degistir</a>
+                        </div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Ad</label>
+                        <div class="md:col-span-9">
+                            <input type="text" name="Name" x-model="form.name" maxlength="48" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        </div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Dil</label>
+                        <div class="md:col-span-3">
+                            <select name="LanguageId" x-model="form.languageId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                @foreach (var language in Model.Languages)
+                                {
+                                    <option value="@language.Id">@language.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Tum Calisanlar</label>
+                        <div class="md:col-span-3">
+                            <input type="checkbox" name="AllEmployee" x-model="form.allEmployee" @@change="toggleAllEmployee" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Gecersiz</label>
+                        <div class="md:col-span-3">
+                            <input type="checkbox" name="IsInvalid" x-model="form.isInvalid" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Rol</h3>
+                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <template x-for="(role, index) in roles" :key="role.roleId">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2">
+                                    <input type="checkbox" :value="String(role.roleId)" x-model="selectedRoleIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    <input type="hidden" :name="'Roles[' + index + '].RoleId'" :value="role.roleId">
+                                    <input type="hidden" :name="'Roles[' + index + '].Name'" :value="role.name">
+                                    <input type="hidden" :name="'Roles[' + index + '].Invisible'" :value="role.invisible">
+                                    <input type="hidden" :name="'Roles[' + index + '].Global'" :value="role.global">
+                                    <input type="hidden" :name="'Roles[' + index + '].AllMenu'" :value="role.allMenu">
+                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="role.name"></td>
+                            </tr>
+                        </template>
+                        <tr x-show="roles.length === 0">
+                            <td colspan="2" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-blue-900 font-semibold">Sayfa Boyu</span>
+                        <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
+                        <button type="button" @@click="removeSelectedRoles" class="text-red-600 font-semibold hover:underline">Sil</button>
+                        <button type="button" @@click="openRoleModal" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                    </div>
+                    <span class="text-gray-500" x-text="roles.length + ' rol'"></span>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Fonksiyon</h3>
+                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <template x-for="(functionItem, index) in functions" :key="functionItem.functionId">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2">
+                                    <input type="checkbox" :value="String(functionItem.functionId)" x-model="selectedFunctionIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    <input type="hidden" :name="'Functions[' + index + '].FunctionId'" :value="functionItem.functionId">
+                                    <input type="hidden" :name="'Functions[' + index + '].Name'" :value="functionItem.name">
+                                    <input type="hidden" :name="'Functions[' + index + '].Invisible'" :value="functionItem.invisible">
+                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="functionItem.name"></td>
+                            </tr>
+                        </template>
+                        <tr x-show="functions.length === 0">
+                            <td colspan="2" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-blue-900 font-semibold">Sayfa Boyu</span>
+                        <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
+                        <button type="button" @@click="removeSelectedFunctions" class="text-red-600 font-semibold hover:underline">Sil</button>
+                        <button type="button" @@click="openFunctionModal" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                    </div>
+                    <span class="text-gray-500" x-text="functions.length + ' fonksiyon'"></span>
+                </div>
+            </section>
+        </div>
+
+        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800">Calisan</h3>
+            </div>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kod</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <template x-for="(employee, index) in employees" :key="employee.employeeId">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2">
+                                <input type="checkbox" :value="String(employee.employeeId)" x-model="selectedEmployeeIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                <input type="hidden" :name="'Employees[' + index + '].EmployeeId'" :value="employee.employeeId">
+                                <input type="hidden" :name="'Employees[' + index + '].Code'" :value="employee.code">
+                                <input type="hidden" :name="'Employees[' + index + '].Name'" :value="employee.name">
+                                <input type="hidden" :name="'Employees[' + index + '].Invisible'" :value="employee.invisible">
+                            </td>
+                            <td class="px-4 py-2 text-sm text-gray-900" x-text="employee.code"></td>
+                            <td class="px-4 py-2 text-sm text-gray-900" x-text="employee.name"></td>
+                        </tr>
+                    </template>
+                    <tr x-show="employees.length === 0">
+                        <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                    <button type="button" @@click="removeSelectedEmployees" class="text-red-600 font-semibold hover:underline" :disabled="form.allEmployee">Sil</button>
+                    <button type="button" @@click="openEmployeeModal" class="text-blue-700 font-semibold hover:underline" :disabled="form.allEmployee">Ekle</button>
+                </div>
+                <span class="text-gray-500" x-show="form.allEmployee">Tum calisan secili oldugu icin atama listesi kullanilmiyor.</span>
+            </div>
+        </section>
+
+        <div class="space-y-4">
+            <partial name="_DetailNavigator" model="@(new DetailNavigatorViewModel
+            {
+                Header = "Kullanici Navigasyonu",
+                CurrentIndex = Model.CurrentIndex,
+                TotalCount = Model.TotalSelected,
+                FirstUrl = BuildEditUrl(0),
+                PreviousUrl = BuildEditUrl(Model.CurrentIndex - 1),
+                NextUrl = BuildEditUrl(Model.CurrentIndex + 1),
+                LastUrl = BuildEditUrl(Model.SelectedIds.Count - 1),
+                FormAction = "/User/Edit",
+                SelectedIds = Model.SelectedIds,
+                ReturnUrl = Model.ReturnUrl
+            })" />
+
+            <div class="flex items-center justify-center gap-4">
+                <label class="inline-flex items-center text-sm text-gray-700">
+                    <input type="checkbox" name="AutomaticForward" x-model="form.automaticForward" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                    <span class="ml-2">Otomatik Ilerle</span>
+                </label>
+
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                    Degistir
+                </button>
+                <a href="@BuildDetailUrl()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                    Vazgec
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <partial name="_RoleSelectModal" />
+    <partial name="_FunctionSelectModal" />
+    <partial name="_EmployeeSelectModal" />
+</div>
+
+@section Scripts {
+    <script src="~/js/components/role-select-modal.js" asp-append-version="true"></script>
+    <script src="~/js/components/function-select-modal.js" asp-append-version="true"></script>
+    <script>
+        function userEditPage(initialState) {
+            return {
+                form: {
+                    name: initialState.form?.name || '',
+                    languageId: initialState.form?.languageId || 1,
+                    allEmployee: !!initialState.form?.allEmployee,
+                    isInvalid: !!initialState.form?.isInvalid,
+                    automaticForward: !!initialState.form?.automaticForward
+                },
+                roles: initialState.roles || [],
+                functions: initialState.functions || [],
+                employees: initialState.employees || [],
+
+                selectedRoleIds: [],
+                selectedFunctionIds: [],
+                selectedEmployeeIds: [],
+
+                toggleAllEmployee() {
+                    if (this.form.allEmployee) {
+                        this.employees = [];
+                        this.selectedEmployeeIds = [];
+                    }
+                },
+
+                showPasswordInfo() {
+                    if (window.Toast && typeof window.Toast.error === 'function') {
+                        window.Toast.error('Sifre degistirme islemi bu sprintte aktif edilmedi.');
+                    } else {
+                        alert('Sifre degistirme islemi bu sprintte aktif edilmedi.');
+                    }
+                },
+
+                openRoleModal() {
+                    const excludeIds = this.roles.map(x => x.roleId).join(',');
+                    this.$dispatch('role-select-open', {
+                        targetId: 'user-edit-role',
+                        isMultiSelect: true,
+                        excludeIds: excludeIds
+                    });
+                },
+
+                openFunctionModal() {
+                    const excludeIds = this.functions.map(x => x.functionId).join(',');
+                    this.$dispatch('user-function-select-open', {
+                        targetId: 'user-edit-function',
+                        isMultiSelect: true,
+                        excludeIds: excludeIds
+                    });
+                },
+
+                openEmployeeModal() {
+                    if (this.form.allEmployee) {
+                        return;
+                    }
+
+                    this.$dispatch('employee-select-open', {
+                        targetId: 'userEditEmployee',
+                        isMultiSelect: true,
+                        showFilter: true
+                    });
+                },
+
+                handleRoleSelection(detail) {
+                    if (detail.targetId !== 'user-edit-role') {
+                        return;
+                    }
+
+                    const incoming = detail.roles || (detail.role ? [detail.role] : []);
+                    incoming.forEach(role => {
+                        const roleId = role.roleId ?? role.id;
+                        if (!roleId) {
+                            return;
+                        }
+
+                        if (this.roles.some(x => Number(x.roleId) === Number(roleId))) {
+                            return;
+                        }
+
+                        this.roles.push({
+                            roleId: Number(roleId),
+                            name: role.name || '',
+                            invisible: !!role.invisible,
+                            global: !!role.global,
+                            allMenu: !!role.allMenu
+                        });
+                    });
+                },
+
+                handleFunctionSelection(detail) {
+                    if (detail.targetId !== 'user-edit-function') {
+                        return;
+                    }
+
+                    const incoming = detail.functions || (detail.functionItem ? [detail.functionItem] : []);
+                    incoming.forEach(functionItem => {
+                        const functionId = functionItem.functionId ?? functionItem.id;
+                        if (!functionId) {
+                            return;
+                        }
+
+                        if (this.functions.some(x => Number(x.functionId) === Number(functionId))) {
+                            return;
+                        }
+
+                        this.functions.push({
+                            functionId: Number(functionId),
+                            name: functionItem.name || '',
+                            invisible: !!functionItem.invisible
+                        });
+                    });
+                },
+
+                handleEmployeeSelection(detail) {
+                    if (detail.targetId !== 'userEditEmployee') {
+                        return;
+                    }
+
+                    if (this.form.allEmployee) {
+                        return;
+                    }
+
+                    const incoming = detail.employees || (detail.employee ? [detail.employee] : []);
+                    incoming.forEach(employee => {
+                        const employeeId = employee.employeeId ?? employee.id;
+                        if (!employeeId) {
+                            return;
+                        }
+
+                        if (this.employees.some(x => Number(x.employeeId) === Number(employeeId))) {
+                            return;
+                        }
+
+                        this.employees.push({
+                            employeeId: Number(employeeId),
+                            code: employee.code || '',
+                            name: employee.name || '',
+                            invisible: !!employee.invisible
+                        });
+                    });
+                },
+
+                removeSelectedRoles() {
+                    if (this.selectedRoleIds.length === 0) {
+                        return;
+                    }
+
+                    const selected = this.selectedRoleIds.map(x => Number(x));
+                    this.roles = this.roles.filter(x => !selected.includes(Number(x.roleId)));
+                    this.selectedRoleIds = [];
+                },
+
+                removeSelectedFunctions() {
+                    if (this.selectedFunctionIds.length === 0) {
+                        return;
+                    }
+
+                    const selected = this.selectedFunctionIds.map(x => Number(x));
+                    this.functions = this.functions.filter(x => !selected.includes(Number(x.functionId)));
+                    this.selectedFunctionIds = [];
+                },
+
+                removeSelectedEmployees() {
+                    if (this.selectedEmployeeIds.length === 0) {
+                        return;
+                    }
+
+                    const selected = this.selectedEmployeeIds.map(x => Number(x));
+                    this.employees = this.employees.filter(x => !selected.includes(Number(x.employeeId)));
+                    this.selectedEmployeeIds = [];
+                }
+            };
+        }
+    </script>
+}

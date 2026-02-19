@@ -9,6 +9,9 @@
   <data name="Customer" xml:space="preserve">
     <value>Müşteri</value>
   </data>
+  <data name="User" xml:space="preserve">
+    <value>Kullanıcı</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Rezervasyon</value>
   </data>

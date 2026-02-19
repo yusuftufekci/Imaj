@@ -38,6 +38,7 @@ namespace Imaj.Web.Authorization
             },
 
             // Implemented menu items (current MVC coverage)
+            new() { Key = "User", Label = "Kullanici", AspPage = "UserQry.asp", Url = "/User", Controller = "User", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Customer", Label = "Musteri", AspPage = "CustomerQry.asp", Url = "/Customer", Controller = "Customer", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Job", Label = "Is", AspPage = "JobQry.asp", Url = "/Job", Controller = "Job", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Invoice", Label = "Fatura", AspPage = "InvoiceQry.asp", Url = "/Invoice", Controller = "Invoice", Action = "Index", IncludeInMenu = true, IsImplemented = true },
@@ -49,7 +50,6 @@ namespace Imaj.Web.Authorization
             new() { Key = "EmployeeApiAlias", Label = "Employee API Alias", AspPage = "JobQry.asp", Url = string.Empty, Controller = "Employee", Action = "Search", IncludeInMenu = false, IsImplemented = true },
 
             // Planned legacy menu items (not implemented yet)
-            new() { Key = "User", Label = "Kullanici", AspPage = "UserQry.asp", Url = "/User", IncludeInMenu = true, IsImplemented = false, PlannedController = "User", PlannedAction = "Index" },
             new() { Key = "ResoCat", Label = "Kaynak Kategorisi", AspPage = "ResoCatQry.asp", Url = "/ResoCat", IncludeInMenu = true, IsImplemented = false, PlannedController = "ResoCat", PlannedAction = "Index" },
             new() { Key = "Function", Label = "Fonksiyon", AspPage = "FunctionQry.asp", Url = "/Function", IncludeInMenu = true, IsImplemented = false, PlannedController = "Function", PlannedAction = "Index" },
             new() { Key = "Resource", Label = "Kaynak", AspPage = "ResourceQry.asp", Url = "/Resource", IncludeInMenu = true, IsImplemented = false, PlannedController = "Resource", PlannedAction = "Index" },
