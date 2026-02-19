@@ -238,30 +238,6 @@ namespace Imaj.Service.Services
                         .Distinct()
                         .ToListAsync();
 
-                    var roleMenuContainerIds = roleMenuPageIds.Count == 0
-                        ? new HashSet<decimal>()
-                        : (await baseIntfRepository
-                            .Query()
-                            .Where(x => roleMenuPageIds.Contains(x.Id))
-                            .Select(x => x.BaseContID)
-                            .Distinct()
-                            .ToListAsync())
-                        .ToHashSet();
-
-                    var allIntfContainerIds = snapshot.Containers.Values
-                        .Where(x => x.AllIntf && roleMenuContainerIds.Contains(x.BaseContId))
-                        .Select(x => x.BaseContId)
-                        .Distinct()
-                        .ToList();
-
-                    var allIntfPageIds = allIntfContainerIds.Count == 0
-                        ? new List<decimal>()
-                        : await baseIntfRepository
-                            .Query()
-                            .Where(x => allIntfContainerIds.Contains(x.BaseContID))
-                            .Select(x => x.Id)
-                            .ToListAsync();
-
                     var roleContIds = roleContRows.Select(x => x.RoleContId).Distinct().ToList();
                     var roleIntfPageIds = roleContIds.Count == 0
                         ? new List<decimal>()
@@ -273,7 +249,6 @@ namespace Imaj.Service.Services
                             .ToListAsync();
 
                     var allowedPageIds = roleMenuPageIds
-                        .Concat(allIntfPageIds)
                         .Concat(roleIntfPageIds)
                         .Distinct()
                         .ToList();
@@ -289,7 +264,7 @@ namespace Imaj.Service.Services
                         snapshot,
                         "PAGE_ACCESS",
                         snapshot.AllowedPages.Count > 0 ? "ALLOW" : "DENY",
-                        $"RoleMenu={roleMenuPageIds.Count}, RoleMenuContainers={roleMenuContainerIds.Count}, AllIntfDerived={allIntfPageIds.Count}, RoleIntfExplicit={roleIntfPageIds.Count}, Final={snapshot.AllowedPages.Count}");
+                        $"RoleMenu={roleMenuPageIds.Count}, AllIntfDerived=0(legacy-page-parity), RoleIntfExplicit={roleIntfPageIds.Count}, Final={snapshot.AllowedPages.Count}");
                 }
 
                 var orderedLegacyMenu = snapshot.AllowedPages.Values
