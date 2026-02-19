@@ -45,13 +45,13 @@ namespace Imaj.Web.Authorization
             new() { Key = "OvertimeReport", Label = "Mesai Raporu", AspPage = "JobWorkReport.asp", Url = "/OvertimeReport", Controller = "OvertimeReport", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "ProductReport", Label = "Urun Raporu", AspPage = "JobProdReport.asp", Url = "/ProductReport", Controller = "ProductReport", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "ResoCat", Label = "Kaynak Kategorisi", AspPage = "ResoCatQry.asp", Url = "/ResoCat", Controller = "ResoCat", Action = "Index", IncludeInMenu = true, IsImplemented = true },
+            new() { Key = "Function", Label = "Fonksiyon", AspPage = "FunctionQry.asp", Url = "/Function", Controller = "Function", Action = "Index", IncludeInMenu = true, IsImplemented = true },
 
             // Temporary API aliases to preserve current behavior until dedicated pages are implemented.
             new() { Key = "ProductApiAlias", Label = "Product API Alias", AspPage = "JobQry.asp", Url = string.Empty, Controller = "Product", Action = "Search", IncludeInMenu = false, IsImplemented = true },
             new() { Key = "EmployeeApiAlias", Label = "Employee API Alias", AspPage = "JobQry.asp", Url = string.Empty, Controller = "Employee", Action = "Search", IncludeInMenu = false, IsImplemented = true },
 
             // Planned legacy menu items (not implemented yet)
-            new() { Key = "Function", Label = "Fonksiyon", AspPage = "FunctionQry.asp", Url = "/Function", IncludeInMenu = true, IsImplemented = false, PlannedController = "Function", PlannedAction = "Index" },
             new() { Key = "Resource", Label = "Kaynak", AspPage = "ResourceQry.asp", Url = "/Resource", IncludeInMenu = true, IsImplemented = false, PlannedController = "Resource", PlannedAction = "Index" },
             new() { Key = "ReserveCrossTab", Label = "Takvim", AspPage = "ReserveCrossTab.asp", Url = "/ReserveCalendar", IncludeInMenu = true, IsImplemented = false, PlannedController = "ReserveCalendar", PlannedAction = "Index" },
             new() { Key = "Reason", Label = "Gerekce", AspPage = "ReasonQry.asp", Url = "/Reason", IncludeInMenu = true, IsImplemented = false, PlannedController = "Reason", PlannedAction = "Index" },
