@@ -55,7 +55,7 @@ namespace Imaj.Web.Authorization
 
             // Planned legacy menu items (not implemented yet)
             new() { Key = "ReserveCrossTab", Label = "Takvim", AspPage = "ReserveCrossTab.asp", Url = "/ReserveCalendar", IncludeInMenu = true, IsImplemented = false, PlannedController = "ReserveCalendar", PlannedAction = "Index" },
-            new() { Key = "Absence", Label = "Mazeret", AspPage = "AbsenceQry.asp", Url = "/Absence", IncludeInMenu = true, IsImplemented = false, PlannedController = "Absence", PlannedAction = "Index" },
+            new() { Key = "Absence", Label = "Mazeret", AspPage = "AbsenceQry.asp", Url = "/Absence", Controller = "Absence", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Reserve", Label = "Reservasyon", AspPage = "ReserveQry.asp", Url = "/Reserve", IncludeInMenu = true, IsImplemented = false, PlannedController = "Reserve", PlannedAction = "Index" },
             new() { Key = "WorkType", Label = "Gorev Tipi", AspPage = "WorkTypeQry.asp", Url = "/WorkType", IncludeInMenu = true, IsImplemented = false, PlannedController = "WorkType", PlannedAction = "Index" },
             new() { Key = "TimeType", Label = "Mesai Tipi", AspPage = "TimeTypeQry.asp", Url = "/TimeType", IncludeInMenu = true, IsImplemented = false, PlannedController = "TimeType", PlannedAction = "Index" },

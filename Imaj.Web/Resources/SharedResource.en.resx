@@ -24,6 +24,9 @@
   <data name="Reason" xml:space="preserve">
     <value>Reason</value>
   </data>
+  <data name="Absence" xml:space="preserve">
+    <value>Absence</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Reservation</value>
   </data>

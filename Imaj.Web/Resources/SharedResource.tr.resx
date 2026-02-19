@@ -24,6 +24,9 @@
   <data name="Reason" xml:space="preserve">
     <value>Gerekçe</value>
   </data>
+  <data name="Absence" xml:space="preserve">
+    <value>Mazeret</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Rezervasyon</value>
   </data>

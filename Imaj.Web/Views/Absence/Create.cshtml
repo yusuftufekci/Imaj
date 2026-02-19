@@ -1,0 +1,292 @@
+@using System.Text.Json
+@model AbsenceCreateViewModel
+
+@{
+    ViewData["Title"] = "Yeni Mazeret";
+
+    var initialState = new
+    {
+        functionOptions = Model.FunctionOptions.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name
+        }),
+        reasonOptions = Model.ReasonOptions.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name
+        }),
+        resources = Model.Resources.Select(x => new
+        {
+            resourceId = x.ResourceId,
+            code = x.Code,
+            name = x.Name,
+            functionId = x.FunctionId,
+            functionName = x.FunctionName,
+            resoCatId = x.ResoCatId,
+            resoCatName = x.ResoCatName,
+            invisible = x.Invisible
+        }),
+        form = new
+        {
+            functionId = Model.FunctionId,
+            reasonId = Model.ReasonId,
+            name = Model.Name,
+            contact = Model.Contact,
+            startDate = Model.StartDate.ToString("yyyy-MM-ddTHH:mm"),
+            endDate = Model.EndDate.ToString("yyyy-MM-ddTHH:mm"),
+            evaluated = Model.Evaluated,
+            notes = Model.Notes
+        },
+        stateName = Model.StateName,
+        returnUrl = Model.ReturnUrl
+    };
+}
+
+<div x-data='absenceCreatePage(@Html.Raw(JsonSerializer.Serialize(initialState)))'
+     @@absence-resource-selected.window="handleResourceSelection($event.detail)"
+     class="space-y-6">
+
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">Rezervasyon / Mazeret</h2>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="rounded-md bg-red-50 border border-red-200 p-4">
+            <div asp-validation-summary="All" class="text-sm text-red-700"></div>
+        </div>
+    }
+
+    <form method="post" action="/Absence/Save" class="space-y-4">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ReturnUrl" :value="returnUrl" />
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <section class="xl:col-span-2 bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Temel Bilgiler</h3>
+                </div>
+
+                <div class="p-4 space-y-3 text-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Fonksiyon</label>
+                        <div class="md:col-span-8">
+                            <select name="FunctionId" x-model="form.functionId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                <option value="">Seciniz</option>
+                                <template x-for="option in functionOptions" :key="option.id">
+                                    <option :value="option.id" x-text="option.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Baslangic Tarihi</label>
+                        <div class="md:col-span-8">
+                            <input type="datetime-local" name="StartDate" x-model="form.startDate" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" />
+                        </div>
+
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Bitis Tarihi</label>
+                        <div class="md:col-span-8">
+                            <input type="datetime-local" name="EndDate" x-model="form.endDate" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" />
+                        </div>
+
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Gerekce</label>
+                        <div class="md:col-span-8">
+                            <select name="ReasonId" x-model="form.reasonId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                <option value="">Seciniz</option>
+                                <template x-for="option in reasonOptions" :key="option.id">
+                                    <option :value="option.id" x-text="option.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Ad</label>
+                        <div class="md:col-span-8">
+                            <input type="text" name="Name" x-model="form.name" maxlength="32" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" />
+                        </div>
+
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Ilgili</label>
+                        <div class="md:col-span-8">
+                            <input type="text" name="Contact" x-model="form.contact" maxlength="32" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" />
+                        </div>
+
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Durum</label>
+                        <div class="md:col-span-8">
+                            <span class="text-gray-900" x-text="stateName"></span>
+                        </div>
+
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Degerlendirildi</label>
+                        <div class="md:col-span-8">
+                            <input type="checkbox" name="Evaluated" value="true" x-model="form.evaluated" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                            <input type="hidden" name="Evaluated" value="false" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="xl:col-span-1 bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Notlar</h3>
+                </div>
+
+                <div class="p-4">
+                    <textarea name="Notes" x-model="form.notes" class="w-full h-44 shadow-sm border-gray-300 rounded-md sm:text-sm"></textarea>
+                </div>
+            </section>
+        </div>
+
+        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800">Kaynak (<span x-text="resources.length"></span>)</h3>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kod</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Fonksiyon</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kategori</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        <template x-for="(resource, index) in resources" :key="resource.resourceId">
+                            <tr>
+                                <td class="px-4 py-2">
+                                    <input type="checkbox" :value="String(resource.resourceId)" x-model="selectedResourceIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+
+                                    <input type="hidden" :name="'Resources[' + index + '].ResourceId'" :value="resource.resourceId" />
+                                    <input type="hidden" :name="'Resources[' + index + '].Code'" :value="resource.code" />
+                                    <input type="hidden" :name="'Resources[' + index + '].Name'" :value="resource.name" />
+                                    <input type="hidden" :name="'Resources[' + index + '].FunctionId'" :value="resource.functionId" />
+                                    <input type="hidden" :name="'Resources[' + index + '].FunctionName'" :value="resource.functionName" />
+                                    <input type="hidden" :name="'Resources[' + index + '].ResoCatId'" :value="resource.resoCatId" />
+                                    <input type="hidden" :name="'Resources[' + index + '].ResoCatName'" :value="resource.resoCatName" />
+                                    <input type="hidden" :name="'Resources[' + index + '].Invisible'" :value="resource.invisible" />
+                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="resource.code"></td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="resource.name"></td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="resource.functionName"></td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="resource.resoCatName"></td>
+                            </tr>
+                        </template>
+
+                        <tr x-show="resources.length === 0">
+                            <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center gap-3 text-sm">
+                <button type="button" @@click="removeSelectedResources" class="text-red-600 font-semibold hover:underline">Sil</button>
+                <button type="button" @@click="openResourceModal" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+            </div>
+        </section>
+
+        <div class="flex items-center justify-center gap-3 py-2">
+            <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                Kaydet
+            </button>
+            <a href="/Absence" class="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                Vazgec
+            </a>
+        </div>
+    </form>
+
+    <partial name="_AbsenceResourceSelectModal" />
+</div>
+
+@section Scripts {
+    <script src="~/js/components/absence-resource-select-modal.js" asp-append-version="true"></script>
+    <script>
+        function absenceCreatePage(initialState) {
+            return {
+                functionOptions: initialState.functionOptions || [],
+                reasonOptions: initialState.reasonOptions || [],
+                stateName: initialState.stateName || 'Acik',
+                returnUrl: initialState.returnUrl || '/Absence',
+
+                form: {
+                    functionId: initialState.form && initialState.form.functionId ? Number(initialState.form.functionId) : '',
+                    reasonId: initialState.form && initialState.form.reasonId ? Number(initialState.form.reasonId) : '',
+                    name: initialState.form && initialState.form.name ? initialState.form.name : '',
+                    contact: initialState.form && initialState.form.contact ? initialState.form.contact : '',
+                    startDate: initialState.form && initialState.form.startDate ? initialState.form.startDate : '',
+                    endDate: initialState.form && initialState.form.endDate ? initialState.form.endDate : '',
+                    evaluated: !!(initialState.form && initialState.form.evaluated),
+                    notes: initialState.form && initialState.form.notes ? initialState.form.notes : ''
+                },
+
+                resources: (initialState.resources || []).map(x => ({
+                    resourceId: Number(x.resourceId),
+                    code: x.code || '',
+                    name: x.name || '',
+                    functionId: Number(x.functionId || 0),
+                    functionName: x.functionName || '',
+                    resoCatId: Number(x.resoCatId || 0),
+                    resoCatName: x.resoCatName || '',
+                    invisible: !!x.invisible
+                })),
+                selectedResourceIds: [],
+
+                get resourceCsv() {
+                    return this.resources
+                        .map(x => Number(x.resourceId))
+                        .filter(x => x > 0)
+                        .join(',');
+                },
+
+                openResourceModal() {
+                    this.$dispatch('absence-resource-select-open', {
+                        targetId: 'absence-create-resources',
+                        isMultiSelect: true,
+                        excludeIds: this.resourceCsv,
+                        functionOptions: this.functionOptions
+                    });
+                },
+
+                removeSelectedResources() {
+                    if (this.selectedResourceIds.length === 0) {
+                        return;
+                    }
+
+                    const selectedSet = new Set(this.selectedResourceIds.map(x => Number(x)));
+                    this.resources = this.resources.filter(x => !selectedSet.has(Number(x.resourceId)));
+                    this.selectedResourceIds = [];
+                },
+
+                handleResourceSelection(detail) {
+                    if (!detail || detail.targetId !== 'absence-create-resources') {
+                        return;
+                    }
+
+                    const incomingResources = detail.resources || [];
+                    for (const resource of incomingResources) {
+                        const resourceId = Number(resource.resourceId);
+                        if (resourceId <= 0) {
+                            continue;
+                        }
+
+                        if (this.resources.some(x => Number(x.resourceId) === resourceId)) {
+                            continue;
+                        }
+
+                        this.resources.push({
+                            resourceId: resourceId,
+                            code: resource.code || '',
+                            name: resource.name || '',
+                            functionId: Number(resource.functionId || 0),
+                            functionName: resource.functionName || '',
+                            resoCatId: Number(resource.resoCatId || 0),
+                            resoCatName: resource.resoCatName || '',
+                            invisible: !!resource.invisible
+                        });
+                    }
+                }
+            };
+        }
+    </script>
+}
