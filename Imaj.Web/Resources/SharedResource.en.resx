@@ -33,6 +33,9 @@
   <data name="ProdCat" xml:space="preserve">
     <value>Product Category</value>
   </data>
+  <data name="ProdGrp" xml:space="preserve">
+    <value>Product Group</value>
+  </data>
   <data name="Resource" xml:space="preserve">
     <value>Resource</value>
   </data>

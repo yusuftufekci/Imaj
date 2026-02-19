@@ -47,6 +47,7 @@ namespace Imaj.Service.Extensions
             services.AddScoped<ITimeTypeService, TimeTypeService>();
             services.AddScoped<ITaxTypeService, TaxTypeService>();
             services.AddScoped<IProdCatService, ProdCatService>();
+            services.AddScoped<IProdGrpService, ProdGrpService>();
             services.AddScoped<IAbsenceService, AbsenceService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILookupService, LookupService>();
