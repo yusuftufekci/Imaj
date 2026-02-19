@@ -30,6 +30,9 @@
   <data name="TaxType" xml:space="preserve">
     <value>Tax Type</value>
   </data>
+  <data name="ProdCat" xml:space="preserve">
+    <value>Product Category</value>
+  </data>
   <data name="Resource" xml:space="preserve">
     <value>Resource</value>
   </data>

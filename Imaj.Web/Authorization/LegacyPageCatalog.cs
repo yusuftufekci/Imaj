@@ -61,7 +61,7 @@ namespace Imaj.Web.Authorization
             new() { Key = "TimeType", Label = "Mesai Tipi", AspPage = "TimeTypeQry.asp", Url = "/TimeType", Controller = "TimeType", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Employee", Label = "Calisan", AspPage = "EmployeeQry.asp", Url = "/Employee", Controller = "EmployeePage", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "TaxType", Label = "Vergi Tipi", AspPage = "TaxTypeQry.asp", Url = "/TaxType", Controller = "TaxType", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "ProdCat", Label = "Urun Kategorisi", AspPage = "ProdCatQry.asp", Url = "/ProdCat", IncludeInMenu = true, IsImplemented = false, PlannedController = "ProdCat", PlannedAction = "Index" },
+            new() { Key = "ProdCat", Label = "Urun Kategorisi", AspPage = "ProdCatQry.asp", Url = "/ProdCat", Controller = "ProdCat", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "ProdGrp", Label = "Urun Grubu", AspPage = "ProdGrpQry.asp", Url = "/ProdGrp", IncludeInMenu = true, IsImplemented = false, PlannedController = "ProdGrp", PlannedAction = "Index" },
             new() { Key = "Product", Label = "Urun", AspPage = "ProductQry.asp", Url = "/Product", IncludeInMenu = true, IsImplemented = false, PlannedController = "Product", PlannedAction = "Index" },
             new() { Key = "JobEntry", Label = "Is Girisi", AspPage = "JobEntryQry.asp", Url = "/JobEntry", IncludeInMenu = true, IsImplemented = false, PlannedController = "JobEntry", PlannedAction = "Index" }

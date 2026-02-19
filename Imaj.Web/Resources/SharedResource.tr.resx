@@ -30,6 +30,9 @@
   <data name="TaxType" xml:space="preserve">
     <value>Vergi Tipi</value>
   </data>
+  <data name="ProdCat" xml:space="preserve">
+    <value>Ürün Kategorisi</value>
+  </data>
   <data name="Resource" xml:space="preserve">
     <value>Kaynak</value>
   </data>
