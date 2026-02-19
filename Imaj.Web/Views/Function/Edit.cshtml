@@ -1,0 +1,573 @@
+@using System.Net
+@using System.Text.Json
+@using System.Collections.Generic
+@model FunctionEditViewModel
+
+@{
+    ViewData["Title"] = "Fonksiyon Duzenleme";
+
+    var selectedIds = Model.SelectedIds ?? new List<string>();
+
+    var initialState = new
+    {
+        names = Model.Names.Select(x => new
+        {
+            languageId = x.LanguageId,
+            name = x.Name
+        }),
+        languages = Model.Languages.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name
+        }),
+        intervals = Model.Intervals.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name
+        }),
+        products = Model.Products.Select(x => new
+        {
+            productId = x.ProductId,
+            code = x.Code,
+            name = x.Name,
+            invisible = x.Invisible
+        }),
+        rules = Model.Rules.Select(x => new
+        {
+            name = x.Name,
+            minValue = x.MinValue,
+            maxValue = x.MaxValue,
+            resoCats = x.ResoCats.Select(rc => new
+            {
+                resoCatId = rc.ResoCatId,
+                name = rc.Name,
+                invisible = rc.Invisible
+            })
+        }),
+        form = new
+        {
+            reservable = Model.Reservable,
+            workMandatory = Model.WorkMandatory,
+            prodMandatory = Model.ProdMandatory,
+            isInvalid = Model.IsInvalid,
+            intervalId = Model.IntervalId,
+            automaticForward = Model.AutomaticForward
+        }
+    };
+
+    string BuildEditUrl(int index)
+    {
+        if (selectedIds.Count == 0)
+        {
+            return "#";
+        }
+
+        if (index < 0)
+        {
+            index = 0;
+        }
+
+        if (index >= selectedIds.Count)
+        {
+            index = selectedIds.Count - 1;
+        }
+
+        var selected = selectedIds[index];
+        var idsQuery = string.Join("&selectedIds=", selectedIds.Select(WebUtility.UrlEncode));
+        var url = $"/Function/Edit?id={WebUtility.UrlEncode(selected)}&currentIndex={index}&selectedIds={idsQuery}";
+
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+
+        return url;
+    }
+
+    string BuildDetailUrl()
+    {
+        var targetId = Model.Id?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        var url = $"/Function/Detail?id={WebUtility.UrlEncode(targetId)}";
+
+        if (selectedIds.Count > 0)
+        {
+            var idsQuery = string.Join("&selectedIds=", selectedIds.Select(WebUtility.UrlEncode));
+            url += $"&currentIndex={Model.CurrentIndex}&selectedIds={idsQuery}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+
+        return url;
+    }
+}
+
+<div x-data='functionEditPage(@Html.Raw(JsonSerializer.Serialize(initialState)))'
+     @@function-product-selected.window="handleProductSelection($event.detail)"
+     @@function-resocat-selected.window="handleResoCatSelection($event.detail)"
+     class="space-y-6">
+
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">Fonksiyon</h2>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="rounded-md bg-red-50 border border-red-200 p-4">
+            <div asp-validation-summary="All" class="text-sm text-red-700"></div>
+        </div>
+    }
+
+    <form method="post" action="/Function/Update" class="space-y-4" @@submit.prevent="submitForm($event)">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+
+        @foreach (var selectedId in selectedIds)
+        {
+            <input type="hidden" name="SelectedIds" value="@selectedId" />
+        }
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Fonksiyon</h3>
+                </div>
+
+                <div class="p-4 space-y-4">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Dil</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                                    <th class="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase w-24">Islem</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                <template x-for="(nameItem, index) in names" :key="index">
+                                    <tr>
+                                        <td class="px-4 py-2">
+                                            <select :name="'Names[' + index + '].LanguageId'" x-model.number="nameItem.languageId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                                <template x-for="language in languages" :key="language.id">
+                                                    <option :value="language.id" x-text="language.name"></option>
+                                                </template>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input type="text"
+                                                   :name="'Names[' + index + '].Name'"
+                                                   x-model="nameItem.name"
+                                                   maxlength="32"
+                                                   class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm"
+                                                   placeholder="Fonksiyon adi">
+                                        </td>
+                                        <td class="px-4 py-2 text-right">
+                                            <button type="button" @@click="removeLanguage(index)" class="text-red-600 font-semibold hover:underline">Sil</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="text-sm">
+                        <button type="button" @@click="addLanguage" class="text-blue-700 font-semibold hover:underline">Dil Ekle</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Rezervasyon Araligi</label>
+                        <div class="md:col-span-7">
+                            <select name="IntervalId" x-model="form.intervalId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                <option value="">Seciniz</option>
+                                <template x-for="interval in intervals" :key="interval.id">
+                                    <option :value="interval.id" x-text="interval.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Rezervasyon Uyumlu</label>
+                        <div class="md:col-span-7">
+                            <input type="checkbox" name="Reservable" value="true" x-model="form.reservable" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Zorunlu Mesai</label>
+                        <div class="md:col-span-7">
+                            <input type="checkbox" name="WorkMandatory" value="true" x-model="form.workMandatory" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Zorunlu Urun</label>
+                        <div class="md:col-span-7">
+                            <input type="checkbox" name="ProdMandatory" value="true" x-model="form.prodMandatory" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Gecersiz</label>
+                        <div class="md:col-span-7">
+                            <input type="checkbox" name="IsInvalid" value="true" x-model="form.isInvalid" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Urun</h3>
+                </div>
+
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kod</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        <template x-for="(product, index) in products" :key="product.productId">
+                            <tr>
+                                <td class="px-4 py-2">
+                                    <input type="checkbox" :value="String(product.productId)" x-model="selectedProductIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    <input type="hidden" :name="'Products[' + index + '].ProductId'" :value="product.productId">
+                                    <input type="hidden" :name="'Products[' + index + '].Code'" :value="product.code">
+                                    <input type="hidden" :name="'Products[' + index + '].Name'" :value="product.name">
+                                    <input type="hidden" :name="'Products[' + index + '].Invisible'" :value="product.invisible">
+                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="product.code"></td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="product.name"></td>
+                            </tr>
+                        </template>
+                        <tr x-show="products.length === 0">
+                            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm">
+                    <button type="button" @@click="removeSelectedProducts" class="text-red-600 font-semibold hover:underline">Sil</button>
+                    <button type="button" @@click="openProductModal" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                </div>
+            </section>
+        </div>
+
+        <template x-if="showRuleSection">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Kural</h3>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-36">Minimum Deger</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-36">Maksimum Deger</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kaynak Kategorileri</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            <template x-for="(rule, ruleIndex) in rules" :key="rule.key">
+                                <tr>
+                                    <td class="px-4 py-2 align-top">
+                                        <input type="checkbox" :value="String(rule.key)" x-model="selectedRuleKeys" class="h-4 w-4 text-indigo-600 border-gray-300 rounded mt-2">
+                                    </td>
+                                    <td class="px-4 py-2 align-top">
+                                        <input type="text" :name="'Rules[' + ruleIndex + '].Name'" x-model="rule.name" maxlength="32" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                    </td>
+                                    <td class="px-4 py-2 align-top">
+                                        <input type="number" :name="'Rules[' + ruleIndex + '].MinValue'" x-model.number="rule.minValue" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                    </td>
+                                    <td class="px-4 py-2 align-top">
+                                        <input type="number" :name="'Rules[' + ruleIndex + '].MaxValue'" x-model.number="rule.maxValue" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                    </td>
+                                    <td class="px-4 py-2 align-top">
+                                        <template x-for="(resoCat, catIndex) in rule.resoCats" :key="resoCat.resoCatId">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <input type="checkbox" :value="String(resoCat.resoCatId)" x-model="rule.selectedResoCatIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                                <span class="text-sm text-gray-900" x-text="resoCat.name"></span>
+                                                <input type="hidden" :name="'Rules[' + ruleIndex + '].ResoCats[' + catIndex + '].ResoCatId'" :value="resoCat.resoCatId">
+                                                <input type="hidden" :name="'Rules[' + ruleIndex + '].ResoCats[' + catIndex + '].Name'" :value="resoCat.name">
+                                                <input type="hidden" :name="'Rules[' + ruleIndex + '].ResoCats[' + catIndex + '].Invisible'" :value="resoCat.invisible">
+                                                <input type="hidden" :name="'Rules[' + ruleIndex + '].ResoCatIds[' + catIndex + ']'" :value="resoCat.resoCatId">
+                                            </div>
+                                        </template>
+                                        <div class="flex items-center gap-3 mt-2 text-sm">
+                                            <button type="button" @@click="removeSelectedRuleResoCats(rule.key)" class="text-red-600 font-semibold hover:underline">Sil</button>
+                                            <button type="button" @@click="openResoCatModal(rule.key)" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+
+                            <tr x-show="rules.length === 0">
+                                <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">Kural kaydi yok.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center gap-3 text-sm">
+                    <button type="button" @@click="removeSelectedRules" class="text-red-600 font-semibold hover:underline">Sil</button>
+                    <span class="text-blue-900 font-semibold">Adet</span>
+                    <input type="number" x-model.number="newRuleCount" min="1" class="w-16 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
+                    <button type="button" @@click="addRuleRows" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                </div>
+            </section>
+        </template>
+
+        <div class="space-y-4">
+            <partial name="_DetailNavigator" model="@(new DetailNavigatorViewModel
+            {
+                Header = "Fonksiyon Navigasyonu",
+                CurrentIndex = Model.CurrentIndex,
+                TotalCount = Model.TotalSelected,
+                FirstUrl = BuildEditUrl(0),
+                PreviousUrl = BuildEditUrl(Model.CurrentIndex - 1),
+                NextUrl = BuildEditUrl(Model.CurrentIndex + 1),
+                LastUrl = BuildEditUrl(selectedIds.Count - 1),
+                FormAction = "/Function/Edit",
+                SelectedIds = selectedIds,
+                ReturnUrl = Model.ReturnUrl
+            })" />
+
+            <div class="flex items-center justify-center gap-4 py-2">
+                <label class="inline-flex items-center text-sm text-gray-700">
+                    <input type="checkbox" name="AutomaticForward" value="true" x-model="form.automaticForward" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                    <span class="ml-2">Otomatik Ilerle</span>
+                </label>
+
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                    Degistir
+                </button>
+                <a href="@BuildDetailUrl()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                    Vazgec
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <partial name="_FunctionProductSelectModal" />
+    <partial name="_FunctionResoCatSelectModal" />
+</div>
+
+@section Scripts {
+    <script src="~/js/components/function-product-select-modal.js" asp-append-version="true"></script>
+    <script src="~/js/components/function-resocat-select-modal.js" asp-append-version="true"></script>
+    <script>
+        function functionEditPage(initialState) {
+            const normalizedRules = (initialState.rules || []).map((rule, index) => ({
+                key: index + 1,
+                name: rule.name || '',
+                minValue: Number(rule.minValue || 0),
+                maxValue: Number(rule.maxValue || 0),
+                resoCats: (rule.resoCats || []).map(x => ({
+                    resoCatId: Number(x.resoCatId),
+                    name: x.name || '',
+                    invisible: !!x.invisible
+                })),
+                selectedResoCatIds: []
+            }));
+
+            return {
+                languages: initialState.languages || [],
+                intervals: initialState.intervals || [],
+                names: (initialState.names && initialState.names.length > 0)
+                    ? initialState.names
+                    : [{ languageId: (initialState.languages && initialState.languages.length > 0 ? initialState.languages[0].id : 1), name: '' }],
+                products: (initialState.products || []).map(x => ({
+                    productId: Number(x.productId),
+                    code: x.code || '',
+                    name: x.name || '',
+                    invisible: !!x.invisible
+                })),
+                rules: normalizedRules,
+
+                form: {
+                    reservable: !!(initialState.form && initialState.form.reservable),
+                    workMandatory: !!(initialState.form && initialState.form.workMandatory),
+                    prodMandatory: !!(initialState.form && initialState.form.prodMandatory),
+                    isInvalid: !!(initialState.form && initialState.form.isInvalid),
+                    intervalId: (initialState.form && initialState.form.intervalId) ? Number(initialState.form.intervalId) : '',
+                    automaticForward: !!(initialState.form && initialState.form.automaticForward)
+                },
+
+                selectedProductIds: [],
+                selectedRuleKeys: [],
+                newRuleCount: 1,
+                nextRuleKey: (normalizedRules.length + 1),
+
+                get showRuleSection() {
+                    return this.form.reservable && this.form.intervalId !== '' && this.form.intervalId !== null;
+                },
+
+                addLanguage() {
+                    this.names.push({
+                        languageId: this.getNextLanguageId(),
+                        name: ''
+                    });
+                },
+
+                removeLanguage(index) {
+                    if (this.names.length === 1) {
+                        this.names[0].name = '';
+                        return;
+                    }
+
+                    this.names.splice(index, 1);
+                },
+
+                getNextLanguageId() {
+                    if (!this.languages || this.languages.length === 0) {
+                        return 1;
+                    }
+
+                    const usedLanguageIds = new Set(this.names.map(x => Number(x.languageId)));
+                    const available = this.languages.find(x => !usedLanguageIds.has(Number(x.id)));
+                    return available ? Number(available.id) : Number(this.languages[0].id);
+                },
+
+                openProductModal() {
+                    const excludeIds = this.products.map(x => x.productId).join(',');
+                    this.$dispatch('function-product-select-open', {
+                        targetId: 'function-editor-product',
+                        isMultiSelect: true,
+                        excludeIds: excludeIds
+                    });
+                },
+
+                handleProductSelection(detail) {
+                    if (detail.targetId !== 'function-editor-product') {
+                        return;
+                    }
+
+                    const incoming = detail.products || (detail.productItem ? [detail.productItem] : []);
+                    incoming.forEach(product => {
+                        const productId = Number(product.productId ?? product.id);
+                        if (!productId || this.products.some(x => Number(x.productId) === productId)) {
+                            return;
+                        }
+
+                        this.products.push({
+                            productId: productId,
+                            code: product.code || '',
+                            name: product.name || '',
+                            invisible: !!product.invisible
+                        });
+                    });
+                },
+
+                removeSelectedProducts() {
+                    if (this.selectedProductIds.length === 0) {
+                        return;
+                    }
+
+                    const selected = this.selectedProductIds.map(x => Number(x));
+                    this.products = this.products.filter(x => !selected.includes(Number(x.productId)));
+                    this.selectedProductIds = [];
+                },
+
+                addRuleRows() {
+                    const count = Number(this.newRuleCount || 0);
+                    if (count <= 0) {
+                        return;
+                    }
+
+                    for (let i = 0; i < count; i += 1) {
+                        this.rules.push({
+                            key: this.nextRuleKey++,
+                            name: '',
+                            minValue: 0,
+                            maxValue: 0,
+                            resoCats: [],
+                            selectedResoCatIds: []
+                        });
+                    }
+                },
+
+                removeSelectedRules() {
+                    if (this.selectedRuleKeys.length === 0) {
+                        return;
+                    }
+
+                    const selected = this.selectedRuleKeys.map(x => Number(x));
+                    this.rules = this.rules.filter(x => !selected.includes(Number(x.key)));
+                    this.selectedRuleKeys = [];
+                },
+
+                openResoCatModal(ruleKey) {
+                    const rule = this.rules.find(x => Number(x.key) === Number(ruleKey));
+                    if (!rule) {
+                        return;
+                    }
+
+                    const excludeIds = rule.resoCats.map(x => x.resoCatId).join(',');
+                    this.$dispatch('function-resocat-select-open', {
+                        targetId: 'function-rule-' + ruleKey,
+                        isMultiSelect: true,
+                        excludeIds: excludeIds
+                    });
+                },
+
+                handleResoCatSelection(detail) {
+                    const targetId = detail.targetId || '';
+                    if (!targetId.startsWith('function-rule-')) {
+                        return;
+                    }
+
+                    const ruleKey = Number(targetId.replace('function-rule-', ''));
+                    const rule = this.rules.find(x => Number(x.key) === ruleKey);
+                    if (!rule) {
+                        return;
+                    }
+
+                    const incoming = detail.resoCats || (detail.resoCatItem ? [detail.resoCatItem] : []);
+                    incoming.forEach(resoCat => {
+                        const resoCatId = Number(resoCat.resoCatId ?? resoCat.id);
+                        if (!resoCatId || rule.resoCats.some(x => Number(x.resoCatId) === resoCatId)) {
+                            return;
+                        }
+
+                        rule.resoCats.push({
+                            resoCatId: resoCatId,
+                            name: resoCat.name || '',
+                            invisible: !!resoCat.invisible
+                        });
+                    });
+                },
+
+                removeSelectedRuleResoCats(ruleKey) {
+                    const rule = this.rules.find(x => Number(x.key) === Number(ruleKey));
+                    if (!rule || !rule.selectedResoCatIds || rule.selectedResoCatIds.length === 0) {
+                        return;
+                    }
+
+                    const selected = rule.selectedResoCatIds.map(x => Number(x));
+                    rule.resoCats = rule.resoCats.filter(x => !selected.includes(Number(x.resoCatId)));
+                    rule.selectedResoCatIds = [];
+                },
+
+                submitForm(event) {
+                    if (this.form.reservable && (this.form.intervalId === '' || this.form.intervalId === null)) {
+                        if (window.Toast && typeof window.Toast.error === 'function') {
+                            window.Toast.error('Rezervasyon Uyumlu seciliyse Rezervasyon Araligi da secilmelidir.');
+                        }
+                        return;
+                    }
+
+                    if (!this.form.reservable && this.form.intervalId !== '' && this.form.intervalId !== null) {
+                        if (window.Toast && typeof window.Toast.error === 'function') {
+                            window.Toast.error('Rezervasyon Araligi seciliyse Rezervasyon Uyumlu da secilmelidir.');
+                        }
+                        return;
+                    }
+
+                    event.target.submit();
+                }
+            };
+        }
+    </script>
+}

@@ -40,6 +40,7 @@ namespace Imaj.Service.Extensions
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductReportService, ProductReportService>();
             services.AddScoped<IResoCatService, ResoCatService>();
+            services.AddScoped<IFunctionService, FunctionService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILookupService, LookupService>();
 

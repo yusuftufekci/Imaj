@@ -15,6 +15,9 @@
   <data name="ResoCat" xml:space="preserve">
     <value>Kaynak Kategorisi</value>
   </data>
+  <data name="Function" xml:space="preserve">
+    <value>Fonksiyon</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Rezervasyon</value>
   </data>
