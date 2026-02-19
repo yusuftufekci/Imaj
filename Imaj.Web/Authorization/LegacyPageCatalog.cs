@@ -58,7 +58,7 @@ namespace Imaj.Web.Authorization
             new() { Key = "Absence", Label = "Mazeret", AspPage = "AbsenceQry.asp", Url = "/Absence", Controller = "Absence", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Reserve", Label = "Reservasyon", AspPage = "ReserveQry.asp", Url = "/Reserve", IncludeInMenu = true, IsImplemented = false, PlannedController = "Reserve", PlannedAction = "Index" },
             new() { Key = "WorkType", Label = "Gorev Tipi", AspPage = "WorkTypeQry.asp", Url = "/WorkType", Controller = "WorkType", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "TimeType", Label = "Mesai Tipi", AspPage = "TimeTypeQry.asp", Url = "/TimeType", IncludeInMenu = true, IsImplemented = false, PlannedController = "TimeType", PlannedAction = "Index" },
+            new() { Key = "TimeType", Label = "Mesai Tipi", AspPage = "TimeTypeQry.asp", Url = "/TimeType", Controller = "TimeType", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Employee", Label = "Calisan", AspPage = "EmployeeQry.asp", Url = "/Employee", IncludeInMenu = true, IsImplemented = false, PlannedController = "Employee", PlannedAction = "Index" },
             new() { Key = "TaxType", Label = "Vergi Tipi", AspPage = "TaxTypeQry.asp", Url = "/TaxType", IncludeInMenu = true, IsImplemented = false, PlannedController = "TaxType", PlannedAction = "Index" },
             new() { Key = "ProdCat", Label = "Urun Kategorisi", AspPage = "ProdCatQry.asp", Url = "/ProdCat", IncludeInMenu = true, IsImplemented = false, PlannedController = "ProdCat", PlannedAction = "Index" },
