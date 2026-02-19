@@ -11,17 +11,16 @@ namespace Imaj.Web.Authorization
 {
     public class PermissionViewService : IPermissionViewService
     {
-        private const string HomeAspPage = "Home.asp";
-
-        private static readonly IReadOnlyList<VisibleMenuItem> MenuDefinitions = new List<VisibleMenuItem>
-        {
-            new() { Key = "Home", Label = "Ana Sayfa", Url = "/", AspPage = HomeAspPage },
-            new() { Key = "Customer", Label = "Müşteri", Url = "/Customer", AspPage = "CustomerQry.asp" },
-            new() { Key = "Job", Label = "İş", Url = "/Job", AspPage = "JobQry.asp" },
-            new() { Key = "Invoice", Label = "Fatura", Url = "/Invoice", AspPage = "InvoiceQry.asp" },
-            new() { Key = "OvertimeReport", Label = "Mesai Raporu", Url = "/OvertimeReport", AspPage = "JobWorkReport.asp" },
-            new() { Key = "ProductReport", Label = "Ürün Raporu", Url = "/ProductReport", AspPage = "JobProdReport.asp" }
-        };
+        private static readonly IReadOnlyList<VisibleMenuItem> MenuDefinitions = LegacyPageCatalog
+            .GetImplementedMenuPages()
+            .Select(x => new VisibleMenuItem
+            {
+                Key = x.Key,
+                Label = x.Label,
+                Url = x.Url,
+                AspPage = x.AspPage
+            })
+            .ToList();
 
         private readonly ICurrentPermissionContext _currentPermissionContext;
         private readonly ILogger<PermissionViewService> _logger;
@@ -117,7 +116,7 @@ namespace Imaj.Web.Authorization
 
         private static bool IsAlwaysOpenAspPage(string aspPage)
         {
-            return string.Equals(aspPage, HomeAspPage, StringComparison.OrdinalIgnoreCase);
+            return LegacyPageCatalog.IsAlwaysOpenAspPage(aspPage);
         }
     }
 }

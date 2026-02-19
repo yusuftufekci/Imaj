@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Imaj.Core.Entities;
@@ -12,19 +11,6 @@ namespace Imaj.Web.Authorization
     public class PageRouteResolver : IPageRouteResolver
     {
         private const string BaseIntfMapCacheKey = "authz:route:baseintf-map:v1";
-
-        private static readonly Dictionary<string, string> ControllerPageMap = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Home"] = "Home.asp",
-            ["Culture"] = "Home.asp",
-            ["Customer"] = "CustomerQry.asp",
-            ["Invoice"] = "InvoiceQry.asp",
-            ["Job"] = "JobQry.asp",
-            ["OvertimeReport"] = "JobWorkReport.asp",
-            ["ProductReport"] = "JobProdReport.asp",
-            ["Product"] = "JobQry.asp",
-            ["Employee"] = "JobQry.asp"
-        };
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMemoryCache _memoryCache;
@@ -47,27 +33,7 @@ namespace Imaj.Web.Authorization
                 };
             }
 
-            if (string.Equals(controller, "Home", StringComparison.OrdinalIgnoreCase))
-            {
-                return new PageRouteMatch
-                {
-                    IsMapped = false,
-                    MatchStatus = "Bypass-Home",
-                    Reason = "Home controller tüm authenticated kullanıcılar için açık."
-                };
-            }
-
-            if (string.Equals(controller, "Culture", StringComparison.OrdinalIgnoreCase))
-            {
-                return new PageRouteMatch
-                {
-                    IsMapped = false,
-                    MatchStatus = "Bypass-Culture",
-                    Reason = "Culture controller tüm authenticated kullanıcılar için açık."
-                };
-            }
-
-            if (!ControllerPageMap.TryGetValue(controller, out var aspPage))
+            if (!LegacyPageCatalog.TryGetControllerRoute(controller, out var route))
             {
                 return new PageRouteMatch
                 {
@@ -77,15 +43,26 @@ namespace Imaj.Web.Authorization
                 };
             }
 
+            if (route.AlwaysAllowAuthenticated)
+            {
+                return new PageRouteMatch
+                {
+                    IsMapped = false,
+                    MatchStatus = route.BypassMatchStatus ?? "Bypass-AlwaysOpen",
+                    AspPage = route.AspPage,
+                    Reason = route.BypassReason ?? "Controller tum authenticated kullanicilar icin acik."
+                };
+            }
+
             var baseIntfMap = await GetBaseIntfMapAsync();
-            if (!baseIntfMap.TryGetValue(aspPage, out var baseIntfId))
+            if (!baseIntfMap.TryGetValue(route.AspPage, out var baseIntfId))
             {
                 return new PageRouteMatch
                 {
                     IsMapped = false,
                     MatchStatus = "BaseIntfMissing",
-                    AspPage = aspPage,
-                    Reason = $"BaseIntf kaydı bulunamadı: {aspPage}"
+                    AspPage = route.AspPage,
+                    Reason = $"BaseIntf kaydı bulunamadı: {route.AspPage}"
                 };
             }
 
@@ -93,7 +70,7 @@ namespace Imaj.Web.Authorization
             {
                 IsMapped = true,
                 MatchStatus = "Mapped",
-                AspPage = aspPage,
+                AspPage = route.AspPage,
                 BaseIntfId = baseIntfId
             };
         }
