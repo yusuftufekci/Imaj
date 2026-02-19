@@ -12,6 +12,9 @@
   <data name="User" xml:space="preserve">
     <value>User</value>
   </data>
+  <data name="ResoCat" xml:space="preserve">
+    <value>Resource Category</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Reservation</value>
   </data>

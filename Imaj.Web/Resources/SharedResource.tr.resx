@@ -12,6 +12,9 @@
   <data name="User" xml:space="preserve">
     <value>Kullanıcı</value>
   </data>
+  <data name="ResoCat" xml:space="preserve">
+    <value>Kaynak Kategorisi</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Rezervasyon</value>
   </data>
