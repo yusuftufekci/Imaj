@@ -18,6 +18,9 @@
   <data name="Function" xml:space="preserve">
     <value>Function</value>
   </data>
+  <data name="WorkType" xml:space="preserve">
+    <value>Task Type</value>
+  </data>
   <data name="Resource" xml:space="preserve">
     <value>Resource</value>
   </data>

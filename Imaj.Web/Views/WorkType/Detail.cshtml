@@ -1,0 +1,143 @@
+@using System.Net
+@using System.Collections.Generic
+@using Imaj.Web.Authorization
+@model WorkTypeDetailViewModel
+@inject IPermissionViewService PermissionViewService
+
+@{
+    ViewData["Title"] = "Gorev Tipi";
+    var canEdit = await PermissionViewService.CanExecuteMethodAsync(1185);
+    var selectedIds = Model.SelectedIds ?? new List<string>();
+
+    string BuildDetailUrl(int index)
+    {
+        if (selectedIds.Count == 0)
+        {
+            return "#";
+        }
+
+        if (index < 0)
+        {
+            index = 0;
+        }
+        if (index >= selectedIds.Count)
+        {
+            index = selectedIds.Count - 1;
+        }
+
+        var selected = selectedIds[index];
+        var idsQuery = string.Join("&selectedIds=", selectedIds.Select(WebUtility.UrlEncode));
+        var url = $"/WorkType/Detail?id={WebUtility.UrlEncode(selected)}&currentIndex={index}&selectedIds={idsQuery}";
+
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+
+        return url;
+    }
+
+    string BuildEditUrl()
+    {
+        var targetId = Model.Id?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        if (selectedIds.Count > 0)
+        {
+            targetId = selectedIds[Model.CurrentIndex];
+        }
+
+        var idsQuery = string.Join("&selectedIds=", selectedIds.Select(WebUtility.UrlEncode));
+        var url = $"/WorkType/Edit?id={WebUtility.UrlEncode(targetId)}&currentIndex={Model.CurrentIndex}&selectedIds={idsQuery}";
+
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+
+        return url;
+    }
+
+    var firstUrl = BuildDetailUrl(0);
+    var previousUrl = BuildDetailUrl(Model.CurrentIndex - 1);
+    var nextUrl = BuildDetailUrl(Model.CurrentIndex + 1);
+    var lastUrl = BuildDetailUrl(selectedIds.Count - 1);
+
+    var navigatorModel = new DetailNavigatorViewModel
+    {
+        CurrentIndex = Model.CurrentIndex,
+        TotalCount = Model.TotalSelected,
+        FirstUrl = firstUrl,
+        PreviousUrl = previousUrl,
+        NextUrl = nextUrl,
+        LastUrl = lastUrl,
+        FormAction = "/WorkType/Detail",
+        SelectedIds = selectedIds,
+        ReturnUrl = Model.ReturnUrl
+    };
+}
+
+<div class="space-y-6">
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">Gorev Tipi</h2>
+    </div>
+
+    <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6 max-w-5xl mx-auto">
+            <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">Gorev Tipi</h3>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Dil</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            @if (Model.Names.Count > 0)
+                            {
+                                foreach (var name in Model.Names)
+                                {
+                                    <tr>
+                                        <td class="px-4 py-2 text-sm text-gray-900">@name.LanguageName</td>
+                                        <td class="px-4 py-2 text-sm text-gray-900">@name.Name</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="2" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
+                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">Gecersiz</span>
+                    <span class="md:col-span-9">
+                        <input type="checkbox" disabled @(Model.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.TotalSelected > 0)
+    {
+        <partial name="~/Views/Shared/_DetailNavigator.cshtml" model="navigatorModel" />
+    }
+
+    <div class="flex items-center justify-center gap-3">
+        @if (canEdit)
+        {
+            <a href="@BuildEditUrl()" class="inline-flex items-center px-5 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">
+                Degistir
+            </a>
+        }
+        <a href="@Model.ReturnUrl" class="inline-flex items-center px-5 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+            Geri
+        </a>
+    </div>
+</div>
