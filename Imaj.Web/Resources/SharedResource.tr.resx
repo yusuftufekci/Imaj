@@ -27,6 +27,9 @@
   <data name="TimeType" xml:space="preserve">
     <value>Mesai Tipi</value>
   </data>
+  <data name="TaxType" xml:space="preserve">
+    <value>Vergi Tipi</value>
+  </data>
   <data name="Resource" xml:space="preserve">
     <value>Kaynak</value>
   </data>
