@@ -1,0 +1,200 @@
+@using System.Net
+@using System.Collections.Generic
+@using Imaj.Web.Authorization
+@using Imaj.Web.Models.Components
+@model AbsenceListViewModel
+@inject IPermissionViewService PermissionViewService
+
+@{
+    ViewData["Title"] = "Mazeretler";
+    var canView = await PermissionViewService.CanExecuteMethodAsync(1105);
+
+    var queryParts = new List<string>();
+    if (Model.Filter.FunctionId.HasValue)
+    {
+        queryParts.Add($"FunctionId={Model.Filter.FunctionId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+    }
+    if (Model.Filter.ReasonId.HasValue)
+    {
+        queryParts.Add($"ReasonId={Model.Filter.ReasonId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+    }
+    if (!string.IsNullOrWhiteSpace(Model.Filter.Name))
+    {
+        queryParts.Add($"Name={WebUtility.UrlEncode(Model.Filter.Name)}");
+    }
+    if (!string.IsNullOrWhiteSpace(Model.Filter.Contact))
+    {
+        queryParts.Add($"Contact={WebUtility.UrlEncode(Model.Filter.Contact)}");
+    }
+    if (Model.Filter.StartDateFrom.HasValue)
+    {
+        queryParts.Add($"StartDateFrom={WebUtility.UrlEncode(Model.Filter.StartDateFrom.Value.ToString("yyyy-MM-ddTHH:mm"))}");
+    }
+    if (Model.Filter.StartDateTo.HasValue)
+    {
+        queryParts.Add($"StartDateTo={WebUtility.UrlEncode(Model.Filter.StartDateTo.Value.ToString("yyyy-MM-ddTHH:mm"))}");
+    }
+    if (Model.Filter.EndDateFrom.HasValue)
+    {
+        queryParts.Add($"EndDateFrom={WebUtility.UrlEncode(Model.Filter.EndDateFrom.Value.ToString("yyyy-MM-ddTHH:mm"))}");
+    }
+    if (Model.Filter.EndDateTo.HasValue)
+    {
+        queryParts.Add($"EndDateTo={WebUtility.UrlEncode(Model.Filter.EndDateTo.Value.ToString("yyyy-MM-ddTHH:mm"))}");
+    }
+    if (Model.Filter.StateId.HasValue)
+    {
+        queryParts.Add($"StateId={Model.Filter.StateId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+    }
+    if (Model.Filter.Evaluated.HasValue)
+    {
+        queryParts.Add($"Evaluated={Model.Filter.Evaluated.Value.ToString().ToLowerInvariant()}");
+    }
+    if (Model.Filter.ResourceIds.Count > 0)
+    {
+        foreach (var resourceId in Model.Filter.ResourceIds.Where(x => x > 0).Distinct())
+        {
+            queryParts.Add($"ResourceIds={resourceId.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        }
+    }
+    if (Model.Filter.PageSize > 0)
+    {
+        queryParts.Add($"PageSize={Model.Filter.PageSize}");
+    }
+
+    var queryString = string.Join("&", queryParts);
+    var allIds = Model.Items.Select(x => $"'{x.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)}'");
+}
+
+<div x-data="absenceListPage()" class="space-y-6">
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">Mazeretler</h2>
+    </div>
+
+    <form x-ref="listForm" method="post" action="/Absence/Detail" class="bg-white border border-gray-200 shadow sm:rounded-lg">
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-blue-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">
+                            <input type="checkbox" @@click="toggleAll" :checked="allSelected" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fonksiyon</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Baslangic Tarihi</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Bitis Tarihi</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Gerekce</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Durum</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Degerlendirildi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    @if (Model.Items.Count > 0)
+                    {
+                        foreach (var item in Model.Items)
+                        {
+                            var itemId = item.Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                            <tr class="hover:bg-gray-50 cursor-pointer" @@click="toggleRow('@itemId')">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <input type="checkbox"
+                                           name="selectedIds"
+                                           value="@itemId"
+                                           x-model="selectedIds"
+                                           @@click.stop
+                                           class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.FunctionName</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.StartDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.EndDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.ReasonName</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 underline decoration-dotted">@item.Name</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.StateName</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <input type="checkbox" disabled @(item.Evaluated ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">Kayit bulunamadi.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+            @if (Model.TotalCount > 0)
+            {
+                <partial name="Components/_Pagination" model="@(new PaginationModel
+                {
+                    CurrentPage = Model.Page,
+                    TotalCount = Model.TotalCount,
+                    PageSize = Model.PageSize,
+                    BaseUrl = "/Absence/List",
+                    QueryString = queryString
+                })" />
+            }
+
+            <div class="mt-4 flex justify-center gap-2">
+                @if (canView)
+                {
+                    <button type="button" @@click="submitTo('/Absence/Detail')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                        Goruntule
+                    </button>
+                }
+                <a href="/Absence" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                    Geri
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    function absenceListPage() {
+        return {
+            selectedIds: [],
+            allPageIds: [@Html.Raw(string.Join(",", allIds))],
+
+            get allSelected() {
+                return this.allPageIds.length > 0 && this.selectedIds.length === this.allPageIds.length;
+            },
+
+            toggleAll() {
+                if (this.allSelected) {
+                    this.selectedIds = [];
+                } else {
+                    this.selectedIds = [...this.allPageIds];
+                }
+            },
+
+            toggleRow(id) {
+                const index = this.selectedIds.indexOf(id);
+                if (index === -1) {
+                    this.selectedIds.push(id);
+                } else {
+                    this.selectedIds.splice(index, 1);
+                }
+            },
+
+            submitTo(action) {
+                if (this.selectedIds.length === 0) {
+                    if (window.Toast && typeof window.Toast.error === 'function') {
+                        window.Toast.error('Lutfen en az bir mazeret secin.');
+                    } else {
+                        alert('Lutfen en az bir mazeret secin.');
+                    }
+                    return;
+                }
+
+                this.$refs.listForm.action = action;
+                this.$refs.listForm.submit();
+            }
+        };
+    }
+</script>
