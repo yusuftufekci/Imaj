@@ -27,6 +27,9 @@
   <data name="TimeType" xml:space="preserve">
     <value>Overtime Type</value>
   </data>
+  <data name="TaxType" xml:space="preserve">
+    <value>Tax Type</value>
+  </data>
   <data name="Resource" xml:space="preserve">
     <value>Resource</value>
   </data>
