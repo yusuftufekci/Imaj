@@ -21,6 +21,9 @@
   <data name="Resource" xml:space="preserve">
     <value>Kaynak</value>
   </data>
+  <data name="Reason" xml:space="preserve">
+    <value>Gerekçe</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Rezervasyon</value>
   </data>

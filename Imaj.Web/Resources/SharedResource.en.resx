@@ -21,6 +21,9 @@
   <data name="Resource" xml:space="preserve">
     <value>Resource</value>
   </data>
+  <data name="Reason" xml:space="preserve">
+    <value>Reason</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Reservation</value>
   </data>
