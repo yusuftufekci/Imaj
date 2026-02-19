@@ -1,0 +1,366 @@
+@using System.Text.Json
+@model EmployeePageCreateViewModel
+
+@{
+    ViewData["Title"] = "Yeni Calisan";
+
+    var initialState = new
+    {
+        form = new
+        {
+            code = Model.Code,
+            name = Model.Name,
+            isInvalid = Model.IsInvalid,
+            automaticForward = Model.AutomaticForward
+        },
+        functions = Model.Functions.Select(x => new
+        {
+            functionId = x.FunctionId,
+            functionName = x.FunctionName,
+            workAmountUpdate = x.WorkAmountUpdate
+        }),
+        workTypes = Model.WorkTypes.Select(x => new
+        {
+            workTypeId = x.WorkTypeId,
+            workTypeName = x.WorkTypeName,
+            isDefault = x.IsDefault
+        }),
+        timeTypes = Model.TimeTypes.Select(x => new
+        {
+            timeTypeId = x.TimeTypeId,
+            timeTypeName = x.TimeTypeName,
+            isDefault = x.IsDefault
+        }),
+        availableFunctions = Model.AvailableFunctions.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name,
+            isInvalid = x.IsInvalid
+        }),
+        availableWorkTypes = Model.AvailableWorkTypes.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name,
+            isInvalid = x.IsInvalid
+        }),
+        availableTimeTypes = Model.AvailableTimeTypes.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name,
+            isInvalid = x.IsInvalid
+        })
+    };
+}
+
+<div x-data='employeeCreatePage(@Html.Raw(JsonSerializer.Serialize(initialState)))' class="space-y-6">
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">Calisan</h2>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="rounded-md bg-red-50 border border-red-200 p-4">
+            <div asp-validation-summary="All" class="text-sm text-red-700"></div>
+        </div>
+    }
+
+    <form method="post" action="/Employee/Save" class="space-y-4">
+        @Html.AntiForgeryToken()
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Temel Bilgiler</h3>
+                </div>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
+                    <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Kod</label>
+                    <div class="md:col-span-8">
+                        <input type="text" name="Code" x-model="form.code" maxlength="8" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm uppercase" />
+                    </div>
+
+                    <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Ad</label>
+                    <div class="md:col-span-8">
+                        <input type="text" name="Name" x-model="form.name" maxlength="32" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" />
+                    </div>
+
+                    <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Gecersiz</label>
+                    <div class="md:col-span-8">
+                        <input type="checkbox" name="IsInvalid" x-model="form.isInvalid" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Fonksiyon (<span x-text="functions.length"></span>)</h3>
+                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">Mesai Ucreti</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <template x-for="(item, index) in functions" :key="item.functionId">
+                            <tr>
+                                <td class="px-4 py-2">
+                                    <input type="checkbox" :value="String(item.functionId)" x-model="selectedFunctionIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                    <input type="hidden" :name="'Functions[' + index + '].FunctionId'" :value="item.functionId" />
+                                    <input type="hidden" :name="'Functions[' + index + '].FunctionName'" :value="item.functionName" />
+                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="item.functionName"></td>
+                                <td class="px-4 py-2 text-center">
+                                    <input type="checkbox" :name="'Functions[' + index + '].WorkAmountUpdate'" x-model="item.workAmountUpdate" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                </td>
+                            </tr>
+                        </template>
+                        <tr x-show="functions.length === 0">
+                            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm">
+                    <span class="text-blue-900 font-semibold">Sayfa Boyu</span>
+                    <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
+                    <button type="button" @@click="removeSelectedFunctions" class="text-red-600 font-semibold hover:underline">Sil</button>
+                    <select x-model="picker.functionId" class="min-w-[200px] shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <option value="">Fonksiyon seciniz</option>
+                        <template x-for="option in availableFunctions" :key="option.id">
+                            <option :value="String(option.id)" x-text="formatOptionLabel(option)"></option>
+                        </template>
+                    </select>
+                    <button type="button" @@click="addFunction" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Gorev Tipi (<span x-text="workTypes.length"></span>)</h3>
+                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">Varsayilan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <template x-for="(item, index) in workTypes" :key="item.workTypeId">
+                            <tr>
+                                <td class="px-4 py-2">
+                                    <input type="checkbox" :value="String(item.workTypeId)" x-model="selectedWorkTypeIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                    <input type="hidden" :name="'WorkTypes[' + index + '].WorkTypeId'" :value="item.workTypeId" />
+                                    <input type="hidden" :name="'WorkTypes[' + index + '].WorkTypeName'" :value="item.workTypeName" />
+                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="item.workTypeName"></td>
+                                <td class="px-4 py-2 text-center">
+                                    <input type="checkbox" :name="'WorkTypes[' + index + '].IsDefault'" x-model="item.isDefault" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                </td>
+                            </tr>
+                        </template>
+                        <tr x-show="workTypes.length === 0">
+                            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm">
+                    <span class="text-blue-900 font-semibold">Sayfa Boyu</span>
+                    <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
+                    <button type="button" @@click="removeSelectedWorkTypes" class="text-red-600 font-semibold hover:underline">Sil</button>
+                    <select x-model="picker.workTypeId" class="min-w-[200px] shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <option value="">Gorev tipi seciniz</option>
+                        <template x-for="option in availableWorkTypes" :key="option.id">
+                            <option :value="String(option.id)" x-text="formatOptionLabel(option)"></option>
+                        </template>
+                    </select>
+                    <button type="button" @@click="addWorkType" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Mesai Tipi (<span x-text="timeTypes.length"></span>)</h3>
+                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">Varsayilan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <template x-for="(item, index) in timeTypes" :key="item.timeTypeId">
+                            <tr>
+                                <td class="px-4 py-2">
+                                    <input type="checkbox" :value="String(item.timeTypeId)" x-model="selectedTimeTypeIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                    <input type="hidden" :name="'TimeTypes[' + index + '].TimeTypeId'" :value="item.timeTypeId" />
+                                    <input type="hidden" :name="'TimeTypes[' + index + '].TimeTypeName'" :value="item.timeTypeName" />
+                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="item.timeTypeName"></td>
+                                <td class="px-4 py-2 text-center">
+                                    <input type="checkbox" :name="'TimeTypes[' + index + '].IsDefault'" x-model="item.isDefault" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                </td>
+                            </tr>
+                        </template>
+                        <tr x-show="timeTypes.length === 0">
+                            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm">
+                    <span class="text-blue-900 font-semibold">Sayfa Boyu</span>
+                    <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
+                    <button type="button" @@click="removeSelectedTimeTypes" class="text-red-600 font-semibold hover:underline">Sil</button>
+                    <select x-model="picker.timeTypeId" class="min-w-[200px] shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <option value="">Mesai tipi seciniz</option>
+                        <template x-for="option in availableTimeTypes" :key="option.id">
+                            <option :value="String(option.id)" x-text="formatOptionLabel(option)"></option>
+                        </template>
+                    </select>
+                    <button type="button" @@click="addTimeType" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                </div>
+            </section>
+        </div>
+
+        <div class="flex items-center justify-center gap-3">
+            <label class="inline-flex items-center text-sm text-gray-700">
+                <input type="checkbox" name="AutomaticForward" x-model="form.automaticForward" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                <span class="ml-2">Otomatik Ilerle</span>
+            </label>
+
+            <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                Kaydet
+            </button>
+            <a href="/Employee" class="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                Vazgec
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function employeeCreatePage(initialState) {
+        return {
+            form: {
+                code: initialState.form?.code || '',
+                name: initialState.form?.name || '',
+                isInvalid: !!initialState.form?.isInvalid,
+                automaticForward: !!initialState.form?.automaticForward
+            },
+            functions: initialState.functions || [],
+            workTypes: initialState.workTypes || [],
+            timeTypes: initialState.timeTypes || [],
+            availableFunctions: initialState.availableFunctions || [],
+            availableWorkTypes: initialState.availableWorkTypes || [],
+            availableTimeTypes: initialState.availableTimeTypes || [],
+
+            selectedFunctionIds: [],
+            selectedWorkTypeIds: [],
+            selectedTimeTypeIds: [],
+
+            picker: {
+                functionId: '',
+                workTypeId: '',
+                timeTypeId: ''
+            },
+
+            formatOptionLabel(option) {
+                return option && option.isInvalid ? `${option.name} (Gecersiz)` : option.name;
+            },
+
+            addFunction() {
+                const id = Number(this.picker.functionId);
+                if (!id) {
+                    return;
+                }
+
+                if (this.functions.some(x => Number(x.functionId) === id)) {
+                    return;
+                }
+
+                const option = this.availableFunctions.find(x => Number(x.id) === id);
+                this.functions.push({
+                    functionId: id,
+                    functionName: option ? option.name : String(id),
+                    workAmountUpdate: false
+                });
+                this.functions.sort((a, b) => String(a.functionName).localeCompare(String(b.functionName), 'tr'));
+                this.picker.functionId = '';
+            },
+
+            addWorkType() {
+                const id = Number(this.picker.workTypeId);
+                if (!id) {
+                    return;
+                }
+
+                if (this.workTypes.some(x => Number(x.workTypeId) === id)) {
+                    return;
+                }
+
+                const option = this.availableWorkTypes.find(x => Number(x.id) === id);
+                this.workTypes.push({
+                    workTypeId: id,
+                    workTypeName: option ? option.name : String(id),
+                    isDefault: false
+                });
+                this.workTypes.sort((a, b) => String(a.workTypeName).localeCompare(String(b.workTypeName), 'tr'));
+                this.picker.workTypeId = '';
+            },
+
+            addTimeType() {
+                const id = Number(this.picker.timeTypeId);
+                if (!id) {
+                    return;
+                }
+
+                if (this.timeTypes.some(x => Number(x.timeTypeId) === id)) {
+                    return;
+                }
+
+                const option = this.availableTimeTypes.find(x => Number(x.id) === id);
+                this.timeTypes.push({
+                    timeTypeId: id,
+                    timeTypeName: option ? option.name : String(id),
+                    isDefault: false
+                });
+                this.timeTypes.sort((a, b) => String(a.timeTypeName).localeCompare(String(b.timeTypeName), 'tr'));
+                this.picker.timeTypeId = '';
+            },
+
+            removeSelectedFunctions() {
+                if (this.selectedFunctionIds.length === 0) {
+                    return;
+                }
+
+                const selected = this.selectedFunctionIds.map(x => Number(x));
+                this.functions = this.functions.filter(x => !selected.includes(Number(x.functionId)));
+                this.selectedFunctionIds = [];
+            },
+
+            removeSelectedWorkTypes() {
+                if (this.selectedWorkTypeIds.length === 0) {
+                    return;
+                }
+
+                const selected = this.selectedWorkTypeIds.map(x => Number(x));
+                this.workTypes = this.workTypes.filter(x => !selected.includes(Number(x.workTypeId)));
+                this.selectedWorkTypeIds = [];
+            },
+
+            removeSelectedTimeTypes() {
+                if (this.selectedTimeTypeIds.length === 0) {
+                    return;
+                }
+
+                const selected = this.selectedTimeTypeIds.map(x => Number(x));
+                this.timeTypes = this.timeTypes.filter(x => !selected.includes(Number(x.timeTypeId)));
+                this.selectedTimeTypeIds = [];
+            }
+        };
+    }
+</script>

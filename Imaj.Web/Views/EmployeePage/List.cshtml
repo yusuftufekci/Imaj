@@ -1,0 +1,167 @@
+@using System.Net
+@using Imaj.Web.Authorization
+@using Imaj.Web.Models.Components
+@model EmployeePageListViewModel
+@inject IPermissionViewService PermissionViewService
+
+@{
+    ViewData["Title"] = "Calisanlar";
+    var canView = await PermissionViewService.CanExecuteMethodAsync(1217);
+    var canEdit = await PermissionViewService.CanExecuteMethodAsync(1220);
+
+    var queryParts = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.Filter.Code))
+    {
+        queryParts.Add($"Code={WebUtility.UrlEncode(Model.Filter.Code)}");
+    }
+    if (!string.IsNullOrWhiteSpace(Model.Filter.Name))
+    {
+        queryParts.Add($"Name={WebUtility.UrlEncode(Model.Filter.Name)}");
+    }
+    if (Model.Filter.FunctionId.HasValue)
+    {
+        queryParts.Add($"FunctionId={Model.Filter.FunctionId.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+    }
+    if (Model.Filter.IsInvalid.HasValue)
+    {
+        queryParts.Add($"IsInvalid={Model.Filter.IsInvalid.Value.ToString().ToLowerInvariant()}");
+    }
+    if (Model.Filter.PageSize > 0)
+    {
+        queryParts.Add($"PageSize={Model.Filter.PageSize}");
+    }
+
+    var queryString = string.Join("&", queryParts);
+    var allIds = Model.Items.Select(x => $"'{x.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)}'");
+}
+
+<div x-data="employeeListPage()" class="space-y-6">
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">Calisanlar</h2>
+    </div>
+
+    <form x-ref="listForm" method="post" action="/Employee/Detail" class="bg-white border border-gray-200 shadow sm:rounded-lg">
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-blue-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">
+                            <input type="checkbox" @@click="toggleAll" :checked="allSelected" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kod</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Gecersiz</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    @if (Model.Items.Count > 0)
+                    {
+                        foreach (var item in Model.Items)
+                        {
+                            var itemId = item.Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                            <tr class="hover:bg-gray-50 cursor-pointer" @@click="toggleRow('@itemId')">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <input type="checkbox"
+                                           name="selectedIds"
+                                           value="@itemId"
+                                           x-model="selectedIds"
+                                           @@click.stop
+                                           class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">@item.Code</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Name</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <input type="checkbox" disabled @(item.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded" />
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="px-4 py-10 text-center text-sm text-gray-500">Kayit bulunamadi.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+            @if (Model.TotalCount > 0)
+            {
+                <partial name="Components/_Pagination" model="@(new PaginationModel
+                {
+                    CurrentPage = Model.Page,
+                    TotalCount = Model.TotalCount,
+                    PageSize = Model.PageSize,
+                    BaseUrl = "/Employee/List",
+                    QueryString = queryString
+                })" />
+            }
+
+            <div class="mt-4 flex justify-center gap-2">
+                @if (canView)
+                {
+                    <button type="button" @@click="submitTo('/Employee/Detail')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                        Goruntule
+                    </button>
+                }
+                @if (canEdit)
+                {
+                    <button type="button" @@click="submitTo('/Employee/Edit')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">
+                        Degistir
+                    </button>
+                }
+                <a href="/Employee" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                    Geri
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    function employeeListPage() {
+        return {
+            selectedIds: [],
+            allPageIds: [@Html.Raw(string.Join(",", allIds))],
+
+            get allSelected() {
+                return this.allPageIds.length > 0 && this.selectedIds.length === this.allPageIds.length;
+            },
+
+            toggleAll() {
+                if (this.allSelected) {
+                    this.selectedIds = [];
+                } else {
+                    this.selectedIds = [...this.allPageIds];
+                }
+            },
+
+            toggleRow(id) {
+                const index = this.selectedIds.indexOf(id);
+                if (index === -1) {
+                    this.selectedIds.push(id);
+                } else {
+                    this.selectedIds.splice(index, 1);
+                }
+            },
+
+            submitTo(action) {
+                if (this.selectedIds.length === 0) {
+                    if (window.Toast && typeof window.Toast.error === 'function') {
+                        window.Toast.error('Lutfen en az bir calisan secin.');
+                    } else {
+                        alert('Lutfen en az bir calisan secin.');
+                    }
+                    return;
+                }
+
+                this.$refs.listForm.action = action;
+                this.$refs.listForm.submit();
+            }
+        };
+    }
+</script>
