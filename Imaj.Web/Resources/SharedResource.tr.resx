@@ -12,6 +12,9 @@
   <data name="User" xml:space="preserve">
     <value>Kullanıcı</value>
   </data>
+  <data name="Employee" xml:space="preserve">
+    <value>Çalışan</value>
+  </data>
   <data name="ResoCat" xml:space="preserve">
     <value>Kaynak Kategorisi</value>
   </data>
