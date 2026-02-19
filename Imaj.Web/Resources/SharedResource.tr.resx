@@ -18,6 +18,9 @@
   <data name="Function" xml:space="preserve">
     <value>Fonksiyon</value>
   </data>
+  <data name="Resource" xml:space="preserve">
+    <value>Kaynak</value>
+  </data>
   <data name="Reservation" xml:space="preserve">
     <value>Rezervasyon</value>
   </data>
