@@ -1,6 +1,7 @@
 using Imaj.Core.Entities;
 using Imaj.Core.Interfaces.Repositories;
 using Imaj.Service.DTOs;
+using Imaj.Service.DTOs.Security;
 using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
 using Microsoft.EntityFrameworkCore;
@@ -11,18 +12,29 @@ namespace Imaj.Service.Services
 {
     public class ProductReportService : BaseService, IProductReportService
     {
+        private readonly ICurrentPermissionContext _currentPermissionContext;
+
         public ProductReportService(
             IUnitOfWork unitOfWork,
             ILogger<ProductReportService> logger,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ICurrentPermissionContext currentPermissionContext)
             : base(unitOfWork, logger, configuration)
         {
+            _currentPermissionContext = currentPermissionContext;
         }
 
         public async Task<ServiceResult<List<ProductReportRowDto>>> GetDetailedReportAsync(ProductReportFilterDto filter)
         {
             try
             {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<ProductReportRowDto>>.Success(new List<ProductReportRowDto>());
+                }
+
+                var activeSnapshot = snapshot!;
                 var startDate = filter.StartDate.Date;
                 var endDate = filter.EndDate.Date.AddDays(1);
                 var languageId = filter.LanguageId > 0 ? filter.LanguageId : 1;
@@ -46,6 +58,10 @@ namespace Imaj.Service.Services
                     where jp.Deleted == 0
                           && j.StartDT >= startDate
                           && j.StartDT < endDate
+                          && activeSnapshot.AllowedFunctionIds.Contains(j.FunctionID)
+                          && (activeSnapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound
+                              || !activeSnapshot.CompanyId.HasValue
+                              || j.CompanyID == activeSnapshot.CompanyId.Value)
                     select new ProductReportRowDto
                     {
                         ProductGroupName = xProductGroup != null ? xProductGroup.Name : string.Empty,
@@ -90,6 +106,14 @@ namespace Imaj.Service.Services
                 _logger.LogError(ex, "Detaylı ürün raporu alınırken hata oluştu.");
                 return ServiceResult<List<ProductReportRowDto>>.Fail("Detaylı ürün raporu alınırken bir hata oluştu.");
             }
+        }
+
+        private static bool IsDataScopeDenied(PermissionSnapshotDto? snapshot)
+        {
+            return snapshot == null
+                   || snapshot.IsDenied
+                   || snapshot.CompanyScopeMode == CompanyScopeMode.Deny
+                   || snapshot.AllowedFunctionIds.Count == 0;
         }
     }
 }

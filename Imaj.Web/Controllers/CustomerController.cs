@@ -3,6 +3,7 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Controllers.Base;
 using Imaj.Web.Models;
+using Imaj.Web.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -61,6 +62,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
+        [RequireMethodPermission(1090)]
         public async Task<IActionResult> Search([FromBody] CustomerFilterModel? filter)
         {
             var f = filter ?? new CustomerFilterModel();
@@ -106,6 +108,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        [RequireMethodPermission(1090)]
         public async Task<IActionResult> List(CustomerFilterModel filter)
         {
             var f = filter ?? new CustomerFilterModel();

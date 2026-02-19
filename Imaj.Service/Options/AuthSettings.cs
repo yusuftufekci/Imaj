@@ -14,6 +14,6 @@ namespace Imaj.Service.Options
         /// <summary>
         /// Oturum zaman aşımı süresi (dakika)
         /// </summary>
-        public int SessionTimeoutMinutes { get; set; } = 60;
+        public int SessionTimeoutMinutes { get; set; } = 45;
     }
 }

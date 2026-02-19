@@ -26,9 +26,13 @@ namespace Imaj.Service.Extensions
             // Options Pattern - Configuration binding
             services.Configure<CustomerSettings>(configuration.GetSection(CustomerSettings.SectionName));
             services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.SectionName));
+            services.AddMemoryCache();
+            services.AddHttpContextAccessor();
 
             // Business Services
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IPermissionService, PermissionService>();
+            services.AddScoped<ICurrentPermissionContext, CurrentPermissionContext>();
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IInvoiceService, InvoiceService>();

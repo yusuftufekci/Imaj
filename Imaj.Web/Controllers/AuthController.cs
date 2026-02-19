@@ -1,8 +1,11 @@
 using System.Threading.Tasks;
+using System.Globalization;
+using System.Security.Claims;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
 using Imaj.Web.Controllers.Base;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -16,21 +19,26 @@ namespace Imaj.Web.Controllers
     public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
+        private readonly IPermissionService _permissionService;
 
         public AuthController(
             IAuthService authService,
+            IPermissionService permissionService,
             ILogger<AuthController> logger) : base(logger)
         {
             _authService = authService;
+            _permissionService = permissionService;
         }
 
 
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Login()
         {
             return View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
@@ -62,6 +70,12 @@ namespace Imaj.Web.Controllers
 
         public async Task<IActionResult> Logout()
         {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (decimal.TryParse(userIdClaim, NumberStyles.Number, CultureInfo.InvariantCulture, out var userId))
+            {
+                await _permissionService.InvalidateAsync(userId);
+            }
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
         }

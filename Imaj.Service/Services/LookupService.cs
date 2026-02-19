@@ -15,12 +15,16 @@ namespace Imaj.Service.Services
     /// </summary>
     public class LookupService : BaseService, ILookupService
     {
+        private readonly ICurrentPermissionContext _currentPermissionContext;
+
         public LookupService(
             IUnitOfWork unitOfWork, 
             ILogger<LookupService> logger, 
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ICurrentPermissionContext currentPermissionContext)
             : base(unitOfWork, logger, configuration)
         {
+            _currentPermissionContext = currentPermissionContext;
         }
 
         /// <summary>
@@ -65,11 +69,29 @@ namespace Imaj.Service.Services
         /// </summary>
         public async Task<ServiceResult<List<FunctionDto>>> GetFunctionsAsync()
         {
-            return await GetTranslatedListAsync<Function, XFunction, FunctionDto>(
+            var result = await GetTranslatedListAsync<Function, XFunction, FunctionDto>(
                 f => f.Id,
                 xf => xf.FunctionID,
                 (f, xf) => new FunctionDto { Id = f.Id, Name = xf.Name }
             );
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                return result;
+            }
+
+            var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+            if (snapshot == null || snapshot.IsDenied || snapshot.AllowedFunctionIds.Count == 0)
+            {
+                return ServiceResult<List<FunctionDto>>.Success(new List<FunctionDto>());
+            }
+
+            var filtered = result.Data
+                .Where(x => snapshot.AllowedFunctionIds.Contains(x.Id))
+                .OrderBy(x => x.Name)
+                .ToList();
+
+            return ServiceResult<List<FunctionDto>>.Success(filtered);
         }
 
         /// <summary>

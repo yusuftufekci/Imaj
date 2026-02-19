@@ -1,6 +1,7 @@
 using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Web.Authorization;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -89,6 +90,7 @@ namespace Imaj.Web.Controllers
         /// page ve pageSize URL query string'den ayrı alınabilir (pagination linkleri için)
         /// </summary>
         [AcceptVerbs("GET", "POST")]
+        [RequireMethodPermission(1397)]
         public async Task<IActionResult> List(JobViewModel model, int? page, int? pageSize)
         {
             // Pagination değerlerini URL'den gelen değerlerle override et

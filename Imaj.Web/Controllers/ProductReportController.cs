@@ -1,5 +1,6 @@
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Web.Authorization;
 using Imaj.Web.Models;
 using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        [RequireMethodPermission(1754)]
         public async Task<IActionResult> DownloadDetailedExcel([FromQuery] ProductReportDownloadRequest request)
         {
             if (!TryCreateReportContext(request, out var filter, out var excelContext, out var badRequest))

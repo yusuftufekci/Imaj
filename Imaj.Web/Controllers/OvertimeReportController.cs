@@ -1,5 +1,6 @@
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Web.Authorization;
 using Imaj.Web.Models;
 using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        [RequireMethodPermission(1698)]
         public async Task<IActionResult> DownloadDetailedExcel([FromQuery] OvertimeReportDownloadRequest request)
         {
             if (!TryCreateReportContext(request, out var reportFilter, out var excelContext, out var badRequest))
@@ -46,6 +48,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        [RequireMethodPermission(1745)]
         public async Task<IActionResult> DownloadSummaryExcel([FromQuery] OvertimeReportDownloadRequest request)
         {
             if (!TryCreateReportContext(request, out var reportFilter, out var excelContext, out var badRequest))
@@ -64,6 +67,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        [RequireMethodPermission(2917)]
         public async Task<IActionResult> DownloadAdministrativeSummaryExcel([FromQuery] OvertimeReportDownloadRequest request)
         {
             if (!TryCreateReportContext(request, out var reportFilter, out var excelContext, out var badRequest))

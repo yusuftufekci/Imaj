@@ -1,6 +1,7 @@
 using Imaj.Core.Entities;
 using Imaj.Core.Interfaces.Repositories;
 using Imaj.Service.DTOs;
+using Imaj.Service.DTOs.Security;
 using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
 using Microsoft.EntityFrameworkCore;
@@ -16,9 +17,16 @@ namespace Imaj.Service.Services
     /// </summary>
     public class JobService : BaseService, IJobService
     {
-        public JobService(IUnitOfWork unitOfWork, ILogger<JobService> logger, IConfiguration configuration)
+        private readonly ICurrentPermissionContext _currentPermissionContext;
+
+        public JobService(
+            IUnitOfWork unitOfWork,
+            ILogger<JobService> logger,
+            IConfiguration configuration,
+            ICurrentPermissionContext currentPermissionContext)
             : base(unitOfWork, logger, configuration)
         {
+            _currentPermissionContext = currentPermissionContext;
         }
 
         /// <summary>
@@ -30,9 +38,24 @@ namespace Imaj.Service.Services
             // ... (existing code) ...
             try
             {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<PagedResult<JobDto>>.Success(new PagedResult<JobDto>
+                    {
+                        Items = new List<JobDto>(),
+                        TotalCount = 0,
+                        PageNumber = filter.Page > 0 ? filter.Page : 1,
+                        PageSize = filter.PageSize > 0 ? filter.PageSize : 20
+                    });
+                }
+
+                var activeSnapshot = snapshot!;
+
                 // ... (implementation of GetByFilterAsync) ...
                 // Ana sorgu - Job'lardan başla
-                var query = from j in _unitOfWork.Repository<Job>().Query()
+                var scopedJobs = ApplyJobDataScope(_unitOfWork.Repository<Job>().Query(), activeSnapshot);
+                var query = from j in scopedJobs
                             join c in _unitOfWork.Repository<Customer>().Query() on j.CustomerID equals c.Id into cGroup
                             from customer in cGroup.DefaultIfEmpty()
                             join xf in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == 1) 
@@ -169,17 +192,38 @@ namespace Imaj.Service.Services
                 if (!string.IsNullOrWhiteSpace(filter.EmployeeCode))
                 {
                     _logger.LogInformation("Çalışan filtresi uygulanıyor. EmployeeCode: {EmployeeCode}", filter.EmployeeCode);
-                    
+
                     // Subquery olarak Employee ve JobWork tablolarını birleştir
                     var jobWorkRepo = _unitOfWork.Repository<JobWork>();
                     var employeeRepo = _unitOfWork.Repository<Employee>();
-                    
+
+                    if (!activeSnapshot.EmployeeScopeBypass)
+                    {
+                        var requestedEmployeeAllowed = await employeeRepo.Query()
+                            .AnyAsync(e =>
+                                e.Code == filter.EmployeeCode
+                                && activeSnapshot.AllowedEmployeeIds.Contains(e.Id));
+
+                        if (!requestedEmployeeAllowed)
+                        {
+                            return ServiceResult<PagedResult<JobDto>>.Success(new PagedResult<JobDto>
+                            {
+                                Items = new List<JobDto>(),
+                                TotalCount = 0,
+                                PageNumber = filter.Page > 0 ? filter.Page : 1,
+                                PageSize = filter.PageSize > 0 ? filter.PageSize : 20
+                            });
+                        }
+                    }
+
                     // Subquery: Bu çalışanın mesai kaydı olan Job ID'leri
                     var jobIdsWithEmployee = from jw in jobWorkRepo.Query()
                                               join e in employeeRepo.Query() on jw.EmployeeID equals e.Id
-                                              where e.Code == filter.EmployeeCode && jw.Deleted == 0
+                                              where e.Code == filter.EmployeeCode
+                                                    && jw.Deleted == 0
+                                                    && (activeSnapshot.EmployeeScopeBypass || activeSnapshot.AllowedEmployeeIds.Contains(jw.EmployeeID))
                                               select jw.JobID;
-                    
+
                     // Ana sorguya subquery ile filtre uygula
                     query = query.Where(x => jobIdsWithEmployee.Contains(x.Job.Id));
                 }
@@ -268,8 +312,17 @@ namespace Imaj.Service.Services
         {
             try
             {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<JobDto>.Fail("İş bulunamadı.");
+                }
+
+                var activeSnapshot = snapshot!;
+
                 // 1. Ana İş Bilgisi
-                var jobQuery = from j in _unitOfWork.Repository<Job>().Query()
+                var scopedJobs = ApplyJobDataScope(_unitOfWork.Repository<Job>().Query(), activeSnapshot);
+                var jobQuery = from j in scopedJobs
                             where j.Reference == reference // Referansa göre filtrele
                             join c in _unitOfWork.Repository<Customer>().Query() on j.CustomerID equals c.Id into cGroup
                             from customer in cGroup.DefaultIfEmpty()
@@ -309,7 +362,9 @@ namespace Imaj.Service.Services
 
                 // 2. Mesai (JobWork) Bilgileri
                 var workQuery = from jw in _unitOfWork.Repository<JobWork>().Query()
-                                where jw.JobID == jobDto.Id 
+                                where jw.JobID == jobDto.Id
+                                      && jw.Deleted == 0
+                                      && (activeSnapshot.EmployeeScopeBypass || activeSnapshot.AllowedEmployeeIds.Contains(jw.EmployeeID))
                                 join e in _unitOfWork.Repository<Employee>().Query() on jw.EmployeeID equals e.Id
                                 join xw in _unitOfWork.Repository<XWorkType>().Query().Where(x => x.LanguageID == 1) 
                                     on jw.WorkTypeID equals xw.WorkTypeID into wGroup
@@ -335,7 +390,7 @@ namespace Imaj.Service.Services
 
                 // 3. Ürün (JobProd) Bilgileri
                 var prodQuery = from jp in _unitOfWork.Repository<JobProd>().Query()
-                                where jp.JobID == jobDto.Id
+                                where jp.JobID == jobDto.Id && jp.Deleted == 0
                                 join p in _unitOfWork.Repository<Product>().Query() on jp.ProductID equals p.Id
                                 join xp in _unitOfWork.Repository<XProduct>().Query().Where(x => x.LanguageID == 1) 
                                     on jp.ProductID equals xp.ProductID into xpGroup
@@ -396,7 +451,19 @@ namespace Imaj.Service.Services
         {
             try
             {
-                var items = await BuildOvertimeReportBaseQuery(filter)
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<OvertimeReportRowDto>>.Success(new List<OvertimeReportRowDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+                if (IsEmployeeScopeDenied(activeSnapshot))
+                {
+                    return ServiceResult<List<OvertimeReportRowDto>>.Success(new List<OvertimeReportRowDto>());
+                }
+
+                var items = await BuildOvertimeReportBaseQuery(filter, activeSnapshot)
                     .OrderBy(x => x.EmployeeName)
                     .ThenBy(x => x.JobDate)
                     .ThenBy(x => x.Reference)
@@ -433,7 +500,19 @@ namespace Imaj.Service.Services
         {
             try
             {
-                var items = await BuildOvertimeReportBaseQuery(filter)
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<OvertimeSummaryReportRowDto>>.Success(new List<OvertimeSummaryReportRowDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+                if (IsEmployeeScopeDenied(activeSnapshot))
+                {
+                    return ServiceResult<List<OvertimeSummaryReportRowDto>>.Success(new List<OvertimeSummaryReportRowDto>());
+                }
+
+                var items = await BuildOvertimeReportBaseQuery(filter, activeSnapshot)
                     .GroupBy(x => new { x.EmployeeCode, x.EmployeeName, x.TimeTypeName, x.WorkTypeName })
                     .Select(g => new OvertimeSummaryReportRowDto
                     {
@@ -465,7 +544,19 @@ namespace Imaj.Service.Services
         {
             try
             {
-                var items = await BuildOvertimeReportBaseQuery(filter)
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<OvertimeAdministrativeSummaryReportRowDto>>.Success(new List<OvertimeAdministrativeSummaryReportRowDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+                if (IsEmployeeScopeDenied(activeSnapshot))
+                {
+                    return ServiceResult<List<OvertimeAdministrativeSummaryReportRowDto>>.Success(new List<OvertimeAdministrativeSummaryReportRowDto>());
+                }
+
+                var items = await BuildOvertimeReportBaseQuery(filter, activeSnapshot)
                     .GroupBy(x => new { x.EmployeeCode, x.EmployeeName })
                     .Select(g => new OvertimeAdministrativeSummaryReportRowDto
                     {
@@ -486,7 +577,9 @@ namespace Imaj.Service.Services
             }
         }
 
-        private IQueryable<OvertimeReportBaseRow> BuildOvertimeReportBaseQuery(OvertimeReportFilterDto filter)
+        private IQueryable<OvertimeReportBaseRow> BuildOvertimeReportBaseQuery(
+            OvertimeReportFilterDto filter,
+            PermissionSnapshotDto snapshot)
         {
             var startDate = filter.StartDate.Date;
             var endDate = filter.EndDate.Date.AddDays(1);
@@ -509,6 +602,11 @@ namespace Imaj.Service.Services
                         where jw.Deleted == 0
                               && j.StartDT >= startDate
                               && j.StartDT < endDate
+                              && snapshot.AllowedFunctionIds.Contains(j.FunctionID)
+                              && (snapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound
+                                  || !snapshot.CompanyId.HasValue
+                                  || j.CompanyID == snapshot.CompanyId.Value)
+                              && (snapshot.EmployeeScopeBypass || snapshot.AllowedEmployeeIds.Contains(jw.EmployeeID))
                         select new OvertimeReportBaseRow
                         {
                             EmployeeCode = employee != null ? employee.Code : string.Empty,
@@ -545,6 +643,29 @@ namespace Imaj.Service.Services
                 .Select(x => x.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        private static bool IsDataScopeDenied(PermissionSnapshotDto? snapshot)
+        {
+            return snapshot == null
+                   || snapshot.IsDenied
+                   || snapshot.CompanyScopeMode == CompanyScopeMode.Deny
+                   || snapshot.AllowedFunctionIds.Count == 0;
+        }
+
+        private static bool IsEmployeeScopeDenied(PermissionSnapshotDto snapshot)
+        {
+            return !snapshot.EmployeeScopeBypass && snapshot.AllowedEmployeeIds.Count == 0;
+        }
+
+        private static IQueryable<Job> ApplyJobDataScope(IQueryable<Job> query, PermissionSnapshotDto snapshot)
+        {
+            if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound && snapshot.CompanyId.HasValue)
+            {
+                query = query.Where(j => j.CompanyID == snapshot.CompanyId.Value);
+            }
+
+            return query.Where(j => snapshot.AllowedFunctionIds.Contains(j.FunctionID));
         }
 
         private sealed class OvertimeReportBaseRow
@@ -778,6 +899,21 @@ namespace Imaj.Service.Services
         {
             try
             {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<JobLogDto>>.Success(new List<JobLogDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+                var canAccessJob = await ApplyJobDataScope(_unitOfWork.Repository<Job>().Query(), activeSnapshot)
+                    .AnyAsync(j => j.Id == jobId);
+
+                if (!canAccessJob)
+                {
+                    return ServiceResult<List<JobLogDto>>.Success(new List<JobLogDto>());
+                }
+
                 // JobLog tablosundan iş geçmişini getir
                 // ActionDT: İşlem tarihi, Destination: E-posta adresi vb. hedef bilgisi
                 var query = from log in _unitOfWork.Repository<JobLog>().Query()

@@ -33,7 +33,7 @@ try
     builder.Services.AddApplicationServices(builder.Configuration);
 
     // Web servisleri (Authentication)
-    builder.Services.AddWebServices();
+    builder.Services.AddWebServices(builder.Configuration);
 
     var app = builder.Build();
 

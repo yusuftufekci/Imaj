@@ -1,11 +1,16 @@
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Imaj.Web
+@using Imaj.Web.Authorization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResource> Localizer
+@inject IPermissionViewService PermissionViewService
 @model OvertimeReportViewModel
 
 @{
     ViewData["Title"] = Localizer["OvertimeReport"];
+    var canDownloadDetailed = await PermissionViewService.CanExecuteMethodAsync(1698);
+    var canDownloadSummary = await PermissionViewService.CanExecuteMethodAsync(1745);
+    var canDownloadAdministrativeSummary = await PermissionViewService.CanExecuteMethodAsync(2917);
 }
 
 <div x-data="overtimeReport()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="space-y-6">
@@ -75,15 +80,28 @@
             
             <!-- Action Buttons -->
             <div class="mt-8 flex justify-end space-x-3">
-                 <button type="button" @@click="downloadDetailedReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Detay Rapor Bas
-                </button>
-                <button type="button" @@click="downloadSummaryReport()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Özet Rapor Bas
-                </button>
-                 <button type="button" @@click="downloadAdministrativeSummaryReport()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    İdari Özet Raporu Bas
-                </button>
+                @if (canDownloadDetailed)
+                {
+                    <button type="button" @@click="downloadDetailedReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Detay Rapor Bas
+                    </button>
+                }
+                @if (canDownloadSummary)
+                {
+                    <button type="button" @@click="downloadSummaryReport()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Özet Rapor Bas
+                    </button>
+                }
+                @if (canDownloadAdministrativeSummary)
+                {
+                    <button type="button" @@click="downloadAdministrativeSummaryReport()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        İdari Özet Raporu Bas
+                    </button>
+                }
+                @if (!canDownloadDetailed && !canDownloadSummary && !canDownloadAdministrativeSummary)
+                {
+                    <span class="text-sm text-gray-500">Rapor çıktısı için yetkiniz bulunmuyor.</span>
+                }
             </div>
         </div>
     </div>

@@ -1,7 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Mvc.Localization
 @using Imaj.Web
+@using Imaj.Web.Authorization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResource> Localizer
+@inject IPermissionViewService PermissionViewService
 
 <!DOCTYPE html>
 <html lang="en">
@@ -60,17 +62,27 @@
                         <div class="hidden md:ml-10 md:flex md:space-x-1">
                             <!-- Menu Items -->
                             @{
-                                var menuItems = new[] 
-                                { 
-                                    new { Key = "Home", Label = Localizer["Home"].Value, Url = "/" },
-                                    new { Key = "Calendar", Label = Localizer["Calendar"].Value, Url = "#" },
-                                    new { Key = "Customer", Label = Localizer["Customer"].Value, Url = "/Customer" },
-                                    new { Key = "Reservation", Label = Localizer["Reservation"].Value, Url = "#" },
-                                    new { Key = "Job", Label = Localizer["Job"].Value, Url = "/Job" },
-                                    new { Key = "Invoice", Label = Localizer["Invoice"].Value, Url = "/Invoice" },
-                                    new { Key = "OvertimeReport", Label = Localizer["OvertimeReport"].Value, Url = "/OvertimeReport" },
-                                    new { Key = "ProductReport", Label = "Ürün Raporu", Url = "/ProductReport" }
-                                };
+                                var visibleMenuItems = User.Identity?.IsAuthenticated == true
+                                    ? await PermissionViewService.GetVisibleMenuItemsAsync()
+                                    : Array.Empty<Imaj.Web.Models.Authorization.VisibleMenuItem>();
+
+                                var menuItems = visibleMenuItems
+                                    .Select(item => new
+                                    {
+                                        item.Key,
+                                        Label = item.Key switch
+                                        {
+                                            "Home" => Localizer["Home"].Value,
+                                            "Customer" => Localizer["Customer"].Value,
+                                            "Job" => Localizer["Job"].Value,
+                                            "Invoice" => Localizer["Invoice"].Value,
+                                            "OvertimeReport" => Localizer["OvertimeReport"].Value,
+                                            "ProductReport" => "Ürün Raporu",
+                                            _ => item.Label
+                                        },
+                                        item.Url
+                                    })
+                                    .ToList();
                             }
                             @foreach (var item in menuItems)
                             {

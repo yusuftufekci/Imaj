@@ -2,6 +2,7 @@ using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
+using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -37,6 +38,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        [RequireMethodPermission(1360)]
         public async Task<IActionResult> Results([FromQuery] InvoiceViewModel? filter)
         {
             var f = filter ?? new InvoiceViewModel();
@@ -62,6 +64,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
+        [RequireMethodPermission(1360)]
         public async Task<IActionResult> Search([FromBody] InvoiceViewModel? filter)
         {
             var f = filter ?? new InvoiceViewModel();

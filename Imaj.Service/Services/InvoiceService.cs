@@ -1,6 +1,7 @@
 using Imaj.Core.Entities;
 using Imaj.Core.Interfaces.Repositories;
 using Imaj.Service.DTOs;
+using Imaj.Service.DTOs.Security;
 using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
 using Microsoft.EntityFrameworkCore;
@@ -11,16 +12,36 @@ namespace Imaj.Service.Services
 {
     public class InvoiceService : BaseService, IInvoiceService
     {
-        public InvoiceService(IUnitOfWork unitOfWork, ILogger<InvoiceService> logger, IConfiguration configuration)
+        private readonly ICurrentPermissionContext _currentPermissionContext;
+
+        public InvoiceService(
+            IUnitOfWork unitOfWork,
+            ILogger<InvoiceService> logger,
+            IConfiguration configuration,
+            ICurrentPermissionContext currentPermissionContext)
             : base(unitOfWork, logger, configuration)
         {
+            _currentPermissionContext = currentPermissionContext;
         }
 
         public async Task<ServiceResult<PagedResult<InvoiceDto>>> GetByFilterAsync(InvoiceFilterDto filter)
         {
             try
             {
-                var invoices = _unitOfWork.Repository<Invoice>().Query();
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<PagedResult<InvoiceDto>>.Success(new PagedResult<InvoiceDto>
+                    {
+                        Items = new List<InvoiceDto>(),
+                        TotalCount = 0,
+                        PageNumber = filter.Page > 0 ? filter.Page : 1,
+                        PageSize = filter.PageSize > 0 ? filter.PageSize : 10
+                    });
+                }
+
+                var activeSnapshot = snapshot!;
+                var invoices = BuildScopedInvoiceQuery(activeSnapshot);
                 var customers = _unitOfWork.Repository<Customer>().Query();
                 var states = _unitOfWork.Repository<XState>().Query();
 
@@ -155,13 +176,22 @@ namespace Imaj.Service.Services
         {
             try
             {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<InvoiceDetailDto>>.Success(new List<InvoiceDetailDto>());
+                }
+
                 var refList = references?.Where(r => r > 0).Distinct().ToList() ?? new List<int>();
                 if (refList.Count == 0)
                 {
                     return ServiceResult<List<InvoiceDetailDto>>.Success(new List<InvoiceDetailDto>());
                 }
 
-                var invoices = _unitOfWork.Repository<Invoice>().Query();
+                var activeSnapshot = snapshot!;
+                var scopedJobsQuery = BuildScopedJobQuery(activeSnapshot);
+                var scopedJobIds = scopedJobsQuery.Select(j => j.Id);
+                var invoices = BuildScopedInvoiceQuery(activeSnapshot);
                 var customers = _unitOfWork.Repository<Customer>().Query();
                 var states = _unitOfWork.Repository<XState>().Query();
 
@@ -191,7 +221,7 @@ namespace Imaj.Service.Services
 
                 var lineIds = lines.Select(l => l.Id).Distinct().ToList();
                 var invoJobs = await _unitOfWork.Repository<InvoJob>().Query()
-                    .Where(j => lineIds.Contains(j.InvoLineID) && j.Deleted == 0)
+                    .Where(j => lineIds.Contains(j.InvoLineID) && j.Deleted == 0 && scopedJobIds.Contains(j.JobID))
                     .ToListAsync();
                 List<Job> jobs;
                 Dictionary<decimal, bool> jobSelectMap;
@@ -200,7 +230,7 @@ namespace Imaj.Service.Services
                 if (invoJobs.Any())
                 {
                     var jobIdsFromRows = invoJobs.Select(r => r.JobID).Distinct().ToList();
-                    jobs = await _unitOfWork.Repository<Job>().Query()
+                    jobs = await scopedJobsQuery
                         .Where(j => jobIdsFromRows.Contains(j.Id))
                         .ToListAsync();
                     jobSelectMap = invoJobs
@@ -212,7 +242,7 @@ namespace Imaj.Service.Services
                 }
                 else
                 {
-                    jobs = await _unitOfWork.Repository<Job>().Query()
+                    jobs = await scopedJobsQuery
                         .Where(j => j.InvoLineID.HasValue && lineIds.Contains(j.InvoLineID.Value))
                         .ToListAsync();
                     jobSelectMap = jobs.ToDictionary(j => j.Id, j => j.SelectFlag);
@@ -436,7 +466,14 @@ namespace Imaj.Service.Services
         {
             try
             {
-                var invoice = await _unitOfWork.Repository<Invoice>().Query()
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<InvoiceHistoryDto>.Fail("Fatura bulunamadı.");
+                }
+
+                var activeSnapshot = snapshot!;
+                var invoice = await BuildScopedInvoiceQuery(activeSnapshot)
                     .FirstOrDefaultAsync(i => i.Reference == reference);
 
                 if (invoice == null)
@@ -446,6 +483,10 @@ namespace Imaj.Service.Services
 
                 var detailResult = await GetDetailsByReferencesAsync(new List<int> { reference });
                 var detail = detailResult.IsSuccess ? detailResult.Data?.FirstOrDefault() : null;
+                if (detail == null)
+                {
+                    return ServiceResult<InvoiceHistoryDto>.Fail("Fatura bulunamadı.");
+                }
 
                 var logs = await (from log in _unitOfWork.Repository<InvoiceLog>().Query()
                                   where log.InvoiceID == invoice.Id
@@ -482,6 +523,58 @@ namespace Imaj.Service.Services
                 _logger.LogError(ex, "Invoice history fetch failed. Reference: {Reference}", reference);
                 return ServiceResult<InvoiceHistoryDto>.Fail("Fatura geçmişi yüklenirken hata oluştu.");
             }
+        }
+
+        private static bool IsDataScopeDenied(PermissionSnapshotDto? snapshot)
+        {
+            return snapshot == null
+                   || snapshot.IsDenied
+                   || snapshot.CompanyScopeMode == CompanyScopeMode.Deny
+                   || snapshot.AllowedFunctionIds.Count == 0;
+        }
+
+        private IQueryable<Job> BuildScopedJobQuery(PermissionSnapshotDto snapshot)
+        {
+            var query = _unitOfWork.Repository<Job>().Query()
+                .Where(j => snapshot.AllowedFunctionIds.Contains(j.FunctionID));
+
+            if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound && snapshot.CompanyId.HasValue)
+            {
+                query = query.Where(j => j.CompanyID == snapshot.CompanyId.Value);
+            }
+
+            return query;
+        }
+
+        private IQueryable<Invoice> BuildScopedInvoiceQuery(PermissionSnapshotDto snapshot)
+        {
+            var invoiceQuery = _unitOfWork.Repository<Invoice>().Query();
+
+            if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound && snapshot.CompanyId.HasValue)
+            {
+                invoiceQuery = invoiceQuery.Where(i => i.CompanyID == snapshot.CompanyId.Value);
+            }
+
+            var scopedJobs = BuildScopedJobQuery(snapshot);
+            var scopedJobIds = scopedJobs.Select(j => j.Id);
+            var scopedInvoLineIdsFromJobs = scopedJobs
+                .Select(j => j.InvoLineID ?? 0m)
+                .Where(invoLineId => invoLineId > 0);
+
+            var scopedInvoiceIds = _unitOfWork.Repository<InvoLine>().Query()
+                .Where(line =>
+                    line.Deleted == 0
+                    && (
+                        _unitOfWork.Repository<InvoJob>().Query().Any(invoJob =>
+                            invoJob.InvoLineID == line.Id
+                            && invoJob.Deleted == 0
+                            && scopedJobIds.Contains(invoJob.JobID))
+                        || scopedInvoLineIdsFromJobs.Contains(line.Id)
+                    ))
+                .Select(line => line.InvoiceID)
+                .Distinct();
+
+            return invoiceQuery.Where(i => scopedInvoiceIds.Contains(i.Id));
         }
 
     }
