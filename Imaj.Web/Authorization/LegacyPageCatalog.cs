@@ -8,6 +8,7 @@ namespace Imaj.Web.Authorization
     {
         private static readonly IReadOnlyList<LegacyPageDefinition> AllPages = new List<LegacyPageDefinition>
         {
+            /* === Her zaman açık sayfalar === */
             new()
             {
                 Key = "Home",
@@ -37,24 +38,14 @@ namespace Imaj.Web.Authorization
                 BypassReason = "Culture controller tum authenticated kullanicilar icin acik."
             },
 
-            // Implemented menu items (current MVC coverage)
+            /* === Menü sıralaması (ekran görüntüsüyle uyumlu) === */
             new() { Key = "User", Label = "Kullanici", AspPage = "UserQry.asp", Url = "/User", Controller = "User", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "Customer", Label = "Musteri", AspPage = "CustomerQry.asp", Url = "/Customer", Controller = "Customer", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "Job", Label = "Is", AspPage = "JobQry.asp", Url = "/Job", Controller = "Job", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "Invoice", Label = "Fatura", AspPage = "InvoiceQry.asp", Url = "/Invoice", Controller = "Invoice", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "OvertimeReport", Label = "Mesai Raporu", AspPage = "JobWorkReport.asp", Url = "/OvertimeReport", Controller = "OvertimeReport", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "ProductReport", Label = "Urun Raporu", AspPage = "JobProdReport.asp", Url = "/ProductReport", Controller = "ProductReport", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "ResoCat", Label = "Kaynak Kategorisi", AspPage = "ResoCatQry.asp", Url = "/ResoCat", Controller = "ResoCat", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Function", Label = "Fonksiyon", AspPage = "FunctionQry.asp", Url = "/Function", Controller = "Function", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Resource", Label = "Kaynak", AspPage = "ResourceQry.asp", Url = "/Resource", Controller = "Resource", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "Reason", Label = "Gerekce", AspPage = "ReasonQry.asp", Url = "/Reason", Controller = "Reason", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-
-            // Temporary API aliases to preserve current behavior until dedicated pages are implemented.
-            new() { Key = "ProductApiAlias", Label = "Product API Alias", AspPage = "JobQry.asp", Url = string.Empty, Controller = "Product", Action = "Search", IncludeInMenu = false, IsImplemented = true },
-            new() { Key = "EmployeeApiAlias", Label = "Employee API Alias", AspPage = "JobQry.asp", Url = string.Empty, Controller = "Employee", Action = "Search", IncludeInMenu = false, IsImplemented = true },
-
-            // Planned legacy menu items (not implemented yet)
             new() { Key = "ReserveCrossTab", Label = "Takvim", AspPage = "ReserveCrossTab.asp", Url = "/ReserveCalendar", IncludeInMenu = true, IsImplemented = false, PlannedController = "ReserveCalendar", PlannedAction = "Index" },
+            new() { Key = "Reason", Label = "Gerekce", AspPage = "ReasonQry.asp", Url = "/Reason", Controller = "Reason", Action = "Index", IncludeInMenu = true, IsImplemented = true },
+            new() { Key = "Customer", Label = "Musteri", AspPage = "CustomerQry.asp", Url = "/Customer", Controller = "Customer", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Absence", Label = "Mazeret", AspPage = "AbsenceQry.asp", Url = "/Absence", Controller = "Absence", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Reserve", Label = "Reservasyon", AspPage = "ReserveQry.asp", Url = "/Reserve", IncludeInMenu = true, IsImplemented = false, PlannedController = "Reserve", PlannedAction = "Index" },
             new() { Key = "WorkType", Label = "Gorev Tipi", AspPage = "WorkTypeQry.asp", Url = "/WorkType", Controller = "WorkType", Action = "Index", IncludeInMenu = true, IsImplemented = true },
@@ -64,7 +55,15 @@ namespace Imaj.Web.Authorization
             new() { Key = "ProdCat", Label = "Urun Kategorisi", AspPage = "ProdCatQry.asp", Url = "/ProdCat", Controller = "ProdCat", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "ProdGrp", Label = "Urun Grubu", AspPage = "ProdGrpQry.asp", Url = "/ProdGrp", Controller = "ProdGrp", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Product", Label = "Urun", AspPage = "ProductQry.asp", Url = "/Product", Controller = "ProductPage", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "JobEntry", Label = "Is Girisi", AspPage = "JobEntryQry.asp", Url = "/JobEntry", Controller = "JobEntry", Action = "Index", IncludeInMenu = true, IsImplemented = true }
+            new() { Key = "Job", Label = "Is", AspPage = "JobQry.asp", Url = "/Job", Controller = "Job", Action = "Index", IncludeInMenu = true, IsImplemented = true },
+            new() { Key = "JobEntry", Label = "Is Girisi", AspPage = "JobEntryQry.asp", Url = "/JobEntry", Controller = "JobEntry", Action = "Index", IncludeInMenu = true, IsImplemented = true },
+            new() { Key = "Invoice", Label = "Fatura", AspPage = "InvoiceQry.asp", Url = "/Invoice", Controller = "Invoice", Action = "Index", IncludeInMenu = true, IsImplemented = true },
+            new() { Key = "OvertimeReport", Label = "Mesai Raporu", AspPage = "JobWorkReport.asp", Url = "/OvertimeReport", Controller = "OvertimeReport", Action = "Index", IncludeInMenu = true, IsImplemented = true },
+            new() { Key = "ProductReport", Label = "Urun Raporu", AspPage = "JobProdReport.asp", Url = "/ProductReport", Controller = "ProductReport", Action = "Index", IncludeInMenu = true, IsImplemented = true },
+
+            // API alias'ları (menüde gösterilmez)
+            new() { Key = "ProductApiAlias", Label = "Product API Alias", AspPage = "JobQry.asp", Url = string.Empty, Controller = "Product", Action = "Search", IncludeInMenu = false, IsImplemented = true },
+            new() { Key = "EmployeeApiAlias", Label = "Employee API Alias", AspPage = "JobQry.asp", Url = string.Empty, Controller = "Employee", Action = "Search", IncludeInMenu = false, IsImplemented = true }
         };
 
         private static readonly IReadOnlyDictionary<string, LegacyPageDefinition> ControllerRouteMap = AllPages
