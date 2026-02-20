@@ -131,18 +131,11 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> Create()
         {
             var languageOptions = await GetLanguageOptionsAsync();
-            var defaultLanguageId = languageOptions.Count > 0 ? languageOptions[0].Id : 1m;
 
             return View(new ResoCatCreateViewModel
             {
                 Languages = languageOptions,
-                Names = new List<ResoCatLocalizedNameViewModel>
-                {
-                    new()
-                    {
-                        LanguageId = defaultLanguageId
-                    }
-                }
+                Names = BuildCreateLocalizedNames(languageOptions, null)
             });
         }
 
@@ -298,6 +291,12 @@ namespace Imaj.Web.Controllers
                 model.Names = new List<ResoCatLocalizedNameViewModel>();
             }
 
+            if (model is ResoCatCreateViewModel)
+            {
+                model.Names = BuildCreateLocalizedNames(languages, model.Names);
+                return;
+            }
+
             if (model.Names.Count == 0)
             {
                 var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
@@ -313,6 +312,20 @@ namespace Imaj.Web.Controllers
                 if (localizedName.LanguageId <= 0)
                 {
                     localizedName.LanguageId = fallbackLanguageId;
+                }
+            }
+
+            var languageNameById = languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
+            {
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
                 }
             }
         }
@@ -383,6 +396,42 @@ namespace Imaj.Web.Controllers
             }
 
             return parsed > 0 ? parsed : null;
+        }
+
+        private static List<ResoCatLocalizedNameViewModel> BuildCreateLocalizedNames(
+            IReadOnlyCollection<ResoCatLanguageOptionViewModel> languages,
+            IEnumerable<ResoCatLocalizedNameViewModel>? existingNames)
+        {
+            var existingByLanguage = (existingNames ?? Enumerable.Empty<ResoCatLocalizedNameViewModel>())
+                .Where(x => x.LanguageId > 0)
+                .GroupBy(x => x.LanguageId)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (languages.Count == 0)
+            {
+                return existingByLanguage.Values
+                    .OrderBy(x => x.LanguageId)
+                    .Select(x => new ResoCatLocalizedNameViewModel
+                    {
+                        LanguageId = x.LanguageId,
+                        LanguageName = x.LanguageName,
+                        Name = x.Name
+                    })
+                    .ToList();
+            }
+
+            return languages
+                .Select(language =>
+                {
+                    existingByLanguage.TryGetValue(language.Id, out var existing);
+                    return new ResoCatLocalizedNameViewModel
+                    {
+                        LanguageId = language.Id,
+                        LanguageName = language.Name,
+                        Name = existing?.Name ?? string.Empty
+                    };
+                })
+                .ToList();
         }
     }
 }
