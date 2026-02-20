@@ -86,7 +86,7 @@ namespace Imaj.Web.Models
         public string Name { get; set; } = string.Empty;
 
         [StringLength(32, ErrorMessage = "Sifre en fazla 32 karakter olabilir.")]
-        public string Password { get; set; } = string.Empty;
+        public string? Password { get; set; }
 
         [Range(1, 999, ErrorMessage = "Dil secimi zorunludur.")]
         public decimal LanguageId { get; set; } = 1;
