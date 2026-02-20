@@ -36,6 +36,9 @@
   <data name="ProdGrp" xml:space="preserve">
     <value>Ürün Grubu</value>
   </data>
+  <data name="Product" xml:space="preserve">
+    <value>Ürün</value>
+  </data>
   <data name="Resource" xml:space="preserve">
     <value>Kaynak</value>
   </data>
