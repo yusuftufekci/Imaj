@@ -1,0 +1,277 @@
+@using System.Net
+@model JobDetailViewModel
+
+@{
+    ViewData["Title"] = "İş Detayı";
+    
+    // Logic to build query string for navigation
+    string BuildNavUrl(int index) {
+        if(Model.SelectedIds == null || Model.SelectedIds.Count == 0) return "#";
+        
+        // Clamp
+        if (index < 0) index = 0;
+        if (index >= Model.SelectedIds.Count) index = Model.SelectedIds.Count - 1;
+        
+        var nextId = Model.SelectedIds[index];
+        var idsQuery = string.Join("&selectedIds=", Model.SelectedIds);
+        
+        var url = $"/JobEntry/Detail?id={nextId}&currentIndex={index}&selectedIds={idsQuery}";
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+        return url;
+    }
+}
+
+<div x-data="jobDetail()" class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
+        <div class="flex-1 min-w-0">
+             <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
+                İş
+            </h2>
+        </div>
+    </div>
+
+    <!-- Info Sections -->
+    <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Left: Basic Info -->
+            <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm">
+                <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">Temel Bilgiler</h3>
+                
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Fonksiyon</span>
+                    <span class="col-span-2 text-gray-900">@Model.Function</span>
+                </div>
+                 <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Referans</span>
+                    <span class="col-span-2 text-gray-900">@Model.Code</span>
+                </div>
+                 <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Müşteri</span>
+                    <span class="col-span-2 text-gray-900">@Model.CustomerName</span>
+                </div>
+                 <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Ad</span>
+                    <span class="col-span-2 text-gray-900">@Model.Name</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">İlgili</span>
+                    <span class="col-span-2 text-gray-900">@Model.RelatedPerson</span>
+                </div>
+                 <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Başlangıç Tarihi</span>
+                    <span class="col-span-2 text-gray-900">@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</span>
+                </div>
+                 <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Bitiş Tarihi</span>
+                    <span class="col-span-2 text-gray-900">@Model.EndDate?.ToString("dd/MM/yyyy HH:mm") @Model.EndDate?.ToString("dddd")</span>
+                </div>
+                 <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Durum</span>
+                    <span class="col-span-2 text-gray-900">@Model.Status</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">E-Posta Yollandı</span>
+                    <span class="col-span-2">
+                         <input type="checkbox" disabled @(Model.IsEmailSent ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                    </span>
+                </div>
+                 <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Değerlendirildi</span>
+                    <span class="col-span-2">
+                         <input type="checkbox" disabled @(Model.IsEvaluated ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">Fatura</span>
+                    <span class="col-span-2 text-gray-900">@Model.InvoiceStatus</span>
+                </div>
+            </div>
+
+            <!-- Right: Notes -->
+            <div class="space-y-4">
+                <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                     <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">İdari Notlar</h3>
+                     <textarea readonly rows="3" class="w-full text-sm border-gray-300 rounded bg-white">@Model.AdminNotes</textarea>
+                </div>
+                 <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                     <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">Müşteri Notları</h3>
+                     <textarea readonly rows="3" class="w-full text-sm border-gray-300 rounded bg-white">@Model.CustomerNotes</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Overtime Section -->
+    <div class="mt-6">
+        <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+             <h3 class="font-bold text-gray-800 text-sm">Mesai (@Model.Overtimes.Count)</h3>
+        </div>
+        <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+             <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-yellow-50">
+                    <tr>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Seçili</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Kod</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Görev Tipi</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Mesai Tipi</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Miktar</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Tutar</th>
+                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Notlar</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var ot in Model.Overtimes)
+                    {
+                         <tr>
+                            <td class="px-6 py-2 whitespace-nowrap">
+                                <input type="checkbox" disabled @(ot.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeCode</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeName</td>
+                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.TaskType</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.OvertimeType</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@ot.Quantity</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@ot.Amount.ToString("N2")</td>
+                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.Notes</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="bg-yellow-50">
+                    <tr>
+                        <td colspan="6" class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                        <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalOvertimeAmount.ToString("N2")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+             </table>
+        </div>
+    </div>
+    
+     <!-- Product Section -->
+    <div class="mt-6">
+        <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+             <h3 class="font-bold text-gray-800 text-sm">Ürün (@Model.Products.Count)</h3>
+        </div>
+        <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+             <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-yellow-50">
+                    <tr>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Seçili</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Kod</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Miktar</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Fiyat</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Ara Tutar</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Net Tutar</th>
+                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Notlar</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var prod in Model.Products)
+                    {
+                         <tr>
+                            <td class="px-6 py-2 whitespace-nowrap">
+                                <input type="checkbox" disabled @(prod.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Code</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Name</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.Quantity</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.Price.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.SubTotal.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.NetTotal.ToString("N2")</td>
+                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Notes</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="bg-yellow-50">
+                    <tr>
+                         <td colspan="5" class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.Products.Sum(x => x.SubTotal).ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalProductAmount.ToString("N2")</td>
+                         <td></td>
+                    </tr>
+                </tfoot>
+             </table>
+        </div>
+    </div>
+
+     <!-- Product Category Section -->
+    <div class="mt-6">
+        <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+             <h3 class="font-bold text-gray-800 text-sm">Ürün Kategorisi (@Model.ProductCategories.Count)</h3>
+        </div>
+        <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+             <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-yellow-50">
+                    <tr>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Ara Tutar</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">İndirim</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">İndirim Tutarı</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Net Tutar</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var cat in Model.ProductCategories)
+                    {
+                         <tr>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@cat.Name</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.SubTotal.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.Discount.ToString("N0")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.DiscountAmount.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.NetTotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="bg-yellow-50">
+                    <tr>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.ProductCategories.Sum(x => x.SubTotal).ToString("N2")</td>
+                         <td></td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.ProductCategories.Sum(x => x.DiscountAmount).ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalCategoryAmount.ToString("N2")</td>
+                    </tr>
+                </tfoot>
+             </table>
+        </div>
+    </div>
+    
+    <!-- Footer Navigation (Modernized) -->
+    <div class="mt-8 flex flex-col items-center space-y-4">
+         
+         <partial name="_DetailNavigator" model="@(new DetailNavigatorViewModel {
+             Header = "İş Navigasyonu",
+             CurrentIndex = Model.CurrentIndex,
+             TotalCount = Model.TotalSelected,
+             FirstUrl = BuildNavUrl(0),
+             PreviousUrl = BuildNavUrl(Model.CurrentIndex - 1),
+             NextUrl = BuildNavUrl(Model.CurrentIndex + 1),
+             LastUrl = BuildNavUrl(Model.SelectedIds.Count - 1),
+             FormAction = "/JobEntry/Detail",
+             SelectedIds = Model.SelectedIds,
+             ReturnUrl = Model.ReturnUrl
+         })" />
+         
+         <div class="flex space-x-2">
+             <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                Geri
+            </a>
+            <button class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                Değerlendirmeyi Geri Al
+            </button>
+             <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                Geçmiş Görüntüle
+            </a>
+         </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Scripts buraya gelebilir -->
+}

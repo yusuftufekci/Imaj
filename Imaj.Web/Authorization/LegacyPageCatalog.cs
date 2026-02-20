@@ -64,7 +64,7 @@ namespace Imaj.Web.Authorization
             new() { Key = "ProdCat", Label = "Urun Kategorisi", AspPage = "ProdCatQry.asp", Url = "/ProdCat", Controller = "ProdCat", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "ProdGrp", Label = "Urun Grubu", AspPage = "ProdGrpQry.asp", Url = "/ProdGrp", Controller = "ProdGrp", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Product", Label = "Urun", AspPage = "ProductQry.asp", Url = "/Product", Controller = "ProductPage", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "JobEntry", Label = "Is Girisi", AspPage = "JobEntryQry.asp", Url = "/JobEntry", IncludeInMenu = true, IsImplemented = false, PlannedController = "JobEntry", PlannedAction = "Index" }
+            new() { Key = "JobEntry", Label = "Is Girisi", AspPage = "JobEntryQry.asp", Url = "/JobEntry", Controller = "JobEntry", Action = "Index", IncludeInMenu = true, IsImplemented = true }
         };
 
         private static readonly IReadOnlyDictionary<string, LegacyPageDefinition> ControllerRouteMap = AllPages

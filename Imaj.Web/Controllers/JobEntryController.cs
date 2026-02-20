@@ -1,0 +1,494 @@
+using Imaj.Core.Constants;
+using Imaj.Service.DTOs;
+using Imaj.Service.Interfaces;
+using Imaj.Web.Authorization;
+using Imaj.Web.Models;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Imaj.Web.Controllers
+{
+    public class JobEntryController : Controller
+    {
+        private const double QueryMethodId = 1397;
+        private const double AddJobEntryMethodId = 1710;
+        private const double ViewJobEntryMethodId = 1711;
+
+        private readonly IJobService _jobService;
+        private readonly ILookupService _lookupService;
+
+        public JobEntryController(IJobService jobService, ILookupService lookupService)
+        {
+            _jobService = jobService;
+            _lookupService = lookupService;
+        }
+
+
+
+        /// <summary>
+        /// İş geçmişini tam sayfa olarak görüntüler.
+        /// </summary>
+        [HttpGet]
+        [RequireMethodPermission(ViewJobEntryMethodId)]
+        public async Task<IActionResult> GetHistory(int id)
+        {
+            // If id is Reference:
+            var reference = id; 
+            var jobResult = await _jobService.GetByReferenceAsync(reference);
+
+            if (!jobResult.IsSuccess || jobResult.Data == null)
+            {
+                return RedirectToAction("List");
+            }
+            
+            var job = jobResult.Data;
+            
+            // Now get history using the actual Job.Id (PK)
+            var historyResult = await _jobService.GetJobHistoryAsync(job.Id);
+
+            var model = new JobHistoryViewModel
+            {
+                JobId = job.Id, // PK
+                Reference = job.Reference.ToString(),
+                Function = job.FunctionName,
+                CustomerName = job.CustomerName,
+                RelatedPerson = job.Contact, // "İlgili"
+                ContactName = job.Name, // "Ad" (Job.Name kişi adı gibi kullanılıyor screenshotta)
+                StartDate = job.StartDate,
+                EndDate = job.EndDate,
+                Status = job.StatusName,
+                IsEmailSent = job.IsEmailSent,
+                IsEvaluated = job.IsEvaluated,
+                InvoiceStatus = job.InvoLineId.HasValue ? "Faturalandı" : "-",
+                AdminNotes = job.IntNotes,
+                CustomerNotes = job.ExtNotes,
+                
+                Items = historyResult.IsSuccess ? historyResult.Data.Select(x => new JobHistoryItem
+                {
+                    Date = x.LogDate,
+                    UserCode = x.UserCode,
+                    UserName = x.UserName,
+                    UserEmail = x.UserEmail,
+                    Action = x.ActionName
+                }).ToList() : new List<JobHistoryItem>()
+            };
+
+            return View("History", model);
+        }
+
+        /// <summary>
+        /// İş sorgulama sayfası.
+        /// Dropdown verileri veritabanından yüklenir.
+        /// </summary>
+        public async Task<IActionResult> Index()
+        {
+            // Dropdown verilerini backend'den al
+            await LoadDropdownDataAsync();
+
+            var model = new JobViewModel();
+            // Varsayılan tarih filtresini kaldırdık - kullanıcı seçmedikçe filtre uygulanmasın
+            return View(model);
+        }
+
+        /// <summary>
+        /// İş listesi sorgulaması.
+        /// Veritabanından filtreleme ile getirir.
+        /// page ve pageSize URL query string'den ayrı alınabilir (pagination linkleri için)
+        /// </summary>
+        [AcceptVerbs("GET", "POST")]
+        [RequireMethodPermission(QueryMethodId)]
+        public async Task<IActionResult> List(JobViewModel model, int? page, int? pageSize)
+        {
+            // Pagination değerlerini URL'den gelen değerlerle override et
+            // Bu sayede /JobEntry/List?page=2&pageSize=10 şeklinde linkler çalışır
+            if (page.HasValue && page.Value > 0)
+            {
+                model.Filter.Page = page.Value;
+            }
+            if (pageSize.HasValue && pageSize.Value > 0)
+            {
+                model.Filter.PageSize = pageSize.Value;
+            }
+            
+            // Dropdown verilerini backend'den al (geri dönüşlerde gerekli)
+            await LoadDropdownDataAsync();
+
+            // Filtre DTO'sunu hazırla
+            var filterDto = new JobFilterDto
+            {
+                // Fonksiyon ID string olarak geliyor, decimal'e çevir
+                FunctionId = decimal.TryParse(model.Filter.Function, out var funcId) ? funcId : null,
+                
+                // Müşteri ID
+                CustomerId = model.Filter.CustomerId,
+                
+                // Referans aralığı
+                ReferenceStart = int.TryParse(model.Filter.ReferenceStart, out var refStart) ? refStart : null,
+                ReferenceEnd = int.TryParse(model.Filter.ReferenceEnd, out var refEnd) ? refEnd : null,
+                ReferenceList = model.Filter.ReferenceList,
+                
+                // İş bilgileri
+                JobName = model.Filter.JobName,
+                RelatedPerson = model.Filter.RelatedPerson,
+                
+                // Tarih aralıkları
+                StartDateStart = model.Filter.StartDateStart,
+                StartDateEnd = model.Filter.StartDateEnd,
+                EndDateStart = model.Filter.EndDateStart,
+                EndDateEnd = model.Filter.EndDateEnd,
+                
+                // Durum ID string olarak geliyor
+                StateId = decimal.TryParse(model.Filter.Status, out var stateId) ? stateId : null,
+                
+                // Boolean filtreler
+                IsEmailSent = model.Filter.EmailSent switch
+                {
+                    "true" => true,
+                    "false" => false,
+                    _ => null
+                },
+                IsEvaluated = model.Filter.Evaluated switch
+                {
+                    "true" => true,
+                    "false" => false,
+                    _ => null
+                },
+                
+                // Ürün filtresi
+                ProductId = model.Filter.ProductId,
+                
+                // Mesai Kriteri filtreleri
+                EmployeeCode = model.Filter.EmployeeCode,
+                WorkTypeId = decimal.TryParse(model.Filter.TaskType, out var workTypeId) ? workTypeId : null,
+                TimeTypeId = decimal.TryParse(model.Filter.OvertimeType, out var timeTypeId) ? timeTypeId : null,
+                
+                // Sayfalama
+                Page = model.Filter.Page > 0 ? model.Filter.Page : 1,
+                PageSize = model.Filter.PageSize > 0 ? model.Filter.PageSize : 10
+            };
+
+            // Veritabanından verileri getir
+            var result = await _jobService.GetByFilterAsync(filterDto);
+
+            if (result.IsSuccess && result.Data != null)
+            {
+                // DTO'dan ViewModel'e dönüştür
+                model.Items = result.Data.Items.Select(j => new JobSearchResult
+                {
+                    Code = j.Reference.ToString(),
+                    Function = j.FunctionName,
+                    Name = j.Name,
+                    CustomerName = j.CustomerName,
+                    StartDate = j.StartDate,
+                    EndDate = j.EndDate,
+                    Status = j.StatusName,
+                    IsEmailSent = j.IsEmailSent,
+                    IsEvaluated = j.IsEvaluated
+                }).ToList();
+                
+                model.TotalCount = result.Data.TotalCount;
+            }
+            else
+            {
+                model.Items = new List<JobSearchResult>();
+                model.TotalCount = 0;
+                // Hatayı ekrana bas
+                ModelState.AddModelError("", result.Message ?? "Veriler yüklenirken bir hata oluştu.");
+            }
+
+            return View(model);
+        }
+
+        // Action to view detail. Supports navigation if multiple ids passed
+        // Accepted via POST from List or GET from navigation links
+        [AcceptVerbs("GET", "POST")]
+        [RequireMethodPermission(ViewJobEntryMethodId)]
+        public async Task<IActionResult> Detail(string? id, string[]? selectedIds = null, int currentIndex = 0, string? returnUrl = null)
+        {
+            // Dropdown verilerini backend'den al
+            await LoadDropdownDataAsync();
+            
+            // If posted from List page with multiple selections but no specific ID
+            if (string.IsNullOrEmpty(id) && selectedIds != null && selectedIds.Length > 0)
+            {
+                id = selectedIds[0];
+                currentIndex = 0;
+            }
+
+            // Fallback
+            if (string.IsNullOrEmpty(id)) 
+            {
+                 return RedirectToAction("Index");
+            }
+            
+            // If navigating via next/prev
+            if (selectedIds != null && selectedIds.Length > 0)
+            {
+                 if (currentIndex < 0) currentIndex = 0;
+                 if (currentIndex >= selectedIds.Length) currentIndex = selectedIds.Length - 1;
+                 
+                 id = selectedIds[currentIndex];
+            }
+
+            // Referans numarasından iş bul
+            if (!int.TryParse(id, out var reference))
+            {
+                return RedirectToAction("Index");
+            }
+            
+            // Veritabanından getir (Referans ve Detaylı)
+            var result = await _jobService.GetByReferenceAsync(reference);
+            
+            if (!result.IsSuccess || result.Data == null)
+            {
+                // İş bulunamazsa listeye dön
+                return RedirectToAction("List");
+            }
+            
+            var job = result.Data;
+
+            // Map to Detail ViewModel
+            var model = new JobDetailViewModel
+            {
+                Code = job.Reference.ToString(),
+                Function = job.FunctionName,
+                CustomerName = job.CustomerName,
+                Name = job.Name,
+                RelatedPerson = job.Contact,
+                StartDate = job.StartDate,
+                EndDate = job.EndDate,
+                Status = job.StatusName,
+                IsEmailSent = job.IsEmailSent,
+                IsEvaluated = job.IsEvaluated,
+                InvoiceStatus = job.InvoLineId.HasValue ? "Faturalandı" : "-",
+                
+                // Mapped Notes
+                AdminNotes = job.IntNotes,
+                CustomerNotes = job.ExtNotes,
+                
+                // Navigation state
+                SelectedIds = selectedIds?.ToList() ?? new List<string> { id },
+                CurrentIndex = currentIndex,
+                TotalSelected = selectedIds?.Length ?? 1,
+                ReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/JobEntry/List" : returnUrl
+            };
+
+            // Mesai (JobWork) Detaylarını Map Et
+            if (job.JobWorks != null && job.JobWorks.Any())
+            {
+                model.Overtimes = job.JobWorks.Select(jw => new JobOvertimeItem
+                {
+                    IsSelected = jw.SelectFlag,
+                    EmployeeCode = jw.EmployeeCode,
+                    EmployeeName = jw.EmployeeName,
+                    TaskType = jw.WorkTypeName,
+                    OvertimeType = jw.TimeTypeName,
+                    Quantity = jw.Quantity,
+                    Amount = jw.Amount,
+                    Notes = jw.Notes
+                }).ToList();
+
+                // Toplam Tutar Hesapla
+                model.TotalOvertimeAmount = model.Overtimes.Sum(x => x.Amount);
+            }
+
+            // Ürün Detayları (JobProd)
+            if (job.JobProds != null && job.JobProds.Any())
+            {
+                // 1. Ürün Listesi Mapping
+                model.Products = job.JobProds.Select(jp => new JobProductItem
+                {
+                    IsSelected = jp.SelectFlag,
+                    Code = jp.ProductCode,
+                    Name = jp.ProductName,
+                    Quantity = jp.Quantity,
+                    Price = jp.Price,
+                    SubTotal = jp.GrossAmount,
+                    NetTotal = jp.NetAmount,
+                    Notes = jp.Notes
+                }).ToList();
+
+                model.TotalProductAmount = model.Products.Sum(x => x.NetTotal);
+            }
+
+            // 2. Kategori Özeti (JobProdCat öncelikli)
+            if (job.JobProdCats != null && job.JobProdCats.Any())
+            {
+                model.ProductCategories = job.JobProdCats
+                    .GroupBy(jp => new { jp.CategoryId, jp.CategoryName })
+                    .Select(g =>
+                    {
+                        var subTotal = g.Sum(x => x.GrossAmount);
+                        var netTotal = g.Sum(x => x.NetAmount);
+                        var discAmount = g.Sum(x => x.DiscAmount);
+                        var discPercentage = subTotal > 0 ? (discAmount / subTotal) * 100 : 0;
+                        return new JobCategorySummaryItem
+                        {
+                            Name = g.Key.CategoryName,
+                            SubTotal = subTotal,
+                            NetTotal = netTotal,
+                            DiscountAmount = discAmount,
+                            Discount = discPercentage
+                        };
+                    })
+                    .ToList();
+
+                model.TotalCategoryAmount = model.ProductCategories.Sum(x => x.NetTotal);
+            }
+            else if (job.JobProds != null && job.JobProds.Any())
+            {
+                model.ProductCategories = job.JobProds
+                    .GroupBy(jp => new { jp.CategoryId, jp.CategoryName })
+                    .Select(g =>
+                    {
+                        // Eğer ürünün birim fiyatı 0 ise (Hizmet, Mesai vb.), Ara Tutar olarak Net Tutar'ı baz alıyoruz.
+                        // Aksi takdirde (Ürün vb.) Ara Tutar olarak Gross Tutar'ı (Miktar * Fiyat) alıyoruz.
+                        var subTotal = g.Sum(x => x.Price == 0 ? x.NetAmount : x.GrossAmount);
+                        var netTotal = g.Sum(x => x.NetAmount);
+
+                        return new JobCategorySummaryItem
+                        {
+                            Name = g.Key.CategoryName,
+                            SubTotal = subTotal,
+                            NetTotal = netTotal,
+                            DiscountAmount = subTotal - netTotal,
+                            Discount = subTotal > 0 ? ((subTotal - netTotal) / subTotal) * 100 : 0
+                        };
+                    })
+                    .ToList();
+
+                model.TotalCategoryAmount = model.ProductCategories.Sum(x => x.NetTotal);
+            }
+
+            return View(model);
+        }
+
+        /// <summary>
+        /// Yeni iş yaratma sayfası.
+        /// Dropdown verileri veritabanından yüklenir.
+        /// </summary>
+        [RequireMethodPermission(AddJobEntryMethodId)]
+        public async Task<IActionResult> Create()
+        {
+            // Dropdown verilerini backend'den al
+            await LoadDropdownDataAsync();
+
+            var model = new JobCreateViewModel();
+            model.StartDate = DateTime.Now;
+            model.EndDate = DateTime.Now;
+            return View(model);
+        }
+
+        [HttpPost]
+        [RequireMethodPermission(AddJobEntryMethodId, write: true)]
+        public async Task<IActionResult> Create(JobCreateViewModel model)
+        {
+            // AJAX isteği kontrolü
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
+            if (!ModelState.IsValid)
+            {
+                if (isAjax)
+                {
+                    // Validasyon hatalarını topla
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                        
+                    return Json(new { success = false, message = "Lütfen form alanlarını kontrol ediniz.", errors = errors });
+                }
+
+                await LoadDropdownDataAsync();
+                return View(model);
+            }
+
+            // Map View Model to DTO
+            var jobDto = new JobDto
+            {
+                CustomerId = model.CustomerId,
+                Name = model.Name,
+                Contact = model.RelatedPerson,
+                // Function Handling
+                FunctionId = decimal.TryParse(model.Function, out var fId) ? fId : 1m,
+                
+                StartDate = model.StartDate,
+                EndDate = model.EndDate,
+                IsEmailSent = model.IsEmailSent,
+                IsEvaluated = model.IsEvaluated,
+                IntNotes = model.AdminNotes,
+                ExtNotes = model.CustomerNotes,
+                
+                // Map Overtimes
+                JobWorks = model.Overtimes?.Select(x => new JobWorkDto
+                {
+                    EmployeeId = x.EmployeeId,
+                    WorkTypeId = x.WorkTypeId,
+                    TimeTypeId = x.TimeTypeId,
+                    Quantity = x.Quantity,
+                    Amount = x.Amount,
+                    Notes = x.Notes
+                }).ToList() ?? new List<JobWorkDto>(),
+                
+                // Map Products
+                JobProds = model.Products?.Select(x => new JobProdDto
+                {
+                    ProductId = x.ProductId,
+                    Quantity = x.Quantity,
+                    Price = x.Price,
+                    Notes = x.Notes
+                }).ToList() ?? new List<JobProdDto>()
+            };
+
+            var result = await _jobService.AddAsync(jobDto);
+            
+            if (result.IsSuccess && result.Data != null)
+            {
+                if (isAjax)
+                {
+                    return Json(new { success = true, message = $"İş başarıyla oluşturuldu. Referans No: {result.Data.Reference}", redirectUrl = Url.Action("Detail", new { id = result.Data.Reference }) });
+                }
+
+                // Başarılı: TempData ile success mesajı set et
+                TempData["SuccessMessage"] = $"İş başarıyla oluşturuldu. Referans No: {result.Data.Reference}";
+                
+                // Redirect to Detail
+                return RedirectToAction("Detail", new { id = result.Data.Reference });
+            }
+            
+            // Başarısız
+            if (isAjax)
+            {
+                return Json(new { success = false, message = result.Message ?? "Kayıt sırasında bir hata oluştu." });
+            }
+
+            // TempData ile error mesajı set et
+            TempData["ErrorMessage"] = result.Message ?? "Kayıt sırasında bir hata oluştu.";
+            ModelState.AddModelError("", result.Message ?? "Kayıt sırasında bir hata oluştu.");
+            await LoadDropdownDataAsync();
+            return View(model);
+        }
+
+        /// <summary>
+        /// Dropdown verilerini LookupService üzerinden yükler ve ViewBag'e ekler.
+        /// States, Functions, WorkTypes, TimeTypes
+        /// </summary>
+        private async Task LoadDropdownDataAsync()
+        {
+            // Durum listesi - Job kategorisi (StateCategories constant kullanılıyor)
+            var statesResult = await _lookupService.GetStatesAsync(StateCategories.Job);
+            ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<StateDto>();
+
+            // Fonksiyon listesi
+            var functionsResult = await _lookupService.GetFunctionsAsync();
+            ViewBag.Functions = functionsResult.IsSuccess ? functionsResult.Data : new List<FunctionDto>();
+
+            // Görev Tipi listesi
+            var workTypesResult = await _lookupService.GetWorkTypesAsync();
+            ViewBag.WorkTypes = workTypesResult.IsSuccess ? workTypesResult.Data : new List<WorkTypeDto>();
+
+            // Mesai Tipi listesi
+            var timeTypesResult = await _lookupService.GetTimeTypesAsync();
+            ViewBag.TimeTypes = timeTypesResult.IsSuccess ? timeTypesResult.Data : new List<TimeTypeDto>();
+        }
+    }
+}

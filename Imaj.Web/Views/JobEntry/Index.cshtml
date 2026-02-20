@@ -1,0 +1,334 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Imaj.Web
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> Localizer
+@model JobViewModel
+
+@{
+    ViewData["Title"] = "İş İşlemleri";
+}
+
+<div x-data="jobPage()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@product-selected.window="handleProductSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
+                İş Sorgulama
+            </h2>
+        </div>
+    </div>
+
+    <form method="post" action="/JobEntry/List">
+        <!-- Main Filter Card -->
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- COLUMN 1: İŞ KRİTERİ (Job Criteria) -->
+                    <div class="lg:col-span-6 space-y-4 border-r border-gray-200 pr-4">
+                        <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">İş Kriteri</h3>
+                        
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Fonksiyon</label>
+                            <div class="col-span-8">
+                                <select name="Filter.Function" x-model="filter.function" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <option value="">Seçiniz</option>
+                                    @if (ViewBag.Functions != null)
+                                    {
+                                        @foreach (var func in ViewBag.Functions)
+                                        {
+                                            <option value="@func.Id">@func.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Müşteri -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Müşteri</label>
+                            <div class="col-span-8 flex space-x-2">
+                                <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
+                                <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
+                                <input type="text" readonly x-model="customerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="Tümü">
+                                <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter' })" class="text-blue-600 font-bold hover:underline text-sm">Seç</button>
+                            </div>
+                        </div>
+
+                        <!-- Referans Aralığı -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Referans Aralığı</label>
+                            <div class="col-span-8 flex space-x-2">
+                                <input type="text" name="Filter.ReferenceStart" x-model="filter.referenceStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md">
+                                <input type="text" name="Filter.ReferenceEnd" x-model="filter.referenceEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <!-- Referans Listesi -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Referans Listesi</label>
+                            <div class="col-span-8">
+                                <input type="text" name="Filter.ReferenceList" x-model="filter.referenceList" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <!-- Ad -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Ad</label>
+                            <div class="col-span-8">
+                                <input type="text" name="Filter.JobName" x-model="filter.jobName" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+                        
+                        <!-- İlgili -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">İlgili</label>
+                            <div class="col-span-8">
+                                <input type="text" name="Filter.RelatedPerson" x-model="filter.relatedPerson" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <!-- Başlangıç Tarihi -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Başlangıç Tarihi Aralığı</label>
+                            <div class="col-span-8 flex space-x-2">
+                                <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")">
+                                <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")">
+                            </div>
+                        </div>
+                        
+                        <!-- Bitiş Tarihi -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Bitiş Tarihi Aralığı</label>
+                            <div class="col-span-8 flex space-x-2">
+                                <input type="date" name="Filter.EndDateStart" x-model="filter.endDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <input type="date" name="Filter.EndDateEnd" x-model="filter.endDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <!-- Durum -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Durum</label>
+                            <div class="col-span-8">
+                                <select name="Filter.Status" x-model="filter.status" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <option value="">Tümü</option>
+                                    @if (ViewBag.States != null)
+                                    {
+                                        @foreach (var state in ViewBag.States)
+                                        {
+                                            <option value="@state.Id">@state.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- E-Posta Yollandı -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">E-Posta Yollandı</label>
+                            <div class="col-span-8">
+                                <select name="Filter.EmailSent" x-model="filter.emailSent" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <option value="">Tümü</option>
+                                    <option value="true">Evet</option>
+                                    <option value="false">Hayır</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Değerlendirildi -->
+                        <div class="grid grid-cols-12 gap-4 items-center">
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Değerlendirildi</label>
+                            <div class="col-span-8">
+                                <select name="Filter.Evaluated" x-model="filter.evaluated" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <option value="">Tümü</option>
+                                    <option value="true">Evet</option>
+                                    <option value="false">Hayır</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN WRAPPER -->
+                    <div class="lg:col-span-6 space-y-6">
+                        
+                        <!-- COLUMN 2: MESAI KRİTERİ (Overtime Criteria) -->
+                        <div class="space-y-4">
+                            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">Mesai Kriteri</h3>
+                            
+                            <!-- Çalışan -->
+                            <div class="grid grid-cols-12 gap-4 items-center">
+                                <label class="col-span-4 text-right text-sm font-medium text-gray-700">Çalışan</label>
+                                <div class="col-span-8 flex space-x-2">
+                                    <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
+                                    <input type="text" readonly x-model="filter.employeeName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="Tümü">
+                                    <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="text-blue-600 font-bold hover:underline text-sm">Seç</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Görev Tipi -->
+                            <div class="grid grid-cols-12 gap-4 items-center">
+                                <label class="col-span-4 text-right text-sm font-medium text-gray-700">Görev Tipi</label>
+                                <div class="col-span-8">
+                                    <select name="Filter.TaskType" x-model="filter.taskType" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        <option value="">Tümü</option>
+                                        @if (ViewBag.WorkTypes != null)
+                                        {
+                                            @foreach (var wt in ViewBag.WorkTypes)
+                                            {
+                                                <option value="@wt.Id">@wt.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Mesai Tipi -->
+                            <div class="grid grid-cols-12 gap-4 items-center">
+                                <label class="col-span-4 text-right text-sm font-medium text-gray-700">Mesai Tipi</label>
+                                <div class="col-span-8">
+                                    <select name="Filter.OvertimeType" x-model="filter.overtimeType" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                        <option value="">Tümü</option>
+                                        @if (ViewBag.TimeTypes != null)
+                                        {
+                                            @foreach (var tt in ViewBag.TimeTypes)
+                                            {
+                                                <option value="@tt.Id">@tt.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMN 3: ÜRÜN KRİTERİ (Product Criteria) -->
+                        <div class="space-y-4">
+                            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">Ürün Kriteri</h3>
+                            
+                            <!-- Ürün -->
+                            <div class="grid grid-cols-12 gap-4 items-center">
+                                <label class="col-span-4 text-right text-sm font-medium text-gray-700">Ürün</label>
+                                <div class="col-span-8 flex space-x-2">
+                                    <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
+                                    <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
+                                    <input type="text" readonly x-model="filter.productName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="Tümü">
+                                    <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct' })" class="text-blue-600 font-bold hover:underline text-sm">Seç</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+                
+                <!-- BUTTONS -->
+                <div class="mt-8 flex flex-col items-center space-y-4 border-t border-gray-200 pt-6">
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm text-blue-900 font-semibold">İlk</label>
+                        <input type="number" name="PageSize" x-model="pageSize" class="w-16 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        <label class="text-sm text-blue-900 font-semibold">Sayfa (1)</label>
+                        <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                            Sorgula
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    
+    <!-- Job Creation Section -->
+    <div class="text-center mt-10">
+         <h2 class="text-xl font-bold text-orange-600 mb-4">İş Yaratma</h2>
+         <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
+             <div class="grid grid-cols-12 gap-4 items-center justify-center">
+                 <label class="col-span-4 text-right text-sm font-bold text-gray-700 bg-gray-200 px-2 py-1">Ön Bilgiler</label>
+                 <div class="col-span-8"></div> <!-- Spacer/Header effect -->
+                 
+                 <label class="col-span-4 text-right text-sm font-medium text-gray-700">Fonksiyon</label>
+                 <div class="col-span-6">
+                     <select x-model="filter.function" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                         <option value="">Seçiniz</option>
+                         @if (ViewBag.Functions != null)
+                         {
+                             @foreach (var func in ViewBag.Functions)
+                             {
+                                 <option value="@func.Id">@func.Name</option>
+                             }
+                         }
+                     </select>
+                 </div>
+             </div>
+             <div class="mt-4 flex justify-center">
+                 <a href="/JobEntry/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    Yeni İş Yarat
+                </a>
+             </div>
+         </div>
+    </div>
+    
+    <!-- Shared Customer & Product & Employee Modal -->
+    <partial name="_CustomerSelectModal" />
+    <partial name="_ProductSelectModal" />
+    <partial name="_EmployeeSelectModal" />
+</div>
+
+<script>
+    function jobPage() {
+        return {
+            filter: {
+                function: '',
+                customerCode: '', customerId: '',
+                referenceStart: '', referenceEnd: '', referenceList: '',
+                jobName: '', relatedPerson: '',
+                startDateStart: '@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")',
+                startDateEnd: '@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")',
+                endDateStart: '', endDateEnd: '',
+                status: '', emailSent: '', evaluated: '',
+                
+                employeeCode: '', employeeName: '',
+                taskType: '', overtimeType: '',
+                
+                productId: '', productCode: '', productName: '',
+                
+                page: 1,
+            },
+            
+            customerName: '', 
+            pageSize: 10,
+            
+            init() {},
+
+            handleCustomerSelection(detail) {
+                if (detail.targetId === 'jobFilter') {
+                    this.filter.customerCode = detail.customer.code;
+                    this.filter.customerId = detail.customer.id;
+                    this.customerName = detail.customer.name;
+                }
+            },
+            
+            handleProductSelection(detail) {
+                if(detail.targetId === 'jobProduct') {
+                    // Tek ürün veya çoklu ürün seçimi için
+                    const product = detail.product || (detail.products && detail.products[0]);
+                    if (product) {
+                        this.filter.productId = product.id;
+                        this.filter.productName = product.name;
+                        this.filter.productCode = product.code;
+                    }
+                }
+            },
+            
+            handleEmployeeSelection(detail) {
+                if(detail.targetId === 'jobEmployee') {
+                    const emp = detail.employee;
+                    if (emp) {
+                       this.filter.employeeName = emp.name;
+                       this.filter.employeeCode = emp.code; 
+                    } else {
+                       this.filter.employeeName = '';
+                       this.filter.employeeCode = '';
+                    }
+                }
+            }
+        }
+    }
+</script>
