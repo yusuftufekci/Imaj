@@ -1,0 +1,380 @@
+@using System.Net
+@using System.Text.Json
+@using System.Collections.Generic
+@model ProductPageEditViewModel
+
+@{
+    ViewData["Title"] = "Urun Degistir";
+    var selectedIds = Model.SelectedIds ?? new List<string>();
+
+    var initialState = new
+    {
+        names = Model.Names.Select(x => new
+        {
+            languageId = x.LanguageId,
+            name = x.Name
+        }),
+        languages = Model.Languages.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name
+        }),
+        categories = Model.ProductCategoryOptions.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name
+        }),
+        groups = Model.ProductGroupOptions.Select(x => new
+        {
+            id = x.Id,
+            name = x.Name
+        }),
+        functions = Model.Functions.Select(x => new
+        {
+            functionId = x.FunctionId,
+            name = x.FunctionName,
+            invisible = x.IsInvalid
+        }),
+        form = new
+        {
+            code = Model.Code,
+            productCategoryId = Model.ProductCategoryId,
+            productGroupId = Model.ProductGroupId,
+            price = Model.Price,
+            isInvalid = Model.IsInvalid,
+            automaticForward = Model.AutomaticForward
+        }
+    };
+
+    string BuildEditUrl(int index)
+    {
+        if (selectedIds.Count == 0)
+        {
+            return "#";
+        }
+
+        if (index < 0)
+        {
+            index = 0;
+        }
+
+        if (index >= selectedIds.Count)
+        {
+            index = selectedIds.Count - 1;
+        }
+
+        var selected = selectedIds[index];
+        var idsQuery = string.Join("&selectedIds=", selectedIds.Select(WebUtility.UrlEncode));
+        var url = $"/Product/Edit?id={WebUtility.UrlEncode(selected)}&currentIndex={index}&selectedIds={idsQuery}";
+
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+
+        return url;
+    }
+
+    string BuildDetailUrl()
+    {
+        var targetId = Model.Id?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        var url = $"/Product/Detail?id={WebUtility.UrlEncode(targetId)}";
+
+        if (selectedIds.Count > 0)
+        {
+            var idsQuery = string.Join("&selectedIds=", selectedIds.Select(WebUtility.UrlEncode));
+            url += $"&currentIndex={Model.CurrentIndex}&selectedIds={idsQuery}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
+        }
+
+        return url;
+    }
+}
+
+<div x-data='productEditorPage(@Html.Raw(JsonSerializer.Serialize(initialState)))'
+     @@product-function-selected.window="handleFunctionSelection($event.detail)"
+     class="space-y-6">
+
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">Urun</h2>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="rounded-md bg-red-50 border border-red-200 p-4">
+            <div asp-validation-summary="All" class="text-sm text-red-700"></div>
+        </div>
+    }
+
+    <form method="post" action="/Product/Update" class="space-y-4">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+
+        @foreach (var selectedId in selectedIds)
+        {
+            <input type="hidden" name="SelectedIds" value="@selectedId" />
+        }
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Urun</h3>
+                </div>
+
+                <div class="p-4 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Kod</label>
+                        <div class="md:col-span-9">
+                            <input type="text" name="Code" x-model="form.code" maxlength="8" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm uppercase" required />
+                        </div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Kategori</label>
+                        <div class="md:col-span-9">
+                            <select name="ProductCategoryId" x-model.number="form.productCategoryId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" required>
+                                <option value="">Seciniz</option>
+                                <template x-for="option in categories" :key="option.id">
+                                    <option :value="option.id" x-text="option.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Urun Grubu</label>
+                        <div class="md:col-span-9">
+                            <select name="ProductGroupId" x-model.number="form.productGroupId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" required>
+                                <option value="">Seciniz</option>
+                                <template x-for="option in groups" :key="option.id">
+                                    <option :value="option.id" x-text="option.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Fiyat</label>
+                        <div class="md:col-span-4">
+                            <input type="number" step="0.01" min="0" name="Price" x-model.number="form.price" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" required />
+                        </div>
+
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Gecersiz</label>
+                        <div class="md:col-span-2">
+                            <input type="checkbox" name="IsInvalid" value="true" x-model="form.isInvalid" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Dil</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                                    <th class="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase w-24">Islem</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                <template x-for="(nameItem, index) in names" :key="index">
+                                    <tr>
+                                        <td class="px-4 py-2">
+                                            <select :name="'Names[' + index + '].LanguageId'" x-model.number="nameItem.languageId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                                                <template x-for="language in languages" :key="language.id">
+                                                    <option :value="language.id" x-text="language.name"></option>
+                                                </template>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input type="text"
+                                                   :name="'Names[' + index + '].Name'"
+                                                   x-model="nameItem.name"
+                                                   maxlength="32"
+                                                   class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm"
+                                                   placeholder="Urun adi" />
+                                        </td>
+                                        <td class="px-4 py-2 text-right">
+                                            <button type="button" @@click="removeLanguage(index)" class="text-red-600 font-semibold hover:underline">Sil</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="text-sm">
+                        <button type="button" @@click="addLanguage" class="text-blue-700 font-semibold hover:underline">Dil Ekle</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Fonksiyon</h3>
+                </div>
+
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        <template x-for="(functionItem, index) in functions" :key="functionItem.functionId">
+                            <tr>
+                                <td class="px-4 py-2">
+                                    <input type="checkbox" :value="String(functionItem.functionId)" x-model="selectedFunctionIds" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                                    <input type="hidden" :name="'Functions[' + index + '].FunctionId'" :value="functionItem.functionId" />
+                                    <input type="hidden" :name="'Functions[' + index + '].FunctionName'" :value="functionItem.name" />
+                                    <input type="hidden" :name="'Functions[' + index + '].IsInvalid'" :value="functionItem.invisible" />
+                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-900" x-text="functionItem.name"></td>
+                            </tr>
+                        </template>
+                        <tr x-show="functions.length === 0">
+                            <td colspan="2" class="px-4 py-6 text-center text-sm text-gray-500">Kayit yok.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-3 text-sm">
+                    <button type="button" @@click="removeSelectedFunctions" class="text-red-600 font-semibold hover:underline">Sil</button>
+                    <button type="button" @@click="openFunctionModal" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                </div>
+            </section>
+        </div>
+
+        <partial name="_DetailNavigator" model="@(new DetailNavigatorViewModel
+        {
+            Header = "Urun Navigasyonu",
+            CurrentIndex = Model.CurrentIndex,
+            TotalCount = Model.TotalSelected,
+            FirstUrl = BuildEditUrl(0),
+            PreviousUrl = BuildEditUrl(Model.CurrentIndex - 1),
+            NextUrl = BuildEditUrl(Model.CurrentIndex + 1),
+            LastUrl = BuildEditUrl(selectedIds.Count - 1),
+            FormAction = "/Product/Edit",
+            SelectedIds = selectedIds,
+            ReturnUrl = Model.ReturnUrl
+        })" />
+
+        <div class="flex items-center justify-center gap-3">
+            <label class="inline-flex items-center text-sm text-gray-700">
+                <input type="checkbox" name="AutomaticForward" value="true" x-model="form.automaticForward" class="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                Otomatik Ilerle
+            </label>
+
+            <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                Degistir
+            </button>
+            <a href="@BuildDetailUrl()" class="inline-flex items-center px-6 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                Vazgec
+            </a>
+        </div>
+    </form>
+
+    <partial name="_ProductFunctionSelectModal" />
+</div>
+
+@section Scripts {
+    <script src="~/js/components/product-function-select-modal.js" asp-append-version="true"></script>
+    <script>
+        function productEditorPage(initialState) {
+            return {
+                languages: initialState.languages || [],
+                categories: initialState.categories || [],
+                groups: initialState.groups || [],
+                names: (initialState.names && initialState.names.length > 0)
+                    ? initialState.names
+                    : [{ languageId: (initialState.languages && initialState.languages.length > 0 ? initialState.languages[0].id : 1), name: '' }],
+                functions: (initialState.functions || []).map(item => ({
+                    functionId: Number(item.functionId),
+                    name: item.name || '',
+                    invisible: !!item.invisible
+                })),
+                form: {
+                    code: (initialState.form && initialState.form.code) ? initialState.form.code : '',
+                    productCategoryId: (initialState.form && initialState.form.productCategoryId) ? Number(initialState.form.productCategoryId) : '',
+                    productGroupId: (initialState.form && initialState.form.productGroupId) ? Number(initialState.form.productGroupId) : '',
+                    price: (initialState.form && typeof initialState.form.price !== 'undefined') ? Number(initialState.form.price) : 0,
+                    isInvalid: !!(initialState.form && initialState.form.isInvalid),
+                    automaticForward: !!(initialState.form && initialState.form.automaticForward)
+                },
+                selectedFunctionIds: [],
+
+                addLanguage() {
+                    this.names.push({
+                        languageId: this.getNextLanguageId(),
+                        name: ''
+                    });
+                },
+
+                removeLanguage(index) {
+                    if (this.names.length === 1) {
+                        this.names[0].name = '';
+                        return;
+                    }
+
+                    this.names.splice(index, 1);
+                },
+
+                getNextLanguageId() {
+                    if (!this.languages || this.languages.length === 0) {
+                        return 1;
+                    }
+
+                    const usedLanguageIds = new Set(this.names.map(x => Number(x.languageId)));
+                    const available = this.languages.find(x => !usedLanguageIds.has(Number(x.id)));
+                    return available ? Number(available.id) : Number(this.languages[0].id);
+                },
+
+                openFunctionModal() {
+                    const excludeIds = this.functions.map(x => x.functionId).join(',');
+                    this.$dispatch('product-function-select-open', {
+                        targetId: 'product-editor-function',
+                        isMultiSelect: true,
+                        excludeIds
+                    });
+                },
+
+                handleFunctionSelection(detail) {
+                    if (!detail || detail.targetId !== 'product-editor-function') {
+                        return;
+                    }
+
+                    const incoming = detail.functions || [];
+                    incoming.forEach(item => {
+                        const functionId = Number(item.functionId);
+                        if (!functionId || this.functions.some(existing => Number(existing.functionId) === functionId)) {
+                            return;
+                        }
+
+                        this.functions.push({
+                            functionId,
+                            name: item.name || '',
+                            invisible: !!item.invisible
+                        });
+                    });
+
+                    this.functions.sort((a, b) => {
+                        const nameCompare = (a.name || '').localeCompare(b.name || '', 'tr');
+                        if (nameCompare !== 0) {
+                            return nameCompare;
+                        }
+                        return Number(a.functionId) - Number(b.functionId);
+                    });
+                },
+
+                removeSelectedFunctions() {
+                    if (!this.selectedFunctionIds || this.selectedFunctionIds.length === 0) {
+                        return;
+                    }
+
+                    const selected = new Set(this.selectedFunctionIds.map(x => Number(x)));
+                    this.functions = this.functions.filter(item => !selected.has(Number(item.functionId)));
+                    this.selectedFunctionIds = [];
+                }
+            };
+        }
+    </script>
+}
