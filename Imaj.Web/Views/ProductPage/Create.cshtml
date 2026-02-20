@@ -89,21 +89,25 @@
 
                         <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Kategori</label>
                         <div class="md:col-span-9">
-                            <select name="ProductCategoryId" x-model.number="form.productCategoryId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" required>
+                            <select name="ProductCategoryId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" required>
                                 <option value="">Seciniz</option>
-                                <template x-for="option in categories" :key="option.id">
-                                    <option :value="option.id" x-text="option.name"></option>
-                                </template>
+                                @foreach (var option in Model.ProductCategoryOptions)
+                                {
+                                    var selected = Model.ProductCategoryId == option.Id;
+                                    <option value="@option.Id" selected="@(selected ? "selected" : null)">@option.Name</option>
+                                }
                             </select>
                         </div>
 
                         <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Urun Grubu</label>
                         <div class="md:col-span-9">
-                            <select name="ProductGroupId" x-model.number="form.productGroupId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" required>
+                            <select name="ProductGroupId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" required>
                                 <option value="">Seciniz</option>
-                                <template x-for="option in groups" :key="option.id">
-                                    <option :value="option.id" x-text="option.name"></option>
-                                </template>
+                                @foreach (var option in Model.ProductGroupOptions)
+                                {
+                                    var selected = Model.ProductGroupId == option.Id;
+                                    <option value="@option.Id" selected="@(selected ? "selected" : null)">@option.Name</option>
+                                }
                             </select>
                         </div>
 

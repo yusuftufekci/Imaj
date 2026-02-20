@@ -370,14 +370,30 @@ namespace Imaj.Web.Controllers
                 }
             }
 
-            if (model.ProductCategoryId <= 0 && categories.Count > 0)
+            if (model is ProductPageEditViewModel editModel)
             {
-                model.ProductCategoryId = categories[0].Id;
+                EnsureProductCategoryOptionExists(categories, editModel.ProductCategoryId, editModel.ProductCategoryName);
+                EnsureProductGroupOptionExists(groups, editModel.ProductGroupId, editModel.ProductGroupName);
             }
-
-            if (model.ProductGroupId <= 0 && groups.Count > 0)
+            else
             {
-                model.ProductGroupId = groups[0].Id;
+                if (model.ProductCategoryId <= 0 && categories.Count > 0)
+                {
+                    model.ProductCategoryId = categories[0].Id;
+                }
+                else if (model.ProductCategoryId > 0 && categories.All(x => x.Id != model.ProductCategoryId))
+                {
+                    model.ProductCategoryId = 0;
+                }
+
+                if (model.ProductGroupId <= 0 && groups.Count > 0)
+                {
+                    model.ProductGroupId = groups[0].Id;
+                }
+                else if (model.ProductGroupId > 0 && groups.All(x => x.Id != model.ProductGroupId))
+                {
+                    model.ProductGroupId = 0;
+                }
             }
 
             var functionNameMap = functions
@@ -413,6 +429,46 @@ namespace Imaj.Web.Controllers
                 .OrderBy(x => x.FunctionName)
                 .ThenBy(x => x.FunctionId)
                 .ToList();
+        }
+
+        private static void EnsureProductCategoryOptionExists(
+            ICollection<ProductPageCategoryOptionViewModel> options,
+            decimal currentId,
+            string? currentName)
+        {
+            if (currentId <= 0 || options.Any(x => x.Id == currentId))
+            {
+                return;
+            }
+
+            options.Add(new ProductPageCategoryOptionViewModel
+            {
+                Id = currentId,
+                Name = !string.IsNullOrWhiteSpace(currentName)
+                    ? currentName
+                    : currentId.ToString(CultureInfo.InvariantCulture),
+                IsInvalid = false
+            });
+        }
+
+        private static void EnsureProductGroupOptionExists(
+            ICollection<ProductPageGroupOptionViewModel> options,
+            decimal currentId,
+            string? currentName)
+        {
+            if (currentId <= 0 || options.Any(x => x.Id == currentId))
+            {
+                return;
+            }
+
+            options.Add(new ProductPageGroupOptionViewModel
+            {
+                Id = currentId,
+                Name = !string.IsNullOrWhiteSpace(currentName)
+                    ? currentName
+                    : currentId.ToString(CultureInfo.InvariantCulture),
+                IsInvalid = false
+            });
         }
 
         private void ValidateEditorModel(ProductPageEditorViewModelBase model)

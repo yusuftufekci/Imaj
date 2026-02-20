@@ -132,21 +132,25 @@
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
                     <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Fonksiyon</label>
                     <div class="md:col-span-9">
-                        <select name="FunctionId" x-model.number="form.functionId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <select name="FunctionId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
                             <option value="">Seciniz</option>
-                            <template x-for="option in functions" :key="option.id">
-                                <option :value="option.id" x-text="option.name"></option>
-                            </template>
+                            @foreach (var option in Model.FunctionOptions)
+                            {
+                                var selected = Model.FunctionId.HasValue && Model.FunctionId.Value == option.Id;
+                                <option value="@option.Id" selected="@(selected ? "selected" : null)">@option.Name</option>
+                            }
                         </select>
                     </div>
 
                     <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Kaynak Kategorisi</label>
                     <div class="md:col-span-9">
-                        <select name="ResoCatId" x-model.number="form.resoCatId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <select name="ResoCatId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
                             <option value="">Seciniz</option>
-                            <template x-for="option in resoCats" :key="option.id">
-                                <option :value="option.id" x-text="option.name"></option>
-                            </template>
+                            @foreach (var option in Model.ResoCatOptions)
+                            {
+                                var selected = Model.ResoCatId.HasValue && Model.ResoCatId.Value == option.Id;
+                                <option value="@option.Id" selected="@(selected ? "selected" : null)">@option.Name</option>
+                            }
                         </select>
                     </div>
 
