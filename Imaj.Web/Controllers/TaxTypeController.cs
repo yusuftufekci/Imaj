@@ -132,20 +132,13 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> Create(string? code = null)
         {
             var languages = await GetLanguageOptionsAsync();
-            var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
 
             return View(new TaxTypeCreateViewModel
             {
                 Code = NormalizeCode(code),
                 TaxPercentage = 0,
                 Languages = languages,
-                Names = new List<TaxTypeLocalizedNameViewModel>
-                {
-                    new()
-                    {
-                        LanguageId = defaultLanguageId
-                    }
-                }
+                Names = BuildCreateLocalizedNames(languages, null)
             });
         }
 
@@ -301,6 +294,11 @@ namespace Imaj.Web.Controllers
             model.Languages = languages;
             model.Names ??= new List<TaxTypeLocalizedNameViewModel>();
 
+            if (model is TaxTypeCreateViewModel)
+            {
+                model.Names = BuildCreateLocalizedNames(languages, model.Names);
+            }
+
             var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
             if (model.Names.Count == 0)
             {
@@ -315,6 +313,20 @@ namespace Imaj.Web.Controllers
                 if (localizedName.LanguageId <= 0)
                 {
                     localizedName.LanguageId = defaultLanguageId;
+                }
+            }
+
+            var languageNameById = languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
+            {
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
                 }
             }
         }
@@ -433,6 +445,44 @@ namespace Imaj.Web.Controllers
             }
 
             return normalized;
+        }
+
+        private static List<TaxTypeLocalizedNameViewModel> BuildCreateLocalizedNames(
+            IReadOnlyCollection<TaxTypeLanguageOptionViewModel> languages,
+            IEnumerable<TaxTypeLocalizedNameViewModel>? existingNames)
+        {
+            var existingByLanguage = (existingNames ?? Enumerable.Empty<TaxTypeLocalizedNameViewModel>())
+                .Where(x => x.LanguageId > 0)
+                .GroupBy(x => x.LanguageId)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (languages.Count == 0)
+            {
+                return existingByLanguage.Values
+                    .OrderBy(x => x.LanguageId)
+                    .Select(x => new TaxTypeLocalizedNameViewModel
+                    {
+                        LanguageId = x.LanguageId,
+                        LanguageName = x.LanguageName,
+                        Name = x.Name,
+                        InvoLinePostfix = x.InvoLinePostfix
+                    })
+                    .ToList();
+            }
+
+            return languages
+                .Select(language =>
+                {
+                    existingByLanguage.TryGetValue(language.Id, out var existing);
+                    return new TaxTypeLocalizedNameViewModel
+                    {
+                        LanguageId = language.Id,
+                        LanguageName = language.Name,
+                        Name = existing?.Name ?? string.Empty,
+                        InvoLinePostfix = existing?.InvoLinePostfix ?? string.Empty
+                    };
+                })
+                .ToList();
         }
     }
 }

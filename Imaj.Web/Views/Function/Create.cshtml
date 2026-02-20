@@ -1,21 +1,62 @@
 @using System.Text.Json
+@using System.Globalization
 @model FunctionCreateViewModel
 
 @{
     ViewData["Title"] = "Yeni Fonksiyon";
+    var languageNameById = Model.Languages
+        .GroupBy(x => x.Id)
+        .ToDictionary(x => x.Key, x => x.First().Name);
+    var intervalNameById = Model.Intervals
+        .GroupBy(x => x.Id)
+        .ToDictionary(x => x.Key, x => x.First().Name);
+
+    string ResolveLanguageName(FunctionLocalizedNameViewModel localizedName)
+    {
+        if (!string.IsNullOrWhiteSpace(localizedName.LanguageName))
+        {
+            return localizedName.LanguageName;
+        }
+
+        if (languageNameById.TryGetValue(localizedName.LanguageId, out var fallbackName)
+            && !string.IsNullOrWhiteSpace(fallbackName))
+        {
+            return fallbackName;
+        }
+
+        return localizedName.LanguageId > 0
+            ? localizedName.LanguageId.ToString(CultureInfo.InvariantCulture)
+            : string.Empty;
+    }
+
+    string ResolveIntervalName(decimal? intervalId, string? intervalName)
+    {
+        if (!string.IsNullOrWhiteSpace(intervalName))
+        {
+            return intervalName;
+        }
+
+        if (intervalId.HasValue
+            && intervalId.Value > 0
+            && intervalNameById.TryGetValue(intervalId.Value, out var fallbackName)
+            && !string.IsNullOrWhiteSpace(fallbackName))
+        {
+            return fallbackName;
+        }
+
+        return intervalId.HasValue && intervalId.Value > 0
+            ? intervalId.Value.ToString(CultureInfo.InvariantCulture)
+            : string.Empty;
+    }
+
+    var sourceIntervalId = Model.SourceIntervalId.HasValue && Model.SourceIntervalId.Value > 0
+        ? Model.SourceIntervalId
+        : null;
+    var sourceReservable = Model.SourceReservable;
+    var sourceIntervalName = ResolveIntervalName(sourceIntervalId, Model.SourceIntervalName);
 
     var initialState = new
     {
-        names = Model.Names.Select(x => new
-        {
-            languageId = x.LanguageId,
-            name = x.Name
-        }),
-        languages = Model.Languages.Select(x => new
-        {
-            id = x.Id,
-            name = x.Name
-        }),
         intervals = Model.Intervals.Select(x => new
         {
             id = x.Id,
@@ -42,11 +83,11 @@
         }),
         form = new
         {
-            reservable = Model.Reservable,
+            reservable = sourceReservable,
             workMandatory = Model.WorkMandatory,
             prodMandatory = Model.ProdMandatory,
             isInvalid = Model.IsInvalid,
-            intervalId = Model.IntervalId,
+            intervalId = sourceIntervalId,
             automaticForward = Model.AutomaticForward
         }
     };
@@ -84,54 +125,56 @@
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Dil</th>
                                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
-                                    <th class="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase w-24">Islem</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 bg-white">
-                                <template x-for="(nameItem, index) in names" :key="index">
+                                @for (var index = 0; index < Model.Names.Count; index++)
+                                {
+                                    var localizedName = Model.Names[index];
+                                    var languageName = ResolveLanguageName(localizedName);
+
                                     <tr>
                                         <td class="px-4 py-2">
-                                            <select :name="'Names[' + index + '].LanguageId'" x-model.number="nameItem.languageId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
-                                                <template x-for="language in languages" :key="language.id">
-                                                    <option :value="language.id" x-text="language.name"></option>
-                                                </template>
-                                            </select>
+                                            <input type="hidden" name="Names[@index].LanguageId" value="@localizedName.LanguageId" />
+                                            <input type="text"
+                                                   value="@languageName"
+                                                   readonly
+                                                   class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm bg-gray-100 text-gray-700 cursor-not-allowed">
                                         </td>
                                         <td class="px-4 py-2">
                                             <input type="text"
-                                                   :name="'Names[' + index + '].Name'"
-                                                   x-model="nameItem.name"
+                                                   name="Names[@index].Name"
+                                                   value="@localizedName.Name"
                                                    maxlength="32"
                                                    class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm"
                                                    placeholder="Fonksiyon adi">
                                         </td>
-                                        <td class="px-4 py-2 text-right">
-                                            <button type="button" @@click="removeLanguage(index)" class="text-red-600 font-semibold hover:underline">Sil</button>
-                                        </td>
                                     </tr>
-                                </template>
+                                }
                             </tbody>
                         </table>
-                    </div>
-
-                    <div class="text-sm">
-                        <button type="button" @@click="addLanguage" class="text-blue-700 font-semibold hover:underline">Dil Ekle</button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
                         <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Rezervasyon Araligi</label>
                         <div class="md:col-span-7">
-                            <select name="IntervalId" x-model="form.intervalId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
-                                <option value="">Seciniz</option>
-                                <template x-for="interval in intervals" :key="interval.id">
-                                    <option :value="interval.id" x-text="interval.name"></option>
-                                </template>
-                            </select>
+                            <input type="hidden" name="SourceIntervalId" value="@sourceIntervalId" />
+                            <input type="hidden" name="SourceIntervalName" value="@sourceIntervalName" />
+                            <input type="hidden" name="IntervalId" value="@sourceIntervalId" />
+                            <input type="text"
+                                   value="@sourceIntervalName"
+                                   readonly
+                                   class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm bg-gray-100 text-gray-700 cursor-not-allowed">
                         </div>
 
                         <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Rezervasyon Uyumlu</label>
                         <div class="md:col-span-7">
-                            <input type="checkbox" name="Reservable" value="true" x-model="form.reservable" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                            <input type="hidden" name="SourceReservable" value="@(sourceReservable ? "true" : "false")" />
+                            <input type="hidden" name="Reservable" value="@(sourceReservable ? "true" : "false")" />
+                            <input type="checkbox"
+                                   @(sourceReservable ? "checked" : null)
+                                   disabled
+                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-not-allowed">
                         </div>
 
                         <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Zorunlu Mesai</label>
@@ -297,11 +340,7 @@
             }));
 
             return {
-                languages: initialState.languages || [],
                 intervals: initialState.intervals || [],
-                names: (initialState.names && initialState.names.length > 0)
-                    ? initialState.names
-                    : [{ languageId: (initialState.languages && initialState.languages.length > 0 ? initialState.languages[0].id : 1), name: '' }],
                 products: (initialState.products || []).map(x => ({
                     productId: Number(x.productId),
                     code: x.code || '',
@@ -326,32 +365,6 @@
 
                 get showRuleSection() {
                     return this.form.reservable && this.form.intervalId !== '' && this.form.intervalId !== null;
-                },
-
-                addLanguage() {
-                    this.names.push({
-                        languageId: this.getNextLanguageId(),
-                        name: ''
-                    });
-                },
-
-                removeLanguage(index) {
-                    if (this.names.length === 1) {
-                        this.names[0].name = '';
-                        return;
-                    }
-
-                    this.names.splice(index, 1);
-                },
-
-                getNextLanguageId() {
-                    if (!this.languages || this.languages.length === 0) {
-                        return 1;
-                    }
-
-                    const usedLanguageIds = new Set(this.names.map(x => Number(x.languageId)));
-                    const available = this.languages.find(x => !usedLanguageIds.has(Number(x.id)));
-                    return available ? Number(available.id) : Number(this.languages[0].id);
                 },
 
                 openProductModal() {

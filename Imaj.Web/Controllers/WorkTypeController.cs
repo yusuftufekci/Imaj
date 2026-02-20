@@ -130,18 +130,11 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> Create()
         {
             var languages = await GetLanguageOptionsAsync();
-            var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
 
             return View(new WorkTypeCreateViewModel
             {
                 Languages = languages,
-                Names = new List<WorkTypeLocalizedNameViewModel>
-                {
-                    new()
-                    {
-                        LanguageId = defaultLanguageId
-                    }
-                }
+                Names = BuildCreateLocalizedNames(languages, null)
             });
         }
 
@@ -297,6 +290,11 @@ namespace Imaj.Web.Controllers
             model.Languages = languages;
             model.Names ??= new List<WorkTypeLocalizedNameViewModel>();
 
+            if (model is WorkTypeCreateViewModel)
+            {
+                model.Names = BuildCreateLocalizedNames(languages, model.Names);
+            }
+
             var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
             if (model.Names.Count == 0)
             {
@@ -311,6 +309,20 @@ namespace Imaj.Web.Controllers
                 if (localizedName.LanguageId <= 0)
                 {
                     localizedName.LanguageId = defaultLanguageId;
+                }
+            }
+
+            var languageNameById = languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
+            {
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
                 }
             }
         }
@@ -392,6 +404,42 @@ namespace Imaj.Web.Controllers
             }
 
             return parsed > 0 ? parsed : null;
+        }
+
+        private static List<WorkTypeLocalizedNameViewModel> BuildCreateLocalizedNames(
+            IReadOnlyCollection<WorkTypeLanguageOptionViewModel> languages,
+            IEnumerable<WorkTypeLocalizedNameViewModel>? existingNames)
+        {
+            var existingByLanguage = (existingNames ?? Enumerable.Empty<WorkTypeLocalizedNameViewModel>())
+                .Where(x => x.LanguageId > 0)
+                .GroupBy(x => x.LanguageId)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (languages.Count == 0)
+            {
+                return existingByLanguage.Values
+                    .OrderBy(x => x.LanguageId)
+                    .Select(x => new WorkTypeLocalizedNameViewModel
+                    {
+                        LanguageId = x.LanguageId,
+                        LanguageName = x.LanguageName,
+                        Name = x.Name
+                    })
+                    .ToList();
+            }
+
+            return languages
+                .Select(language =>
+                {
+                    existingByLanguage.TryGetValue(language.Id, out var existing);
+                    return new WorkTypeLocalizedNameViewModel
+                    {
+                        LanguageId = language.Id,
+                        LanguageName = language.Name,
+                        Name = existing?.Name ?? string.Empty
+                    };
+                })
+                .ToList();
         }
     }
 }

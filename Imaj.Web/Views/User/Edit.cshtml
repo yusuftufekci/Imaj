@@ -131,8 +131,9 @@
                         <div class="md:col-span-3">
                             <input type="text" name="Code" value="@Model.Code" readonly class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm bg-gray-100">
                         </div>
-                        <div class="md:col-span-6">
-                            <a href="#" class="text-blue-700 font-semibold hover:underline" @@click.prevent="showPasswordInfo()">Sifre Degistir</a>
+                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Sifre</label>
+                        <div class="md:col-span-3">
+                            <input type="password" name="Password" value="@Model.Password" maxlength="32" autocomplete="new-password" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" placeholder="Bos birakilirsa degismez">
                         </div>
 
                         <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Ad</label>
@@ -347,14 +348,6 @@
                     if (this.form.allEmployee) {
                         this.employees = [];
                         this.selectedEmployeeIds = [];
-                    }
-                },
-
-                showPasswordInfo() {
-                    if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Sifre degistirme islemi bu sprintte aktif edilmedi.');
-                    } else {
-                        alert('Sifre degistirme islemi bu sprintte aktif edilmedi.');
                     }
                 },
 

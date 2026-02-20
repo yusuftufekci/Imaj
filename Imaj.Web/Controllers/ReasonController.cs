@@ -123,6 +123,7 @@ namespace Imaj.Web.Controllers
 
             var languages = await GetLanguageOptionsAsync();
             var reasonCats = await GetReasonCatOptionsAsync();
+            EnsureReasonCatOptionExists(reasonCats, detailResult.Data.ReasonCatId, detailResult.Data.ReasonCatName);
             var model = MapEdit(detailResult.Data, languages, reasonCats);
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
@@ -350,7 +351,11 @@ namespace Imaj.Web.Controllers
                 }
             }
 
-            if (model.ReasonCatId.HasValue && reasonCats.All(x => x.Id != model.ReasonCatId.Value))
+            if (model is ReasonEditViewModel editModel)
+            {
+                EnsureReasonCatOptionExists(reasonCats, editModel.ReasonCatId, editModel.ReasonCatName);
+            }
+            else if (model.ReasonCatId.HasValue && reasonCats.All(x => x.Id != model.ReasonCatId.Value))
             {
                 model.ReasonCatId = null;
             }
@@ -454,6 +459,25 @@ namespace Imaj.Web.Controllers
             }
 
             return parsed > 0 ? parsed : null;
+        }
+
+        private static void EnsureReasonCatOptionExists(
+            ICollection<ReasonCatOptionViewModel> options,
+            decimal? currentId,
+            string? currentName)
+        {
+            if (!currentId.HasValue || currentId.Value <= 0 || options.Any(x => x.Id == currentId.Value))
+            {
+                return;
+            }
+
+            options.Add(new ReasonCatOptionViewModel
+            {
+                Id = currentId.Value,
+                Name = !string.IsNullOrWhiteSpace(currentName)
+                    ? currentName
+                    : currentId.Value.ToString(CultureInfo.InvariantCulture)
+            });
         }
     }
 }

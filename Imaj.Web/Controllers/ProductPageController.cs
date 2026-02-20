@@ -334,6 +334,11 @@ namespace Imaj.Web.Controllers
             model.Names ??= new List<ProductPageLocalizedNameViewModel>();
             model.Functions ??= new List<ProductPageFunctionAssignmentViewModel>();
 
+            if (model is ProductPageCreateViewModel)
+            {
+                model.Names = BuildCreateLocalizedNames(languages, model.Names);
+            }
+
             var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
             if (model.Names.Count == 0)
             {
@@ -351,14 +356,44 @@ namespace Imaj.Web.Controllers
                 }
             }
 
-            if (model.ProductCategoryId <= 0 && categories.Count > 0)
+            var languageNameById = languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
             {
-                model.ProductCategoryId = categories[0].Id;
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
+                }
             }
 
-            if (model.ProductGroupId <= 0 && groups.Count > 0)
+            if (model is ProductPageEditViewModel editModel)
             {
-                model.ProductGroupId = groups[0].Id;
+                EnsureProductCategoryOptionExists(categories, editModel.ProductCategoryId, editModel.ProductCategoryName);
+                EnsureProductGroupOptionExists(groups, editModel.ProductGroupId, editModel.ProductGroupName);
+            }
+            else
+            {
+                if (model.ProductCategoryId <= 0 && categories.Count > 0)
+                {
+                    model.ProductCategoryId = categories[0].Id;
+                }
+                else if (model.ProductCategoryId > 0 && categories.All(x => x.Id != model.ProductCategoryId))
+                {
+                    model.ProductCategoryId = 0;
+                }
+
+                if (model.ProductGroupId <= 0 && groups.Count > 0)
+                {
+                    model.ProductGroupId = groups[0].Id;
+                }
+                else if (model.ProductGroupId > 0 && groups.All(x => x.Id != model.ProductGroupId))
+                {
+                    model.ProductGroupId = 0;
+                }
             }
 
             var functionNameMap = functions
@@ -394,6 +429,46 @@ namespace Imaj.Web.Controllers
                 .OrderBy(x => x.FunctionName)
                 .ThenBy(x => x.FunctionId)
                 .ToList();
+        }
+
+        private static void EnsureProductCategoryOptionExists(
+            ICollection<ProductPageCategoryOptionViewModel> options,
+            decimal currentId,
+            string? currentName)
+        {
+            if (currentId <= 0 || options.Any(x => x.Id == currentId))
+            {
+                return;
+            }
+
+            options.Add(new ProductPageCategoryOptionViewModel
+            {
+                Id = currentId,
+                Name = !string.IsNullOrWhiteSpace(currentName)
+                    ? currentName
+                    : currentId.ToString(CultureInfo.InvariantCulture),
+                IsInvalid = false
+            });
+        }
+
+        private static void EnsureProductGroupOptionExists(
+            ICollection<ProductPageGroupOptionViewModel> options,
+            decimal currentId,
+            string? currentName)
+        {
+            if (currentId <= 0 || options.Any(x => x.Id == currentId))
+            {
+                return;
+            }
+
+            options.Add(new ProductPageGroupOptionViewModel
+            {
+                Id = currentId,
+                Name = !string.IsNullOrWhiteSpace(currentName)
+                    ? currentName
+                    : currentId.ToString(CultureInfo.InvariantCulture),
+                IsInvalid = false
+            });
         }
 
         private void ValidateEditorModel(ProductPageEditorViewModelBase model)
@@ -659,6 +734,42 @@ namespace Imaj.Web.Controllers
             }
 
             return normalized;
+        }
+
+        private static List<ProductPageLocalizedNameViewModel> BuildCreateLocalizedNames(
+            IReadOnlyCollection<ProductPageLanguageOptionViewModel> languages,
+            IEnumerable<ProductPageLocalizedNameViewModel>? existingNames)
+        {
+            var existingByLanguage = (existingNames ?? Enumerable.Empty<ProductPageLocalizedNameViewModel>())
+                .Where(x => x.LanguageId > 0)
+                .GroupBy(x => x.LanguageId)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (languages.Count == 0)
+            {
+                return existingByLanguage.Values
+                    .OrderBy(x => x.LanguageId)
+                    .Select(x => new ProductPageLocalizedNameViewModel
+                    {
+                        LanguageId = x.LanguageId,
+                        LanguageName = x.LanguageName,
+                        Name = x.Name
+                    })
+                    .ToList();
+            }
+
+            return languages
+                .Select(language =>
+                {
+                    existingByLanguage.TryGetValue(language.Id, out var existing);
+                    return new ProductPageLocalizedNameViewModel
+                    {
+                        LanguageId = language.Id,
+                        LanguageName = language.Name,
+                        Name = existing?.Name ?? string.Empty
+                    };
+                })
+                .ToList();
         }
     }
 }

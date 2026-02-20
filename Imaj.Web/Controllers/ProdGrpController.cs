@@ -130,18 +130,11 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> Create()
         {
             var languageOptions = await GetLanguageOptionsAsync();
-            var defaultLanguageId = languageOptions.Count > 0 ? languageOptions[0].Id : 1m;
 
             return View(new ProdGrpCreateViewModel
             {
                 Languages = languageOptions,
-                Names = new List<ProdGrpLocalizedNameViewModel>
-                {
-                    new()
-                    {
-                        LanguageId = defaultLanguageId
-                    }
-                }
+                Names = BuildCreateLocalizedNames(languageOptions, null)
             });
         }
 
@@ -296,6 +289,11 @@ namespace Imaj.Web.Controllers
 
             model.Names ??= new List<ProdGrpLocalizedNameViewModel>();
 
+            if (model is ProdGrpCreateViewModel)
+            {
+                model.Names = BuildCreateLocalizedNames(languages, model.Names);
+            }
+
             var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
             if (model.Names.Count == 0)
             {
@@ -310,6 +308,20 @@ namespace Imaj.Web.Controllers
                 if (localizedName.LanguageId <= 0)
                 {
                     localizedName.LanguageId = defaultLanguageId;
+                }
+            }
+
+            var languageNameById = languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
+            {
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
                 }
             }
         }
@@ -391,6 +403,42 @@ namespace Imaj.Web.Controllers
             }
 
             return parsed > 0 ? parsed : null;
+        }
+
+        private static List<ProdGrpLocalizedNameViewModel> BuildCreateLocalizedNames(
+            IReadOnlyCollection<ProdGrpLanguageOptionViewModel> languages,
+            IEnumerable<ProdGrpLocalizedNameViewModel>? existingNames)
+        {
+            var existingByLanguage = (existingNames ?? Enumerable.Empty<ProdGrpLocalizedNameViewModel>())
+                .Where(x => x.LanguageId > 0)
+                .GroupBy(x => x.LanguageId)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (languages.Count == 0)
+            {
+                return existingByLanguage.Values
+                    .OrderBy(x => x.LanguageId)
+                    .Select(x => new ProdGrpLocalizedNameViewModel
+                    {
+                        LanguageId = x.LanguageId,
+                        LanguageName = x.LanguageName,
+                        Name = x.Name
+                    })
+                    .ToList();
+            }
+
+            return languages
+                .Select(language =>
+                {
+                    existingByLanguage.TryGetValue(language.Id, out var existing);
+                    return new ProdGrpLocalizedNameViewModel
+                    {
+                        LanguageId = language.Id,
+                        LanguageName = language.Name,
+                        Name = existing?.Name ?? string.Empty
+                    };
+                })
+                .ToList();
         }
     }
 }

@@ -481,7 +481,7 @@ namespace Imaj.Web.Controllers
                 Id = model.Id,
                 Code = model.Code,
                 Name = model.Name,
-                Password = model.Password,
+                Password = model.Password ?? string.Empty,
                 LanguageId = model.LanguageId,
                 CompanyId = model.CompanyId,
                 AllEmployee = model.AllEmployee,

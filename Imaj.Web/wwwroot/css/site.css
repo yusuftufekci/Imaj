@@ -300,3 +300,19 @@ textarea:focus {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* ============================================
+   ResoCat Name Table Stability
+   ============================================ */
+.resocat-names-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.resocat-names-language-col {
+    width: 220px;
+}
+
+.resocat-names-action-col {
+    width: 96px;
+}

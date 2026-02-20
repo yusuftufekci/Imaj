@@ -106,7 +106,10 @@
             <div class="px-4 py-5 sm:p-6 max-w-4xl mx-auto space-y-4">
                 <h3 class="text-3xl font-bold text-orange-600 text-center">Fonksiyon Yaratma</h3>
 
-                <form method="get" action="/Function/Create" class="bg-blue-50 p-4 rounded-md border border-blue-200">
+                <form method="get"
+                      action="/Function/Create"
+                      class="bg-blue-50 p-4 rounded-md border border-blue-200"
+                      @@submit.prevent="submitCreate($event)">
                     <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">On Bilgiler</h4>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
@@ -146,7 +149,22 @@
     function functionCreateStarter() {
         return {
             reservable: false,
-            intervalId: ''
+            intervalId: '',
+
+            submitCreate(event) {
+                const hasInterval = this.intervalId !== '' && this.intervalId !== null && this.intervalId !== undefined;
+                if (this.reservable !== hasInterval) {
+                    const message = 'Rezervasyon Uyumlu ve Rezervasyon Araligi birlikte secilmelidir.';
+                    if (window.Toast && typeof window.Toast.error === 'function') {
+                        window.Toast.error(message);
+                    } else {
+                        alert(message);
+                    }
+                    return;
+                }
+
+                event.target.submit();
+            }
         };
     }
 </script>
