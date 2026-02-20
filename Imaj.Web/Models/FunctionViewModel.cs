@@ -133,6 +133,9 @@ namespace Imaj.Web.Models
 
     public class FunctionCreateViewModel : FunctionEditorViewModelBase
     {
+        public bool SourceReservable { get; set; }
+        public decimal? SourceIntervalId { get; set; }
+        public string SourceIntervalName { get; set; } = string.Empty;
     }
 
     public class FunctionProductLookupFilterModel

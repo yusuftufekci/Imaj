@@ -138,29 +138,31 @@ namespace Imaj.Web.Controllers
         {
             var languageOptions = await GetLanguageOptionsAsync();
             var intervalOptions = await GetIntervalOptionsAsync();
-            var defaultLanguageId = languageOptions.Count > 0 ? languageOptions[0].Id : 1m;
+            var normalizedReservable = reservable == true;
+            var normalizedIntervalId = intervalId.HasValue && intervalId.Value > 0 ? intervalId : null;
+
+            if (!IsReservationPairValid(normalizedReservable, normalizedIntervalId))
+            {
+                ShowError("Rezervasyon Uyumlu ve Rezervasyon Araligi birlikte secilmelidir.");
+                return RedirectToAction(nameof(Index));
+            }
+
+            var normalizedIntervalName = normalizedIntervalId.HasValue
+                ? intervalOptions.FirstOrDefault(x => x.Id == normalizedIntervalId.Value)?.Name ?? string.Empty
+                : string.Empty;
 
             var model = new FunctionCreateViewModel
             {
-                Reservable = reservable == true,
-                IntervalId = intervalId.HasValue && intervalId.Value > 0 ? intervalId : null,
+                Reservable = normalizedReservable,
+                IntervalId = normalizedIntervalId,
                 Languages = languageOptions,
                 Intervals = intervalOptions,
-                Names = new List<FunctionLocalizedNameViewModel>
-                {
-                    new()
-                    {
-                        LanguageId = defaultLanguageId
-                    }
-                }
+                Names = BuildCreateLocalizedNames(languageOptions, null),
+                SourceReservable = normalizedReservable,
+                SourceIntervalId = normalizedIntervalId,
+                SourceIntervalName = normalizedIntervalName,
+                IntervalName = normalizedIntervalName
             };
-
-            if (!IsReservationPairValid(model.Reservable, model.IntervalId))
-            {
-                model.Reservable = false;
-                model.IntervalId = null;
-                ShowError("Rezervasyon Uyumlu ve Rezervasyon Araligi birlikte secilmelidir.");
-            }
 
             return View(model);
         }
@@ -229,6 +231,24 @@ namespace Imaj.Web.Controllers
         [RequireMethodPermission(EditMethodId, write: true)]
         public async Task<IActionResult> Update(FunctionEditViewModel model)
         {
+            if (!model.Id.HasValue || model.Id.Value <= 0)
+            {
+                ShowError("Fonksiyon ID zorunludur.");
+                return RedirectToAction("List");
+            }
+
+            var currentDetail = await _functionService.GetFunctionDetailAsync(model.Id.Value);
+            if (!currentDetail.IsSuccess || currentDetail.Data == null)
+            {
+                ShowError(currentDetail.Message ?? "Fonksiyon bulunamadi.");
+                return RedirectToAction("List");
+            }
+
+            // Legacy parity: edit ekraninda bu alanlar degismez, mevcut kayittan sabitlenir.
+            model.Reservable = currentDetail.Data.Reservable;
+            model.IntervalId = currentDetail.Data.IntervalId;
+            model.IntervalName = currentDetail.Data.IntervalName;
+
             await EnsureEditorDependenciesAsync(model);
             ValidateReservationPair(model);
 
@@ -400,6 +420,25 @@ namespace Imaj.Web.Controllers
             model.Products ??= new List<FunctionProductAssignmentViewModel>();
             model.Rules ??= new List<FunctionRuleViewModel>();
 
+            if (model is FunctionCreateViewModel createModel)
+            {
+                model.Names = BuildCreateLocalizedNames(languages, model.Names);
+
+                var sourceIntervalId = createModel.SourceIntervalId.HasValue && createModel.SourceIntervalId.Value > 0
+                    ? createModel.SourceIntervalId
+                    : null;
+
+                var sourceIntervalName = sourceIntervalId.HasValue
+                    ? intervals.FirstOrDefault(x => x.Id == sourceIntervalId.Value)?.Name ?? string.Empty
+                    : string.Empty;
+
+                createModel.SourceIntervalId = sourceIntervalId;
+                createModel.SourceIntervalName = sourceIntervalName;
+                createModel.IntervalId = sourceIntervalId;
+                createModel.IntervalName = sourceIntervalName;
+                createModel.Reservable = createModel.SourceReservable;
+            }
+
             var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
             if (model.Names.Count == 0)
             {
@@ -414,6 +453,20 @@ namespace Imaj.Web.Controllers
                 if (name.LanguageId <= 0)
                 {
                     name.LanguageId = defaultLanguageId;
+                }
+            }
+
+            var languageNameById = languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
+            {
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
                 }
             }
 
@@ -602,6 +655,42 @@ namespace Imaj.Web.Controllers
                 .Where(x => x.HasValue)
                 .Select(x => x!.Value)
                 .Distinct()
+                .ToList();
+        }
+
+        private static List<FunctionLocalizedNameViewModel> BuildCreateLocalizedNames(
+            IReadOnlyCollection<FunctionLanguageOptionViewModel> languages,
+            IEnumerable<FunctionLocalizedNameViewModel>? existingNames)
+        {
+            var existingByLanguage = (existingNames ?? Enumerable.Empty<FunctionLocalizedNameViewModel>())
+                .Where(x => x.LanguageId > 0)
+                .GroupBy(x => x.LanguageId)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (languages.Count == 0)
+            {
+                return existingByLanguage.Values
+                    .OrderBy(x => x.LanguageId)
+                    .Select(x => new FunctionLocalizedNameViewModel
+                    {
+                        LanguageId = x.LanguageId,
+                        LanguageName = x.LanguageName,
+                        Name = x.Name
+                    })
+                    .ToList();
+            }
+
+            return languages
+                .Select(language =>
+                {
+                    existingByLanguage.TryGetValue(language.Id, out var existing);
+                    return new FunctionLocalizedNameViewModel
+                    {
+                        LanguageId = language.Id,
+                        LanguageName = language.Name,
+                        Name = existing?.Name ?? string.Empty
+                    };
+                })
                 .ToList();
         }
     }
