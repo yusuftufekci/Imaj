@@ -137,6 +137,8 @@ namespace Imaj.Web.Controllers
             var languages = await GetLanguageOptionsAsync();
             var functions = await GetFunctionOptionsAsync();
             var resoCats = await GetResoCatOptionsAsync();
+            EnsureFunctionOptionExists(functions, detailResult.Data.FunctionId, detailResult.Data.FunctionName);
+            EnsureResoCatOptionExists(resoCats, detailResult.Data.ResoCatId, detailResult.Data.ResoCatName);
             var model = MapEdit(detailResult.Data, languages, functions, resoCats);
 
             model.SelectedIds = resolved.SelectedIds;
@@ -154,7 +156,6 @@ namespace Imaj.Web.Controllers
             var languages = await GetLanguageOptionsAsync();
             var functions = await GetFunctionOptionsAsync();
             var resoCats = await GetResoCatOptionsAsync();
-            var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
 
             var normalizedCode = NormalizeCode(code);
 
@@ -171,13 +172,7 @@ namespace Imaj.Web.Controllers
                 Languages = languages,
                 FunctionOptions = functions,
                 ResoCatOptions = resoCats,
-                Names = new List<ResourceLocalizedNameViewModel>
-                {
-                    new()
-                    {
-                        LanguageId = defaultLanguageId
-                    }
-                }
+                Names = BuildCreateLocalizedNames(languages, null)
             });
         }
 
@@ -377,6 +372,11 @@ namespace Imaj.Web.Controllers
             model.Code = NormalizeCode(model.Code);
             model.Names ??= new List<ResourceLocalizedNameViewModel>();
 
+            if (model is ResourceCreateViewModel)
+            {
+                model.Names = BuildCreateLocalizedNames(languages, model.Names);
+            }
+
             var defaultLanguageId = languages.Count > 0 ? languages[0].Id : 1m;
             if (model.Names.Count == 0)
             {
@@ -394,14 +394,36 @@ namespace Imaj.Web.Controllers
                 }
             }
 
-            if (model.FunctionId.HasValue && functions.All(x => x.Id != model.FunctionId.Value))
+            var languageNameById = languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
             {
-                model.FunctionId = null;
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
+                }
             }
 
-            if (model.ResoCatId.HasValue && resoCats.All(x => x.Id != model.ResoCatId.Value))
+            if (model is ResourceEditViewModel editModel)
             {
-                model.ResoCatId = null;
+                EnsureFunctionOptionExists(functions, model.FunctionId, editModel.FunctionName);
+                EnsureResoCatOptionExists(resoCats, model.ResoCatId, editModel.ResoCatName);
+            }
+            else
+            {
+                if (model.FunctionId.HasValue && functions.All(x => x.Id != model.FunctionId.Value))
+                {
+                    model.FunctionId = null;
+                }
+
+                if (model.ResoCatId.HasValue && resoCats.All(x => x.Id != model.ResoCatId.Value))
+                {
+                    model.ResoCatId = null;
+                }
             }
         }
 
@@ -525,6 +547,80 @@ namespace Imaj.Web.Controllers
             }
 
             return parsed > 0 ? parsed : null;
+        }
+
+        private static List<ResourceLocalizedNameViewModel> BuildCreateLocalizedNames(
+            IReadOnlyCollection<ResourceLanguageOptionViewModel> languages,
+            IEnumerable<ResourceLocalizedNameViewModel>? existingNames)
+        {
+            var existingByLanguage = (existingNames ?? Enumerable.Empty<ResourceLocalizedNameViewModel>())
+                .Where(x => x.LanguageId > 0)
+                .GroupBy(x => x.LanguageId)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (languages.Count == 0)
+            {
+                return existingByLanguage.Values
+                    .OrderBy(x => x.LanguageId)
+                    .Select(x => new ResourceLocalizedNameViewModel
+                    {
+                        LanguageId = x.LanguageId,
+                        LanguageName = x.LanguageName,
+                        Name = x.Name
+                    })
+                    .ToList();
+            }
+
+            return languages
+                .Select(language =>
+                {
+                    existingByLanguage.TryGetValue(language.Id, out var existing);
+                    return new ResourceLocalizedNameViewModel
+                    {
+                        LanguageId = language.Id,
+                        LanguageName = language.Name,
+                        Name = existing?.Name ?? string.Empty
+                    };
+                })
+                .ToList();
+        }
+
+        private static void EnsureFunctionOptionExists(
+            ICollection<ResourceFunctionOptionViewModel> options,
+            decimal? currentId,
+            string? currentName)
+        {
+            if (!currentId.HasValue || currentId.Value <= 0 || options.Any(x => x.Id == currentId.Value))
+            {
+                return;
+            }
+
+            options.Add(new ResourceFunctionOptionViewModel
+            {
+                Id = currentId.Value,
+                Name = !string.IsNullOrWhiteSpace(currentName)
+                    ? currentName
+                    : currentId.Value.ToString(CultureInfo.InvariantCulture)
+            });
+        }
+
+        private static void EnsureResoCatOptionExists(
+            ICollection<ResourceResoCatOptionViewModel> options,
+            decimal? currentId,
+            string? currentName)
+        {
+            if (!currentId.HasValue || currentId.Value <= 0 || options.Any(x => x.Id == currentId.Value))
+            {
+                return;
+            }
+
+            options.Add(new ResourceResoCatOptionViewModel
+            {
+                Id = currentId.Value,
+                Name = !string.IsNullOrWhiteSpace(currentName)
+                    ? currentName
+                    : currentId.Value.ToString(CultureInfo.InvariantCulture)
+            });
         }
     }
 }

@@ -236,6 +236,11 @@ namespace Imaj.Web.Controllers
 
             model.Names ??= new List<ProdCatLocalizedNameViewModel>();
 
+            if (model is ProdCatCreateViewModel)
+            {
+                model.Names = BuildCreateLocalizedNames(model.Languages, model.Names);
+            }
+
             var defaultLanguageId = model.Languages.Count > 0 ? model.Languages[0].Id : 1m;
             if (model.Names.Count == 0)
             {
@@ -250,6 +255,20 @@ namespace Imaj.Web.Controllers
                 if (localizedName.LanguageId <= 0)
                 {
                     localizedName.LanguageId = defaultLanguageId;
+                }
+            }
+
+            var languageNameById = model.Languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
+            {
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
                 }
             }
 
@@ -419,6 +438,42 @@ namespace Imaj.Web.Controllers
             return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) && parsed > 0
                 ? parsed
                 : null;
+        }
+
+        private static List<ProdCatLocalizedNameViewModel> BuildCreateLocalizedNames(
+            IReadOnlyCollection<ProdCatLanguageOptionViewModel> languages,
+            IEnumerable<ProdCatLocalizedNameViewModel>? existingNames)
+        {
+            var existingByLanguage = (existingNames ?? Enumerable.Empty<ProdCatLocalizedNameViewModel>())
+                .Where(x => x.LanguageId > 0)
+                .GroupBy(x => x.LanguageId)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            if (languages.Count == 0)
+            {
+                return existingByLanguage.Values
+                    .OrderBy(x => x.LanguageId)
+                    .Select(x => new ProdCatLocalizedNameViewModel
+                    {
+                        LanguageId = x.LanguageId,
+                        LanguageName = x.LanguageName,
+                        Name = x.Name
+                    })
+                    .ToList();
+            }
+
+            return languages
+                .Select(language =>
+                {
+                    existingByLanguage.TryGetValue(language.Id, out var existing);
+                    return new ProdCatLocalizedNameViewModel
+                    {
+                        LanguageId = language.Id,
+                        LanguageName = language.Name,
+                        Name = existing?.Name ?? string.Empty
+                    };
+                })
+                .ToList();
         }
     }
 }

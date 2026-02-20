@@ -1,22 +1,33 @@
 @using System.Text.Json
+@using System.Globalization
 @model TaxTypeCreateViewModel
 
 @{
     ViewData["Title"] = "Yeni Vergi Tipi";
+    var languageNameById = Model.Languages
+        .GroupBy(x => x.Id)
+        .ToDictionary(x => x.Key, x => x.First().Name);
+
+    string ResolveLanguageName(TaxTypeLocalizedNameViewModel localizedName)
+    {
+        if (!string.IsNullOrWhiteSpace(localizedName.LanguageName))
+        {
+            return localizedName.LanguageName;
+        }
+
+        if (languageNameById.TryGetValue(localizedName.LanguageId, out var fallbackName) &&
+            !string.IsNullOrWhiteSpace(fallbackName))
+        {
+            return fallbackName;
+        }
+
+        return localizedName.LanguageId > 0
+            ? localizedName.LanguageId.ToString(CultureInfo.InvariantCulture)
+            : string.Empty;
+    }
 
     var initialState = new
     {
-        names = Model.Names.Select(x => new
-        {
-            languageId = x.LanguageId,
-            name = x.Name,
-            invoLinePostfix = x.InvoLinePostfix
-        }),
-        languages = Model.Languages.Select(x => new
-        {
-            id = x.Id,
-            name = x.Name
-        }),
         form = new
         {
             isInvalid = Model.IsInvalid,
@@ -89,46 +100,42 @@
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Dil</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Fatura Son-Eki</th>
-                                <th class="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase w-24">Islem</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            <template x-for="(nameItem, index) in names" :key="index">
+                            @for (var index = 0; index < Model.Names.Count; index++)
+                            {
+                                var localizedName = Model.Names[index];
+                                var languageName = ResolveLanguageName(localizedName);
+
                                 <tr>
                                     <td class="px-4 py-2">
-                                        <select :name="'Names[' + index + '].LanguageId'" x-model.number="nameItem.languageId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
-                                            <template x-for="language in languages" :key="language.id">
-                                                <option :value="language.id" x-text="language.name"></option>
-                                            </template>
-                                        </select>
+                                        <input type="hidden" name="Names[@index].LanguageId" value="@localizedName.LanguageId" />
+                                        <input type="text"
+                                               value="@languageName"
+                                               readonly
+                                               class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm bg-gray-100 text-gray-700 cursor-not-allowed">
                                     </td>
                                     <td class="px-4 py-2">
                                         <input type="text"
-                                               :name="'Names[' + index + '].Name'"
-                                               x-model="nameItem.name"
+                                               name="Names[@index].Name"
+                                               value="@localizedName.Name"
                                                maxlength="32"
                                                class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm"
                                                placeholder="Vergi tipi adi" />
                                     </td>
                                     <td class="px-4 py-2">
                                         <input type="text"
-                                               :name="'Names[' + index + '].InvoLinePostfix'"
-                                               x-model="nameItem.invoLinePostfix"
+                                               name="Names[@index].InvoLinePostfix"
+                                               value="@localizedName.InvoLinePostfix"
                                                maxlength="32"
                                                class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm"
                                                placeholder="Fatura son-eki" />
                                     </td>
-                                    <td class="px-4 py-2 text-right">
-                                        <button type="button" @@click="removeLanguage(index)" class="text-red-600 font-semibold hover:underline">Sil</button>
-                                    </td>
                                 </tr>
-                            </template>
+                            }
                         </tbody>
                     </table>
-                </div>
-
-                <div class="text-sm">
-                    <button type="button" @@click="addLanguage" class="text-blue-700 font-semibold hover:underline">Dil Ekle</button>
                 </div>
             </div>
         </div>
@@ -152,45 +159,9 @@
 <script>
     function taxTypeCreatePage(initialState) {
         return {
-            languages: initialState.languages || [],
-            names: (initialState.names && initialState.names.length > 0)
-                ? initialState.names
-                : [{
-                    languageId: (initialState.languages && initialState.languages.length > 0 ? initialState.languages[0].id : 1),
-                    name: '',
-                    invoLinePostfix: ''
-                }],
             form: {
                 isInvalid: !!(initialState.form && initialState.form.isInvalid),
                 automaticForward: !!(initialState.form && initialState.form.automaticForward)
-            },
-
-            addLanguage() {
-                this.names.push({
-                    languageId: this.getNextLanguageId(),
-                    name: '',
-                    invoLinePostfix: ''
-                });
-            },
-
-            removeLanguage(index) {
-                if (this.names.length === 1) {
-                    this.names[0].name = '';
-                    this.names[0].invoLinePostfix = '';
-                    return;
-                }
-
-                this.names.splice(index, 1);
-            },
-
-            getNextLanguageId() {
-                if (!this.languages || this.languages.length === 0) {
-                    return 1;
-                }
-
-                const usedLanguageIds = new Set(this.names.map(x => Number(x.languageId)));
-                const available = this.languages.find(x => !usedLanguageIds.has(Number(x.id)));
-                return available ? Number(available.id) : Number(this.languages[0].id);
             }
         };
     }
