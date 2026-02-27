@@ -9,6 +9,7 @@ using Imaj.Service.Results;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 
 namespace Imaj.Service.Services
 {
@@ -20,13 +21,19 @@ namespace Imaj.Service.Services
 
         // Configuration constants - easier to change globally later
         protected const int CurrentCompanyId = 7;
-        protected const int CurrentLanguageId = 1;
+        protected decimal CurrentLanguageId => ResolveUiLanguageId();
 
         protected BaseService(IUnitOfWork unitOfWork, ILogger logger, IConfiguration configuration)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
             _configuration = configuration;
+        }
+
+        protected static decimal ResolveUiLanguageId()
+        {
+            var culture = CultureInfo.CurrentUICulture.Name;
+            return culture.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? 2m : 1m;
         }
 
         /// <summary>

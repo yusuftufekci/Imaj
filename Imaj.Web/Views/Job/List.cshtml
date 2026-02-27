@@ -1,7 +1,7 @@
 @model JobViewModel
 
 @{
-    ViewData["Title"] = "İşler";
+    ViewData["Title"] = Localizer["Jobs"];
 }
 
 <div x-data="jobList()" class="space-y-6">
@@ -9,7 +9,7 @@
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
              <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-orange-600">
-                İşler
+                @Localizer["Jobs"]
             </h2>
         </div>
     </div>
@@ -27,17 +27,17 @@
                                         <!-- Select All Checkbox -->
                                         <div class="flex items-center">
                                             <input type="checkbox" @@click="toggleAll" x-model="allSelected" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2">
-                                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer" @@click="toggleAll(); allSelected = !allSelected">Seç</span>
+                                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer" @@click="toggleAll(); allSelected = !allSelected">@Localizer["Select"]</span>
                                         </div>
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fonksiyon</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Referans</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Başlangıç Tarihi</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Müşteri</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Durum</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Function"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Reference"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["StartDate"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Customer"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Status"]</th>
                                     <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">E-Posta</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Değerlendirildi</th>
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Evaluated"]</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -89,16 +89,16 @@
              }
              else
              {
-                 <p class="text-center text-gray-500 text-sm">Sonuç bulunamadı.</p>
+                 <p class="text-center text-gray-500 text-sm">@Localizer["NoRecordsFound"]</p>
              }
 
              <div class="flex justify-center space-x-2">
                  <!-- Must submit to use selectedIds -->
                  <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Görüntüle
+                    @Localizer["View"]
                 </button>
                  <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    Değiştir
+                    @Localizer["Edit"]
                 </button>
              </div>
         </div>

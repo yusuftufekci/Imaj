@@ -1,4 +1,6 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
+﻿@using System.Globalization
+@using System.Text.Json
+@using Microsoft.AspNetCore.Mvc.Localization
 @using Imaj.Web
 @using Imaj.Web.Authorization
 @using Microsoft.Extensions.Localization
@@ -6,7 +8,7 @@
 @inject IPermissionViewService PermissionViewService
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@CultureInfo.CurrentUICulture.Name">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -30,7 +32,7 @@
                 </div>
                 <!-- ... existing top bar right side ... -->
                 <div class="flex items-center space-x-6">
-                    <span class="text-slate-300">Sesam Imaj Bilgi Sistemi 2.0.7</span>
+                    <span class="text-slate-300">@Localizer["SystemVersion"]</span>
                     <div class="flex items-center space-x-3">
                         <a href="/Culture/SetLanguage?culture=tr-TR&returnUrl=@Context.Request.Path" class="hover:text-white text-slate-300 transition-colors">TR</a>
                         <span class="text-slate-400">|</span>
@@ -89,9 +91,10 @@
                                             "Absence" => Localizer["Absence"].Value,
                                             "Customer" => Localizer["Customer"].Value,
                                             "Job" => Localizer["Job"].Value,
+                                            "JobEntry" => Localizer["JobEntry"].Value,
                                             "Invoice" => Localizer["Invoice"].Value,
                                             "OvertimeReport" => Localizer["OvertimeReport"].Value,
-                                            "ProductReport" => "Ürün Raporu",
+                                            "ProductReport" => Localizer["ProductReportMenu"].Value,
                                             _ => item.Label
                                         },
                                         item.Url
@@ -109,7 +112,7 @@
                      <!-- Mobile menu button placeholder -->
                     <div class="-mr-2 flex items-center md:hidden">
                         <button type="button" @@click="mobileMenuOpen = !mobileMenuOpen" class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" aria-controls="mobile-menu" :aria-expanded="mobileMenuOpen.toString()">
-                            <span class="sr-only">Menüyü aç</span>
+                            <span class="sr-only">@Localizer["OpenMenu"]</span>
                             <!-- Hamburger icon -->
                             <svg class="h-6 w-6" :class="{'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -157,6 +160,27 @@
         </footer>
     </div>
 
+    <script>
+        window.imajTexts = @Html.Raw(JsonSerializer.Serialize(new
+        {
+            successTitle = Localizer["SuccessTitle"].Value,
+            errorTitle = Localizer["ErrorTitle"].Value,
+            ok = Localizer["Ok"].Value,
+            yes = Localizer["ConfirmYes"].Value,
+            cancel = Localizer["ConfirmCancel"].Value,
+            genericError = Localizer["GenericError"].Value,
+            pleaseEnterCustomerCode = Localizer["PleaseEnterCustomerCode"].Value,
+            customerCreatedSuccess = Localizer["CustomerCreatedSuccess"].Value,
+            customerCreateFailed = Localizer["CustomerCreateFailed"].Value,
+            printReportStarted = Localizer["PrintReportStarted"].Value,
+            pleaseSelectCustomer = Localizer["PleaseSelectCustomer"].Value,
+            pleaseEnterJobName = Localizer["PleaseEnterJobName"].Value,
+            pleaseEnterStartDate = Localizer["PleaseEnterStartDate"].Value,
+            serverError = Localizer["ServerError"].Value,
+            connectionError = Localizer["ConnectionError"].Value
+        }));
+    </script>
+
     <!-- Site JavaScript -->
     <script src="~/js/site.js" asp-append-version="true"></script>
     
@@ -174,10 +198,10 @@
                 <text>
                 Swal.fire({
                     icon: 'success',
-                    title: 'Başarılı!',
+                    title: '@Localizer["SuccessTitle"]',
                     text: '@Html.Raw(TempData["SuccessMessage"])',
                     confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'Tamam'
+                    confirmButtonText: '@Localizer["Ok"]'
                 });
                 </text>
             }
@@ -186,10 +210,10 @@
                 <text>
                 Swal.fire({
                     icon: 'error',
-                    title: 'Hata!',
+                    title: '@Localizer["ErrorTitle"]',
                     text: '@Html.Raw(TempData["ErrorMessage"])',
                     confirmButtonColor: '#d33',
-                    confirmButtonText: 'Tamam'
+                    confirmButtonText: '@Localizer["Ok"]'
                 });
                 </text>
             }

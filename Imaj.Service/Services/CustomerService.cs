@@ -14,6 +14,7 @@ using Imaj.Service.Results;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 
 namespace Imaj.Service.Services
 {
@@ -277,14 +278,15 @@ namespace Imaj.Service.Services
         /// </summary>
         private async Task LoadProductCategoriesAsync(CustomerDto dto)
         {
+            var languageId = ResolveUiLanguageId();
             var catsQuery = from cpc in _unitOfWork.Repository<CustProdCat>().Query()
                            join pc in _unitOfWork.Repository<ProdCat>().Query() on cpc.ProdCatID equals pc.Id
                            join xpc in _unitOfWork.Repository<XProdCat>().Query() on pc.Id equals xpc.ProdCatID
                            join tt in _unitOfWork.Repository<TaxType>().Query() on pc.TaxTypeID equals tt.Id
                            join xtt in _unitOfWork.Repository<XTaxType>().Query() on tt.Id equals xtt.TaxTypeID
                            where cpc.CustomerID == dto.Id && cpc.Deleted == 0
-                                 && xpc.LanguageID == 1
-                                 && xtt.LanguageID == 1
+                                 && xpc.LanguageID == languageId
+                                 && xtt.LanguageID == languageId
                            select new ProductCategoryDto
                            {
                                Id = pc.Id,
@@ -298,6 +300,12 @@ namespace Imaj.Service.Services
                            };
 
             dto.ProductCategories = await catsQuery.ToListAsync();
+        }
+
+        private static decimal ResolveUiLanguageId()
+        {
+            var culture = CultureInfo.CurrentUICulture.Name;
+            return culture.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? 2m : 1m;
         }
     }
 }

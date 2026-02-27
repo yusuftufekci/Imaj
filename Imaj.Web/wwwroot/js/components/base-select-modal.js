@@ -164,7 +164,7 @@ class BaseSelectModal {
                 } catch (error) {
                     console.error(`${storeName} search error:`, error);
                     if (typeof Toast !== 'undefined') {
-                        Toast.error('Arama sırasında bir hata oluştu.');
+                        Toast.error((window.imajTexts && window.imajTexts.genericError) || 'An error occurred.');
                     }
                     this.items = [];
                     this.totalCount = 0;
@@ -344,7 +344,7 @@ class BaseSelectModal {
                         this.hasSearched = true;
                     } catch (error) {
                         console.error('Search error:', error);
-                        Toast.error('Arama sırasında bir hata oluştu.');
+                        Toast.error((window.imajTexts && window.imajTexts.genericError) || 'An error occurred.');
                     }
                 },
 

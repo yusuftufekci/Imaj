@@ -1,14 +1,23 @@
 using ClosedXML.Excel;
 using Imaj.Service.DTOs;
+using Imaj.Web;
+using Microsoft.Extensions.Localization;
 
 namespace Imaj.Web.Services.Reports
 {
     public class ProductReportExcelService : IProductReportExcelService
     {
+        private readonly IStringLocalizer<SharedResource> _localizer;
+
+        public ProductReportExcelService(IStringLocalizer<SharedResource> localizer)
+        {
+            _localizer = localizer;
+        }
+
         public byte[] BuildDetailedReport(List<ProductReportRowDto> rows, ProductReportExcelContext context)
         {
             using var workbook = new XLWorkbook();
-            var ws = workbook.Worksheets.Add("Detayli Urun");
+            var ws = workbook.Worksheets.Add(L("DetailedProductSheet"));
 
             ConfigureSheet(ws);
             SetColumns(ws);
@@ -28,62 +37,62 @@ namespace Imaj.Web.Services.Reports
 
         private static void SetColumns(IXLWorksheet ws)
         {
-            ws.Column(1).Width = 18; // Urun Grubu
-            ws.Column(2).Width = 26; // Urun
-            ws.Column(3).Width = 10; // Referans
-            ws.Column(4).Width = 12; // Tarih
-            ws.Column(5).Width = 14; // Musteri
+            ws.Column(1).Width = 18; // Product Group
+            ws.Column(2).Width = 26; // Product
+            ws.Column(3).Width = 10; // Reference
+            ws.Column(4).Width = 12; // Date
+            ws.Column(5).Width = 14; // Customer
             ws.Column(6).Width = 34; // Ad
             ws.Column(7).Width = 34; // Notlar
             ws.Column(8).Width = 10; // Miktar
             ws.Column(9).Width = 12; // Tutar
         }
 
-        private static void WriteHeader(IXLWorksheet ws, ProductReportExcelContext context)
+        private void WriteHeader(IXLWorksheet ws, ProductReportExcelContext context)
         {
             ws.Range(1, 1, 1, 9).Merge();
-            ws.Cell(1, 1).Value = "Detaylı Ürün Raporu";
+            ws.Cell(1, 1).Value = L("DetailedProductReportTitle");
             ws.Cell(1, 1).Style.Font.Bold = true;
             ws.Cell(1, 1).Style.Font.FontSize = 18;
             ws.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            ws.Cell(3, 1).Value = "Tarih Aralığı :";
+            ws.Cell(3, 1).Value = L("DateRange");
             ws.Cell(3, 1).Style.Font.Bold = true;
             ws.Cell(3, 2).Value = context.StartDate.Date;
             ws.Cell(3, 2).Style.DateFormat.Format = "dd/MM/yyyy";
             ws.Cell(4, 2).Value = context.EndDate.Date;
             ws.Cell(4, 2).Style.DateFormat.Format = "dd/MM/yyyy";
 
-            ws.Cell(3, 3).Value = "Ürün Grubu :";
+            ws.Cell(3, 3).Value = L("ProductGroupWithColon");
             ws.Cell(3, 3).Style.Font.Bold = true;
             ws.Range(3, 4, 3, 5).Merge();
             ws.Cell(3, 4).Value = context.ProductGroupDisplay;
 
-            ws.Cell(3, 6).Value = "Ürün :";
+            ws.Cell(3, 6).Value = L("ProductWithColon");
             ws.Cell(3, 6).Style.Font.Bold = true;
             ws.Range(3, 7, 3, 8).Merge();
             ws.Cell(3, 7).Value = context.ProductDisplay;
 
-            ws.Cell(3, 9).Value = "Müşteri :";
+            ws.Cell(3, 9).Value = L("CustomerWithColon");
             ws.Cell(3, 9).Style.Font.Bold = true;
             ws.Range(4, 9, 4, 9).Merge();
             ws.Cell(4, 9).Value = context.CustomerDisplay;
         }
 
-        private static void WriteTable(IXLWorksheet ws, List<ProductReportRowDto> rows)
+        private void WriteTable(IXLWorksheet ws, List<ProductReportRowDto> rows)
         {
             const int headerRow = 6;
             var headers = new[]
             {
-                "Ürün Grubu",
-                "Ürün",
-                "Referans",
-                "Tarih",
-                "Müşteri",
-                "Ad",
-                "Notlar",
-                "Miktar",
-                "Tutar"
+                L("ProductGroupColumn"),
+                L("ProductColumn"),
+                L("Reference"),
+                L("Date"),
+                L("Customer"),
+                L("Name"),
+                L("Notes"),
+                L("Quantity"),
+                L("Amount")
             };
 
             for (var i = 0; i < headers.Length; i++)
@@ -133,7 +142,7 @@ namespace Imaj.Web.Services.Reports
                 }
 
                 ws.Range(currentRow, 1, currentRow, 7).Merge();
-                ws.Cell(currentRow, 1).Value = $"{productGroup.Key.ProductName} Toplamı";
+                ws.Cell(currentRow, 1).Value = string.Format(L("EmployeeTotalFormat"), productGroup.Key.ProductName);
                 ws.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
                 ws.Cell(currentRow, 8).Value = productGroup.Sum(x => x.Quantity);
                 ws.Cell(currentRow, 9).Value = productGroup.Sum(x => x.Amount);
@@ -149,7 +158,7 @@ namespace Imaj.Web.Services.Reports
             }
 
             ws.Range(currentRow, 1, currentRow, 7).Merge();
-            ws.Cell(currentRow, 1).Value = "Rapor Toplamı";
+            ws.Cell(currentRow, 1).Value = L("ReportTotal");
             ws.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
             ws.Cell(currentRow, 8).Value = rows.Sum(x => x.Quantity);
             ws.Cell(currentRow, 9).Value = rows.Sum(x => x.Amount);
@@ -165,6 +174,11 @@ namespace Imaj.Web.Services.Reports
             ws.Range(headerRow, 1, tableEndRow, 9).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             ws.Range(headerRow, 1, tableEndRow, 9).Style.Border.InsideBorder = XLBorderStyleValues.Hair;
             ws.SheetView.FreezeRows(headerRow);
+        }
+
+        private string L(string key)
+        {
+            return _localizer[key].Value;
         }
     }
 }

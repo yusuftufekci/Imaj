@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IResoCatService _resoCatService;
 
-        public ResoCatController(IResoCatService resoCatService, ILogger<ResoCatController> logger)
-            : base(logger)
+        public ResoCatController(IResoCatService resoCatService, ILogger<ResoCatController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _resoCatService = resoCatService;
         }
@@ -86,7 +88,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _resoCatService.GetResoCatDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Kaynak kategorisi bulunamadi.");
+                ShowError(detailResult.Message ?? L("ResourceCategoryNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -112,7 +114,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _resoCatService.GetResoCatDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Kaynak kategorisi bulunamadi.");
+                ShowError(detailResult.Message ?? L("ResourceCategoryNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -154,11 +156,11 @@ namespace Imaj.Web.Controllers
             var result = await _resoCatService.UpdateResoCatAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Kaynak kategorisi guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ResourceCategoryUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Kaynak kategorisi guncellendi.");
+            ShowSuccess(result.Message ?? L("ResourceCategoryUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -183,11 +185,11 @@ namespace Imaj.Web.Controllers
             var result = await _resoCatService.CreateResoCatAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Kaynak kategorisi kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ResourceCategorySaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Kaynak kategorisi kaydedildi.");
+            ShowSuccess(result.Message ?? L("ResourceCategorySavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create");

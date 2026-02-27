@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IResourceService _resourceService;
 
-        public ResourceController(IResourceService resourceService, ILogger<ResourceController> logger)
-            : base(logger)
+        public ResourceController(IResourceService resourceService, ILogger<ResourceController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _resourceService = resourceService;
         }
@@ -60,7 +62,7 @@ namespace Imaj.Web.Controllers
             if (normalizedFilter.SequenceFrom.HasValue && normalizedFilter.SequenceTo.HasValue
                 && normalizedFilter.SequenceFrom.Value > normalizedFilter.SequenceTo.Value)
             {
-                ModelState.AddModelError(string.Empty, "Sira No baslangic degeri bitis degerinden buyuk olamaz.");
+                ModelState.AddModelError(string.Empty, L("SequenceRangeInvalid"));
                 normalizedFilter.SequenceTo = normalizedFilter.SequenceFrom;
             }
 
@@ -104,7 +106,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _resourceService.GetResourceDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Kaynak bulunamadi.");
+                ShowError(detailResult.Message ?? L("ResourceNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -130,7 +132,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _resourceService.GetResourceDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Kaynak bulunamadi.");
+                ShowError(detailResult.Message ?? L("ResourceNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -192,11 +194,11 @@ namespace Imaj.Web.Controllers
             var result = await _resourceService.UpdateResourceAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Kaynak guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ResourceUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Kaynak guncellendi.");
+            ShowSuccess(result.Message ?? L("ResourceUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -222,11 +224,11 @@ namespace Imaj.Web.Controllers
             var result = await _resourceService.CreateResourceAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Kaynak kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ResourceSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Kaynak kaydedildi.");
+            ShowSuccess(result.Message ?? L("ResourceSavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create", new
@@ -431,17 +433,17 @@ namespace Imaj.Web.Controllers
         {
             if (!model.FunctionId.HasValue || model.FunctionId.Value <= 0)
             {
-                ModelState.AddModelError(nameof(model.FunctionId), "Fonksiyon secimi zorunludur.");
+                ModelState.AddModelError(nameof(model.FunctionId), L("FunctionSelectionRequired"));
             }
 
             if (!model.ResoCatId.HasValue || model.ResoCatId.Value <= 0)
             {
-                ModelState.AddModelError(nameof(model.ResoCatId), "Kaynak kategorisi secimi zorunludur.");
+                ModelState.AddModelError(nameof(model.ResoCatId), L("ResourceCategorySelectionRequired"));
             }
 
             if (string.IsNullOrWhiteSpace(model.Code))
             {
-                ModelState.AddModelError(nameof(model.Code), "Kaynak kodu zorunludur.");
+                ModelState.AddModelError(nameof(model.Code), L("ResourceCodeRequired"));
             }
 
             if (model.Sequence < 0)

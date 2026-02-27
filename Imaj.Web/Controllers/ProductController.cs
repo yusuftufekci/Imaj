@@ -24,9 +24,9 @@ namespace Imaj.Web.Controllers
             var filterDto = new ProductFilterDto
             {
                 Code = f.Code,
-                Category = f.Category == "Tümü" ? null : f.Category, // Handle "Tümü" from frontend dropdown
-                ProductGroup = f.ProductGroup == "Tümü" ? null : f.ProductGroup,
-                Function = f.Function == "Tümü" ? null : f.Function,
+                Category = IsAllOption(f.Category) ? null : f.Category,
+                ProductGroup = IsAllOption(f.ProductGroup) ? null : f.ProductGroup,
+                Function = IsAllOption(f.Function) ? null : f.Function,
                 IsInvalid = f.IsInvalid,
                 Page = f.Page,
                 PageSize = f.PageSize > 0 ? f.PageSize : 10
@@ -87,6 +87,18 @@ namespace Imaj.Web.Controllers
                 return Json(result.Data);
             }
             return BadRequest(result.Message);
+        }
+
+        private static bool IsAllOption(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return true;
+            }
+
+            return value.Equals("Tümü", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("Tumu", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("All", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

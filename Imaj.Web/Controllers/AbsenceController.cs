@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IAbsenceService _absenceService;
 
-        public AbsenceController(IAbsenceService absenceService, ILogger<AbsenceController> logger)
-            : base(logger)
+        public AbsenceController(IAbsenceService absenceService, ILogger<AbsenceController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _absenceService = absenceService;
         }
@@ -69,7 +71,7 @@ namespace Imaj.Web.Controllers
                 && normalizedFilter.StartDateTo.HasValue
                 && normalizedFilter.StartDateFrom.Value > normalizedFilter.StartDateTo.Value)
             {
-                ModelState.AddModelError(string.Empty, "Baslangic tarihi araliginda ilk tarih ikinci tarihten buyuk olamaz.");
+                ModelState.AddModelError(string.Empty, L("StartDateRangeInvalid"));
                 normalizedFilter.StartDateTo = normalizedFilter.StartDateFrom;
             }
 
@@ -77,7 +79,7 @@ namespace Imaj.Web.Controllers
                 && normalizedFilter.EndDateTo.HasValue
                 && normalizedFilter.EndDateFrom.Value > normalizedFilter.EndDateTo.Value)
             {
-                ModelState.AddModelError(string.Empty, "Bitis tarihi araliginda ilk tarih ikinci tarihten buyuk olamaz.");
+                ModelState.AddModelError(string.Empty, L("EndDateRangeInvalid"));
                 normalizedFilter.EndDateTo = normalizedFilter.EndDateFrom;
             }
 
@@ -126,7 +128,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _absenceService.GetAbsenceDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Mazeret bulunamadi.");
+                ShowError(detailResult.Message ?? L("AbsenceNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -191,7 +193,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? "Kaynak listesi alinamadi.");
+                return BadRequest(result.Message ?? L("ResourceListUnavailable"));
             }
 
             return Json(new
@@ -219,11 +221,11 @@ namespace Imaj.Web.Controllers
             var result = await _absenceService.CreateAbsenceAsync(MapToCreateDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Mazeret kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("AbsenceSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Mazeret kaydedildi.");
+            ShowSuccess(result.Message ?? L("AbsenceSavedSuccess"));
             return RedirectToAction("Index");
         }
 
@@ -387,22 +389,22 @@ namespace Imaj.Web.Controllers
         {
             if (!model.FunctionId.HasValue || model.FunctionId.Value <= 0)
             {
-                ModelState.AddModelError(nameof(model.FunctionId), "Fonksiyon secimi zorunludur.");
+                ModelState.AddModelError(nameof(model.FunctionId), L("FunctionSelectionRequired"));
             }
 
             if (!model.ReasonId.HasValue || model.ReasonId.Value <= 0)
             {
-                ModelState.AddModelError(nameof(model.ReasonId), "Gerekce secimi zorunludur.");
+                ModelState.AddModelError(nameof(model.ReasonId), L("ReasonSelectionRequired"));
             }
 
             if (string.IsNullOrWhiteSpace(model.Name))
             {
-                ModelState.AddModelError(nameof(model.Name), "Ad alani zorunludur.");
+                ModelState.AddModelError(nameof(model.Name), L("NameFieldRequired"));
             }
 
             if (model.StartDate >= model.EndDate)
             {
-                ModelState.AddModelError(nameof(model.EndDate), "Bitis tarihi baslangic tarihinden buyuk olmalidir.");
+                ModelState.AddModelError(nameof(model.EndDate), L("EndDateMustBeAfterStartDate"));
             }
         }
 

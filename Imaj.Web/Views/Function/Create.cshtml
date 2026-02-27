@@ -3,7 +3,7 @@
 @model FunctionCreateViewModel
 
 @{
-    ViewData["Title"] = "Yeni Fonksiyon";
+    ViewData["Title"] = Localizer["Function"];
     var languageNameById = Model.Languages
         .GroupBy(x => x.Id)
         .ToDictionary(x => x.Key, x => x.First().Name);
@@ -99,7 +99,7 @@
      class="space-y-6">
 
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Fonksiyon</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["Function"]</h2>
     </div>
 
     @if (!ViewData.ModelState.IsValid)
@@ -115,7 +115,7 @@
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Fonksiyon</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">@Localizer["Function"]</h3>
                 </div>
 
                 <div class="p-4 space-y-4">
@@ -123,8 +123,8 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Dil</th>
-                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Language"]</th>
+                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Name"]</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 bg-white">
@@ -156,7 +156,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Rezervasyon Araligi</label>
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">@Localizer["ReservationRange"]</label>
                         <div class="md:col-span-7">
                             <input type="hidden" name="SourceIntervalId" value="@sourceIntervalId" />
                             <input type="hidden" name="SourceIntervalName" value="@sourceIntervalName" />
@@ -167,7 +167,7 @@
                                    class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm bg-gray-100 text-gray-700 cursor-not-allowed">
                         </div>
 
-                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Rezervasyon Uyumlu</label>
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">@Localizer["ReservationCompatible"]</label>
                         <div class="md:col-span-7">
                             <input type="hidden" name="SourceReservable" value="@(sourceReservable ? "true" : "false")" />
                             <input type="hidden" name="Reservable" value="@(sourceReservable ? "true" : "false")" />
@@ -177,17 +177,17 @@
                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-not-allowed">
                         </div>
 
-                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Zorunlu Mesai</label>
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">@Localizer["SelectTimeType"]</label>
                         <div class="md:col-span-7">
                             <input type="checkbox" name="WorkMandatory" value="true" x-model="form.workMandatory" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         </div>
 
-                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Zorunlu Urun</label>
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">@Localizer["ProductSelectionRequired"]</label>
                         <div class="md:col-span-7">
                             <input type="checkbox" name="ProdMandatory" value="true" x-model="form.prodMandatory" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         </div>
 
-                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">Gecersiz</label>
+                        <label class="md:col-span-5 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</label>
                         <div class="md:col-span-7">
                             <input type="checkbox" name="IsInvalid" value="true" x-model="form.isInvalid" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         </div>
@@ -197,15 +197,15 @@
 
             <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Urun</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">@Localizer["Product"]</h3>
                 </div>
 
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
-                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kod</th>
-                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">@Localizer["Selected"]</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Code"]</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Name"]</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
@@ -223,14 +223,14 @@
                             </tr>
                         </template>
                         <tr x-show="products.length === 0">
-                            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">@Localizer["NoRecordsFound"]</td>
                         </tr>
                     </tbody>
                 </table>
 
                 <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm">
-                    <button type="button" @@click="removeSelectedProducts" class="text-red-600 font-semibold hover:underline">Sil</button>
-                    <button type="button" @@click="openProductModal" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                    <button type="button" @@click="removeSelectedProducts" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
+                    <button type="button" @@click="openProductModal" class="text-blue-700 font-semibold hover:underline">@Localizer["Add"]</button>
                 </div>
             </section>
         </div>
@@ -245,11 +245,11 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">Secili</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">@Localizer["Selected"]</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Name"]</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-36">Minimum Deger</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-36">Maksimum Deger</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kaynak Kategorileri</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["ResoCat"]</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
@@ -279,8 +279,8 @@
                                             </div>
                                         </template>
                                         <div class="flex items-center gap-3 mt-2 text-sm">
-                                            <button type="button" @@click="removeSelectedRuleResoCats(rule.key)" class="text-red-600 font-semibold hover:underline">Sil</button>
-                                            <button type="button" @@click="openResoCatModal(rule.key)" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                                            <button type="button" @@click="removeSelectedRuleResoCats(rule.key)" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
+                                            <button type="button" @@click="openResoCatModal(rule.key)" class="text-blue-700 font-semibold hover:underline">@Localizer["Add"]</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -294,10 +294,10 @@
                 </div>
 
                 <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center gap-3 text-sm">
-                    <button type="button" @@click="removeSelectedRules" class="text-red-600 font-semibold hover:underline">Sil</button>
-                    <span class="text-blue-900 font-semibold">Adet</span>
+                    <button type="button" @@click="removeSelectedRules" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
+                    <span class="text-blue-900 font-semibold">@Localizer["Quantity"]</span>
                     <input type="number" x-model.number="newRuleCount" min="1" class="w-16 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                    <button type="button" @@click="addRuleRows" class="text-blue-700 font-semibold hover:underline">Ekle</button>
+                    <button type="button" @@click="addRuleRows" class="text-blue-700 font-semibold hover:underline">@Localizer["Add"]</button>
                 </div>
             </section>
         </template>
@@ -305,14 +305,14 @@
         <div class="flex items-center justify-center gap-4 py-2">
             <label class="inline-flex items-center text-sm text-gray-700">
                 <input type="checkbox" name="AutomaticForward" value="true" x-model="form.automaticForward" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                <span class="ml-2">Otomatik Ilerle</span>
+                <span class="ml-2">@Localizer["AutomaticForward"]</span>
             </label>
 
             <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                Kaydet
+                @Localizer["Save"]
             </button>
             <a href="/Function" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                Vazgec
+                @Localizer["Cancel"]
             </a>
         </div>
     </form>

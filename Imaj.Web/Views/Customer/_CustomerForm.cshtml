@@ -34,9 +34,9 @@
          
          <!-- Sol Kolon -->
          <div class="space-y-6">
-             <!-- Tanım -->
+             <!-- @Localizer["Description"] -->
              <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                 <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">Tanım</h4>
+                 <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">@Localizer["Description"]</h4>
                  <div class="space-y-3">
                      <div class="grid grid-cols-3 gap-4 items-center">
                          <label class="text-sm font-medium text-gray-700 text-right">Kod <span class="text-red-500">*</span></label>
@@ -47,11 +47,11 @@
                          <input asp-for="Name" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-start">
-                         <label class="text-sm font-medium text-gray-700 text-right mt-1">Notlar</label>
+                         <label class="text-sm font-medium text-gray-700 text-right mt-1">@Localizer["Notes"]</label>
                          <textarea asp-for="Notes" rows="3" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Geçersiz</label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["Invalid"]</label>
                          <div class="col-span-2">
                              <input type="checkbox" asp-for="IsInvalid" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                          </div>
@@ -61,18 +61,18 @@
 
              <!-- İletişim -->
              <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                 <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">İletişim</h4>
+                 <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">@Localizer["ContactInfo"]</h4>
                  <div class="space-y-3">
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Sahibi</label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["Owner"]</label>
                          <input asp-for="Owner" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">İlgili</label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["Related"]</label>
                          <input asp-for="RelatedPerson" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Telefon</label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["Phone"]</label>
                          <input type="tel" asp-for="Phone" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
@@ -80,7 +80,7 @@
                          <input type="tel" asp-for="Fax" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">E-Mail</label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["Email"]</label>
                          <input type="email" asp-for="Email" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                  </div>
@@ -91,22 +91,22 @@
          <div class="space-y-6">
              <!-- Adres -->
              <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                 <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">Adres</h4>
+                 <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">@Localizer["Address"]</h4>
                  <div class="space-y-3">
                      <div class="grid grid-cols-3 gap-4 items-start">
-                         <label class="text-sm font-medium text-gray-700 text-right mt-1">Adres <span class="text-red-500">*</span></label>
+                         <label class="text-sm font-medium text-gray-700 text-right mt-1">@Localizer["Address"] <span class="text-red-500">*</span></label>
                          <textarea asp-for="Address" rows="2" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Şehir <span class="text-red-500">*</span></label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["City"] <span class="text-red-500">*</span></label>
                          <input asp-for="City" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Alan Kodu</label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["AreaCode"]</label>
                          <input asp-for="AreaCode" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Ülke <span class="text-red-500">*</span></label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["Country"] <span class="text-red-500">*</span></label>
                          <input asp-for="Country" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                  </div>
@@ -114,18 +114,18 @@
 
              <!-- Fatura -->
              <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                 <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">Fatura</h4>
+                 <h4 class="text-sm font-bold text-gray-700 mb-4 border-b border-blue-200 pb-1">@Localizer["Invoice"]</h4>
                  <div class="space-y-3">
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Fatura Adı</label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["InvoiceName"]</label>
                           <input asp-for="InvoiceName" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Vergi Dairesi <span class="text-red-500">*</span></label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["TaxOffice"] <span class="text-red-500">*</span></label>
                          <input asp-for="TaxOffice" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                      <div class="grid grid-cols-3 gap-4 items-center">
-                         <label class="text-sm font-medium text-gray-700 text-right">Vergi Numarası <span class="text-red-500">*</span></label>
+                         <label class="text-sm font-medium text-gray-700 text-right">@Localizer["TaxNumber"] <span class="text-red-500">*</span></label>
                          <input inputmode="numeric" asp-for="TaxNumber" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                      </div>
                  </div>
@@ -134,7 +134,7 @@
 
      </div>
      
-     <!-- Ürün Kategorisi Bölümü -->
+     <!-- @Localizer["ProductCategory"] Bölümü -->
      <div class="mt-8" x-data='customerFormState(@Json.Serialize(Model.ProductCategories.Select(x => new { id = x.Id, name = x.Name, discount = x.Discount })) || [])'
      x-on:product-categories-selected.window="addCategories($event.detail.items)">
      
@@ -143,7 +143,7 @@
 
          <div class="bg-gray-50 px-4 py-3 border border-gray-200 rounded-t-md flex justify-between items-center">
              <h4 class="text-sm font-bold text-gray-700">
-                 Ürün Kategorisi (<span x-text="selectedProductCategories.length">0</span>)
+                 @Localizer["ProductCategory"] (<span x-text="selectedProductCategories.length">0</span>)
              </h4>
          </div>
          
@@ -152,10 +152,10 @@
              <table class="min-w-full divide-y divide-gray-200" x-show="selectedProductCategories.length > 0">
                  <thead class="bg-gray-50">
                      <tr>
-                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad</th>
-                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">İndirim</th>
+                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Name"]</th>
+                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">@Localizer["Discount"]</th>
                          <th scope="col" class="relative px-6 py-3 w-16">
-                             <span class="sr-only">Sil</span>
+                             <span class="sr-only">@Localizer["Delete"]</span>
                          </th>
                      </tr>
                  </thead>
@@ -180,7 +180,7 @@
                                  <input type="hidden" :name="'ProductCategories[' + index + '].Name'" :value="category.name">
                              </td>
                              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                 <button type="button" x-on:click="removeCategory(index)" class="text-gray-400 hover:text-red-600 bg-white hover:bg-red-50 p-1.5 rounded-full transition-all duration-200 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" title="Kategoriyi Kaldır">
+                                 <button type="button" x-on:click="removeCategory(index)" class="text-gray-400 hover:text-red-600 bg-white hover:bg-red-50 p-1.5 rounded-full transition-all duration-200 opacity-60 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" title="@Localizer["Delete"]">
                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                      </svg>
@@ -193,17 +193,15 @@
              
              <!-- Boş Durum -->
              <div x-show="selectedProductCategories.length === 0" class="p-8 text-center text-gray-500 italic">
-                 Henüz ürün kategorisi seçilmedi.
+                 @Localizer["NoRecordsFound"]
              </div>
 
              <!-- Footer / Actions -->
              <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
                   <div class="flex items-center space-x-2">
-                     <button type="button" x-on:click="selectedProductCategories = []" class="text-xs text-red-600 hover:text-red-800 hover:underline">Tümünü Temizle</button>
+                     <button type="button" x-on:click="selectedProductCategories = []" class="text-xs text-red-600 hover:text-red-800 hover:underline">@Localizer["ClearAll"]</button>
                      <span class="text-xs text-gray-300">|</span>
-                     <button type="button" x-on:click="$dispatch('open-product-category-modal')" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        + Ekle
-                     </button>
+                     <button type="button" x-on:click="$dispatch('open-product-category-modal')" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">+ </button>
                  </div>
              </div>
          </div>
@@ -218,10 +216,10 @@
 <div class="px-4 py-3 bg-gray-50 text-center sm:px-6 space-y-3">
      <div class="flex justify-center space-x-3">
         <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Kaydet
+            @Localizer["Save"]
         </button>
         <a href="/Customer" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-            Vazgeç
+            @Localizer["Cancel"]
         </a>
      </div>
 </div>

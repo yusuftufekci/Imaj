@@ -1,16 +1,17 @@
 @using Imaj.Service.DTOs
+@using System.Globalization
 @model LoginDto
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = Localizer["Login"];
     Layout = null;
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@CultureInfo.CurrentUICulture.Name">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Imaj</title>
+    <title>@Localizer["Login"] - Imaj</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
@@ -19,36 +20,36 @@
     <div class="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden">
         <div class="p-8">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Welcome Back</h1>
-                <p class="text-gray-500 mt-2">Please sign in to your account</p>
+                <h1 class="text-3xl font-bold text-gray-900">@Localizer["WelcomeBack"]</h1>
+                <p class="text-gray-500 mt-2">@Localizer["PleaseSignIn"]</p>
             </div>
 
             <form id="loginForm" class="space-y-6">
                 <div class="mb-4">
-                    <label asp-for="Username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                    <label asp-for="Username" class="block text-gray-700 text-sm font-bold mb-2">@Localizer["Username"]</label>
                     <input asp-for="Username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
                 </div>
                 <div class="mb-6">
-                    <label asp-for="Password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <label asp-for="Password" class="block text-gray-700 text-sm font-bold mb-2">@Localizer["Password"]</label>
                     <input asp-for="Password" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" required>
                 </div>
 
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
                         <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                        <label for="remember-me" class="ml-2 block text-sm text-gray-900">Remember me</label>
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-900">@Localizer["RememberMe"]</label>
                     </div>
                 </div>
 
                 <div>
                     <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
-                        Sign in
+                        @Localizer["Login"]
                     </button>
                 </div>
             </form>
         </div>
         <div class="px-8 py-4 bg-gray-50 border-t border-gray-200 text-center">
-            <p class="text-xs text-gray-500">Protected by Imaj Security System</p>
+            <p class="text-xs text-gray-500">@Localizer["ProtectedByImajSecuritySystem"]</p>
         </div>
     </div>
 
@@ -79,7 +80,7 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Oops...',
-                        text: result.message || 'Something went wrong!',
+                        text: result.message || '@Localizer["GenericError"]',
                         confirmButtonColor: '#4f46e5'
                     });
                 }
@@ -87,8 +88,8 @@
                 console.error('Error:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'System Error',
-                    text: 'An unexpected error occurred. Please try again later.',
+                    title: '@Localizer["ErrorTitle"]',
+                    text: '@Localizer["GenericError"]',
                     confirmButtonColor: '#4f46e5'
                 });
             }

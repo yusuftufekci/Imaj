@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly ITaxTypeService _taxTypeService;
 
-        public TaxTypeController(ITaxTypeService taxTypeService, ILogger<TaxTypeController> logger)
-            : base(logger)
+        public TaxTypeController(ITaxTypeService taxTypeService, ILogger<TaxTypeController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _taxTypeService = taxTypeService;
         }
@@ -87,7 +89,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _taxTypeService.GetTaxTypeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Vergi tipi bulunamadi.");
+                ShowError(detailResult.Message ?? L("TaxTypeNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -113,7 +115,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _taxTypeService.GetTaxTypeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Vergi tipi bulunamadi.");
+                ShowError(detailResult.Message ?? L("TaxTypeNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -158,11 +160,11 @@ namespace Imaj.Web.Controllers
             var result = await _taxTypeService.UpdateTaxTypeAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Vergi tipi guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("TaxTypeUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Vergi tipi guncellendi.");
+            ShowSuccess(result.Message ?? L("TaxTypeUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -188,11 +190,11 @@ namespace Imaj.Web.Controllers
             var result = await _taxTypeService.CreateTaxTypeAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Vergi tipi kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("TaxTypeSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Vergi tipi kaydedildi.");
+            ShowSuccess(result.Message ?? L("TaxTypeSavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create", new { code = model.Code });
@@ -335,23 +337,23 @@ namespace Imaj.Web.Controllers
         {
             if (string.IsNullOrWhiteSpace(model.Code))
             {
-                ModelState.AddModelError(nameof(model.Code), "Kod zorunludur.");
+                ModelState.AddModelError(nameof(model.Code), L("CodeRequired"));
             }
 
             if (model.Code.Trim().Length > 8)
             {
-                ModelState.AddModelError(nameof(model.Code), "Kod en fazla 8 karakter olabilir.");
+                ModelState.AddModelError(nameof(model.Code), L("CodeMaxLength8"));
             }
 
             if (model.TaxPercentage < 0 || model.TaxPercentage > 100)
             {
-                ModelState.AddModelError(nameof(model.TaxPercentage), "Vergi orani 0 ile 100 arasinda olmalidir.");
+                ModelState.AddModelError(nameof(model.TaxPercentage), L("TaxRateRangeInvalid"));
             }
 
             var hasName = model.Names.Any(x => x.LanguageId > 0 && !string.IsNullOrWhiteSpace(x.Name));
             if (!hasName)
             {
-                ModelState.AddModelError(string.Empty, "En az bir dilde ad girilmelidir.");
+                ModelState.AddModelError(string.Empty, L("AtLeastOneLocalizedNameRequired"));
             }
         }
 

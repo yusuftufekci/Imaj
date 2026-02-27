@@ -3,7 +3,7 @@
 @model CustomerFilterModel
 
 @{
-    ViewData["Title"] = "Müşteri Sorgulama";
+    ViewData["Title"] = Localizer["CustomerSearch"];
 }
 
 <div x-data="customerIndex()" class="space-y-6">
@@ -11,58 +11,58 @@
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                Müşteri İşlemleri
+                @Localizer["CustomerOperations"]
             </h2>
         </div>
     </div>
 
-    <!-- Müşteri Sorgulama Bölümü -->
+    <!-- @Localizer["CustomerSearch"] Bölümü -->
     <form action="/Customer/List" method="get" class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-5 sm:p-6">
             <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 text-center border-b pb-2">
-                Müşteri Sorgulama
+                @Localizer["CustomerSearch"]
             </h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 <!-- Sol Kolon -->
                 <div class="space-y-6">
-                    <!-- Ana Kriterler -->
+                    <!-- @Localizer["MainCriteria"] -->
                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">Ana Kriterler</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["MainCriteria"]</h4>
                         <div class="space-y-2">
                             <div class="form-group">
-                                <label class="form-label">Kod</label>
+                                <label class="form-label">@Localizer["Code"]</label>
                                 <input type="text" name="Code" class="form-input">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Ad</label>
+                                <label class="form-label">@Localizer["Name"]</label>
                                 <input type="text" name="Name" class="form-input">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Geçersiz</label>
+                                <label class="form-label">@Localizer["Invalid"]</label>
                                 <select name="IsInvalid" class="form-input">
-                                    <option value="">Tümü</option>
-                                    <option value="false">Hayır</option>
-                                    <option value="true">Evet</option>
+                                    <option value="">@Localizer["AllOption"]</option>
+                                    <option value="false">@Localizer["No"]</option>
+                                    <option value="true">@Localizer["Yes"]</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    <!-- İletişim Sorgulama -->
+                    <!-- @Localizer["ContactSearch"] -->
                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">İletişim Sorgulama</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["ContactSearch"]</h4>
                         <div class="space-y-2">
                             <div class="form-group">
-                                <label class="form-label">Sahibi</label>
+                                <label class="form-label">@Localizer["Owner"]</label>
                                 <input type="text" name="Owner" class="form-input">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">İlgili</label>
+                                <label class="form-label">@Localizer["Related"]</label>
                                 <input type="text" name="RelatedPerson" class="form-input">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Telefon</label>
+                                <label class="form-label">@Localizer["Phone"]</label>
                                 <input type="text" name="Phone" class="form-input">
                             </div>
                             <div class="form-group">
@@ -70,7 +70,7 @@
                                 <input type="text" name="Fax" class="form-input">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">E-Mail</label>
+                                <label class="form-label">@Localizer["Email"]</label>
                                 <input type="text" name="Email" class="form-input">
                             </div>
                         </div>
@@ -79,52 +79,52 @@
 
                 <!-- Sağ Kolon -->
                 <div class="space-y-6">
-                    <!-- Adres Sorgulama -->
+                    <!-- @Localizer["AddressSearch"] -->
                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">Adres Sorgulama</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["AddressSearch"]</h4>
                         <div class="space-y-2">
                              <div class="form-group">
-                                <label class="form-label">Şehir</label>
+                                <label class="form-label">@Localizer["City"]</label>
                                 <input type="text" name="City" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             </div>
                             <div class="grid grid-cols-3 gap-4 items-center">
-                                <label class="form-label">Alan Kodu</label>
+                                <label class="form-label">@Localizer["AreaCode"]</label>
                                 <input type="text" name="AreaCode" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             </div>
                             <div class="grid grid-cols-3 gap-4 items-center">
-                                <label class="form-label">Ülke</label>
+                                <label class="form-label">@Localizer["Country"]</label>
                                 <input type="text" name="Country" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Fatura Sorgulama -->
+                    <!-- @Localizer["InvoiceSearch"] -->
                      <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">Fatura Sorgulama</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["InvoiceSearch"]</h4>
                         <div class="space-y-2">
                              <div class="form-group">
                                 <label class="form-label">Vergi Dairesi</label>
                                 <input type="text" name="TaxOffice" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             </div>
                             <div class="grid grid-cols-3 gap-4 items-center">
-                                <label class="form-label">Vergi Numarası</label>
+                                <label class="form-label">@Localizer["TaxNumber"]</label>
                                 <input type="text" name="TaxNumber" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             </div>
                         </div>
                     </div>
 
-                    <!-- İş Sorgulama -->
+                    <!-- @Localizer["JobSearch"] -->
                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">İş Sorgulama</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["JobSearch"]</h4>
                         <div class="space-y-2">
                              <div class="form-group">
-                                <label class="form-label">Durum</label>
+                                <label class="form-label">@Localizer["Status"]</label>
                                 @{
                                     // ViewBag'den State listesini al
                                     var states = ViewBag.States as List<Imaj.Service.DTOs.StateDto> ?? new List<Imaj.Service.DTOs.StateDto>();
                                 }
                                 <select name="JobStatus" class="col-span-2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="">Tümü</option>
+                                    <option value="">@Localizer["AllOption"]</option>
                                     @foreach (var state in states)
                                     {
                                         <option value="@state.Id">@state.Name</option>
@@ -139,44 +139,44 @@
             <!-- Butonlar -->
              <div class="mt-8 flex justify-center space-x-3">
                  <div class="flex items-center space-x-2 mr-4">
-                     <span class="text-sm text-gray-500">İlk</span>
+                     <span class="text-sm text-gray-500">@Localizer["First"]</span>
                      <input type="number" name="Page" value="1" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
-                     <span class="text-sm text-gray-500">Sayfa Boyu</span>
+                     <span class="text-sm text-gray-500">@Localizer["PageSize"]</span>
                      <input type="number" name="PageSize" value="20" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
                  </div>
 
                  <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Sorgula
+                    @Localizer["Search"]
                 </button>
                 <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Temizle
+                    @Localizer["Clear"]
                 </button>
             </div>
             
         </div>
     </form>
 
-    <!-- Müşteri Yaratma -->
+    <!-- @Localizer["CustomerCreation"] -->
     <div class="bg-white shadow sm:rounded-lg mt-6">
         <div class="px-4 py-5 sm:p-6 text-center">
              <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 border-b pb-2">
-                Müşteri Yaratma
+                @Localizer["CustomerCreation"]
             </h3>
             
             <a href="/Customer/Create" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Yeni Müşteri Yarat
+                @Localizer["CreateNewCustomer"]
             </a>
         </div>
     </div>
 
-    <!-- Müşteri Raporları -->
+    <!-- @Localizer["CustomerReports"] -->
     <div class="bg-white shadow sm:rounded-lg mt-6 text-center">
          <div class="px-4 py-5 sm:p-6">
              <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 border-b pb-2">
-                Müşteri Raporları
+                @Localizer["CustomerReports"]
             </h3>
             <button type="button" @@click="printReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Rapor Bas
+                @Localizer["PrintReport"]
             </button>
          </div>
     </div>
@@ -189,7 +189,7 @@
             newCustomerCode: '',
             async createCustomer() {
                 if(!this.newCustomerCode) {
-                    alert('Lütfen bir müşteri kodu giriniz.');
+                    alert('');
                     return;
                 }
                 
@@ -203,12 +203,12 @@
                     alert(result.message);
                     this.newCustomerCode = '';
                 } catch(e) {
-                     alert('Yaratma işlemi sırasında hata oluştu.');
+                     alert('');
                 }
             },
 
             printReport() {
-                alert('Rapor basma işlemi başlatıldı.');
+                alert('');
             }
         }
     }

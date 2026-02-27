@@ -5,7 +5,7 @@
 @inject IPermissionViewService PermissionViewService
 
 @{
-    ViewData["Title"] = "Kaynaklar";
+    ViewData["Title"] = Localizer["Resource"];
     var canView = await PermissionViewService.CanExecuteMethodAsync(1029);
     var canEdit = await PermissionViewService.CanExecuteMethodAsync(1031);
 
@@ -45,7 +45,7 @@
 
 <div x-data="resourceListPage()" class="space-y-6">
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Kaynaklar</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["Resource"]</h2>
     </div>
 
     <form x-ref="listForm" method="post" action="/Resource/Detail" class="bg-white border border-gray-200 shadow sm:rounded-lg">
@@ -58,12 +58,12 @@
                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">
                             <input type="checkbox" @@click="toggleAll" :checked="allSelected" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Sira No</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kod</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fonksiyon</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kategori</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Gecersiz</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["SequenceNo"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Code"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Function"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Category"]</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Invalid"]</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
@@ -95,7 +95,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="7" class="px-4 py-10 text-center text-sm text-gray-500">Kayit bulunamadi.</td>
+                            <td colspan="7" class="px-4 py-10 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
                         </tr>
                     }
                 </tbody>
@@ -118,19 +118,15 @@
             <div class="mt-4 flex justify-center gap-2">
                 @if (canView)
                 {
-                    <button type="button" @@click="submitTo('/Resource/Detail')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                        Goruntule
-                    </button>
+                    <button type="button" @@click="submitTo('/Resource/Detail')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">@Localizer["View"]</button>
                 }
                 @if (canEdit)
                 {
                     <button type="button" @@click="submitTo('/Resource/Edit')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">
-                        Degistir
+                        @Localizer["Edit"]
                     </button>
                 }
-                <a href="/Resource" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    Geri
-                </a>
+                <a href="/Resource" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">@Localizer["Back"]</a>
             </div>
         </div>
     </form>

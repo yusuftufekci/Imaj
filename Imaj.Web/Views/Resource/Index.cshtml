@@ -3,29 +3,29 @@
 @inject IPermissionViewService PermissionViewService
 
 @{
-    ViewData["Title"] = "Kaynak Sorgulama";
+    ViewData["Title"] = Localizer["Resource"];
     var canAdd = await PermissionViewService.CanExecuteMethodAsync(1032);
 }
 
 <div class="space-y-8">
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Kaynak Sorgulama</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["ResourceSearch"]</h2>
     </div>
 
     <form method="get" action="/Resource/List" class="bg-white border border-gray-200 shadow sm:rounded-lg">
         <div class="px-4 py-5 sm:p-6">
             <div class="bg-blue-50 p-4 rounded-md border border-blue-200 max-w-4xl mx-auto">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">Kriterler</h3>
+                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["MainCriteria"]</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Kod</label>
+                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">@Localizer["Code"]</label>
                     <input type="text"
                            name="Code"
                            value="@Model.Filter.Code"
                            maxlength="8"
                            class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm uppercase">
 
-                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Sira No Araligi</label>
+                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">@Localizer["SequenceNo"]</label>
                     <div class="md:col-span-3 grid grid-cols-2 gap-2">
                         <input type="number" name="SequenceFrom" value="@Model.Filter.SequenceFrom" min="0" class="shadow-sm border-gray-300 rounded-md sm:text-sm">
                         <input type="number" name="SequenceTo" value="@Model.Filter.SequenceTo" min="0" class="shadow-sm border-gray-300 rounded-md sm:text-sm">
@@ -33,9 +33,9 @@
                 </div>
 
                 <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Fonksiyon</label>
+                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">@Localizer["Function"]</label>
                     <select name="FunctionId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">Tumu</option>
+                        <option value="">@Localizer["AllOption"]</option>
                         @foreach (var option in Model.FunctionOptions)
                         {
                             if (Model.Filter.FunctionId == option.Id)
@@ -49,9 +49,9 @@
                         }
                     </select>
 
-                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Kaynak Kategorisi</label>
+                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">@Localizer["ResoCat"]</label>
                     <select name="ResoCatId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">Tumu</option>
+                        <option value="">@Localizer["AllOption"]</option>
                         @foreach (var option in Model.ResoCatOptions)
                         {
                             if (Model.Filter.ResoCatId == option.Id)
@@ -67,41 +67,41 @@
                 </div>
 
                 <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">Gecersiz</label>
+                    <label class="md:col-span-3 text-sm font-medium text-blue-900 md:text-right">@Localizer["Invalid"]</label>
                     <select name="IsInvalid" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">Tumu</option>
+                        <option value="">@Localizer["AllOption"]</option>
                         @if (Model.Filter.IsInvalid == false)
                         {
-                            <option value="false" selected>Hayir</option>
+                            <option value="false" selected>@Localizer["No"]</option>
                         }
                         else
                         {
-                            <option value="false">Hayir</option>
+                            <option value="false">@Localizer["No"]</option>
                         }
 
                         @if (Model.Filter.IsInvalid == true)
                         {
-                            <option value="true" selected>Evet</option>
+                            <option value="true" selected>@Localizer["Yes"]</option>
                         }
                         else
                         {
-                            <option value="true">Evet</option>
+                            <option value="true">@Localizer["Yes"]</option>
                         }
                     </select>
                 </div>
             </div>
 
             <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <span class="text-sm text-blue-900 font-semibold">Ilk</span>
+                <span class="text-sm text-blue-900 font-semibold">@Localizer["First"]</span>
                 <input type="number" name="Page" value="@(Model.Filter.Page <= 0 ? 1 : Model.Filter.Page)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                <span class="text-sm text-blue-900 font-semibold">Sayfa Boyu</span>
+                <span class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</span>
                 <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
 
                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                    Sorgula
+                    @Localizer["Search"]
                 </button>
                 <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    Temizle
+                    @Localizer["Clear"]
                 </button>
             </div>
         </div>
@@ -111,16 +111,16 @@
     {
         <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
             <div class="px-4 py-5 sm:p-6 max-w-4xl mx-auto space-y-4">
-                <h3 class="text-3xl font-bold text-orange-600 text-center">Kaynak Yaratma</h3>
+                <h3 class="text-3xl font-bold text-orange-600 text-center">@Localizer["ResourceCreation"]</h3>
 
                 <form method="get" action="/Resource/Create" class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                    <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">Kaynak Yaratma</h4>
+                    <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["Resource"]</h4>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Fonksiyon</label>
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Function"]</label>
                         <div class="md:col-span-8">
                             <select name="functionId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
-                                <option value="">Seciniz</option>
+                                <option value="">@Localizer["SelectPrompt"]</option>
                                 @foreach (var option in Model.FunctionOptions)
                                 {
                                     if (Model.CreateFunctionId == option.Id)
@@ -135,10 +135,10 @@
                             </select>
                         </div>
 
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Kaynak Kategorisi</label>
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["ResoCat"]</label>
                         <div class="md:col-span-8">
                             <select name="resoCatId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
-                                <option value="">Seciniz</option>
+                                <option value="">@Localizer["SelectPrompt"]</option>
                                 @foreach (var option in Model.ResoCatOptions)
                                 {
                                     if (Model.CreateResoCatId == option.Id)
@@ -153,7 +153,7 @@
                             </select>
                         </div>
 
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Kod</label>
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Code"]</label>
                         <div class="md:col-span-8">
                             <input type="text" name="code" value="@Model.CreateCode" maxlength="8" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm uppercase">
                         </div>
@@ -161,7 +161,7 @@
 
                     <div class="mt-4 text-center">
                         <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                            Yeni Kaynak Yarat
+                            @Localizer["Resource"]
                         </button>
                     </div>
                 </form>

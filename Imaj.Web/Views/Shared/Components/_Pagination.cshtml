@@ -12,7 +12,10 @@
     - Toplam kayıt ve sayfa bilgisi
 *@
 
+@using Imaj.Web
+@using Microsoft.Extensions.Localization
 @model Imaj.Web.Models.Components.PaginationModel
+@inject IStringLocalizer<SharedResource> Localizer
 
 @{
     var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
@@ -27,59 +30,59 @@
 }
 
 <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-    <!-- Mobil görünüm -->
+    <!-- Mobile -->
     <div class="flex-1 flex justify-between sm:hidden">
         @if (showFirst)
         {
             <a href="@BuildUrl(1)" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                İlk
+                @Localizer["First"]
             </a>
         }
         @if (showPrevious)
         {
             <a href="@BuildUrl(Model.CurrentPage - 1)" 
                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Önceki
+                @Localizer["Previous"]
             </a>
         }
         @if (showNext)
         {
             <a href="@BuildUrl(Model.CurrentPage + 1)" 
                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Sonraki
+                @Localizer["Next"]
             </a>
         }
         @if (showLast)
         {
             <a href="@BuildUrl(totalPages)" 
                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Son
+                @Localizer["Last"]
             </a>
         }
     </div>
     
-    <!-- Desktop görünüm -->
+    <!-- Desktop -->
     <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div>
             <p class="text-sm text-gray-700">
-                Toplam <span class="font-medium">@Model.TotalCount</span> kayıt
+                @Localizer["Total"] <span class="font-medium">@Model.TotalCount</span> @Localizer["Records"]
                 @if (totalPages > 1)
                 {
-                    <text>, Sayfa <span class="font-medium">@Model.CurrentPage</span> / <span class="font-medium">@totalPages</span></text>
+                    <text>, @Localizer["Page"] <span class="font-medium">@Model.CurrentPage</span> / <span class="font-medium">@totalPages</span></text>
                 }
             </p>
         </div>
         <div>
             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                 
-                @* İlk Sayfa Butonu *@
+                @* First Page Button *@
                 @if (showFirst)
                 {
                     <a href="@BuildUrl(1)" 
                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                       title="İlk Sayfa">
-                        <span class="sr-only">İlk</span>
+                       title="@Localizer["First"]">
+                        <span class="sr-only">@Localizer["First"]</span>
                         <!-- Çift ok sola (<<) -->
                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
@@ -95,13 +98,13 @@
                     </span>
                 }
                 
-                @* Önceki Sayfa Butonu *@
+                @* Previous Page Button *@
                 @if (showPrevious)
                 {
                     <a href="@BuildUrl(Model.CurrentPage - 1)" 
                        class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                       title="Önceki Sayfa">
-                        <span class="sr-only">Önceki</span>
+                       title="@Localizer["Previous"]">
+                        <span class="sr-only">@Localizer["Previous"]</span>
                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                         </svg>
@@ -116,7 +119,7 @@
                     </span>
                 }
                 
-                @* Sayfa Numaraları *@
+                @* Page Numbers *@
                 @{
                     // Sayfa 1 her zaman göster
                     if (Model.CurrentPage > 3)
@@ -171,13 +174,13 @@
                     }
                 }
                 
-                @* Sonraki Sayfa Butonu *@
+                @* Next Page Button *@
                 @if (showNext)
                 {
                     <a href="@BuildUrl(Model.CurrentPage + 1)" 
                        class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                       title="Sonraki Sayfa">
-                        <span class="sr-only">Sonraki</span>
+                       title="@Localizer["Next"]">
+                        <span class="sr-only">@Localizer["Next"]</span>
                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                         </svg>
@@ -192,13 +195,13 @@
                     </span>
                 }
                 
-                @* Son Sayfa Butonu *@
+                @* Last Page Button *@
                 @if (showLast)
                 {
                     <a href="@BuildUrl(totalPages)" 
                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                       title="Son Sayfa">
-                        <span class="sr-only">Son</span>
+                       title="@Localizer["Last"]">
+                        <span class="sr-only">@Localizer["Last"]</span>
                         <!-- Çift ok sağa (>>) -->
                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd" />

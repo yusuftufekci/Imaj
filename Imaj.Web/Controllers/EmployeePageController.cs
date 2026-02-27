@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -23,8 +25,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IEmployeeService _employeeService;
 
-        public EmployeePageController(IEmployeeService employeeService, ILogger<EmployeePageController> logger)
-            : base(logger)
+        public EmployeePageController(IEmployeeService employeeService, ILogger<EmployeePageController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _employeeService = employeeService;
         }
@@ -93,7 +95,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _employeeService.GetEmployeeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Calisan bulunamadi.");
+                ShowError(detailResult.Message ?? L("EmployeeNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -120,7 +122,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _employeeService.GetEmployeeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Calisan bulunamadi.");
+                ShowError(detailResult.Message ?? L("EmployeeNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -163,11 +165,11 @@ namespace Imaj.Web.Controllers
             var result = await _employeeService.CreateEmployeeAsync(MapToUpsert(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Calisan kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("EmployeeSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Calisan kaydedildi.");
+            ShowSuccess(result.Message ?? L("EmployeeSavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create", new { code = model.Code });
@@ -192,11 +194,11 @@ namespace Imaj.Web.Controllers
             var result = await _employeeService.UpdateEmployeeAsync(MapToUpsert(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Calisan guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("EmployeeUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Calisan guncellendi.");
+            ShowSuccess(result.Message ?? L("EmployeeUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -395,22 +397,22 @@ namespace Imaj.Web.Controllers
         {
             if (string.IsNullOrWhiteSpace(model.Code))
             {
-                ModelState.AddModelError(nameof(model.Code), "Kod zorunludur.");
+                ModelState.AddModelError(nameof(model.Code), L("CodeRequired"));
             }
 
             if (string.IsNullOrWhiteSpace(model.Name))
             {
-                ModelState.AddModelError(nameof(model.Name), "Ad zorunludur.");
+                ModelState.AddModelError(nameof(model.Name), L("NameRequired"));
             }
 
             if (model.Code != null && model.Code.Trim().Length > 8)
             {
-                ModelState.AddModelError(nameof(model.Code), "Kod en fazla 8 karakter olabilir.");
+                ModelState.AddModelError(nameof(model.Code), L("CodeMaxLength8"));
             }
 
             if (model.Name != null && model.Name.Trim().Length > 32)
             {
-                ModelState.AddModelError(nameof(model.Name), "Ad en fazla 32 karakter olabilir.");
+                ModelState.AddModelError(nameof(model.Name), L("NameMaxLength32"));
             }
         }
 

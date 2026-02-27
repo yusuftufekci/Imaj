@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IUserService _userService;
 
-        public UserController(IUserService userService, ILogger<UserController> logger)
-            : base(logger)
+        public UserController(IUserService userService, ILogger<UserController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _userService = userService;
         }
@@ -100,7 +102,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _userService.GetUserDetailAsync(resolved.ResolvedId);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Kullanici bulunamadi.");
+                ShowError(detailResult.Message ?? L("UserNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -127,7 +129,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _userService.GetUserDetailAsync(resolved.ResolvedId);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Kullanici bulunamadi.");
+                ShowError(detailResult.Message ?? L("UserNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -189,7 +191,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? "Rol listesi alinamadi.");
+                return BadRequest(result.Message ?? L("RoleListUnavailable"));
             }
 
             return Json(new
@@ -218,7 +220,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? "Fonksiyon listesi alinamadi.");
+                return BadRequest(result.Message ?? L("FunctionListUnavailable"));
             }
 
             return Json(new
@@ -247,11 +249,11 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Kullanici guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("UserUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Kullanici guncellendi.");
+            ShowSuccess(result.Message ?? L("UserUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Code,
@@ -278,11 +280,11 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Kullanici kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("UserSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Kullanici kaydedildi.");
+            ShowSuccess(result.Message ?? L("UserSavedSuccess"));
             return RedirectToAction("Index");
         }
 

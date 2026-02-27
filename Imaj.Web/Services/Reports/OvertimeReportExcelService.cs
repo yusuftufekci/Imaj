@@ -1,32 +1,41 @@
 using ClosedXML.Excel;
 using Imaj.Service.DTOs;
+using Imaj.Web;
+using Microsoft.Extensions.Localization;
 
 namespace Imaj.Web.Services.Reports
 {
     public class OvertimeReportExcelService : IOvertimeReportExcelService
     {
+        private readonly IStringLocalizer<SharedResource> _localizer;
+
+        public OvertimeReportExcelService(IStringLocalizer<SharedResource> localizer)
+        {
+            _localizer = localizer;
+        }
+
         public byte[] BuildDetailedReport(List<OvertimeReportRowDto> rows, OvertimeReportExcelContext context)
         {
             using var workbook = new XLWorkbook();
-            var ws = workbook.Worksheets.Add("Detayli Mesai");
+            var ws = workbook.Worksheets.Add(L("DetailedOvertimeSheet"));
 
             ConfigureSheet(ws);
             SetDetailedColumns(ws);
-            WriteCommonHeader(ws, "Detaylı Mesai Raporu", context, 10);
+            WriteCommonHeader(ws, L("DetailedOvertimeReportTitle"), context, 10);
 
             const int headerRow = 6;
             WriteTableHeaders(ws, headerRow, new[]
             {
-                "Çalışan",
-                "Mesai Tipi",
-                "Görev Tipi",
-                "Referans",
-                "Tarih",
-                "Müşteri",
-                "Ad",
-                "Notlar",
-                "Miktar",
-                "Tutar"
+                L("Employee"),
+                L("OvertimeType"),
+                L("TaskType"),
+                L("Reference"),
+                L("Date"),
+                L("Customer"),
+                L("Name"),
+                L("Notes"),
+                L("Quantity"),
+                L("Amount")
             });
 
             var currentRow = headerRow + 1;
@@ -61,7 +70,7 @@ namespace Imaj.Web.Services.Reports
                 }
 
                 ws.Range(currentRow, 1, currentRow, 8).Merge();
-                ws.Cell(currentRow, 1).Value = $"{employeeGroup.Key.EmployeeName} Toplamı";
+                ws.Cell(currentRow, 1).Value = string.Format(L("EmployeeTotalFormat"), employeeGroup.Key.EmployeeName);
                 ws.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
                 ws.Cell(currentRow, 9).Value = employeeGroup.Sum(x => x.Quantity);
                 ws.Cell(currentRow, 10).Value = employeeGroup.Sum(x => x.Amount);
@@ -79,7 +88,8 @@ namespace Imaj.Web.Services.Reports
                 9,
                 10,
                 rows.Sum(x => x.Quantity),
-                rows.Sum(x => x.Amount));
+                rows.Sum(x => x.Amount),
+                L("ReportTotal"));
 
             FinalizeTable(ws, headerRow, currentRow, 10);
             return Save(workbook);
@@ -88,20 +98,20 @@ namespace Imaj.Web.Services.Reports
         public byte[] BuildSummaryReport(List<OvertimeSummaryReportRowDto> rows, OvertimeReportExcelContext context)
         {
             using var workbook = new XLWorkbook();
-            var ws = workbook.Worksheets.Add("Ozet Mesai");
+            var ws = workbook.Worksheets.Add(L("SummaryOvertimeSheet"));
 
             ConfigureSheet(ws);
             SetSummaryColumns(ws);
-            WriteCommonHeader(ws, "Özet Mesai Raporu", context, 5);
+            WriteCommonHeader(ws, L("SummaryOvertimeReportTitle"), context, 5);
 
             const int headerRow = 6;
             WriteTableHeaders(ws, headerRow, new[]
             {
-                "Çalışan",
-                "Mesai Tipi",
-                "Görev Tipi",
-                "Miktar",
-                "Tutar"
+                L("Employee"),
+                L("OvertimeType"),
+                L("TaskType"),
+                L("Quantity"),
+                L("Amount")
             });
 
             var currentRow = headerRow + 1;
@@ -128,7 +138,7 @@ namespace Imaj.Web.Services.Reports
                 }
 
                 ws.Range(currentRow, 1, currentRow, 3).Merge();
-                ws.Cell(currentRow, 1).Value = $"{employeeGroup.Key.EmployeeName} Toplamı";
+                ws.Cell(currentRow, 1).Value = string.Format(L("EmployeeTotalFormat"), employeeGroup.Key.EmployeeName);
                 ws.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
                 ws.Cell(currentRow, 4).Value = employeeGroup.Sum(x => x.Quantity);
                 ws.Cell(currentRow, 5).Value = employeeGroup.Sum(x => x.Amount);
@@ -146,7 +156,8 @@ namespace Imaj.Web.Services.Reports
                 4,
                 5,
                 rows.Sum(x => x.Quantity),
-                rows.Sum(x => x.Amount));
+                rows.Sum(x => x.Amount),
+                L("ReportTotal"));
 
             FinalizeTable(ws, headerRow, currentRow, 5);
             return Save(workbook);
@@ -155,18 +166,18 @@ namespace Imaj.Web.Services.Reports
         public byte[] BuildAdministrativeSummaryReport(List<OvertimeAdministrativeSummaryReportRowDto> rows, OvertimeReportExcelContext context)
         {
             using var workbook = new XLWorkbook();
-            var ws = workbook.Worksheets.Add("Idari Ozet Mesai");
+            var ws = workbook.Worksheets.Add(L("AdminSummaryOvertimeSheet"));
 
             ConfigureSheet(ws);
             SetAdministrativeSummaryColumns(ws);
-            WriteCommonHeader(ws, "İdari Özet Mesai Raporu", context, 3);
+            WriteCommonHeader(ws, L("AdminSummaryOvertimeReportTitle"), context, 3);
 
             const int headerRow = 6;
             WriteTableHeaders(ws, headerRow, new[]
             {
-                "Çalışan",
-                "Miktar",
-                "Tutar"
+                L("Employee"),
+                L("Quantity"),
+                L("Amount")
             });
 
             var currentRow = headerRow + 1;
@@ -188,7 +199,8 @@ namespace Imaj.Web.Services.Reports
                 2,
                 3,
                 rows.Sum(x => x.Quantity),
-                rows.Sum(x => x.Amount));
+                rows.Sum(x => x.Amount),
+                L("ReportTotal"));
 
             FinalizeTable(ws, headerRow, currentRow, 3);
             return Save(workbook);
@@ -230,7 +242,7 @@ namespace Imaj.Web.Services.Reports
             ws.Column(3).Width = 14;
         }
 
-        private static void WriteCommonHeader(IXLWorksheet ws, string title, OvertimeReportExcelContext context, int columnCount)
+        private void WriteCommonHeader(IXLWorksheet ws, string title, OvertimeReportExcelContext context, int columnCount)
         {
             ws.Range(1, 1, 1, columnCount).Merge();
             ws.Cell(1, 1).Value = title;
@@ -238,7 +250,7 @@ namespace Imaj.Web.Services.Reports
             ws.Cell(1, 1).Style.Font.FontSize = 18;
             ws.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-            ws.Cell(3, 1).Value = "Tarih Aralığı :";
+            ws.Cell(3, 1).Value = L("DateRange");
             ws.Cell(3, 1).Style.Font.Bold = true;
             ws.Cell(3, 2).Value = context.StartDate.Date;
             ws.Cell(4, 2).Value = context.EndDate.Date;
@@ -247,12 +259,12 @@ namespace Imaj.Web.Services.Reports
 
             if (columnCount >= 10)
             {
-                ws.Cell(3, 4).Value = "Çalışan :";
+                ws.Cell(3, 4).Value = L("EmployeeWithColon");
                 ws.Cell(3, 4).Style.Font.Bold = true;
                 ws.Range(3, 5, 3, 7).Merge();
                 ws.Cell(3, 5).Value = context.EmployeeDisplay;
 
-                ws.Cell(3, 8).Value = "Müşteri :";
+                ws.Cell(3, 8).Value = L("CustomerWithColon");
                 ws.Cell(3, 8).Style.Font.Bold = true;
                 ws.Range(3, 9, 3, 10).Merge();
                 ws.Cell(3, 9).Value = context.CustomerDisplay;
@@ -261,21 +273,21 @@ namespace Imaj.Web.Services.Reports
 
             if (columnCount >= 5)
             {
-                ws.Cell(3, 3).Value = "Çalışan :";
+                ws.Cell(3, 3).Value = L("EmployeeWithColon");
                 ws.Cell(3, 3).Style.Font.Bold = true;
                 ws.Range(3, 4, 3, columnCount).Merge();
                 ws.Cell(3, 4).Value = context.EmployeeDisplay;
 
-                ws.Cell(4, 3).Value = "Müşteri :";
+                ws.Cell(4, 3).Value = L("CustomerWithColon");
                 ws.Cell(4, 3).Style.Font.Bold = true;
                 ws.Range(4, 4, 4, columnCount).Merge();
                 ws.Cell(4, 4).Value = context.CustomerDisplay;
                 return;
             }
 
-            ws.Cell(3, 3).Value = $"Çalışan : {context.EmployeeDisplay}";
+            ws.Cell(3, 3).Value = $"{L("EmployeeWithColon")} {context.EmployeeDisplay}";
             ws.Cell(3, 3).Style.Font.Bold = true;
-            ws.Cell(4, 3).Value = $"Müşteri : {context.CustomerDisplay}";
+            ws.Cell(4, 3).Value = $"{L("CustomerWithColon")} {context.CustomerDisplay}";
             ws.Cell(4, 3).Style.Font.Bold = true;
         }
 
@@ -314,10 +326,11 @@ namespace Imaj.Web.Services.Reports
             int quantityColumn,
             int amountColumn,
             decimal totalQuantity,
-            decimal totalAmount)
+            decimal totalAmount,
+            string totalLabel)
         {
             ws.Range(row, 1, row, labelLastColumn).Merge();
-            ws.Cell(row, 1).Value = "Rapor Toplamı";
+            ws.Cell(row, 1).Value = totalLabel;
             ws.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
 
             ws.Cell(row, quantityColumn).Value = totalQuantity;
@@ -342,6 +355,11 @@ namespace Imaj.Web.Services.Reports
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
             return stream.ToArray();
+        }
+
+        private string L(string key)
+        {
+            return _localizer[key].Value;
         }
     }
 }

@@ -127,7 +127,7 @@ const employeeCustomMethods = {
         } catch (error) {
             console.error('Employee search error:', error);
             if (typeof Toast !== 'undefined') {
-                Toast.error('Çalışan araması sırasında hata: ' + (error.message || error));
+                Toast.error((window.imajTexts && window.imajTexts.genericError) || 'An error occurred.');
             }
             this.items = [];
             this.totalCount = 0;

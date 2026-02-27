@@ -5,10 +5,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Web;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,11 @@ namespace Imaj.Web.Controllers
 
         private readonly IFunctionService _functionService;
 
-        public FunctionController(IFunctionService functionService, ILogger<FunctionController> logger)
-            : base(logger)
+        public FunctionController(
+            IFunctionService functionService,
+            ILogger<FunctionController> logger,
+            IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _functionService = functionService;
         }
@@ -91,7 +96,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _functionService.GetFunctionDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Fonksiyon bulunamadi.");
+                ShowError(detailResult.Message ?? L("FunctionNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -117,7 +122,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _functionService.GetFunctionDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Fonksiyon bulunamadi.");
+                ShowError(detailResult.Message ?? L("FunctionNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -143,7 +148,7 @@ namespace Imaj.Web.Controllers
 
             if (!IsReservationPairValid(normalizedReservable, normalizedIntervalId))
             {
-                ShowError("Rezervasyon Uyumlu ve Rezervasyon Araligi birlikte secilmelidir.");
+                ShowError(L("ReservationPairRequired"));
                 return RedirectToAction(nameof(Index));
             }
 
@@ -185,7 +190,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? "Urun listesi alinamadi.");
+                return BadRequest(result.Message ?? L("ProductListUnavailable"));
             }
 
             return Json(new
@@ -214,7 +219,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? "Kaynak kategorisi listesi alinamadi.");
+                return BadRequest(result.Message ?? L("ResoCatListUnavailable"));
             }
 
             return Json(new
@@ -233,14 +238,14 @@ namespace Imaj.Web.Controllers
         {
             if (!model.Id.HasValue || model.Id.Value <= 0)
             {
-                ShowError("Fonksiyon ID zorunludur.");
+                ShowError(L("FunctionIdRequired"));
                 return RedirectToAction("List");
             }
 
             var currentDetail = await _functionService.GetFunctionDetailAsync(model.Id.Value);
             if (!currentDetail.IsSuccess || currentDetail.Data == null)
             {
-                ShowError(currentDetail.Message ?? "Fonksiyon bulunamadi.");
+                ShowError(currentDetail.Message ?? L("FunctionNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -260,11 +265,11 @@ namespace Imaj.Web.Controllers
             var result = await _functionService.UpdateFunctionAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Fonksiyon guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("FunctionUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Fonksiyon guncellendi.");
+            ShowSuccess(result.Message ?? L("FunctionUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -290,11 +295,11 @@ namespace Imaj.Web.Controllers
             var result = await _functionService.CreateFunctionAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Fonksiyon kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("FunctionSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Fonksiyon kaydedildi.");
+            ShowSuccess(result.Message ?? L("FunctionSavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create", new
@@ -486,7 +491,7 @@ namespace Imaj.Web.Controllers
 
             if (!IsReservationPairValid(model.Reservable, intervalId))
             {
-                ModelState.AddModelError(string.Empty, "Rezervasyon Uyumlu ve Rezervasyon Araligi birlikte secilmelidir.");
+                ModelState.AddModelError(string.Empty, L("ReservationPairRequired"));
             }
         }
 
@@ -693,5 +698,6 @@ namespace Imaj.Web.Controllers
                 })
                 .ToList();
         }
+
     }
 }

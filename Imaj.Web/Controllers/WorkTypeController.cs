@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IWorkTypeService _workTypeService;
 
-        public WorkTypeController(IWorkTypeService workTypeService, ILogger<WorkTypeController> logger)
-            : base(logger)
+        public WorkTypeController(IWorkTypeService workTypeService, ILogger<WorkTypeController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _workTypeService = workTypeService;
         }
@@ -85,7 +87,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _workTypeService.GetWorkTypeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Gorev tipi bulunamadi.");
+                ShowError(detailResult.Message ?? L("WorkTypeNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -111,7 +113,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _workTypeService.GetWorkTypeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Gorev tipi bulunamadi.");
+                ShowError(detailResult.Message ?? L("WorkTypeNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -154,11 +156,11 @@ namespace Imaj.Web.Controllers
             var result = await _workTypeService.UpdateWorkTypeAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Gorev tipi guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("WorkTypeUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Gorev tipi guncellendi.");
+            ShowSuccess(result.Message ?? L("WorkTypeUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -184,11 +186,11 @@ namespace Imaj.Web.Controllers
             var result = await _workTypeService.CreateWorkTypeAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Gorev tipi kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("WorkTypeSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Gorev tipi kaydedildi.");
+            ShowSuccess(result.Message ?? L("WorkTypeSavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create");
@@ -332,7 +334,7 @@ namespace Imaj.Web.Controllers
             var hasName = model.Names.Any(x => x.LanguageId > 0 && !string.IsNullOrWhiteSpace(x.Name));
             if (!hasName)
             {
-                ModelState.AddModelError(string.Empty, "En az bir dilde ad girilmelidir.");
+                ModelState.AddModelError(string.Empty, L("AtLeastOneLocalizedNameRequired"));
             }
         }
 

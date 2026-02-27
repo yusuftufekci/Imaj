@@ -147,7 +147,7 @@ function productSelectModal() {
                 this.hasSearched = true;
             } catch (error) {
                 console.error('Ürün araması hatası:', error);
-                Toast.error('Ürün araması sırasında bir hata oluştu.');
+                Toast.error((window.imajTexts && window.imajTexts.genericError) || 'An error occurred.');
             }
         },
 

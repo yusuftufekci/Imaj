@@ -34,6 +34,7 @@ namespace Imaj.Service.Services
 
             try
             {
+                var languageId = CurrentLanguageId;
                 var snapshot = await _currentPermissionContext.GetSnapshotAsync();
                 if (IsDataScopeDenied(snapshot))
                 {
@@ -54,15 +55,15 @@ namespace Imaj.Service.Services
                 }
 
                 var query = from p in products
-                            join xp in _unitOfWork.Repository<XProduct>().Query().Where(x => x.LanguageID == 1) 
+                            join xp in _unitOfWork.Repository<XProduct>().Query().Where(x => x.LanguageID == languageId)
                                 on p.Id equals xp.ProductID
                             
                             join pc in _unitOfWork.Repository<ProdCat>().Query() on p.ProdCatID equals pc.Id
-                            join xpc in _unitOfWork.Repository<XProdCat>().Query().Where(x => x.LanguageID == 1) 
+                            join xpc in _unitOfWork.Repository<XProdCat>().Query().Where(x => x.LanguageID == languageId)
                                 on pc.Id equals xpc.ProdCatID
                             
                             join pg in _unitOfWork.Repository<ProdGrp>().Query() on p.ProdGrpID equals pg.Id
-                            join xpg in _unitOfWork.Repository<XProdGrp>().Query().Where(x => x.LanguageID == 1) 
+                            join xpg in _unitOfWork.Repository<XProdGrp>().Query().Where(x => x.LanguageID == languageId)
                                 on pg.Id equals xpg.ProdGrpID
                             
                             // Filter IsInvalid (Geçersiz) logic:

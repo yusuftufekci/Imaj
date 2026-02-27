@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IReasonService _reasonService;
 
-        public ReasonController(IReasonService reasonService, ILogger<ReasonController> logger)
-            : base(logger)
+        public ReasonController(IReasonService reasonService, ILogger<ReasonController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _reasonService = reasonService;
         }
@@ -91,7 +93,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _reasonService.GetReasonDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Gerekce bulunamadi.");
+                ShowError(detailResult.Message ?? L("ReasonNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -117,7 +119,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _reasonService.GetReasonDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Gerekce bulunamadi.");
+                ShowError(detailResult.Message ?? L("ReasonNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -175,11 +177,11 @@ namespace Imaj.Web.Controllers
             var result = await _reasonService.UpdateReasonAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Gerekce guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ReasonUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Gerekce guncellendi.");
+            ShowSuccess(result.Message ?? L("ReasonUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -205,11 +207,11 @@ namespace Imaj.Web.Controllers
             var result = await _reasonService.CreateReasonAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Gerekce kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ReasonSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Gerekce kaydedildi.");
+            ShowSuccess(result.Message ?? L("ReasonSavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create", new
@@ -365,12 +367,12 @@ namespace Imaj.Web.Controllers
         {
             if (!model.ReasonCatId.HasValue || model.ReasonCatId.Value <= 0)
             {
-                ModelState.AddModelError(nameof(model.ReasonCatId), "Gerekce kategorisi secimi zorunludur.");
+                ModelState.AddModelError(nameof(model.ReasonCatId), L("ReasonCategorySelectionRequired"));
             }
 
             if (string.IsNullOrWhiteSpace(model.Code))
             {
-                ModelState.AddModelError(nameof(model.Code), "Gerekce kodu zorunludur.");
+                ModelState.AddModelError(nameof(model.Code), L("ReasonCodeRequired"));
             }
         }
 
