@@ -134,7 +134,7 @@
 
      </div>
      
-     <!-- Ürün Kategorisi Bölümü -->
+     <!-- @Localizer["ProductCategory"] Bölümü -->
      <div class="mt-8" x-data='customerFormState(@Json.Serialize(Model.ProductCategories.Select(x => new { id = x.Id, name = x.Name, discount = x.Discount })) || [])'
      x-on:product-categories-selected.window="addCategories($event.detail.items)">
      
@@ -143,7 +143,7 @@
 
          <div class="bg-gray-50 px-4 py-3 border border-gray-200 rounded-t-md flex justify-between items-center">
              <h4 class="text-sm font-bold text-gray-700">
-                 Ürün Kategorisi (<span x-text="selectedProductCategories.length">0</span>)
+                 @Localizer["ProductCategory"] (<span x-text="selectedProductCategories.length">0</span>)
              </h4>
          </div>
          
@@ -199,7 +199,7 @@
              <!-- Footer / Actions -->
              <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
                   <div class="flex items-center space-x-2">
-                     <button type="button" x-on:click="selectedProductCategories = []" class="text-xs text-red-600 hover:text-red-800 hover:underline">Tümünü Temizle</button>
+                     <button type="button" x-on:click="selectedProductCategories = []" class="text-xs text-red-600 hover:text-red-800 hover:underline">@Localizer["ClearAll"]</button>
                      <span class="text-xs text-gray-300">|</span>
                      <button type="button" x-on:click="$dispatch('open-product-category-modal')" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         + Ekle
@@ -218,7 +218,7 @@
 <div class="px-4 py-3 bg-gray-50 text-center sm:px-6 space-y-3">
      <div class="flex justify-center space-x-3">
         <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Kaydet
+            @Localizer["Save"]
         </button>
         <a href="/Customer" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
             Vazgeç

@@ -1,7 +1,7 @@
 @model JobCreateViewModel
 
 @{
-    ViewData["Title"] = "Yeni İş Yarat";
+    ViewData["Title"] = Localizer["CreateNewJob"];
 }
 
 <div x-data="jobCreate({
@@ -81,7 +81,7 @@
     <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
         <div class="flex-1 min-w-0">
              <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
-                İş Yaratma
+                @Localizer["JobCreation"]
             </h2>
         </div>
     </div>
@@ -153,7 +153,7 @@
                          <div class="col-span-9 flex space-x-4">
                              <label class="inline-flex items-center">
                                  <input type="checkbox" name="IsEmailSent" class="form-checkbox text-blue-600">
-                                 <span class="ml-2 text-sm text-gray-700">E-Posta Yollandı</span>
+                                 <span class="ml-2 text-sm text-gray-700">@Localizer["EmailSent"]</span>
                              </label>
                               <label class="inline-flex items-center">
                                  <input type="checkbox" name="IsEvaluated" class="form-checkbox text-blue-600">
@@ -167,11 +167,11 @@
                 <!-- Right: Notes -->
                  <div class="space-y-4">
                     <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                         <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">İdari Notlar</h3>
+                         <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["AdminNotes"]</h3>
                          <textarea name="AdminNotes" rows="4" class="w-full text-sm border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                     </div>
                      <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                         <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">Müşteri Notları</h3>
+                         <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["CustomerNotes"]</h3>
                          <textarea name="CustomerNotes" rows="4" class="w-full text-sm border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                     </div>
                 </div>
@@ -321,7 +321,7 @@
                  <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                       <div class="flex space-x-2">
                           <button type="button" class="text-red-600 font-bold hover:underline text-sm">Sil</button>
-                          <button type="button" @@click="$dispatch('product-select-open', { targetId: 'productAdd', isMultiSelect: true })" class="text-blue-600 font-bold hover:underline text-sm">Seçerek Ekle</button>
+                          <button type="button" @@click="$dispatch('product-select-open', { targetId: 'productAdd', isMultiSelect: true })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["AddBySelection"]</button>
                       </div>
                       <div class="text-sm font-bold text-gray-900">
                           Toplam: <span x-text="calculateProductTotal()"></span>
@@ -333,7 +333,7 @@
         <!-- FOOTER -->
         <div class="mt-8 flex justify-center space-x-4">
              <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                Kaydet
+                @Localizer["Save"]
             </button>
              <button type="button" onclick="history.back()" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none">
                 Vazgeç

@@ -38,7 +38,7 @@
 
                     <!-- Job Customer -->
                      <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">İş Müşterisi</label>
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["JobCustomer"]</label>
                         <div class="col-span-9 text-gray-900">
                             @Model.JobCustomerCode - @Model.JobCustomerName
                             <input type="hidden" name="JobCustomerCode" value="@Model.JobCustomerCode">
@@ -47,10 +47,10 @@
                     
                     <!-- Invoice Customer -->
                      <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">Fatura Müşterisi</label>
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["InvoiceCustomer"]</label>
                          <div class="col-span-9">
                             <div class="flex rounded-md shadow-sm">
-                                 <input type="text" readonly x-model="invoiceCustomerDisplay" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400 bg-gray-50" placeholder="Seçiniz...">
+                                 <input type="text" readonly x-model="invoiceCustomerDisplay" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400 bg-gray-50" placeholder="@Localizer["SelectPrompt"]">
                                  <input type="hidden" name="InvoiceCustomerCode" x-model="invoiceCustomerCode">
                                 <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'invoice' })" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-400 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                      <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -219,13 +219,13 @@
         <!-- Actions -->
         <div class="mt-6 flex justify-center space-x-3">
              <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Kaydet
+                @Localizer["Save"]
             </button>
             <button type="button" class="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                 Vazgeç
             </button> 
              <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-800 shadow-sm text-sm font-medium rounded-md text-white bg-blue-800 hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Özet Görüntüle
+                @Localizer["ViewSummary"]
             </button>
              <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-400 shadow-sm text-sm font-medium rounded-md text-white bg-blue-400 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Hesapla

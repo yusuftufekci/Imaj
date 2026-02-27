@@ -2,8 +2,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Models;
+using Imaj.Web;
 using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace Imaj.Web.Controllers
 {
@@ -13,13 +15,16 @@ namespace Imaj.Web.Controllers
 
         private readonly IJobService _jobService;
         private readonly IOvertimeReportExcelService _overtimeReportExcelService;
+        private readonly IStringLocalizer<SharedResource> _localizer;
 
         public OvertimeReportController(
             IJobService jobService,
-            IOvertimeReportExcelService overtimeReportExcelService)
+            IOvertimeReportExcelService overtimeReportExcelService,
+            IStringLocalizer<SharedResource> localizer)
         {
             _jobService = jobService;
             _overtimeReportExcelService = overtimeReportExcelService;
+            _localizer = localizer;
         }
 
         public IActionResult Index()
@@ -40,11 +45,11 @@ namespace Imaj.Web.Controllers
             var reportResult = await _jobService.GetDetailedOvertimeReportAsync(reportFilter);
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? "Rapor verisi alınamadı.");
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
             }
 
             var fileBytes = _overtimeReportExcelService.BuildDetailedReport(reportResult.Data, excelContext);
-            return File(fileBytes, ExcelContentType, BuildFileName("detayli-mesai-raporu"));
+            return File(fileBytes, ExcelContentType, BuildFileName(L("DetailedOvertimeFilePrefix")));
         }
 
         [HttpGet]
@@ -59,11 +64,11 @@ namespace Imaj.Web.Controllers
             var reportResult = await _jobService.GetSummaryOvertimeReportAsync(reportFilter);
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? "Rapor verisi alınamadı.");
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
             }
 
             var fileBytes = _overtimeReportExcelService.BuildSummaryReport(reportResult.Data, excelContext);
-            return File(fileBytes, ExcelContentType, BuildFileName("ozet-mesai-raporu"));
+            return File(fileBytes, ExcelContentType, BuildFileName(L("SummaryOvertimeFilePrefix")));
         }
 
         [HttpGet]
@@ -78,14 +83,14 @@ namespace Imaj.Web.Controllers
             var reportResult = await _jobService.GetAdministrativeSummaryOvertimeReportAsync(reportFilter);
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? "Rapor verisi alınamadı.");
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
             }
 
             var fileBytes = _overtimeReportExcelService.BuildAdministrativeSummaryReport(reportResult.Data, excelContext);
-            return File(fileBytes, ExcelContentType, BuildFileName("idari-ozet-mesai-raporu"));
+            return File(fileBytes, ExcelContentType, BuildFileName(L("AdminSummaryOvertimeFilePrefix")));
         }
 
-        private static bool TryCreateReportContext(
+        private bool TryCreateReportContext(
             OvertimeReportDownloadRequest request,
             out OvertimeReportFilterDto reportFilter,
             out OvertimeReportExcelContext excelContext,
@@ -97,13 +102,13 @@ namespace Imaj.Web.Controllers
 
             if (request.StartDate == default || request.EndDate == default)
             {
-                badRequestResult = new BadRequestObjectResult("Başlangıç ve bitiş tarihi zorunludur.");
+                badRequestResult = new BadRequestObjectResult(L("StartEndDateRequired"));
                 return false;
             }
 
             if (request.EndDate.Date < request.StartDate.Date)
             {
-                badRequestResult = new BadRequestObjectResult("Bitiş tarihi başlangıç tarihinden küçük olamaz.");
+                badRequestResult = new BadRequestObjectResult(L("EndDateBeforeStart"));
                 return false;
             }
 
@@ -123,10 +128,10 @@ namespace Imaj.Web.Controllers
                 EndDate = request.EndDate,
                 EmployeeDisplay = !string.IsNullOrWhiteSpace(request.EmployeeNames)
                     ? request.EmployeeNames!
-                    : (employeeCodes.Any() ? string.Join(", ", employeeCodes) : "Tümü"),
+                    : (employeeCodes.Any() ? string.Join(", ", employeeCodes) : L("AllOption")),
                 CustomerDisplay = !string.IsNullOrWhiteSpace(request.CustomerName)
                     ? request.CustomerName!
-                    : (!string.IsNullOrWhiteSpace(request.CustomerCode) ? request.CustomerCode! : "Tümü")
+                    : (!string.IsNullOrWhiteSpace(request.CustomerCode) ? request.CustomerCode! : L("AllOption"))
             };
 
             return true;
@@ -150,6 +155,11 @@ namespace Imaj.Web.Controllers
         private static string BuildFileName(string prefix)
         {
             return $"{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
+        }
+
+        private string L(string key)
+        {
+            return _localizer[key].Value;
         }
     }
 }

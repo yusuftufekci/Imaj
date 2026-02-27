@@ -28,14 +28,14 @@
                 
                 <!-- Date Range -->
                 <div class="sm:col-span-3">
-                    <label for="start-date" class="block text-sm font-medium text-gray-700">Başlangıç Tarihi</label>
+                    <label for="start-date" class="block text-sm font-medium text-gray-700">@Localizer["StartDate"]</label>
                     <div class="mt-1">
                         <input type="date" name="start-date" id="start-date" x-model="startDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.StartDate.ToString("yyyy-MM-dd")">
                     </div>
                 </div>
 
                 <div class="sm:col-span-3">
-                    <label for="end-date" class="block text-sm font-medium text-gray-700">Bitiş Tarihi</label>
+                    <label for="end-date" class="block text-sm font-medium text-gray-700">@Localizer["EndDate"]</label>
                     <div class="mt-1">
                         <input type="date" name="end-date" id="end-date" x-model="endDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.EndDate.ToString("yyyy-MM-dd")">
                     </div>
@@ -46,7 +46,7 @@
                     <label for="product-group" class="block text-sm font-medium text-gray-700">Ürün Grubu</label>
                     <div class="mt-1">
                         <select id="product-group" name="product-group" x-model="productFilter.productGroup" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                            <option value="">Seçiniz</option>
+                            <option value="">@Localizer["SelectPrompt"]</option>
                             <template x-for="grp in productGroups" :key="grp.id">
                                 <option :value="grp.name" x-text="grp.name"></option>
                             </template>

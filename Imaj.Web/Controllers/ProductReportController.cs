@@ -1,9 +1,11 @@
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace Imaj.Web.Controllers
 {
@@ -13,13 +15,16 @@ namespace Imaj.Web.Controllers
 
         private readonly IProductReportService _productReportService;
         private readonly IProductReportExcelService _productReportExcelService;
+        private readonly IStringLocalizer<SharedResource> _localizer;
 
         public ProductReportController(
             IProductReportService productReportService,
-            IProductReportExcelService productReportExcelService)
+            IProductReportExcelService productReportExcelService,
+            IStringLocalizer<SharedResource> localizer)
         {
             _productReportService = productReportService;
             _productReportExcelService = productReportExcelService;
+            _localizer = localizer;
         }
 
         public IActionResult Index()
@@ -39,14 +44,14 @@ namespace Imaj.Web.Controllers
             var reportResult = await _productReportService.GetDetailedReportAsync(filter);
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? "Rapor verisi alınamadı.");
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
             }
 
             var fileBytes = _productReportExcelService.BuildDetailedReport(reportResult.Data, excelContext);
-            return File(fileBytes, ExcelContentType, BuildFileName("detayli-urun-raporu"));
+            return File(fileBytes, ExcelContentType, BuildFileName(L("DetailedProductFilePrefix")));
         }
 
-        private static bool TryCreateReportContext(
+        private bool TryCreateReportContext(
             ProductReportDownloadRequest request,
             out ProductReportFilterDto filter,
             out ProductReportExcelContext excelContext,
@@ -58,13 +63,13 @@ namespace Imaj.Web.Controllers
 
             if (request.StartDate == default || request.EndDate == default)
             {
-                badRequestResult = new BadRequestObjectResult("Başlangıç ve bitiş tarihi zorunludur.");
+                badRequestResult = new BadRequestObjectResult(L("StartEndDateRequired"));
                 return false;
             }
 
             if (request.EndDate.Date < request.StartDate.Date)
             {
-                badRequestResult = new BadRequestObjectResult("Bitiş tarihi başlangıç tarihinden küçük olamaz.");
+                badRequestResult = new BadRequestObjectResult(L("EndDateBeforeStart"));
                 return false;
             }
 
@@ -81,12 +86,12 @@ namespace Imaj.Web.Controllers
             {
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
-                ProductGroupDisplay = string.IsNullOrWhiteSpace(request.ProductGroup) ? "Tümü" : request.ProductGroup!,
+                ProductGroupDisplay = string.IsNullOrWhiteSpace(request.ProductGroup) ? L("AllOption") : request.ProductGroup!,
                 ProductDisplay = string.IsNullOrWhiteSpace(request.ProductName)
-                    ? (string.IsNullOrWhiteSpace(request.ProductCode) ? "Tümü" : request.ProductCode!)
+                    ? (string.IsNullOrWhiteSpace(request.ProductCode) ? L("AllOption") : request.ProductCode!)
                     : request.ProductName!,
                 CustomerDisplay = string.IsNullOrWhiteSpace(request.CustomerName)
-                    ? (string.IsNullOrWhiteSpace(request.CustomerCode) ? "Tümü" : request.CustomerCode!)
+                    ? (string.IsNullOrWhiteSpace(request.CustomerCode) ? L("AllOption") : request.CustomerCode!)
                     : request.CustomerName!
             };
 
@@ -96,6 +101,11 @@ namespace Imaj.Web.Controllers
         private static string BuildFileName(string prefix)
         {
             return $"{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
+        }
+
+        private string L(string key)
+        {
+            return _localizer[key].Value;
         }
     }
 }

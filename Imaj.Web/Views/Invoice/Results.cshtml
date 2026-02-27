@@ -55,8 +55,8 @@
                                         </div>
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Referans</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">İş Müşterisi</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fatura Müşterisi</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["JobCustomer"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["InvoiceCustomer"]</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kesilme Tarihi</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Durum</th>
@@ -85,11 +85,11 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                                 @if (item.Evaluated)
                                                 {
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Evet</span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">@Localizer["Yes"]</span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Hayır</span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">@Localizer["No"]</span>
                                                 }
                                             </td>
                                         </tr>
@@ -98,7 +98,7 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">Sonuç bulunamadı.</td>
+                                        <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
                                     </tr>
                                 }
                             </tbody>
@@ -124,10 +124,10 @@
 
         <div class="mt-4 flex justify-center space-x-2">
             <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50" :disabled="selectedReferences.length === 0">
-                Detay Görüntüle
+                Detay @Localizer["View"]
             </button>
             <button type="submit" formaction="/Invoice/Summary" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50" :disabled="selectedReferences.length === 0">
-                Özet Görüntüle
+                @Localizer["ViewSummary"]
             </button>
         </div>
     </form>

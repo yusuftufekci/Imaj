@@ -1,7 +1,7 @@
 @model InvoiceHistoryViewModel
 
 @{
-    ViewData["Title"] = "Fatura Geçmişi";
+    ViewData["Title"] = Localizer["InvoiceHistory"];
 }
 
 <div class="space-y-6">
@@ -9,7 +9,7 @@
     <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
         <div class="flex-1 min-w-0">
             <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
-                Fatura Geçmişi
+                @Localizer["InvoiceHistory"]
             </h2>
         </div>
     </div>
@@ -26,11 +26,11 @@
                     <span class="col-span-2 text-gray-900">@Model.Invoice.Reference</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">İş Müşterisi</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["JobCustomer"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Invoice.JobCustomer</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Fatura Müşterisi</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["InvoiceCustomer"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Invoice.InvoiceCustomer</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
@@ -103,7 +103,7 @@
                     {
                         <tr>
                             <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
-                                Geçmiş kaydı bulunamadı.
+                                @Localizer["HistoryRecordNotFound"]
                             </td>
                         </tr>
                     }

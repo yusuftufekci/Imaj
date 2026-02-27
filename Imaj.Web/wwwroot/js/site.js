@@ -3,6 +3,9 @@
  * Site genelinde kullanılan ortak fonksiyonlar
  */
 
+const ImajTexts = window.imajTexts || {};
+const t = (key, fallback) => ImajTexts[key] || fallback;
+
 // ============================================
 // Mobile Menu Toggle
 // ============================================
@@ -110,10 +113,10 @@ const Toast = {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'success',
-                title: 'Başarılı!',
+                title: t('successTitle', 'Success!'),
                 text: message,
                 confirmButtonColor: '#3085d6',
-                confirmButtonText: 'Tamam'
+                confirmButtonText: t('ok', 'OK')
             });
         } else {
             alert(message);
@@ -128,10 +131,10 @@ const Toast = {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'error',
-                title: 'Hata!',
+                title: t('errorTitle', 'Error!'),
                 text: message,
                 confirmButtonColor: '#d33',
-                confirmButtonText: 'Tamam'
+                confirmButtonText: t('ok', 'OK')
             });
         } else {
             alert(message);
@@ -153,8 +156,8 @@ const Toast = {
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
                 cancelButtonColor: '#d33',
-                confirmButtonText: 'Evet',
-                cancelButtonText: 'İptal'
+                confirmButtonText: t('yes', 'Yes'),
+                cancelButtonText: t('cancel', 'Cancel')
             });
             return result.isConfirmed;
         } else {

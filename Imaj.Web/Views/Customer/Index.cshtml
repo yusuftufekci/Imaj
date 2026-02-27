@@ -3,7 +3,7 @@
 @model CustomerFilterModel
 
 @{
-    ViewData["Title"] = "Müşteri Sorgulama";
+    ViewData["Title"] = Localizer["CustomerSearch"];
 }
 
 <div x-data="customerIndex()" class="space-y-6">
@@ -11,16 +11,16 @@
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                Müşteri İşlemleri
+                @Localizer["CustomerOperations"]
             </h2>
         </div>
     </div>
 
-    <!-- Müşteri Sorgulama Bölümü -->
+    <!-- @Localizer["CustomerSearch"] Bölümü -->
     <form action="/Customer/List" method="get" class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-5 sm:p-6">
             <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 text-center border-b pb-2">
-                Müşteri Sorgulama
+                @Localizer["CustomerSearch"]
             </h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
@@ -42,8 +42,8 @@
                                 <label class="form-label">Geçersiz</label>
                                 <select name="IsInvalid" class="form-input">
                                     <option value="">Tümü</option>
-                                    <option value="false">Hayır</option>
-                                    <option value="true">Evet</option>
+                                    <option value="false">@Localizer["No"]</option>
+                                    <option value="true">@Localizer["Yes"]</option>
                                 </select>
                             </div>
                         </div>
@@ -113,9 +113,9 @@
                         </div>
                     </div>
 
-                    <!-- İş Sorgulama -->
+                    <!-- @Localizer["JobSearch"] -->
                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">İş Sorgulama</h4>
+                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["JobSearch"]</h4>
                         <div class="space-y-2">
                              <div class="form-group">
                                 <label class="form-label">Durum</label>
@@ -149,31 +149,31 @@
                     Sorgula
                 </button>
                 <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Temizle
+                    @Localizer["Clear"]
                 </button>
             </div>
             
         </div>
     </form>
 
-    <!-- Müşteri Yaratma -->
+    <!-- @Localizer["CustomerCreation"] -->
     <div class="bg-white shadow sm:rounded-lg mt-6">
         <div class="px-4 py-5 sm:p-6 text-center">
              <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 border-b pb-2">
-                Müşteri Yaratma
+                @Localizer["CustomerCreation"]
             </h3>
             
             <a href="/Customer/Create" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Yeni Müşteri Yarat
+                @Localizer["CreateNewCustomer"]
             </a>
         </div>
     </div>
 
-    <!-- Müşteri Raporları -->
+    <!-- @Localizer["CustomerReports"] -->
     <div class="bg-white shadow sm:rounded-lg mt-6 text-center">
          <div class="px-4 py-5 sm:p-6">
              <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 border-b pb-2">
-                Müşteri Raporları
+                @Localizer["CustomerReports"]
             </h3>
             <button type="button" @@click="printReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 Rapor Bas

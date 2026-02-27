@@ -3,7 +3,7 @@
 @inject IPermissionViewService PermissionViewService
 
 @{
-    ViewData["Title"] = "Kullanıcı İşlemleri";
+    ViewData["Title"] = Localizer["UserOperations"];
     var canAdd = await PermissionViewService.CanExecuteMethodAsync(972);
 }
 
@@ -12,7 +12,7 @@
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
              <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
-                Kullanıcı Sorgulama
+                @Localizer["UserSearch"]
             </h2>
         </div>
     </div>
@@ -52,20 +52,20 @@
                                     <option value="">Tümü</option>
                                     @if (Model.Filter.IsInvalid == false)
                                     {
-                                        <option value="false" selected>Hayır</option>
+                                        <option value="false" selected>@Localizer["No"]</option>
                                     }
                                     else
                                     {
-                                        <option value="false">Hayır</option>
+                                        <option value="false">@Localizer["No"]</option>
                                     }
 
                                     @if (Model.Filter.IsInvalid == true)
                                     {
-                                        <option value="true" selected>Evet</option>
+                                        <option value="true" selected>@Localizer["Yes"]</option>
                                     }
                                     else
                                     {
-                                        <option value="true">Evet</option>
+                                        <option value="true">@Localizer["Yes"]</option>
                                     }
                                 </select>
                             </div>
@@ -85,7 +85,7 @@
                             Sorgula
                         </button>
                         <button type="reset" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                            Temizle
+                            @Localizer["Clear"]
                         </button>
                     </div>
                 </div>
@@ -98,7 +98,7 @@
     {
         <!-- User Creation Section -->
         <div class="text-center mt-10">
-             <h2 class="text-xl font-bold text-orange-600 mb-4">Kullanıcı Yaratma</h2>
+             <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["UserCreation"]</h2>
              <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
                  <form method="get" action="/User/Create">
                      <div class="grid grid-cols-12 gap-4 items-center justify-center">
@@ -115,7 +115,7 @@
                      </div>
                      <div class="mt-4 flex justify-center">
                          <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                            Yeni Kullanıcı Yarat
+                            @Localizer["NewUser"] Yarat
                         </button>
                      </div>
                  </form>

@@ -1,10 +1,12 @@
 using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Web;
 using Imaj.Web.Controllers.Base;
 using Imaj.Web.Models;
 using Imaj.Web.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -21,7 +23,8 @@ namespace Imaj.Web.Controllers
         public CustomerController(
             ICustomerService customerService,
             ILookupService lookupService,
-            ILogger<CustomerController> logger) : base(logger)
+            ILogger<CustomerController> logger,
+            IStringLocalizer<SharedResource> localizer) : base(logger, localizer)
         {
             _customerService = customerService;
             _lookupService = lookupService;
@@ -271,12 +274,12 @@ namespace Imaj.Web.Controllers
             var result = await _customerService.UpdateAsync(dto);
             if(result.IsSuccess)
             {
-                 TempData["SuccessMessage"] = "Müşteri başarıyla güncellendi.";
+                 TempData["SuccessMessage"] = L("CustomerUpdatedSuccess");
                  return RedirectToAction("List");
             }
             
-            TempData["ErrorMessage"] = result.Message ?? "Müşteri güncellenirken bir hata oluştu.";
-            ModelState.AddModelError("", result.Message ?? "Error");
+            TempData["ErrorMessage"] = result.Message ?? L("CustomerUpdateFailed");
+            ModelState.AddModelError(string.Empty, result.Message ?? L("GenericError"));
             return View("Edit", model);
         }
 
@@ -327,13 +330,13 @@ namespace Imaj.Web.Controllers
             var result = await _customerService.AddAsync(dto);
             if(result.IsSuccess)
             {
-                 TempData["SuccessMessage"] = "Müşteri Kaydı başarılı.";
+                 TempData["SuccessMessage"] = L("CustomerCreatedRecordSuccess");
                  return RedirectToAction("List"); 
             }
             
-            TempData["ErrorMessage"] = result.Message ?? "Müşteri oluşturulurken bir hata oluştu.";
+            TempData["ErrorMessage"] = result.Message ?? L("CustomerCreateFailed");
             // Also add to ModelState to show in summary if desired
-            ModelState.AddModelError("", result.Message ?? "Error");
+            ModelState.AddModelError(string.Empty, result.Message ?? L("GenericError"));
             return View(model);
         }
     }

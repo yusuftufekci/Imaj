@@ -2,7 +2,7 @@
 @model JobDetailViewModel
 
 @{
-    ViewData["Title"] = "İş Detayı";
+    ViewData["Title"] = Localizer["JobDetail"];
     
     // Logic to build query string for navigation
     string BuildNavUrl(int index) {
@@ -63,11 +63,11 @@
                     <span class="col-span-2 text-gray-900">@Model.RelatedPerson</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Başlangıç Tarihi</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["StartDate"]</span>
                     <span class="col-span-2 text-gray-900">@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Bitiş Tarihi</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["EndDate"]</span>
                     <span class="col-span-2 text-gray-900">@Model.EndDate?.ToString("dd/MM/yyyy HH:mm") @Model.EndDate?.ToString("dddd")</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
@@ -75,7 +75,7 @@
                     <span class="col-span-2 text-gray-900">@Model.Status</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">E-Posta Yollandı</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["EmailSent"]</span>
                     <span class="col-span-2">
                          <input type="checkbox" disabled @(Model.IsEmailSent ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
                     </span>
@@ -95,11 +95,11 @@
             <!-- Right: Notes -->
             <div class="space-y-4">
                 <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                     <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">İdari Notlar</h3>
+                     <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["AdminNotes"]</h3>
                      <textarea readonly rows="3" class="w-full text-sm border-gray-300 rounded bg-white">@Model.AdminNotes</textarea>
                 </div>
                  <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                     <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">Müşteri Notları</h3>
+                     <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["CustomerNotes"]</h3>
                      <textarea readonly rows="3" class="w-full text-sm border-gray-300 rounded bg-white">@Model.CustomerNotes</textarea>
                 </div>
             </div>
@@ -115,7 +115,7 @@
              <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-yellow-50">
                     <tr>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Seçili</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Selected"]</th>
                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Kod</th>
                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Görev Tipi</th>
@@ -162,7 +162,7 @@
              <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-yellow-50">
                     <tr>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Seçili</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Selected"]</th>
                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Kod</th>
                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
                         <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Miktar</th>
@@ -204,7 +204,7 @@
      <!-- Product Category Section -->
     <div class="mt-6">
         <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
-             <h3 class="font-bold text-gray-800 text-sm">Ürün Kategorisi (@Model.ProductCategories.Count)</h3>
+             <h3 class="font-bold text-gray-800 text-sm">@Localizer["ProductCategory"] (@Model.ProductCategories.Count)</h3>
         </div>
         <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
              <table class="min-w-full divide-y divide-gray-200">
@@ -246,7 +246,7 @@
     <div class="mt-8 flex flex-col items-center space-y-4">
          
          <partial name="_DetailNavigator" model="@(new DetailNavigatorViewModel {
-             Header = "İş Navigasyonu",
+             Header = Localizer["JobNavigation"],
              CurrentIndex = Model.CurrentIndex,
              TotalCount = Model.TotalSelected,
              FirstUrl = BuildNavUrl(0),
@@ -266,7 +266,7 @@
                 Değerlendirmeyi Geri Al
             </button>
              <a href="/Job/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                Geçmiş Görüntüle
+                @Localizer["ViewHistory"]
             </a>
          </div>
     </div>

@@ -5,7 +5,7 @@
 @model InvoiceViewModel
 
 @{
-    ViewData["Title"] = "Fatura İşlemleri";
+    ViewData["Title"] = Localizer["InvoiceOperations"];
 }
 
 <div x-data="invoicePage()" @@customer-selected.window="handleSelection($event.detail)" class="space-y-6">
@@ -13,7 +13,7 @@
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
              <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                Fatura İşlemleri
+                @Localizer["InvoiceOperations"]
             </h2>
         </div>
     </div>
@@ -26,7 +26,7 @@
                     Fatura Sorgulama
                 </h3>
                 <div class="text-xs text-gray-500">
-                    Son 30 gün varsayılan
+                    @Localizer["Last30DaysDefault"]
                 </div>
             </div>
         </div>
@@ -35,7 +35,7 @@
                 
                 <!-- Job Customer (Is Musterisi) -->
                 <div class="sm:col-span-6">
-                    <label class="block text-sm font-medium text-gray-700">İş Müşterisi</label>
+                    <label class="block text-sm font-medium text-gray-700">@Localizer["JobCustomer"]</label>
                      <div class="mt-1 flex rounded-md shadow-sm">
                         <div class="relative flex-grow focus-within:z-10">
                              <input type="text" readonly x-model="jobCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400" placeholder="Tüm Müşteriler">
@@ -51,7 +51,7 @@
 
                 <!-- Invoice Customer (Fatura Musterisi) -->
                 <div class="sm:col-span-6">
-                    <label class="block text-sm font-medium text-gray-700">Fatura Müşterisi</label>
+                    <label class="block text-sm font-medium text-gray-700">@Localizer["InvoiceCustomer"]</label>
                      <div class="mt-1 flex rounded-md shadow-sm">
                         <div class="relative flex-grow focus-within:z-10">
                              <input type="text" readonly x-model="invoiceCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400" placeholder="Tüm Müşteriler">
@@ -67,7 +67,7 @@
 
                 <!-- Reference Range -->
                 <div class="sm:col-span-3">
-                    <label class="block text-sm font-medium text-gray-700">Referans Aralığı</label>
+                    <label class="block text-sm font-medium text-gray-700">@Localizer["ReferenceRange"]</label>
                     <div class="mt-1 flex space-x-2">
                         <input type="text" x-model="filter.referenceStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md" placeholder="Başlangıç">
                         <input type="text" x-model="filter.referenceEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md" placeholder="Bitiş">
@@ -122,8 +122,8 @@
                     <div class="mt-1">
                         <select x-model="filter.evaluated" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                             <option value="">Tümü</option>
-                            <option value="true">Evet</option>
-                            <option value="false">Hayır</option>
+                            <option value="true">@Localizer["Yes"]</option>
+                            <option value="false">@Localizer["No"]</option>
                         </select>
                     </div>
                 </div>
@@ -144,7 +144,7 @@
                  </div>
                  <div class="flex items-center space-x-3">
                     <button type="button" @@click="resetFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Temizle
+                        @Localizer["Clear"]
                     </button>
                     <button type="button" @@click="searchInvoices()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Sorgula
@@ -173,10 +173,10 @@
              <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 mb-4">
                  <!-- New Job Customer -->
                 <div class="sm:col-span-6">
-                    <label class="block text-sm font-medium text-gray-700">İş Müşterisi</label>
+                    <label class="block text-sm font-medium text-gray-700">@Localizer["JobCustomer"]</label>
                      <div class="mt-1 flex rounded-md shadow-sm">
                         <div class="relative flex-grow focus-within:z-10">
-                             <input type="text" readonly x-model="newJobCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400" placeholder="Müşteri Seçiniz">
+                             <input type="text" readonly x-model="newJobCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400" placeholder="@Localizer["PleaseSelectCustomer"]">
                         </div>
                         <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'newJob' })" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-400 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

@@ -140,11 +140,11 @@
 
                         @if (Model.Filter.Evaluated == true)
                         {
-                            <option value="true" selected>Evet</option>
+                            <option value="true" selected>@Localizer["Yes"]</option>
                         }
                         else
                         {
-                            <option value="true">Evet</option>
+                            <option value="true">@Localizer["Yes"]</option>
                         }
                     </select>
                 </div>
@@ -167,7 +167,7 @@
                             type="button"
                             @@click="clearFilterResources"
                             class="text-red-600 font-semibold hover:underline">
-                        Temizle
+                        @Localizer["Clear"]
                     </button>
 
                     <template x-for="resourceId in filterResourceIds" :key="resourceId">
@@ -186,7 +186,7 @@
                     Sorgula
                 </button>
                 <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    Temizle
+                    @Localizer["Clear"]
                 </button>
             </div>
         </div>

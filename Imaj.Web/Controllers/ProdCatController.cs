@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IProdCatService _prodCatService;
 
-        public ProdCatController(IProdCatService prodCatService, ILogger<ProdCatController> logger)
-            : base(logger)
+        public ProdCatController(IProdCatService prodCatService, ILogger<ProdCatController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _prodCatService = prodCatService;
         }
@@ -85,7 +87,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _prodCatService.GetProdCatDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Urun kategorisi bulunamadi.");
+                ShowError(detailResult.Message ?? L("ProductCategoryNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -111,7 +113,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _prodCatService.GetProdCatDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Urun kategorisi bulunamadi.");
+                ShowError(detailResult.Message ?? L("ProductCategoryNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -160,11 +162,11 @@ namespace Imaj.Web.Controllers
             var result = await _prodCatService.UpdateProdCatAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Urun kategorisi guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ProductCategoryUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Urun kategorisi guncellendi.");
+            ShowSuccess(result.Message ?? L("ProductCategoryUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -190,11 +192,11 @@ namespace Imaj.Web.Controllers
             var result = await _prodCatService.CreateProdCatAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Urun kategorisi kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ProductCategorySaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Urun kategorisi kaydedildi.");
+            ShowSuccess(result.Message ?? L("ProductCategorySavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create");
@@ -282,18 +284,18 @@ namespace Imaj.Web.Controllers
         {
             if (model.TaxTypeId <= 0)
             {
-                ModelState.AddModelError(nameof(model.TaxTypeId), "Vergi tipi secimi zorunludur.");
+                ModelState.AddModelError(nameof(model.TaxTypeId), L("TaxTypeSelectionRequired"));
             }
 
             if (model.Sequence < 0)
             {
-                ModelState.AddModelError(nameof(model.Sequence), "Sira no sifirdan kucuk olamaz.");
+                ModelState.AddModelError(nameof(model.Sequence), L("SequenceCannotBeNegative"));
             }
 
             var hasName = model.Names.Any(x => x.LanguageId > 0 && !string.IsNullOrWhiteSpace(x.Name));
             if (!hasName)
             {
-                ModelState.AddModelError(string.Empty, "En az bir dilde ad girilmelidir.");
+                ModelState.AddModelError(string.Empty, L("AtLeastOneLocalizedNameRequired"));
             }
         }
 

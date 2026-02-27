@@ -11,8 +11,8 @@ namespace Imaj.Web.Services.Reports
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public string ProductGroupDisplay { get; set; } = "Tümü";
-        public string ProductDisplay { get; set; } = "Tümü";
-        public string CustomerDisplay { get; set; } = "Tümü";
+        public string ProductGroupDisplay { get; set; } = string.Empty;
+        public string ProductDisplay { get; set; } = string.Empty;
+        public string CustomerDisplay { get; set; } = string.Empty;
     }
 }

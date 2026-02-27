@@ -117,5 +117,791 @@
   <data name="InformationSystem" xml:space="preserve">
     <value>Imaj Bilgi Sistemi</value>
   </data>
+  <data name="ProductReportMenu" xml:space="preserve">
+    <value>Ürün Raporu</value>
+  </data>
+  <data name="SystemVersion" xml:space="preserve">
+    <value>Sesam Imaj Bilgi Sistemi 2.0.7</value>
+  </data>
+  <data name="OpenMenu" xml:space="preserve">
+    <value>Menüyü aç</value>
+  </data>
+  <data name="SuccessTitle" xml:space="preserve">
+    <value>Başarılı!</value>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>Hata!</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="ConfirmYes" xml:space="preserve">
+    <value>Evet</value>
+  </data>
+  <data name="ConfirmCancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Sorgula</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Ad</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="Invalid" xml:space="preserve">
+    <value>Geçersiz</value>
+  </data>
+  <data name="All" xml:space="preserve">
+    <value>Tümü</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Evet</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>Hayır</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>Seç</value>
+  </data>
+  <data name="AddSelected" xml:space="preserve">
+    <value>Seçilenleri Ekle</value>
+  </data>
+  <data name="NoRecordsFound" xml:space="preserve">
+    <value>Kayıt bulunamadı.</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Önceki</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Sonraki</value>
+  </data>
+  <data name="First" xml:space="preserve">
+    <value>İlk</value>
+  </data>
+  <data name="Last" xml:space="preserve">
+    <value>Son</value>
+  </data>
+  <data name="Page" xml:space="preserve">
+    <value>Sayfa</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Toplam</value>
+  </data>
+  <data name="Records" xml:space="preserve">
+    <value>kayıt</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Vazgeç</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>Şehir</value>
+  </data>
+  <data name="Country" xml:space="preserve">
+    <value>Ülke</value>
+  </data>
+  <data name="AreaCode" xml:space="preserve">
+    <value>Alan Kodu</value>
+  </data>
+  <data name="Owner" xml:space="preserve">
+    <value>Sahibi</value>
+  </data>
+  <data name="Related" xml:space="preserve">
+    <value>İlgili</value>
+  </data>
+  <data name="Phone" xml:space="preserve">
+    <value>Telefon</value>
+  </data>
+  <data name="Fax" xml:space="preserve">
+    <value>Faks</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>E-Mail</value>
+  </data>
+  <data name="TaxOffice" xml:space="preserve">
+    <value>Vergi Dairesi</value>
+  </data>
+  <data name="TaxNumber" xml:space="preserve">
+    <value>Vergi Numarası</value>
+  </data>
+  <data name="MainCriteria" xml:space="preserve">
+    <value>Ana Kriterler</value>
+  </data>
+  <data name="AddressSearch" xml:space="preserve">
+    <value>Adres Sorgulama</value>
+  </data>
+  <data name="ContactSearch" xml:space="preserve">
+    <value>İletişim Sorgulama</value>
+  </data>
+  <data name="InvoiceSearch" xml:space="preserve">
+    <value>Fatura Sorgulama</value>
+  </data>
+  <data name="JobSearch" xml:space="preserve">
+    <value>İş Sorgulama</value>
+  </data>
+  <data name="ProductCategories" xml:space="preserve">
+    <value>Ürün Kategorileri</value>
+  </data>
+  <data name="ProductCategory" xml:space="preserve">
+    <value>Ürün Kategorisi</value>
+  </data>
+  <data name="ProductGroup" xml:space="preserve">
+    <value>Ürün Grubu</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>Kategori</value>
+  </data>
+  <data name="Group" xml:space="preserve">
+    <value>Grup</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Açıklama</value>
+  </data>
+  <data name="FullName" xml:space="preserve">
+    <value>Ad Soyad</value>
+  </data>
+  <data name="PageSize" xml:space="preserve">
+    <value>Sayfa Boyu</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Yükleniyor...</value>
+  </data>
+  <data name="OnlyValid" xml:space="preserve">
+    <value>Sadece Geçerli</value>
+  </data>
+  <data name="OnlyInvalid" xml:space="preserve">
+    <value>Sadece Geçersiz</value>
+  </data>
+  <data name="Valid" xml:space="preserve">
+    <value>Geçerli</value>
+  </data>
+  <data name="Global" xml:space="preserve">
+    <value>Global</value>
+  </data>
+  <data name="AllMenu" xml:space="preserve">
+    <value>Tüm Menü</value>
+  </data>
+  <data name="TaxCode" xml:space="preserve">
+    <value>Vergi Kodu</value>
+  </data>
+  <data name="TaxName" xml:space="preserve">
+    <value>Vergi Adı</value>
+  </data>
+  <data name="SearchPrompt" xml:space="preserve">
+    <value>Arama yapmak için 'Sorgula' butonuna basınız.</value>
+  </data>
+  <data name="RecordLabel" xml:space="preserve">
+    <value>Kayıt</value>
+  </data>
+  <data name="FunctionSelectionTitle" xml:space="preserve">
+    <value>Fonksiyon Seçimi</value>
+  </data>
+  <data name="RoleSelectionTitle" xml:space="preserve">
+    <value>Rol Seçimi</value>
+  </data>
+  <data name="CustomerSearchTitle" xml:space="preserve">
+    <value>Müşteri Sorgulama</value>
+  </data>
+  <data name="EmployeeSearchTitle" xml:space="preserve">
+    <value>Çalışan Sorgulama</value>
+  </data>
+  <data name="ProductSearchTitle" xml:space="preserve">
+    <value>Ürün Sorgulama</value>
+  </data>
+  <data name="ProductSelectionTitle" xml:space="preserve">
+    <value>Ürün Seçimi</value>
+  </data>
+  <data name="ResourceSelectionTitle" xml:space="preserve">
+    <value>Kaynak Seçimi</value>
+  </data>
+  <data name="ResourceCategorySelectionTitle" xml:space="preserve">
+    <value>Kaynak Kategorisi Seçimi</value>
+  </data>
+  <data name="PleaseEnterCustomerCode" xml:space="preserve">
+    <value>Lütfen bir müşteri kodu giriniz.</value>
+  </data>
+  <data name="CustomerCreatedSuccess" xml:space="preserve">
+    <value>Müşteri başarıyla oluşturuldu.</value>
+  </data>
+  <data name="CustomerCreateFailed" xml:space="preserve">
+    <value>Müşteri oluşturulurken bir hata oluştu.</value>
+  </data>
+  <data name="PrintReportStarted" xml:space="preserve">
+    <value>Rapor basma işlemi başlatıldı.</value>
+  </data>
+  <data name="PleaseSelectCustomer" xml:space="preserve">
+    <value>Lütfen bir müşteri seçiniz.</value>
+  </data>
+  <data name="PleaseEnterJobName" xml:space="preserve">
+    <value>Lütfen iş adını giriniz.</value>
+  </data>
+  <data name="PleaseEnterStartDate" xml:space="preserve">
+    <value>Lütfen başlangıç tarihini giriniz.</value>
+  </data>
+  <data name="PleaseCheckFormFields" xml:space="preserve">
+    <value>Lütfen form alanlarını kontrol ediniz.</value>
+  </data>
+  <data name="ServerError" xml:space="preserve">
+    <value>Sunucu hatası oluştu.</value>
+  </data>
+  <data name="ConnectionError" xml:space="preserve">
+    <value>Bir bağlantı hatası oluştu.</value>
+  </data>
+  <data name="GenericError" xml:space="preserve">
+    <value>Bir hata oluştu.</value>
+  </data>
+  <data name="DataLoadError" xml:space="preserve">
+    <value>Veriler yüklenirken bir hata oluştu.</value>
+  </data>
+  <data name="JobCreatedWithReference" xml:space="preserve">
+    <value>İş başarıyla oluşturuldu. Referans No: {0}</value>
+  </data>
+  <data name="SaveError" xml:space="preserve">
+    <value>Kayıt sırasında bir hata oluştu.</value>
+  </data>
+  <data name="CustomerUpdatedSuccess" xml:space="preserve">
+    <value>Müşteri başarıyla güncellendi.</value>
+  </data>
+  <data name="CustomerUpdateFailed" xml:space="preserve">
+    <value>Müşteri güncellenirken bir hata oluştu.</value>
+  </data>
+  <data name="CustomerCreatedRecordSuccess" xml:space="preserve">
+    <value>Müşteri kaydı başarılı.</value>
+  </data>
+  <data name="ReportDataUnavailable" xml:space="preserve">
+    <value>Rapor verisi alınamadı.</value>
+  </data>
+  <data name="StartEndDateRequired" xml:space="preserve">
+    <value>Başlangıç ve bitiş tarihi zorunludur.</value>
+  </data>
+  <data name="EndDateBeforeStart" xml:space="preserve">
+    <value>Bitiş tarihi başlangıç tarihinden küçük olamaz.</value>
+  </data>
+  <data name="AllOption" xml:space="preserve">
+    <value>Tümü</value>
+  </data>
+  <data name="FunctionIdRequired" xml:space="preserve">
+    <value>Fonksiyon ID zorunludur.</value>
+  </data>
+  <data name="FunctionNotFound" xml:space="preserve">
+    <value>Fonksiyon bulunamadı.</value>
+  </data>
+  <data name="ReservationPairRequired" xml:space="preserve">
+    <value>Rezervasyon Uyumlu ve Rezervasyon Aralığı birlikte seçilmelidir.</value>
+  </data>
+  <data name="ProductListUnavailable" xml:space="preserve">
+    <value>Ürün listesi alınamadı.</value>
+  </data>
+  <data name="ResoCatListUnavailable" xml:space="preserve">
+    <value>Kaynak kategorisi listesi alınamadı.</value>
+  </data>
+  <data name="Billed" xml:space="preserve">
+    <value>Faturalandı</value>
+  </data>
+  <data name="DetailedOvertimeSheet" xml:space="preserve">
+    <value>Detaylı Mesai</value>
+  </data>
+  <data name="SummaryOvertimeSheet" xml:space="preserve">
+    <value>Özet Mesai</value>
+  </data>
+  <data name="AdminSummaryOvertimeSheet" xml:space="preserve">
+    <value>İdari Özet Mesai</value>
+  </data>
+  <data name="DetailedOvertimeReportTitle" xml:space="preserve">
+    <value>Detaylı Mesai Raporu</value>
+  </data>
+  <data name="SummaryOvertimeReportTitle" xml:space="preserve">
+    <value>Özet Mesai Raporu</value>
+  </data>
+  <data name="AdminSummaryOvertimeReportTitle" xml:space="preserve">
+    <value>İdari Özet Mesai Raporu</value>
+  </data>
+  <data name="OvertimeType" xml:space="preserve">
+    <value>Mesai Tipi</value>
+  </data>
+  <data name="Reference" xml:space="preserve">
+    <value>Referans</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Tarih</value>
+  </data>
+  <data name="Notes" xml:space="preserve">
+    <value>Notlar</value>
+  </data>
+  <data name="Quantity" xml:space="preserve">
+    <value>Miktar</value>
+  </data>
+  <data name="Amount" xml:space="preserve">
+    <value>Tutar</value>
+  </data>
+  <data name="EmployeeTotalFormat" xml:space="preserve">
+    <value>{0} Toplamı</value>
+  </data>
+  <data name="DateRange" xml:space="preserve">
+    <value>Tarih Aralığı :</value>
+  </data>
+  <data name="EmployeeWithColon" xml:space="preserve">
+    <value>Çalışan :</value>
+  </data>
+  <data name="CustomerWithColon" xml:space="preserve">
+    <value>Müşteri :</value>
+  </data>
+  <data name="ProductGroupWithColon" xml:space="preserve">
+    <value>Ürün Grubu :</value>
+  </data>
+  <data name="ProductWithColon" xml:space="preserve">
+    <value>Ürün :</value>
+  </data>
+  <data name="ProductGroupColumn" xml:space="preserve">
+    <value>Ürün Grubu</value>
+  </data>
+  <data name="ProductColumn" xml:space="preserve">
+    <value>Ürün</value>
+  </data>
+  <data name="ReportTotal" xml:space="preserve">
+    <value>Rapor Toplamı</value>
+  </data>
+  <data name="DetailedProductSheet" xml:space="preserve">
+    <value>Detaylı Ürün</value>
+  </data>
+  <data name="DetailedProductReportTitle" xml:space="preserve">
+    <value>Detaylı Ürün Raporu</value>
+  </data>
+  <data name="DetailedOvertimeFilePrefix" xml:space="preserve">
+    <value>detayli-mesai-raporu</value>
+  </data>
+  <data name="SummaryOvertimeFilePrefix" xml:space="preserve">
+    <value>ozet-mesai-raporu</value>
+  </data>
+  <data name="AdminSummaryOvertimeFilePrefix" xml:space="preserve">
+    <value>idari-ozet-mesai-raporu</value>
+  </data>
+  <data name="DetailedProductFilePrefix" xml:space="preserve">
+    <value>detayli-urun-raporu</value>
+  </data>
+  <data name="FunctionUpdatedSuccess" xml:space="preserve">
+    <value>Fonksiyon güncellendi.</value>
+  </data>
+  <data name="FunctionSavedSuccess" xml:space="preserve">
+    <value>Fonksiyon kaydedildi.</value>
+  </data>
+  <data name="FunctionUpdateFailed" xml:space="preserve">
+    <value>Fonksiyon güncellenemedi.</value>
+  </data>
+  <data name="FunctionSaveFailed" xml:space="preserve">
+    <value>Fonksiyon kaydedilemedi.</value>
+  </data>
+  <data name="AbsenceNotFound" xml:space="preserve">
+    <value>Mazeret bulunamadı.</value>
+  </data>
+  <data name="AbsenceSaveFailed" xml:space="preserve">
+    <value>Mazeret kaydedilemedi.</value>
+  </data>
+  <data name="AbsenceSavedSuccess" xml:space="preserve">
+    <value>Mazeret kaydedildi.</value>
+  </data>
+  <data name="AtLeastOneFunctionRequired" xml:space="preserve">
+    <value>En az bir fonksiyon seçilmelidir.</value>
+  </data>
+  <data name="AtLeastOneLocalizedNameRequired" xml:space="preserve">
+    <value>En az bir dilde ad girilmelidir.</value>
+  </data>
+  <data name="CodeMaxLength8" xml:space="preserve">
+    <value>Kod en fazla 8 karakter olabilir.</value>
+  </data>
+  <data name="CodeRequired" xml:space="preserve">
+    <value>Kod zorunludur.</value>
+  </data>
+  <data name="EmployeeNotFound" xml:space="preserve">
+    <value>Çalışan bulunamadı.</value>
+  </data>
+  <data name="EmployeeSaveFailed" xml:space="preserve">
+    <value>Çalışan kaydedilemedi.</value>
+  </data>
+  <data name="EmployeeSavedSuccess" xml:space="preserve">
+    <value>Çalışan kaydedildi.</value>
+  </data>
+  <data name="EmployeeUpdateFailed" xml:space="preserve">
+    <value>Çalışan güncellenemedi.</value>
+  </data>
+  <data name="EmployeeUpdatedSuccess" xml:space="preserve">
+    <value>Çalışan güncellendi.</value>
+  </data>
+  <data name="EndDateMustBeAfterStartDate" xml:space="preserve">
+    <value>Bitiş tarihi başlangıç tarihinden büyük olmalıdır.</value>
+  </data>
+  <data name="EndDateRangeInvalid" xml:space="preserve">
+    <value>Bitiş tarihi aralığında ilk tarih ikinci tarihten büyük olamaz.</value>
+  </data>
+  <data name="FunctionListUnavailable" xml:space="preserve">
+    <value>Fonksiyon listesi alınamadı.</value>
+  </data>
+  <data name="FunctionSelectionRequired" xml:space="preserve">
+    <value>Fonksiyon seçimi zorunludur.</value>
+  </data>
+  <data name="NameFieldRequired" xml:space="preserve">
+    <value>Ad alanı zorunludur.</value>
+  </data>
+  <data name="NameMaxLength32" xml:space="preserve">
+    <value>Ad en fazla 32 karakter olabilir.</value>
+  </data>
+  <data name="NameRequired" xml:space="preserve">
+    <value>Ad zorunludur.</value>
+  </data>
+  <data name="PriceCannotBeNegative" xml:space="preserve">
+    <value>Fiyat sıfırdan küçük olamaz.</value>
+  </data>
+  <data name="ProductCategoryNotFound" xml:space="preserve">
+    <value>Ürün kategorisi bulunamadı.</value>
+  </data>
+  <data name="ProductCategorySaveFailed" xml:space="preserve">
+    <value>Ürün kategorisi kaydedilemedi.</value>
+  </data>
+  <data name="ProductCategorySavedSuccess" xml:space="preserve">
+    <value>Ürün kategorisi kaydedildi.</value>
+  </data>
+  <data name="ProductCategorySelectionRequired" xml:space="preserve">
+    <value>Ürün kategorisi seçimi zorunludur.</value>
+  </data>
+  <data name="ProductCategoryUpdateFailed" xml:space="preserve">
+    <value>Ürün kategorisi güncellenemedi.</value>
+  </data>
+  <data name="ProductCategoryUpdatedSuccess" xml:space="preserve">
+    <value>Ürün kategorisi güncellendi.</value>
+  </data>
+  <data name="ProductGroupNotFound" xml:space="preserve">
+    <value>Ürün grubu bulunamadı.</value>
+  </data>
+  <data name="ProductGroupSaveFailed" xml:space="preserve">
+    <value>Ürün grubu kaydedilemedi.</value>
+  </data>
+  <data name="ProductGroupSavedSuccess" xml:space="preserve">
+    <value>Ürün grubu kaydedildi.</value>
+  </data>
+  <data name="ProductGroupSelectionRequired" xml:space="preserve">
+    <value>Ürün grubu seçimi zorunludur.</value>
+  </data>
+  <data name="ProductGroupUpdateFailed" xml:space="preserve">
+    <value>Ürün grubu güncellenemedi.</value>
+  </data>
+  <data name="ProductGroupUpdatedSuccess" xml:space="preserve">
+    <value>Ürün grubu güncellendi.</value>
+  </data>
+  <data name="ProductNotFound" xml:space="preserve">
+    <value>Ürün bulunamadı.</value>
+  </data>
+  <data name="ProductSaveFailed" xml:space="preserve">
+    <value>Ürün kaydedilemedi.</value>
+  </data>
+  <data name="ProductSavedSuccess" xml:space="preserve">
+    <value>Ürün kaydedildi.</value>
+  </data>
+  <data name="ProductUpdateFailed" xml:space="preserve">
+    <value>Ürün güncellenemedi.</value>
+  </data>
+  <data name="ProductUpdatedSuccess" xml:space="preserve">
+    <value>Ürün güncellendi.</value>
+  </data>
+  <data name="ReasonCategorySelectionRequired" xml:space="preserve">
+    <value>Gerekçe kategorisi seçimi zorunludur.</value>
+  </data>
+  <data name="ReasonCodeRequired" xml:space="preserve">
+    <value>Gerekçe kodu zorunludur.</value>
+  </data>
+  <data name="ReasonNotFound" xml:space="preserve">
+    <value>Gerekçe bulunamadı.</value>
+  </data>
+  <data name="ReasonSaveFailed" xml:space="preserve">
+    <value>Gerekçe kaydedilemedi.</value>
+  </data>
+  <data name="ReasonSavedSuccess" xml:space="preserve">
+    <value>Gerekçe kaydedildi.</value>
+  </data>
+  <data name="ReasonSelectionRequired" xml:space="preserve">
+    <value>Gerekçe seçimi zorunludur.</value>
+  </data>
+  <data name="ReasonUpdateFailed" xml:space="preserve">
+    <value>Gerekçe güncellenemedi.</value>
+  </data>
+  <data name="ReasonUpdatedSuccess" xml:space="preserve">
+    <value>Gerekçe güncellendi.</value>
+  </data>
+  <data name="ResourceCategoryNotFound" xml:space="preserve">
+    <value>Kaynak kategorisi bulunamadı.</value>
+  </data>
+  <data name="ResourceCategorySaveFailed" xml:space="preserve">
+    <value>Kaynak kategorisi kaydedilemedi.</value>
+  </data>
+  <data name="ResourceCategorySavedSuccess" xml:space="preserve">
+    <value>Kaynak kategorisi kaydedildi.</value>
+  </data>
+  <data name="ResourceCategorySelectionRequired" xml:space="preserve">
+    <value>Kaynak kategorisi seçimi zorunludur.</value>
+  </data>
+  <data name="ResourceCategoryUpdateFailed" xml:space="preserve">
+    <value>Kaynak kategorisi güncellenemedi.</value>
+  </data>
+  <data name="ResourceCategoryUpdatedSuccess" xml:space="preserve">
+    <value>Kaynak kategorisi güncellendi.</value>
+  </data>
+  <data name="ResourceCodeRequired" xml:space="preserve">
+    <value>Kaynak kodu zorunludur.</value>
+  </data>
+  <data name="ResourceListUnavailable" xml:space="preserve">
+    <value>Kaynak listesi alınamadı.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>Kaynak bulunamadı.</value>
+  </data>
+  <data name="ResourceSaveFailed" xml:space="preserve">
+    <value>Kaynak kaydedilemedi.</value>
+  </data>
+  <data name="ResourceSavedSuccess" xml:space="preserve">
+    <value>Kaynak kaydedildi.</value>
+  </data>
+  <data name="ResourceUpdateFailed" xml:space="preserve">
+    <value>Kaynak güncellenemedi.</value>
+  </data>
+  <data name="ResourceUpdatedSuccess" xml:space="preserve">
+    <value>Kaynak güncellendi.</value>
+  </data>
+  <data name="RoleListUnavailable" xml:space="preserve">
+    <value>Rol listesi alınamadı.</value>
+  </data>
+  <data name="SequenceCannotBeNegative" xml:space="preserve">
+    <value>Sıra no sıfırdan küçük olamaz.</value>
+  </data>
+  <data name="SequenceRangeInvalid" xml:space="preserve">
+    <value>Sıra no başlangıç değeri bitiş değerinden büyük olamaz.</value>
+  </data>
+  <data name="StartDateRangeInvalid" xml:space="preserve">
+    <value>Başlangıç tarihi aralığında ilk tarih ikinci tarihten büyük olamaz.</value>
+  </data>
+  <data name="TaxRateRangeInvalid" xml:space="preserve">
+    <value>Vergi oranı 0 ile 100 arasında olmalıdır.</value>
+  </data>
+  <data name="TaxTypeNotFound" xml:space="preserve">
+    <value>Vergi tipi bulunamadı.</value>
+  </data>
+  <data name="TaxTypeSaveFailed" xml:space="preserve">
+    <value>Vergi tipi kaydedilemedi.</value>
+  </data>
+  <data name="TaxTypeSavedSuccess" xml:space="preserve">
+    <value>Vergi tipi kaydedildi.</value>
+  </data>
+  <data name="TaxTypeSelectionRequired" xml:space="preserve">
+    <value>Vergi tipi seçimi zorunludur.</value>
+  </data>
+  <data name="TaxTypeUpdateFailed" xml:space="preserve">
+    <value>Vergi tipi güncellenemedi.</value>
+  </data>
+  <data name="TaxTypeUpdatedSuccess" xml:space="preserve">
+    <value>Vergi tipi güncellendi.</value>
+  </data>
+  <data name="TimeTypeNotFound" xml:space="preserve">
+    <value>Mesai tipi bulunamadı.</value>
+  </data>
+  <data name="TimeTypeSaveFailed" xml:space="preserve">
+    <value>Mesai tipi kaydedilemedi.</value>
+  </data>
+  <data name="TimeTypeSavedSuccess" xml:space="preserve">
+    <value>Mesai tipi kaydedildi.</value>
+  </data>
+  <data name="TimeTypeUpdateFailed" xml:space="preserve">
+    <value>Mesai tipi güncellenemedi.</value>
+  </data>
+  <data name="TimeTypeUpdatedSuccess" xml:space="preserve">
+    <value>Mesai tipi güncellendi.</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>Kullanıcı bulunamadı.</value>
+  </data>
+  <data name="UserSaveFailed" xml:space="preserve">
+    <value>Kullanıcı kaydedilemedi.</value>
+  </data>
+  <data name="UserSavedSuccess" xml:space="preserve">
+    <value>Kullanıcı kaydedildi.</value>
+  </data>
+  <data name="UserUpdateFailed" xml:space="preserve">
+    <value>Kullanıcı güncellenemedi.</value>
+  </data>
+  <data name="UserUpdatedSuccess" xml:space="preserve">
+    <value>Kullanıcı güncellendi.</value>
+  </data>
+  <data name="WorkTypeNotFound" xml:space="preserve">
+    <value>Görev tipi bulunamadı.</value>
+  </data>
+  <data name="WorkTypeSaveFailed" xml:space="preserve">
+    <value>Görev tipi kaydedilemedi.</value>
+  </data>
+  <data name="WorkTypeSavedSuccess" xml:space="preserve">
+    <value>Görev tipi kaydedildi.</value>
+  </data>
+  <data name="WorkTypeUpdateFailed" xml:space="preserve">
+    <value>Görev tipi güncellenemedi.</value>
+  </data>
+  <data name="WorkTypeUpdatedSuccess" xml:space="preserve">
+    <value>Görev tipi güncellendi.</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="SelectPrompt" xml:space="preserve">
+    <value>Seçiniz</value>
+  </data>
+  <data name="AddBySelection" xml:space="preserve">
+    <value>Seçerek Ekle</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Geri Dön</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Görüntüle</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Değiştir</value>
+  </data>
+  <data name="ClearAll" xml:space="preserve">
+    <value>Tümünü Temizle</value>
+  </data>
+  <data name="ViewHistory" xml:space="preserve">
+    <value>Geçmiş Görüntüle</value>
+  </data>
+  <data name="ViewSummary" xml:space="preserve">
+    <value>Özet Görüntüle</value>
+  </data>
+  <data name="ViewJob" xml:space="preserve">
+    <value>İş Görüntüle</value>
+  </data>
+  <data name="AdminNotes" xml:space="preserve">
+    <value>İdari Notlar</value>
+  </data>
+  <data name="CreateNewCustomer" xml:space="preserve">
+    <value>Yeni Müşteri Yarat</value>
+  </data>
+  <data name="CreateNewJob" xml:space="preserve">
+    <value>Yeni İş Yarat</value>
+  </data>
+  <data name="CustomerCreation" xml:space="preserve">
+    <value>Müşteri Yaratma</value>
+  </data>
+  <data name="CustomerDetails" xml:space="preserve">
+    <value>Müşteri Detayları</value>
+  </data>
+  <data name="CustomerEdit" xml:space="preserve">
+    <value>Müşteri (Düzenle)</value>
+  </data>
+  <data name="CustomerList" xml:space="preserve">
+    <value>Müşteri Listesi</value>
+  </data>
+  <data name="CustomerNotes" xml:space="preserve">
+    <value>Müşteri Notları</value>
+  </data>
+  <data name="CustomerOperations" xml:space="preserve">
+    <value>Müşteri İşlemleri</value>
+  </data>
+  <data name="CustomerReports" xml:space="preserve">
+    <value>Müşteri Raporları</value>
+  </data>
+  <data name="CustomerSearch" xml:space="preserve">
+    <value>Müşteri Sorgulama</value>
+  </data>
+  <data name="EmailSent" xml:space="preserve">
+    <value>E-Posta Yollandı</value>
+  </data>
+  <data name="EndDate" xml:space="preserve">
+    <value>Bitiş Tarihi</value>
+  </data>
+  <data name="EndDateRange" xml:space="preserve">
+    <value>Bitiş Tarihi Aralığı</value>
+  </data>
+  <data name="HistoryRecordNotFound" xml:space="preserve">
+    <value>Geçmiş kaydı bulunamadı.</value>
+  </data>
+  <data name="InvoiceCustomer" xml:space="preserve">
+    <value>Fatura Müşterisi</value>
+  </data>
+  <data name="InvoiceHistory" xml:space="preserve">
+    <value>Fatura Geçmişi</value>
+  </data>
+  <data name="InvoiceOperations" xml:space="preserve">
+    <value>Fatura İşlemleri</value>
+  </data>
+  <data name="InvoiceSummary" xml:space="preserve">
+    <value>Fatura Özet</value>
+  </data>
+  <data name="JobCreation" xml:space="preserve">
+    <value>İş Yaratma</value>
+  </data>
+  <data name="JobCriteria" xml:space="preserve">
+    <value>İş Kriteri</value>
+  </data>
+  <data name="JobCustomer" xml:space="preserve">
+    <value>İş Müşterisi</value>
+  </data>
+  <data name="JobDetail" xml:space="preserve">
+    <value>İş Detayı</value>
+  </data>
+  <data name="JobHistory" xml:space="preserve">
+    <value>İş Geçmişi</value>
+  </data>
+  <data name="JobNavigation" xml:space="preserve">
+    <value>İş Navigasyonu</value>
+  </data>
+  <data name="JobOperations" xml:space="preserve">
+    <value>İş İşlemleri</value>
+  </data>
+  <data name="Jobs" xml:space="preserve">
+    <value>İşler</value>
+  </data>
+  <data name="Last30DaysDefault" xml:space="preserve">
+    <value>Son 30 gün varsayılan</value>
+  </data>
+  <data name="NewUser" xml:space="preserve">
+    <value>Yeni Kullanıcı</value>
+  </data>
+  <data name="ProductCriteria" xml:space="preserve">
+    <value>Ürün Kriteri</value>
+  </data>
+  <data name="ReferenceRange" xml:space="preserve">
+    <value>Referans Aralığı</value>
+  </data>
+  <data name="StartDate" xml:space="preserve">
+    <value>Başlangıç Tarihi</value>
+  </data>
+  <data name="StartDateRange" xml:space="preserve">
+    <value>Başlangıç Tarihi Aralığı</value>
+  </data>
+  <data name="UserCreation" xml:space="preserve">
+    <value>Kullanıcı Yaratma</value>
+  </data>
+  <data name="UserDetail" xml:space="preserve">
+    <value>Kullanıcı Detayı</value>
+  </data>
+  <data name="UserEdit" xml:space="preserve">
+    <value>Kullanıcı Düzenleme</value>
+  </data>
+  <data name="UserList" xml:space="preserve">
+    <value>Kullanıcı Listesi</value>
+  </data>
+  <data name="UserOperations" xml:space="preserve">
+    <value>Kullanıcı İşlemleri</value>
+  </data>
+  <data name="UserSearch" xml:space="preserve">
+    <value>Kullanıcı Sorgulama</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+    <value>Seçili</value>
+  </data>
 
 </root>

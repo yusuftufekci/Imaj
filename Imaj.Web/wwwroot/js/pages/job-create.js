@@ -1,3 +1,5 @@
+const jobCreateText = (key, fallback) => (window.imajTexts && window.imajTexts[key]) || fallback;
+
 function jobCreate(config) {
     return {
         defaultWorkTypeId: config.defaultWorkTypeId || 0,
@@ -28,21 +30,21 @@ function jobCreate(config) {
 
             // Müşteri kontrolü
             if (!this.form.customerId || this.form.customerId <= 0) {
-                this.validationError = 'Lütfen bir müşteri seçiniz.';
+                this.validationError = jobCreateText('pleaseSelectCustomer', 'Please select a customer.');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
 
             // İsim kontrolü
             if (!this.form.name || this.form.name.trim() === '') {
-                this.validationError = 'Lütfen iş adını giriniz.';
+                this.validationError = jobCreateText('pleaseEnterJobName', 'Please enter a job name.');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
 
             // Tarih kontrolü
             if (!this.form.startDate) {
-                this.validationError = 'Lütfen başlangıç tarihini giriniz.';
+                this.validationError = jobCreateText('pleaseEnterStartDate', 'Please enter a start date.');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
@@ -74,19 +76,19 @@ function jobCreate(config) {
                         window.location.href = result.redirectUrl;
                     } else {
                         // Başarısız - Hata göster
-                        this.validationError = result.message || 'Bir hata oluştu.';
+                        this.validationError = result.message || jobCreateText('genericError', 'An error occurred.');
                         if (result.errors && result.errors.length > 0) {
                             this.validationErrorDetails = result.errors;
                         }
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 } else {
-                    this.validationError = 'Sunucu hatası oluştu.';
+                    this.validationError = jobCreateText('serverError', 'A server error occurred.');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             } catch (error) {
                 console.error('Submission error:', error);
-                this.validationError = 'Bir bağlantı hatası oluştu.';
+                this.validationError = jobCreateText('connectionError', 'A connection error occurred.');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } finally {
                 this.isSubmitting = false;

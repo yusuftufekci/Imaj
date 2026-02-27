@@ -7,8 +7,10 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -22,8 +24,8 @@ namespace Imaj.Web.Controllers
 
         private readonly IProdGrpService _prodGrpService;
 
-        public ProdGrpController(IProdGrpService prodGrpService, ILogger<ProdGrpController> logger)
-            : base(logger)
+        public ProdGrpController(IProdGrpService prodGrpService, ILogger<ProdGrpController> logger, IStringLocalizer<SharedResource> localizer)
+            : base(logger, localizer)
         {
             _prodGrpService = prodGrpService;
         }
@@ -85,7 +87,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _prodGrpService.GetProdGrpDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Urun grubu bulunamadi.");
+                ShowError(detailResult.Message ?? L("ProductGroupNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -111,7 +113,7 @@ namespace Imaj.Web.Controllers
             var detailResult = await _prodGrpService.GetProdGrpDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
-                ShowError(detailResult.Message ?? "Urun grubu bulunamadi.");
+                ShowError(detailResult.Message ?? L("ProductGroupNotFound"));
                 return RedirectToAction("List");
             }
 
@@ -154,11 +156,11 @@ namespace Imaj.Web.Controllers
             var result = await _prodGrpService.UpdateProdGrpAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Urun grubu guncellenemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ProductGroupUpdateFailed"));
                 return View("Edit", model);
             }
 
-            ShowSuccess(result.Message ?? "Urun grubu guncellendi.");
+            ShowSuccess(result.Message ?? L("ProductGroupUpdatedSuccess"));
             return RedirectToAction("Detail", new
             {
                 id = model.Id,
@@ -184,11 +186,11 @@ namespace Imaj.Web.Controllers
             var result = await _prodGrpService.CreateProdGrpAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? "Urun grubu kaydedilemedi.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("ProductGroupSaveFailed"));
                 return View("Create", model);
             }
 
-            ShowSuccess(result.Message ?? "Urun grubu kaydedildi.");
+            ShowSuccess(result.Message ?? L("ProductGroupSavedSuccess"));
             if (model.AutomaticForward)
             {
                 return RedirectToAction("Create");
@@ -331,7 +333,7 @@ namespace Imaj.Web.Controllers
             var hasName = model.Names.Any(x => x.LanguageId > 0 && !string.IsNullOrWhiteSpace(x.Name));
             if (!hasName)
             {
-                ModelState.AddModelError(string.Empty, "En az bir dilde ad girilmelidir.");
+                ModelState.AddModelError(string.Empty, L("AtLeastOneLocalizedNameRequired"));
             }
         }
 

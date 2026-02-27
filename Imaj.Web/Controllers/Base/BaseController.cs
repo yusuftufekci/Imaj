@@ -1,6 +1,9 @@
 using Imaj.Service.Results;
+using Imaj.Web;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 
 namespace Imaj.Web.Controllers.Base
 {
@@ -11,10 +14,34 @@ namespace Imaj.Web.Controllers.Base
     public abstract class BaseController : Controller
     {
         protected readonly ILogger _logger;
+        private readonly IStringLocalizer<SharedResource>? _localizer;
 
         protected BaseController(ILogger logger)
         {
             _logger = logger;
+        }
+
+        protected BaseController(ILogger logger, IStringLocalizer<SharedResource> localizer)
+        {
+            _logger = logger;
+            _localizer = localizer;
+        }
+
+        protected string L(string key)
+        {
+            if (_localizer != null)
+            {
+                return _localizer[key].Value;
+            }
+
+            if (key == "GenericError")
+            {
+                return CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+                    ? "An error occurred."
+                    : "Bir hata oluştu.";
+            }
+
+            return key;
         }
 
         /// <summary>
@@ -32,7 +59,7 @@ namespace Imaj.Web.Controllers.Base
             }
 
             _logger.LogWarning("Operation failed: {Message}", result.Message);
-            ShowError(result.Message ?? "Bir hata oluştu.");
+            ShowError(result.Message ?? L("GenericError"));
             return RedirectToAction("Index");
         }
 
@@ -50,7 +77,7 @@ namespace Imaj.Web.Controllers.Base
             }
 
             _logger.LogWarning("Operation failed: {Message}", result.Message);
-            ShowError(result.Message ?? "Bir hata oluştu.");
+            ShowError(result.Message ?? L("GenericError"));
             return RedirectToAction("Index");
         }
 

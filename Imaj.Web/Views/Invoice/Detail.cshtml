@@ -48,11 +48,11 @@
                             <span class="col-span-2 text-gray-900">@invoice.Reference</span>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">İş Müşterisi</span>
+                            <span class="font-bold text-right text-blue-900">@Localizer["JobCustomer"]</span>
                             <span class="col-span-2 text-gray-900">@invoice.JobCustomer</span>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">Fatura Müşterisi</span>
+                            <span class="font-bold text-right text-blue-900">@Localizer["InvoiceCustomer"]</span>
                             <span class="col-span-2 text-gray-900">@invoice.InvoiceCustomer</span>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
@@ -100,7 +100,7 @@
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-yellow-50">
                             <tr>
-                                <th class="px-4 py-2 text-left font-bold text-gray-700">Seçili</th>
+                                <th class="px-4 py-2 text-left font-bold text-gray-700">@Localizer["Selected"]</th>
                                 <th class="px-4 py-2 text-left font-bold text-gray-700">Sıra</th>
                                 <th class="px-4 py-2 text-left font-bold text-gray-700">Notlar</th>
                                 <th class="px-4 py-2 text-right font-bold text-gray-700">Miktar</th>
@@ -135,7 +135,7 @@
                                                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                                                         <thead class="bg-white">
                                                             <tr>
-                                                                <th class="px-3 py-2 text-left font-bold text-gray-700">Seçili</th>
+                                                                <th class="px-3 py-2 text-left font-bold text-gray-700">@Localizer["Selected"]</th>
                                                                 <th class="px-3 py-2 text-left font-bold text-gray-700">Referans</th>
                                                                 <th class="px-3 py-2 text-left font-bold text-gray-700">Ad</th>
                                                                 <th class="px-3 py-2 text-right font-bold text-gray-700">Tutar</th>
@@ -167,11 +167,11 @@
                                                     </table>
                                                 </div>
                                                 <div class="border border-blue-200 rounded">
-                                                    <div class="bg-blue-100 px-3 py-2 text-sm font-bold text-gray-800">Ürün Kategorileri (@invoice.ProductCategories.Count)</div>
+                                                    <div class="bg-blue-100 px-3 py-2 text-sm font-bold text-gray-800">@Localizer["ProductCategories"] (@invoice.ProductCategories.Count)</div>
                                                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                                                         <thead class="bg-white">
                                                             <tr>
-                                                                <th class="px-3 py-2 text-left font-bold text-gray-700">Ürün Kategorisi</th>
+                                                                <th class="px-3 py-2 text-left font-bold text-gray-700">@Localizer["ProductCategory"]</th>
                                                                 <th class="px-3 py-2 text-right font-bold text-gray-700">Ara Tutar</th>
                                                                 <th class="px-3 py-2 text-right font-bold text-gray-700">Net Tutar</th>
                                                             </tr>
@@ -216,7 +216,7 @@
             {
                 <div class="px-2">
                     <a href="/Job/Detail?id=@invoice.WorkItems.First().Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="text-blue-600 hover:text-blue-900 underline text-sm">
-                        İş Görüntüle
+                        @Localizer["ViewJob"]
                     </a>
                 </div>
             }
@@ -282,13 +282,13 @@
                     Geri
                 </a>
                 <a href="/Invoice/Summary?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Özet Görüntüle
+                    @Localizer["ViewSummary"]
                 </a>
                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Değerlendirmeyi Geri Al
                 </button>
                 <a href="/Invoice/History?reference=@invoice.Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Geçmiş Görüntüle
+                    @Localizer["ViewHistory"]
                 </a>
             </div>
         </div>

@@ -2,6 +2,8 @@
  * Customer Index Page
  * Müşteri ana sayfa için Alpine.js component fonksiyonu
  */
+const customerText = (key, fallback) => (window.imajTexts && window.imajTexts[key]) || fallback;
+
 function customerIndex() {
     return {
         newCustomerCode: '',
@@ -11,7 +13,7 @@ function customerIndex() {
          */
         async createCustomer() {
             if (!this.newCustomerCode) {
-                Toast.error('Lütfen bir müşteri kodu giriniz.');
+                Toast.error(customerText('pleaseEnterCustomerCode', 'Please enter a customer code.'));
                 return;
             }
 
@@ -21,14 +23,14 @@ function customerIndex() {
                 });
 
                 if (result.isSuccess) {
-                    Toast.success(result.message || 'Müşteri başarıyla oluşturuldu.');
+                    Toast.success(result.message || customerText('customerCreatedSuccess', 'Customer created successfully.'));
                     this.newCustomerCode = '';
                 } else {
-                    Toast.error(result.message || 'Bir hata oluştu.');
+                    Toast.error(result.message || customerText('genericError', 'An error occurred.'));
                 }
             } catch (error) {
                 console.error('Müşteri oluşturma hatası:', error);
-                Toast.error('Müşteri oluşturulurken bir hata oluştu.');
+                Toast.error(customerText('customerCreateFailed', 'An error occurred while creating the customer.'));
             }
         },
 
@@ -36,7 +38,7 @@ function customerIndex() {
          * Rapor basar
          */
         printReport() {
-            Toast.success('Rapor basma işlemi başlatıldı.');
+            Toast.success(customerText('printReportStarted', 'Report print process started.'));
             // TODO: Implement actual print functionality
         }
     }

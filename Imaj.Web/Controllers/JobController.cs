@@ -1,9 +1,11 @@
 using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Web;
 using Imaj.Web.Authorization;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace Imaj.Web.Controllers
 {
@@ -11,11 +13,16 @@ namespace Imaj.Web.Controllers
     {
         private readonly IJobService _jobService;
         private readonly ILookupService _lookupService;
+        private readonly IStringLocalizer<SharedResource> _localizer;
 
-        public JobController(IJobService jobService, ILookupService lookupService)
+        public JobController(
+            IJobService jobService,
+            ILookupService lookupService,
+            IStringLocalizer<SharedResource> localizer)
         {
             _jobService = jobService;
             _lookupService = lookupService;
+            _localizer = localizer;
         }
 
 
@@ -53,7 +60,7 @@ namespace Imaj.Web.Controllers
                 Status = job.StatusName,
                 IsEmailSent = job.IsEmailSent,
                 IsEvaluated = job.IsEvaluated,
-                InvoiceStatus = job.InvoLineId.HasValue ? "Faturalandı" : "-",
+                InvoiceStatus = job.InvoLineId.HasValue ? L("Billed") : "-",
                 AdminNotes = job.IntNotes,
                 CustomerNotes = job.ExtNotes,
                 
@@ -187,7 +194,7 @@ namespace Imaj.Web.Controllers
                 model.Items = new List<JobSearchResult>();
                 model.TotalCount = 0;
                 // Hatayı ekrana bas
-                ModelState.AddModelError("", result.Message ?? "Veriler yüklenirken bir hata oluştu.");
+                ModelState.AddModelError(string.Empty, result.Message ?? L("DataLoadError"));
             }
 
             return View(model);
@@ -253,7 +260,7 @@ namespace Imaj.Web.Controllers
                 Status = job.StatusName,
                 IsEmailSent = job.IsEmailSent,
                 IsEvaluated = job.IsEvaluated,
-                InvoiceStatus = job.InvoLineId.HasValue ? "Faturalandı" : "-",
+                InvoiceStatus = job.InvoLineId.HasValue ? L("Billed") : "-",
                 
                 // Mapped Notes
                 AdminNotes = job.IntNotes,
@@ -387,7 +394,7 @@ namespace Imaj.Web.Controllers
                         .Select(e => e.ErrorMessage)
                         .ToList();
                         
-                    return Json(new { success = false, message = "Lütfen form alanlarını kontrol ediniz.", errors = errors });
+                    return Json(new { success = false, message = L("PleaseCheckFormFields"), errors = errors });
                 }
 
                 await LoadDropdownDataAsync();
@@ -437,11 +444,11 @@ namespace Imaj.Web.Controllers
             {
                 if (isAjax)
                 {
-                    return Json(new { success = true, message = $"İş başarıyla oluşturuldu. Referans No: {result.Data.Reference}", redirectUrl = Url.Action("Detail", new { id = result.Data.Reference }) });
+                    return Json(new { success = true, message = string.Format(L("JobCreatedWithReference"), result.Data.Reference), redirectUrl = Url.Action("Detail", new { id = result.Data.Reference }) });
                 }
 
                 // Başarılı: TempData ile success mesajı set et
-                TempData["SuccessMessage"] = $"İş başarıyla oluşturuldu. Referans No: {result.Data.Reference}";
+                TempData["SuccessMessage"] = string.Format(L("JobCreatedWithReference"), result.Data.Reference);
                 
                 // Redirect to Detail
                 return RedirectToAction("Detail", new { id = result.Data.Reference });
@@ -450,12 +457,12 @@ namespace Imaj.Web.Controllers
             // Başarısız
             if (isAjax)
             {
-                return Json(new { success = false, message = result.Message ?? "Kayıt sırasında bir hata oluştu." });
+                return Json(new { success = false, message = result.Message ?? L("SaveError") });
             }
 
             // TempData ile error mesajı set et
-            TempData["ErrorMessage"] = result.Message ?? "Kayıt sırasında bir hata oluştu.";
-            ModelState.AddModelError("", result.Message ?? "Kayıt sırasında bir hata oluştu.");
+            TempData["ErrorMessage"] = result.Message ?? L("SaveError");
+            ModelState.AddModelError(string.Empty, result.Message ?? L("SaveError"));
             await LoadDropdownDataAsync();
             return View(model);
         }
@@ -481,6 +488,11 @@ namespace Imaj.Web.Controllers
             // Mesai Tipi listesi
             var timeTypesResult = await _lookupService.GetTimeTypesAsync();
             ViewBag.TimeTypes = timeTypesResult.IsSuccess ? timeTypesResult.Data : new List<TimeTypeDto>();
+        }
+
+        private string L(string key)
+        {
+            return _localizer[key].Value;
         }
     }
 }

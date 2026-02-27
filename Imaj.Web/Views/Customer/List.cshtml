@@ -2,7 +2,7 @@
 @model CustomerListViewModel
 
 @{
-    ViewData["Title"] = "Müşteri Listesi";
+    ViewData["Title"] = Localizer["CustomerList"];
 }
 
 <div x-data="customerList()" class="space-y-6">
@@ -10,12 +10,12 @@
      <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                Müşteri Listesi
+                @Localizer["CustomerList"]
             </h2>
         </div>
          <div class="mt-4 flex md:mt-0 md:ml-4">
             <a href="/Customer" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Geri Dön
+                @Localizer["Back"]
             </a>
         </div>
     </div>
@@ -56,7 +56,7 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Kayıt bulunamadı.</td>
+                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
                                     </tr>
                                 }
                             </tbody>
@@ -154,10 +154,10 @@
         <!-- Action Buttons -->
         <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 space-x-3">
              <button type="button" @@click="goToDetails()" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50" :disabled="!selectedCode">
-                Görüntüle
+                @Localizer["View"]
             </button>
             <button type="button" @@click="goToEdit()" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50" :disabled="!selectedCode">
-                Değiştir
+                @Localizer["Edit"]
             </button>
         </div>
     </div>

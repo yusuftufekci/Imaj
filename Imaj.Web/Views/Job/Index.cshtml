@@ -5,7 +5,7 @@
 @model JobViewModel
 
 @{
-    ViewData["Title"] = "İş İşlemleri";
+    ViewData["Title"] = Localizer["JobOperations"];
 }
 
 <div x-data="jobPage()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@product-selected.window="handleProductSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="space-y-6">
@@ -13,7 +13,7 @@
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
              <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
-                İş Sorgulama
+                @Localizer["JobSearch"]
             </h2>
         </div>
     </div>
@@ -26,13 +26,13 @@
                     
                     <!-- COLUMN 1: İŞ KRİTERİ (Job Criteria) -->
                     <div class="lg:col-span-6 space-y-4 border-r border-gray-200 pr-4">
-                        <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">İş Kriteri</h3>
+                        <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["JobCriteria"]</h3>
                         
                         <div class="grid grid-cols-12 gap-4 items-center">
                             <label class="col-span-4 text-right text-sm font-medium text-gray-700">Fonksiyon</label>
                             <div class="col-span-8">
                                 <select name="Filter.Function" x-model="filter.function" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                    <option value="">Seçiniz</option>
+                                    <option value="">@Localizer["SelectPrompt"]</option>
                                     @if (ViewBag.Functions != null)
                                     {
                                         @foreach (var func in ViewBag.Functions)
@@ -55,9 +55,9 @@
                             </div>
                         </div>
 
-                        <!-- Referans Aralığı -->
+                        <!-- @Localizer["ReferenceRange"] -->
                         <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Referans Aralığı</label>
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["ReferenceRange"]</label>
                             <div class="col-span-8 flex space-x-2">
                                 <input type="text" name="Filter.ReferenceStart" x-model="filter.referenceStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md">
                                 <input type="text" name="Filter.ReferenceEnd" x-model="filter.referenceEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md">
@@ -88,18 +88,18 @@
                             </div>
                         </div>
 
-                        <!-- Başlangıç Tarihi -->
+                        <!-- @Localizer["StartDate"] -->
                         <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Başlangıç Tarihi Aralığı</label>
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["StartDateRange"]</label>
                             <div class="col-span-8 flex space-x-2">
                                 <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")">
                                 <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")">
                             </div>
                         </div>
                         
-                        <!-- Bitiş Tarihi -->
+                        <!-- @Localizer["EndDate"] -->
                         <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">Bitiş Tarihi Aralığı</label>
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["EndDateRange"]</label>
                             <div class="col-span-8 flex space-x-2">
                                 <input type="date" name="Filter.EndDateStart" x-model="filter.endDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                                 <input type="date" name="Filter.EndDateEnd" x-model="filter.endDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
@@ -123,14 +123,14 @@
                             </div>
                         </div>
 
-                        <!-- E-Posta Yollandı -->
+                        <!-- @Localizer["EmailSent"] -->
                         <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">E-Posta Yollandı</label>
+                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["EmailSent"]</label>
                             <div class="col-span-8">
                                 <select name="Filter.EmailSent" x-model="filter.emailSent" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                                     <option value="">Tümü</option>
-                                    <option value="true">Evet</option>
-                                    <option value="false">Hayır</option>
+                                    <option value="true">@Localizer["Yes"]</option>
+                                    <option value="false">@Localizer["No"]</option>
                                 </select>
                             </div>
                         </div>
@@ -141,8 +141,8 @@
                             <div class="col-span-8">
                                 <select name="Filter.Evaluated" x-model="filter.evaluated" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                                     <option value="">Tümü</option>
-                                    <option value="true">Evet</option>
-                                    <option value="false">Hayır</option>
+                                    <option value="true">@Localizer["Yes"]</option>
+                                    <option value="false">@Localizer["No"]</option>
                                 </select>
                             </div>
                         </div>
@@ -202,7 +202,7 @@
 
                         <!-- COLUMN 3: ÜRÜN KRİTERİ (Product Criteria) -->
                         <div class="space-y-4">
-                            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">Ürün Kriteri</h3>
+                            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["ProductCriteria"]</h3>
                             
                             <!-- Ürün -->
                             <div class="grid grid-cols-12 gap-4 items-center">
@@ -237,7 +237,7 @@
     
     <!-- Job Creation Section -->
     <div class="text-center mt-10">
-         <h2 class="text-xl font-bold text-orange-600 mb-4">İş Yaratma</h2>
+         <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["JobCreation"]</h2>
          <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
              <div class="grid grid-cols-12 gap-4 items-center justify-center">
                  <label class="col-span-4 text-right text-sm font-bold text-gray-700 bg-gray-200 px-2 py-1">Ön Bilgiler</label>
@@ -246,7 +246,7 @@
                  <label class="col-span-4 text-right text-sm font-medium text-gray-700">Fonksiyon</label>
                  <div class="col-span-6">
                      <select x-model="filter.function" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                         <option value="">Seçiniz</option>
+                         <option value="">@Localizer["SelectPrompt"]</option>
                          @if (ViewBag.Functions != null)
                          {
                              @foreach (var func in ViewBag.Functions)
@@ -259,7 +259,7 @@
              </div>
              <div class="mt-4 flex justify-center">
                  <a href="/Job/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                    Yeni İş Yarat
+                    @Localizer["CreateNewJob"]
                 </a>
              </div>
          </div>
@@ -270,10 +270,10 @@
          <h2 class="text-xl font-bold text-orange-600 mb-4">İş Raporu</h2>
           <div class="flex justify-center space-x-4">
               <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                Detaylı Fatura Bekleyen İşler Raporu Bas
+                Detaylı Fatura Bekleyen @Localizer["Jobs"] Raporu Bas
             </button>
             <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                Özet Fatura Bekleyen İşler Raporu Bas
+                Özet Fatura Bekleyen @Localizer["Jobs"] Raporu Bas
             </button>
          </div>
     </div>

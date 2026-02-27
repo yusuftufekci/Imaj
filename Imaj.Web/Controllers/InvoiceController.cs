@@ -4,8 +4,10 @@ using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
 using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -18,7 +20,7 @@ namespace Imaj.Web.Controllers
         public InvoiceController(
             IInvoiceService invoiceService,
             ILookupService lookupService,
-            ILogger<InvoiceController> logger) : base(logger)
+            ILogger<InvoiceController> logger, IStringLocalizer<SharedResource> localizer) : base(logger, localizer)
         {
             _invoiceService = invoiceService;
             _lookupService = lookupService;

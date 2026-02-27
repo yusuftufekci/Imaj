@@ -4,11 +4,13 @@ using System.Security.Claims;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
+using Imaj.Web;
 using Imaj.Web.Controllers.Base;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace Imaj.Web.Controllers
@@ -24,7 +26,8 @@ namespace Imaj.Web.Controllers
         public AuthController(
             IAuthService authService,
             IPermissionService permissionService,
-            ILogger<AuthController> logger) : base(logger)
+            ILogger<AuthController> logger,
+            IStringLocalizer<SharedResource> localizer) : base(logger, localizer)
         {
             _authService = authService;
             _permissionService = permissionService;
@@ -50,7 +53,7 @@ namespace Imaj.Web.Controllers
 
             if (result.Data == null)
             {
-                 return Json(ServiceResult<object>.Fail("Bir hata oluştu."));
+                 return Json(ServiceResult<object>.Fail(L("GenericError")));
             }
 
             var principal = _authService.CreatePrincipal(result.Data);

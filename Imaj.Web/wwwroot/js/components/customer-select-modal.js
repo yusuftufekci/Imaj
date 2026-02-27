@@ -126,7 +126,7 @@ function customerSelectModal() {
                 this.hasSearched = true;
             } catch (error) {
                 console.error('Müşteri araması hatası:', error);
-                Toast.error('Müşteri araması sırasında bir hata oluştu.');
+                Toast.error((window.imajTexts && window.imajTexts.genericError) || 'An error occurred.');
             }
         },
 

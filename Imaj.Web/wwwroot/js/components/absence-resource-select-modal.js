@@ -91,7 +91,7 @@ function absenceResourceSelectModal() {
                 this.totalCount = 0;
                 this.hasMore = false;
                 if (window.Toast && typeof window.Toast.error === 'function') {
-                    window.Toast.error('Kaynak listesi alinirken hata olustu.');
+                    window.Toast.error((window.imajTexts && window.imajTexts.genericError) || 'An error occurred.');
                 }
             }
         },
