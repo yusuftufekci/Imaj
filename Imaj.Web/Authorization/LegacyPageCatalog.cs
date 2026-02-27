@@ -56,7 +56,7 @@ namespace Imaj.Web.Authorization
             new() { Key = "ProdGrp", Label = "Urun Grubu", AspPage = "ProdGrpQry.asp", Url = "/ProdGrp", Controller = "ProdGrp", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Product", Label = "Urun", AspPage = "ProductQry.asp", Url = "/Product", Controller = "ProductPage", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Job", Label = "Is", AspPage = "JobQry.asp", Url = "/Job", Controller = "Job", Action = "Index", IncludeInMenu = true, IsImplemented = true },
-            new() { Key = "JobEntry", Label = "Is Girisi", AspPage = "JobEntryQry.asp", Url = "/JobEntry", Controller = "JobEntry", Action = "Index", IncludeInMenu = true, IsImplemented = true },
+            new() { Key = "JobEntry", Label = "JobEntry", AspPage = "JobEntryQry.asp", Url = "/JobEntry", Controller = "JobEntry", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "Invoice", Label = "Fatura", AspPage = "InvoiceQry.asp", Url = "/Invoice", Controller = "Invoice", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "OvertimeReport", Label = "Mesai Raporu", AspPage = "JobWorkReport.asp", Url = "/OvertimeReport", Controller = "OvertimeReport", Action = "Index", IncludeInMenu = true, IsImplemented = true },
             new() { Key = "ProductReport", Label = "Urun Raporu", AspPage = "JobProdReport.asp", Url = "/ProductReport", Controller = "ProductReport", Action = "Index", IncludeInMenu = true, IsImplemented = true },

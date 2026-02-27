@@ -948,5 +948,224 @@
   <data name="WorkAmountUpdate" xml:space="preserve">
     <value>Work Amount Update</value>
   </data>
+  <data name="AbsenceCriteria" xml:space="preserve">
+    <value>Absence Criteria</value>
+  </data>
+  <data name="AddLanguage" xml:space="preserve">
+    <value>Add Language</value>
+  </data>
+  <data name="AllEmployees" xml:space="preserve">
+    <value>All Employees</value>
+  </data>
+  <data name="Company" xml:space="preserve">
+    <value>Company</value>
+  </data>
+  <data name="ContactInfo" xml:space="preserve">
+    <value>Contact Information</value>
+  </data>
+  <data name="Discount" xml:space="preserve">
+    <value>Discount</value>
+  </data>
+  <data name="DiscountAmount" xml:space="preserve">
+    <value>Discount Amount</value>
+  </data>
+  <data name="Evaluated" xml:space="preserve">
+    <value>Evaluated</value>
+  </data>
+  <data name="JobReport" xml:space="preserve">
+    <value>Job Report</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="NetAmount" xml:space="preserve">
+    <value>Net Amount</value>
+  </data>
+  <data name="OpenStatus" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="OvertimeCriteria" xml:space="preserve">
+    <value>Overtime Criteria</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Percentage" xml:space="preserve">
+    <value>Percentage</value>
+  </data>
+  <data name="Price" xml:space="preserve">
+    <value>Price</value>
+  </data>
+  <data name="ProductCreation" xml:space="preserve">
+    <value>Product Creation</value>
+  </data>
+  <data name="ProductSelectionRequired" xml:space="preserve">
+    <value>Product selection required</value>
+  </data>
+  <data name="ReservationCompatible" xml:space="preserve">
+    <value>Reservation Compatible</value>
+  </data>
+  <data name="ReservationRange" xml:space="preserve">
+    <value>Reservation Range</value>
+  </data>
+  <data name="ResourceCriteria" xml:space="preserve">
+    <value>Resource Criteria</value>
+  </data>
+  <data name="Role" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="Sequence" xml:space="preserve">
+    <value>Sequence</value>
+  </data>
+  <data name="SequenceNo" xml:space="preserve">
+    <value>Sequence No</value>
+  </data>
+  <data name="SubTotal" xml:space="preserve">
+    <value>Subtotal</value>
+  </data>
+  <data name="TaxAmount" xml:space="preserve">
+    <value>Tax Amount</value>
+  </data>
+  <data name="TaxRate" xml:space="preserve">
+    <value>Tax Rate</value>
+  </data>
+  <data name="AdminSummaryReport" xml:space="preserve">
+    <value>Administrative Summary Report</value>
+  </data>
+  <data name="DetailedInvoiceReport" xml:space="preserve">
+    <value>Print Detailed Invoice Report</value>
+  </data>
+  <data name="DetailedPendingInvoiceJobsReport" xml:space="preserve">
+    <value>Print Detailed Pending Invoice Jobs Report</value>
+  </data>
+  <data name="PrintReport" xml:space="preserve">
+    <value>Print Report</value>
+  </data>
+  <data name="SummaryInvoiceReport" xml:space="preserve">
+    <value>Print Summary Invoice Report</value>
+  </data>
+  <data name="SummaryPendingInvoiceJobsReport" xml:space="preserve">
+    <value>Print Summary Pending Invoice Jobs Report</value>
+  </data>
+  <data name="AllEmployeesSelectedMessage" xml:space="preserve">
+    <value>Assignment list is disabled because all employees are selected.</value>
+  </data>
+  <data name="AddFreeLine" xml:space="preserve">
+    <value>Add Free Line</value>
+  </data>
+  <data name="Line" xml:space="preserve">
+    <value>Line</value>
+  </data>
+  <data name="UndoEvaluation" xml:space="preserve">
+    <value>Undo Evaluation</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="InvoiceName" xml:space="preserve">
+    <value>Invoice Name</value>
+  </data>
+  <data name="JobEntry" xml:space="preserve">
+    <value>Job Entry</value>
+  </data>
+  <data name="Go" xml:space="preserve">
+    <value>Go</value>
+  </data>
+  <data name="Calculate" xml:space="preserve">
+    <value>Calculate</value>
+  </data>
+  <data name="CreateNewInvoice" xml:space="preserve">
+    <value>Create New Invoice</value>
+  </data>
+  <data name="CreateNewTaxType" xml:space="preserve">
+    <value>Create New Tax Type</value>
+  </data>
+  <data name="CreateNewFunction" xml:space="preserve">
+    <value>Create New Function</value>
+  </data>
+  <data name="CreateNewTimeType" xml:space="preserve">
+    <value>Create New Time Type</value>
+  </data>
+  <data name="WelcomeBack" xml:space="preserve">
+    <value>Welcome Back</value>
+  </data>
+  <data name="PleaseSignIn" xml:space="preserve">
+    <value>Please sign in to your account</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="RememberMe" xml:space="preserve">
+    <value>Remember me</value>
+  </data>
+  <data name="ProtectedByImajSecuritySystem" xml:space="preserve">
+    <value>Protected by Imaj Security System</value>
+  </data>
+  <data name="NewSearch" xml:space="preserve">
+    <value>New Search</value>
+  </data>
+  <data name="CreateNewUser" xml:space="preserve">
+    <value>Create New User</value>
+  </data>
+  <data name="TaxTypeSearch" xml:space="preserve">
+    <value>Tax Type Search</value>
+  </data>
+  <data name="TaxTypeCreation" xml:space="preserve">
+    <value>Tax Type Creation</value>
+  </data>
+  <data name="SelectedResourceCountTemplate" xml:space="preserve">
+    <value>{0} resources selected</value>
+  </data>
+  <data name="ResourceCategorySearch" xml:space="preserve">
+    <value>Resource Category Search</value>
+  </data>
+  <data name="ResourceCategoryCreation" xml:space="preserve">
+    <value>Resource Category Creation</value>
+  </data>
+  <data name="FunctionSearch" xml:space="preserve">
+    <value>Function Search</value>
+  </data>
+  <data name="FunctionCreation" xml:space="preserve">
+    <value>Function Creation</value>
+  </data>
+  <data name="ResourceSearch" xml:space="preserve">
+    <value>Resource Search</value>
+  </data>
+  <data name="ResourceCreation" xml:space="preserve">
+    <value>Resource Creation</value>
+  </data>
+  <data name="ReasonSearch" xml:space="preserve">
+    <value>Reason Search</value>
+  </data>
+  <data name="ReasonCreation" xml:space="preserve">
+    <value>Reason Creation</value>
+  </data>
+  <data name="AbsenceSearch" xml:space="preserve">
+    <value>Absence Search</value>
+  </data>
+  <data name="AbsenceCreation" xml:space="preserve">
+    <value>Absence Creation</value>
+  </data>
+  <data name="WorkTypeSearch" xml:space="preserve">
+    <value>Work Type Search</value>
+  </data>
+  <data name="WorkTypeCreation" xml:space="preserve">
+    <value>Work Type Creation</value>
+  </data>
+  <data name="TimeTypeSearch" xml:space="preserve">
+    <value>Time Type Search</value>
+  </data>
+  <data name="TimeTypeCreation" xml:space="preserve">
+    <value>Time Type Creation</value>
+  </data>
+  <data name="ProductCategorySearch" xml:space="preserve">
+    <value>Product Category Search</value>
+  </data>
+  <data name="ProductCategoryCreation" xml:space="preserve">
+    <value>Product Category Creation</value>
+  </data>
 
 </root>

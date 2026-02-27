@@ -38,6 +38,7 @@ namespace Imaj.Service.Services
             // ... (existing code) ...
             try
             {
+                var languageId = CurrentLanguageId;
                 var snapshot = await _currentPermissionContext.GetSnapshotAsync();
                 if (IsDataScopeDenied(snapshot))
                 {
@@ -58,10 +59,10 @@ namespace Imaj.Service.Services
                 var query = from j in scopedJobs
                             join c in _unitOfWork.Repository<Customer>().Query() on j.CustomerID equals c.Id into cGroup
                             from customer in cGroup.DefaultIfEmpty()
-                            join xf in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == 1) 
+                            join xf in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == languageId)
                                 on j.FunctionID equals xf.FunctionID into fGroup
                             from xFunc in fGroup.DefaultIfEmpty()
-                            join xs in _unitOfWork.Repository<XState>().Query().Where(x => x.LanguageID == 1) 
+                            join xs in _unitOfWork.Repository<XState>().Query().Where(x => x.LanguageID == languageId)
                                 on j.StateID equals xs.StateID into sGroup
                             from xState in sGroup.DefaultIfEmpty()
                             select new { Job = j, CustomerCode = customer != null ? customer.Code : null, CustomerName = customer != null ? customer.Name : null, FunctionName = xFunc != null ? xFunc.Name : null, StateName = xState != null ? xState.Name : null };
@@ -312,6 +313,7 @@ namespace Imaj.Service.Services
         {
             try
             {
+                var languageId = CurrentLanguageId;
                 var snapshot = await _currentPermissionContext.GetSnapshotAsync();
                 if (IsDataScopeDenied(snapshot))
                 {
@@ -326,10 +328,10 @@ namespace Imaj.Service.Services
                             where j.Reference == reference // Referansa göre filtrele
                             join c in _unitOfWork.Repository<Customer>().Query() on j.CustomerID equals c.Id into cGroup
                             from customer in cGroup.DefaultIfEmpty()
-                            join xf in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == 1) 
+                            join xf in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == languageId)
                                 on j.FunctionID equals xf.FunctionID into fGroup
                             from xFunc in fGroup.DefaultIfEmpty()
-                            join xs in _unitOfWork.Repository<XState>().Query().Where(x => x.LanguageID == 1) 
+                            join xs in _unitOfWork.Repository<XState>().Query().Where(x => x.LanguageID == languageId)
                                 on j.StateID equals xs.StateID into sGroup
                             from xState in sGroup.DefaultIfEmpty()
                             select new JobDto
@@ -366,10 +368,10 @@ namespace Imaj.Service.Services
                                       && jw.Deleted == 0
                                       && (activeSnapshot.EmployeeScopeBypass || activeSnapshot.AllowedEmployeeIds.Contains(jw.EmployeeID))
                                 join e in _unitOfWork.Repository<Employee>().Query() on jw.EmployeeID equals e.Id
-                                join xw in _unitOfWork.Repository<XWorkType>().Query().Where(x => x.LanguageID == 1) 
+                                join xw in _unitOfWork.Repository<XWorkType>().Query().Where(x => x.LanguageID == languageId)
                                     on jw.WorkTypeID equals xw.WorkTypeID into wGroup
                                 from xWork in wGroup.DefaultIfEmpty()
-                                join xt in _unitOfWork.Repository<XTimeType>().Query().Where(x => x.LanguageID == 1) 
+                                join xt in _unitOfWork.Repository<XTimeType>().Query().Where(x => x.LanguageID == languageId)
                                     on jw.TimeTypeID equals xt.TimeTypeID into tGroup
                                 from xTime in tGroup.DefaultIfEmpty()
                                 select new JobWorkDto
@@ -392,10 +394,10 @@ namespace Imaj.Service.Services
                 var prodQuery = from jp in _unitOfWork.Repository<JobProd>().Query()
                                 where jp.JobID == jobDto.Id && jp.Deleted == 0
                                 join p in _unitOfWork.Repository<Product>().Query() on jp.ProductID equals p.Id
-                                join xp in _unitOfWork.Repository<XProduct>().Query().Where(x => x.LanguageID == 1) 
+                                join xp in _unitOfWork.Repository<XProduct>().Query().Where(x => x.LanguageID == languageId)
                                     on jp.ProductID equals xp.ProductID into xpGroup
                                 from xProduct in xpGroup.DefaultIfEmpty()
-                                join xpc in _unitOfWork.Repository<XProdCat>().Query().Where(x => x.LanguageID == 1) 
+                                join xpc in _unitOfWork.Repository<XProdCat>().Query().Where(x => x.LanguageID == languageId)
                                     on p.ProdCatID equals xpc.ProdCatID into xpcGroup
                                 from xProdCat in xpcGroup.DefaultIfEmpty()
                                 select new JobProdDto
@@ -420,7 +422,7 @@ namespace Imaj.Service.Services
                 var prodCatQuery = from jpc in _unitOfWork.Repository<JobProdCat>().Query()
                                    where jpc.JobID == jobDto.Id && jpc.Deleted == 0
                                    join pc in _unitOfWork.Repository<ProdCat>().Query() on jpc.ProdCatID equals pc.Id
-                                   join xpc in _unitOfWork.Repository<XProdCat>().Query().Where(x => x.LanguageID == 1)
+                                   join xpc in _unitOfWork.Repository<XProdCat>().Query().Where(x => x.LanguageID == languageId)
                                        on pc.Id equals xpc.ProdCatID into xpcGroup
                                    from xProdCat in xpcGroup.DefaultIfEmpty()
                                    select new JobProdCatDto
@@ -585,7 +587,7 @@ namespace Imaj.Service.Services
             var endDate = filter.EndDate.Date.AddDays(1);
             var customerCode = filter.CustomerCode?.Trim();
             var employeeCodes = NormalizeEmployeeCodes(filter.EmployeeCodes);
-            var languageId = filter.LanguageId > 0 ? filter.LanguageId : 1;
+            var languageId = filter.LanguageId > 0 ? filter.LanguageId : CurrentLanguageId;
 
             var query = from jw in _unitOfWork.Repository<JobWork>().Query()
                         join j in _unitOfWork.Repository<Job>().Query() on jw.JobID equals j.Id
@@ -899,6 +901,7 @@ namespace Imaj.Service.Services
         {
             try
             {
+                var languageId = CurrentLanguageId;
                 var snapshot = await _currentPermissionContext.GetSnapshotAsync();
                 if (IsDataScopeDenied(snapshot))
                 {
@@ -919,7 +922,7 @@ namespace Imaj.Service.Services
                 var query = from log in _unitOfWork.Repository<JobLog>().Query()
                             where log.JobID == jobId
                             join u in _unitOfWork.Repository<User>().Query() on log.UserID equals u.Id
-                            join xl in _unitOfWork.Repository<XLogAction>().Query().Where(x => x.LanguageID == 1) // Türkçe
+                            join xl in _unitOfWork.Repository<XLogAction>().Query().Where(x => x.LanguageID == languageId)
                                 on log.LogActionID equals xl.LogActionID into xlGroup
                             from xLog in xlGroup.DefaultIfEmpty()
                             orderby log.ActionDT descending

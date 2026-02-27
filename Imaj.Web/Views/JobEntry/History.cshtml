@@ -20,26 +20,26 @@
             
             <!-- Left: Basic Info -->
             <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm">
-                <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">Temel Bilgiler</h3>
+                <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">@Localizer["BasicInfo"]</h3>
                 
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Fonksiyon</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Function"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Function</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Referans</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Reference"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Reference</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Müşteri</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Customer"]</span>
                     <span class="col-span-2 text-gray-900">@Model.CustomerName</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Ad</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Name"]</span>
                     <span class="col-span-2 text-gray-900">@Model.ContactName</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">İlgili</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Related"]</span>
                     <span class="col-span-2 text-gray-900">@Model.RelatedPerson</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
@@ -51,7 +51,7 @@
                     <span class="col-span-2 text-gray-900">@Model.EndDate.ToString("dd/MM/yyyy HH:mm") @Model.EndDate.ToString("dddd")</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Durum</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Status"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Status</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
@@ -61,13 +61,13 @@
                     </span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Değerlendirildi</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Evaluated"]</span>
                     <span class="col-span-2">
                          <input type="checkbox" disabled @(Model.IsEvaluated ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
                     </span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Fatura</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Invoice"]</span>
                     <span class="col-span-2 text-gray-900">@Model.InvoiceStatus</span>
                 </div>
             </div>
@@ -89,17 +89,17 @@
     <!-- History Table Section -->
     <div class="mt-6">
         <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
-             <h3 class="font-bold text-gray-800 text-sm">Geçmiş (@Model.Items.Count)</h3>
+             <h3 class="font-bold text-gray-800 text-sm">@Localizer["ViewHistory"] (@Model.Items.Count)</h3>
         </div>
         <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
              <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-yellow-50">
                     <tr>
-                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">Kullanıcı</th>
-                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">Ad</th>
-                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">Tarih</th>
-                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">Hareket</th>
-                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">E-Posta Adresi</th>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["User"]</th>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Name"]</th>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Date"]</th>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Description"]</th>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Email"]</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -131,9 +131,7 @@
 
     <!-- Footer Button -->
     <div class="flex justify-center py-4">
-        <a href="/JobEntry/Detail?id=@Model.Reference" class="inline-flex items-center px-4 py-1 border border-blue-600 text-sm font-bold rounded shadow-sm text-white bg-blue-500 hover:bg-blue-700 focus:outline-none">
-             Geri
-        </a>
+        <a href="/JobEntry/Detail?id=@Model.Reference" class="inline-flex items-center px-4 py-1 border border-blue-600 text-sm font-bold rounded shadow-sm text-white bg-blue-500 hover:bg-blue-700 focus:outline-none">@Localizer["Back"]</a>
     </div>
 
     <div class="text-center text-xs text-white bg-blue-900 py-2 mt-4">

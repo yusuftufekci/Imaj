@@ -948,5 +948,224 @@
   <data name="WorkAmountUpdate" xml:space="preserve">
     <value>Mesai Ücreti</value>
   </data>
+  <data name="AbsenceCriteria" xml:space="preserve">
+    <value>Mazeret Kriterleri</value>
+  </data>
+  <data name="AddLanguage" xml:space="preserve">
+    <value>Dil Ekle</value>
+  </data>
+  <data name="AllEmployees" xml:space="preserve">
+    <value>Tüm Çalışanlar</value>
+  </data>
+  <data name="Company" xml:space="preserve">
+    <value>Şirket</value>
+  </data>
+  <data name="ContactInfo" xml:space="preserve">
+    <value>İletişim Bilgileri</value>
+  </data>
+  <data name="Discount" xml:space="preserve">
+    <value>İndirim</value>
+  </data>
+  <data name="DiscountAmount" xml:space="preserve">
+    <value>İndirim Tutarı</value>
+  </data>
+  <data name="Evaluated" xml:space="preserve">
+    <value>Değerlendirildi</value>
+  </data>
+  <data name="JobReport" xml:space="preserve">
+    <value>İş Raporu</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="NetAmount" xml:space="preserve">
+    <value>Net Tutar</value>
+  </data>
+  <data name="OpenStatus" xml:space="preserve">
+    <value>Açık</value>
+  </data>
+  <data name="Other" xml:space="preserve">
+    <value>Diğer</value>
+  </data>
+  <data name="OvertimeCriteria" xml:space="preserve">
+    <value>Mesai Kriteri</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Şifre</value>
+  </data>
+  <data name="Percentage" xml:space="preserve">
+    <value>Yüzde</value>
+  </data>
+  <data name="Price" xml:space="preserve">
+    <value>Fiyat</value>
+  </data>
+  <data name="ProductCreation" xml:space="preserve">
+    <value>Ürün Yaratma</value>
+  </data>
+  <data name="ProductSelectionRequired" xml:space="preserve">
+    <value>Ürün seçimi zorunlu</value>
+  </data>
+  <data name="ReservationCompatible" xml:space="preserve">
+    <value>Rezervasyon Uyumlu</value>
+  </data>
+  <data name="ReservationRange" xml:space="preserve">
+    <value>Rezervasyon Aralığı</value>
+  </data>
+  <data name="ResourceCriteria" xml:space="preserve">
+    <value>Kaynak Kriterleri</value>
+  </data>
+  <data name="Role" xml:space="preserve">
+    <value>Rol</value>
+  </data>
+  <data name="Sequence" xml:space="preserve">
+    <value>Sıra</value>
+  </data>
+  <data name="SequenceNo" xml:space="preserve">
+    <value>Sıra No</value>
+  </data>
+  <data name="SubTotal" xml:space="preserve">
+    <value>Ara Tutar</value>
+  </data>
+  <data name="TaxAmount" xml:space="preserve">
+    <value>Vergi Tutarı</value>
+  </data>
+  <data name="TaxRate" xml:space="preserve">
+    <value>Vergi Oranı</value>
+  </data>
+  <data name="AdminSummaryReport" xml:space="preserve">
+    <value>İdari Özet Raporu Bas</value>
+  </data>
+  <data name="DetailedInvoiceReport" xml:space="preserve">
+    <value>Detaylı Fatura Raporu Bas</value>
+  </data>
+  <data name="DetailedPendingInvoiceJobsReport" xml:space="preserve">
+    <value>Detaylı Fatura Bekleyen İşler Raporu Bas</value>
+  </data>
+  <data name="PrintReport" xml:space="preserve">
+    <value>Rapor Bas</value>
+  </data>
+  <data name="SummaryInvoiceReport" xml:space="preserve">
+    <value>Özet Fatura Raporu Bas</value>
+  </data>
+  <data name="SummaryPendingInvoiceJobsReport" xml:space="preserve">
+    <value>Özet Fatura Bekleyen İşler Raporu Bas</value>
+  </data>
+  <data name="AllEmployeesSelectedMessage" xml:space="preserve">
+    <value>Tüm çalışanlar seçili olduğu için atama listesi kullanılmıyor.</value>
+  </data>
+  <data name="AddFreeLine" xml:space="preserve">
+    <value>Serbest Satır Ekle</value>
+  </data>
+  <data name="Line" xml:space="preserve">
+    <value>Satır</value>
+  </data>
+  <data name="UndoEvaluation" xml:space="preserve">
+    <value>Değerlendirmeyi Geri Al</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Adres</value>
+  </data>
+  <data name="InvoiceName" xml:space="preserve">
+    <value>Fatura Adı</value>
+  </data>
+  <data name="JobEntry" xml:space="preserve">
+    <value>İş Girişi</value>
+  </data>
+  <data name="Go" xml:space="preserve">
+    <value>Git</value>
+  </data>
+  <data name="Calculate" xml:space="preserve">
+    <value>Hesapla</value>
+  </data>
+  <data name="CreateNewInvoice" xml:space="preserve">
+    <value>Yeni Fatura Yarat</value>
+  </data>
+  <data name="CreateNewTaxType" xml:space="preserve">
+    <value>Yeni Vergi Tipi Yarat</value>
+  </data>
+  <data name="CreateNewFunction" xml:space="preserve">
+    <value>Yeni Fonksiyon Yarat</value>
+  </data>
+  <data name="CreateNewTimeType" xml:space="preserve">
+    <value>Yeni Zaman Tipi Yarat</value>
+  </data>
+  <data name="WelcomeBack" xml:space="preserve">
+    <value>Tekrar Hoş Geldiniz</value>
+  </data>
+  <data name="PleaseSignIn" xml:space="preserve">
+    <value>Lütfen hesabınıza giriş yapın</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Kullanıcı Adı</value>
+  </data>
+  <data name="RememberMe" xml:space="preserve">
+    <value>Beni hatırla</value>
+  </data>
+  <data name="ProtectedByImajSecuritySystem" xml:space="preserve">
+    <value>Imaj Güvenlik Sistemi ile korunmaktadır</value>
+  </data>
+  <data name="NewSearch" xml:space="preserve">
+    <value>Yeni Sorgu</value>
+  </data>
+  <data name="CreateNewUser" xml:space="preserve">
+    <value>Yeni Kullanıcı Yarat</value>
+  </data>
+  <data name="TaxTypeSearch" xml:space="preserve">
+    <value>Vergi Tipi Sorgulama</value>
+  </data>
+  <data name="TaxTypeCreation" xml:space="preserve">
+    <value>Vergi Tipi Yaratma</value>
+  </data>
+  <data name="SelectedResourceCountTemplate" xml:space="preserve">
+    <value>{0} kaynak seçildi</value>
+  </data>
+  <data name="ResourceCategorySearch" xml:space="preserve">
+    <value>Kaynak Kategorisi Sorgulama</value>
+  </data>
+  <data name="ResourceCategoryCreation" xml:space="preserve">
+    <value>Kaynak Kategorisi Yaratma</value>
+  </data>
+  <data name="FunctionSearch" xml:space="preserve">
+    <value>Fonksiyon Sorgulama</value>
+  </data>
+  <data name="FunctionCreation" xml:space="preserve">
+    <value>Fonksiyon Yaratma</value>
+  </data>
+  <data name="ResourceSearch" xml:space="preserve">
+    <value>Kaynak Sorgulama</value>
+  </data>
+  <data name="ResourceCreation" xml:space="preserve">
+    <value>Kaynak Yaratma</value>
+  </data>
+  <data name="ReasonSearch" xml:space="preserve">
+    <value>Gerekçe Sorgulama</value>
+  </data>
+  <data name="ReasonCreation" xml:space="preserve">
+    <value>Gerekçe Yaratma</value>
+  </data>
+  <data name="AbsenceSearch" xml:space="preserve">
+    <value>Mazeret Sorgulama</value>
+  </data>
+  <data name="AbsenceCreation" xml:space="preserve">
+    <value>Mazeret Yaratma</value>
+  </data>
+  <data name="WorkTypeSearch" xml:space="preserve">
+    <value>Görev Tipi Sorgulama</value>
+  </data>
+  <data name="WorkTypeCreation" xml:space="preserve">
+    <value>Görev Tipi Yaratma</value>
+  </data>
+  <data name="TimeTypeSearch" xml:space="preserve">
+    <value>Mesai Tipi Sorgulama</value>
+  </data>
+  <data name="TimeTypeCreation" xml:space="preserve">
+    <value>Mesai Tipi Yaratma</value>
+  </data>
+  <data name="ProductCategorySearch" xml:space="preserve">
+    <value>Ürün Kategorisi Sorgulama</value>
+  </data>
+  <data name="ProductCategoryCreation" xml:space="preserve">
+    <value>Ürün Kategorisi Yaratma</value>
+  </data>
 
 </root>

@@ -2,7 +2,7 @@
 @model CustomerViewModel
 
 @{
-    ViewData["Title"] = "Müşteri Düzenle";
+    ViewData["Title"] = Localizer["CustomerEdit"];
 }
 
 <div x-data="{ autoAdvance: false }" class="space-y-6">
@@ -27,7 +27,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Hata!',
-                    text: 'Lütfen zorunlu alanları kontrol ediniz.',
+                    text: '',
                     confirmButtonColor: '#d33',
                     confirmButtonText: 'Tamam'
                 });

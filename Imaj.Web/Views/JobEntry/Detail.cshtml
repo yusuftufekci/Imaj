@@ -29,7 +29,7 @@
     <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
         <div class="flex-1 min-w-0">
              <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
-                İş
+                @Localizer["Job"]
             </h2>
         </div>
     </div>
@@ -40,26 +40,26 @@
             
             <!-- Left: Basic Info -->
             <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm">
-                <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">Temel Bilgiler</h3>
+                <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">@Localizer["BasicInfo"]</h3>
                 
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Fonksiyon</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Function"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Function</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Referans</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Reference"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Code</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Müşteri</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Customer"]</span>
                     <span class="col-span-2 text-gray-900">@Model.CustomerName</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Ad</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Name"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Name</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">İlgili</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Related"]</span>
                     <span class="col-span-2 text-gray-900">@Model.RelatedPerson</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
@@ -71,7 +71,7 @@
                     <span class="col-span-2 text-gray-900">@Model.EndDate?.ToString("dd/MM/yyyy HH:mm") @Model.EndDate?.ToString("dddd")</span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Durum</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Status"]</span>
                     <span class="col-span-2 text-gray-900">@Model.Status</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
@@ -81,13 +81,13 @@
                     </span>
                 </div>
                  <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Değerlendirildi</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Evaluated"]</span>
                     <span class="col-span-2">
                          <input type="checkbox" disabled @(Model.IsEvaluated ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
                     </span>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">Fatura</span>
+                    <span class="font-bold text-right text-blue-900">@Localizer["Invoice"]</span>
                     <span class="col-span-2 text-gray-900">@Model.InvoiceStatus</span>
                 </div>
             </div>
@@ -116,13 +116,13 @@
                 <thead class="bg-yellow-50">
                     <tr>
                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Selected"]</th>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Kod</th>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Görev Tipi</th>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Mesai Tipi</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Miktar</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Tutar</th>
-                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Notlar</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Code"]</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Name"]</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["WorkType"]</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["TimeType"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["Quantity"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["Amount"]</th>
+                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Notes"]</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -144,7 +144,7 @@
                 </tbody>
                 <tfoot class="bg-yellow-50">
                     <tr>
-                        <td colspan="6" class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                        <td colspan="6" class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Localizer["Total"]</td>
                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalOvertimeAmount.ToString("N2")</td>
                         <td></td>
                     </tr>
@@ -156,20 +156,20 @@
      <!-- Product Section -->
     <div class="mt-6">
         <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
-             <h3 class="font-bold text-gray-800 text-sm">Ürün (@Model.Products.Count)</h3>
+             <h3 class="font-bold text-gray-800 text-sm">@Localizer["Product"] (@Model.Products.Count)</h3>
         </div>
         <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
              <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-yellow-50">
                     <tr>
                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Selected"]</th>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Kod</th>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Miktar</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Fiyat</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Ara Tutar</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Net Tutar</th>
-                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Notlar</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Code"]</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Name"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["Quantity"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["Price"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["SubTotal"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["NetAmount"]</th>
+                         <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Notes"]</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -191,7 +191,7 @@
                 </tbody>
                 <tfoot class="bg-yellow-50">
                     <tr>
-                         <td colspan="5" class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                         <td colspan="5" class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Localizer["Total"]</td>
                          <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.Products.Sum(x => x.SubTotal).ToString("N2")</td>
                          <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalProductAmount.ToString("N2")</td>
                          <td></td>
@@ -210,11 +210,11 @@
              <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-yellow-50">
                     <tr>
-                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">Ad</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Ara Tutar</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">İndirim</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">İndirim Tutarı</th>
-                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">Net Tutar</th>
+                        <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Name"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["SubTotal"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["Discount"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["DiscountAmount"]</th>
+                        <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["NetAmount"]</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -231,7 +231,7 @@
                 </tbody>
                 <tfoot class="bg-yellow-50">
                     <tr>
-                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">Toplam</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Localizer["Total"]</td>
                          <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.ProductCategories.Sum(x => x.SubTotal).ToString("N2")</td>
                          <td></td>
                          <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.ProductCategories.Sum(x => x.DiscountAmount).ToString("N2")</td>
@@ -259,11 +259,9 @@
          })" />
          
          <div class="flex space-x-2">
-             <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                Geri
-            </a>
+             <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
             <button class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                Değerlendirmeyi Geri Al
+                @Localizer["UndoEvaluation"]
             </button>
              <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                 @Localizer["ViewHistory"]

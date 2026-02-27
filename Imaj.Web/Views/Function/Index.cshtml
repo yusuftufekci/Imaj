@@ -3,24 +3,24 @@
 @inject IPermissionViewService PermissionViewService
 
 @{
-    ViewData["Title"] = "Fonksiyon Sorgulama";
+    ViewData["Title"] = Localizer["Function"];
     var canAdd = await PermissionViewService.CanExecuteMethodAsync(1002);
 }
 
 <div class="space-y-8" x-data="functionIndexPage()">
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Fonksiyon Sorgulama</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["FunctionSearch"]</h2>
     </div>
 
     <form method="get" action="/Function/List" class="bg-white border border-gray-200 shadow sm:rounded-lg">
         <div class="px-4 py-5 sm:p-6">
             <div class="bg-blue-50 p-4 rounded-md border border-blue-200 max-w-4xl mx-auto">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">Kriterler</h3>
+                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["MainCriteria"]</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">Rezervasyon Araligi</label>
+                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">@Localizer["ReservationRange"]</label>
                     <select name="IntervalId" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">Tumu</option>
+                        <option value="">@Localizer["AllOption"]</option>
                         @foreach (var interval in Model.Intervals)
                         {
                             if (Model.Filter.IntervalId == interval.Id)
@@ -36,16 +36,16 @@
                 </div>
 
                 <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">Rezervasyon Uyumlu</label>
+                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">@Localizer["ReservationCompatible"]</label>
                     <select name="Reservable" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">Tumu</option>
+                        <option value="">@Localizer["AllOption"]</option>
                         @if (Model.Filter.Reservable == false)
                         {
-                            <option value="false" selected>Hayir</option>
+                            <option value="false" selected>@Localizer["No"]</option>
                         }
                         else
                         {
-                            <option value="false">Hayir</option>
+                            <option value="false">@Localizer["No"]</option>
                         }
 
                         @if (Model.Filter.Reservable == true)
@@ -60,16 +60,16 @@
                 </div>
 
                 <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">Gecersiz</label>
+                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">@Localizer["Invalid"]</label>
                     <select name="IsInvalid" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">Tumu</option>
+                        <option value="">@Localizer["AllOption"]</option>
                         @if (Model.Filter.IsInvalid == false)
                         {
-                            <option value="false" selected>Hayir</option>
+                            <option value="false" selected>@Localizer["No"]</option>
                         }
                         else
                         {
-                            <option value="false">Hayir</option>
+                            <option value="false">@Localizer["No"]</option>
                         }
 
                         @if (Model.Filter.IsInvalid == true)
@@ -85,13 +85,13 @@
             </div>
 
             <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <span class="text-sm text-blue-900 font-semibold">Ilk</span>
+                <span class="text-sm text-blue-900 font-semibold">@Localizer["First"]</span>
                 <input type="number" name="Page" value="@(Model.Filter.Page <= 0 ? 1 : Model.Filter.Page)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                <span class="text-sm text-blue-900 font-semibold">Sayfa Boyu</span>
+                <span class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</span>
                 <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
 
                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                    Sorgula
+                    @Localizer["Search"]
                 </button>
                 <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                     @Localizer["Clear"]
@@ -104,24 +104,24 @@
     {
         <div class="bg-white border border-gray-200 shadow sm:rounded-lg" x-data="functionCreateStarter()">
             <div class="px-4 py-5 sm:p-6 max-w-4xl mx-auto space-y-4">
-                <h3 class="text-3xl font-bold text-orange-600 text-center">Fonksiyon Yaratma</h3>
+                <h3 class="text-3xl font-bold text-orange-600 text-center">@Localizer["FunctionCreation"]</h3>
 
                 <form method="get"
                       action="/Function/Create"
                       class="bg-blue-50 p-4 rounded-md border border-blue-200"
                       @@submit.prevent="submitCreate($event)">
-                    <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">On Bilgiler</h4>
+                    <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["PreInformation"]</h4>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Rezervasyon Uyumlu</label>
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["ReservationCompatible"]</label>
                         <div class="md:col-span-2">
                             <input type="checkbox" name="reservable" value="true" x-model="reservable" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         </div>
 
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">Rezervasyon Araligi</label>
+                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["ReservationRange"]</label>
                         <div class="md:col-span-2">
                             <select name="intervalId" x-model="intervalId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
-                                <option value="">Seciniz</option>
+                                <option value="">@Localizer["SelectPrompt"]</option>
                                 @foreach (var interval in Model.Intervals)
                                 {
                                     <option value="@interval.Id">@interval.Name</option>
@@ -131,9 +131,7 @@
                     </div>
 
                     <div class="mt-4 text-center">
-                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                            Yeni Fonksiyon Yarat
-                        </button>
+                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">@Localizer["CreateNewFunction"]</button>
                     </div>
                 </form>
             </div>

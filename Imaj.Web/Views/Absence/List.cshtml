@@ -6,7 +6,7 @@
 @inject IPermissionViewService PermissionViewService
 
 @{
-    ViewData["Title"] = "Mazeretler";
+    ViewData["Title"] = Localizer["Absence"];
     var canView = await PermissionViewService.CanExecuteMethodAsync(1105);
 
     var queryParts = new List<string>();
@@ -68,7 +68,7 @@
 
 <div x-data="absenceListPage()" class="space-y-6">
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Mazeretler</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["Absence"]</h2>
     </div>
 
     <form x-ref="listForm" method="post" action="/Absence/Detail" class="bg-white border border-gray-200 shadow sm:rounded-lg">
@@ -81,13 +81,13 @@
                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">
                             <input type="checkbox" @@click="toggleAll" :checked="allSelected" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fonksiyon</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Baslangic Tarihi</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Bitis Tarihi</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Gerekce</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Durum</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Degerlendirildi</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Function"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["StartDate"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["EndDate"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Reason"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Status"]</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Evaluated"]</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
@@ -120,7 +120,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">Kayit bulunamadi.</td>
+                            <td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
                         </tr>
                     }
                 </tbody>
@@ -143,13 +143,9 @@
             <div class="mt-4 flex justify-center gap-2">
                 @if (canView)
                 {
-                    <button type="button" @@click="submitTo('/Absence/Detail')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                        Goruntule
-                    </button>
+                    <button type="button" @@click="submitTo('/Absence/Detail')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">@Localizer["View"]</button>
                 }
-                <a href="/Absence" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    Geri
-                </a>
+                <a href="/Absence" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">@Localizer["Back"]</a>
             </div>
         </div>
     </form>

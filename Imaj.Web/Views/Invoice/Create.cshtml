@@ -5,7 +5,7 @@
 @model InvoiceCreateViewModel
 
 @{
-    ViewData["Title"] = "Fatura Ekle";
+    ViewData["Title"] = Localizer["Invoice"];
 }
 
 <div x-data="invoiceCreate()" @@customer-selected.window="handleCustomerSelection($event.detail)" class="space-y-6">
@@ -32,7 +32,7 @@
                 <div class="px-4 py-5 sm:p-6 space-y-4">
                      <!-- Ref -->
                     <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">Referans</label>
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Reference"]</label>
                         <div class="col-span-9 font-bold text-gray-900">@Model.Reference</div>
                     </div>
 
@@ -56,7 +56,7 @@
                                      <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                         <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                                     </svg>
-                                    <span class="text-indigo-600 font-bold">Seç</span>
+                                    <span class="text-indigo-600 font-bold">@Localizer["Select"]</span>
                                 </button>
                             </div>
                         </div>
@@ -65,16 +65,16 @@
                      <div class="grid grid-cols-12 gap-4 items-center">
                          <div class="col-span-3"></div>
                          <div class="col-span-9 flex items-center space-x-2">
-                             <label class="text-sm text-gray-600">Kod</label>
+                             <label class="text-sm text-gray-600">@Localizer["Code"]</label>
                              <input type="text" name="Code" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-24 sm:text-sm border-gray-400 rounded-md">
-                             <label class="text-sm text-gray-600">Sayfa Boyu</label>
+                             <label class="text-sm text-gray-600">@Localizer["PageSize"]</label>
                              <input type="text" value="16" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-16 sm:text-sm border-gray-400 rounded-md">
                          </div>
                      </div>
 
                     <!-- Ad -->
                      <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">Ad</label>
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Name"]</label>
                         <div class="col-span-9">
                             <input type="text" name="Ad" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                         </div>
@@ -82,7 +82,7 @@
 
                     <!-- Ilgili -->
                      <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">İlgili</label>
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Related"]</label>
                         <div class="col-span-9">
                             <input type="text" name="RelatedPerson" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                         </div>
@@ -90,21 +90,21 @@
                     
                     <!-- Date & Status -->
                      <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">Kesilme Tarihi</label>
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Date"]</label>
                         <div class="col-span-9 font-medium text-gray-900">
                              @Model.IssueDate.ToString("dd.MM.yyyy")
                         </div>
                     </div>
 
                      <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">Durum</label>
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Status"]</label>
                         <div class="col-span-9 font-medium text-gray-900">
-                             Açık
+                             @Localizer["OpenStatus"]
                         </div>
                     </div>
                      
                      <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">Değerlendirildi</label>
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Evaluated"]</label>
                         <div class="col-span-9">
                              <input type="checkbox" name="IsEvaluated" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         </div>
@@ -119,7 +119,7 @@
                 <div class="bg-white shadow sm:rounded-lg">
                     <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-50">
                          <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Notlar
+                            @Localizer["Notes"]
                         </h3>
                     </div>
                     <div class="px-4 py-5 sm:p-6">
@@ -127,11 +127,11 @@
                     </div>
                 </div>
 
-                <!-- Dipnot -->
+                <!-- @Localizer["Notes"] -->
                  <div class="bg-white shadow sm:rounded-lg">
                     <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-50">
                          <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Dipnot
+                            @Localizer["Notes"]
                         </h3>
                     </div>
                     <div class="px-4 py-5 sm:p-6">
@@ -145,14 +145,14 @@
         <div class="bg-white shadow sm:rounded-lg mt-8">
             <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-100 flex justify-between items-center">
                  <h3 class="text-lg leading-6 font-medium text-gray-900">
-                    Satır (<span x-text="lines.length"></span>)
+                    @Localizer["Line"] (<span x-text="lines.length"></span>)
                 </h3>
             </div>
             <div class="px-4 py-5 sm:p-6">
                 <!-- Toolbar -->
                 <div class="mb-4">
                      <button type="button" @@click="addLine()" class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
-                        Serbest Satır Ekle
+                        @Localizer["AddFreeLine"]
                     </button>
                 </div>
 
@@ -163,12 +163,12 @@
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Açıklama</th>
-                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Tutar</th>
-                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">KDV %</th>
-                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Genel Toplam</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Description"]</th>
+                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">@Localizer["Amount"]</th>
+                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">@Localizer["TaxRate"]</th>
+                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">@Localizer["Total"]</th>
                                             <th scope="col" class="relative px-6 py-3 w-10">
-                                                <span class="sr-only">Sil</span>
+                                                <span class="sr-only">@Localizer["Delete"]</span>
                                             </th>
                                         </tr>
                                     </thead>
@@ -206,11 +206,11 @@
              <!-- Verification Totals (Matching Screenshot Style) -->
             <div class="px-4 py-5 border-t border-gray-200 sm:px-6 bg-blue-100 grid grid-cols-2 gap-4">
                 <div class="flex justify-between font-bold text-gray-900">
-                    <span>Toplam</span>
+                    <span>@Localizer["Total"]</span>
                     <span x-text="formatMoney(totalAmount)"></span>
                 </div>
                 <div class="flex justify-between font-bold text-gray-900">
-                     <span>Toplam</span>
+                     <span>@Localizer["Total"]</span>
                     <span x-text="formatMoney(grandTotal)"></span>
                 </div>
             </div>
@@ -222,14 +222,12 @@
                 @Localizer["Save"]
             </button>
             <button type="button" class="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                Vazgeç
+                @Localizer["Cancel"]
             </button> 
              <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-800 shadow-sm text-sm font-medium rounded-md text-white bg-blue-800 hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 @Localizer["ViewSummary"]
             </button>
-             <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-400 shadow-sm text-sm font-medium rounded-md text-white bg-blue-400 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Hesapla
-            </button>
+             <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-400 shadow-sm text-sm font-medium rounded-md text-white bg-blue-400 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">@Localizer["Calculate"]</button>
         </div>
 
     </form>

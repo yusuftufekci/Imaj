@@ -4,7 +4,7 @@
 @inject IPermissionViewService PermissionViewService
 
 @{
-    ViewData["Title"] = "Kullanicilar";
+    ViewData["Title"] = Localizer["User"];
     var canView = await PermissionViewService.CanExecuteMethodAsync(970);
     var canEdit = await PermissionViewService.CanExecuteMethodAsync(971);
 
@@ -51,12 +51,12 @@
                                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">
                                         <input type="checkbox" @@click="toggleAll" :checked="allSelected" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kod</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ad</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Dil</th>
-                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tüm Çalışanlar</th>
-                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Geçersiz</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Şirket</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Code"]</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Language"]</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["AllEmployees"]</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Invalid"]</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Company"]</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 bg-white">
@@ -129,9 +129,7 @@
                         @Localizer["Edit"]
                     </button>
                 }
-                <a href="/User" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    Geri
-                </a>
+                <a href="/User" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">@Localizer["Back"]</a>
             </div>
         </div>
     </form>

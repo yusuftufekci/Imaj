@@ -4,7 +4,7 @@
 @model AbsenceDetailViewModel
 
 @{
-    ViewData["Title"] = "Mazeret";
+    ViewData["Title"] = Localizer["Absence"];
     var selectedIds = Model.SelectedIds ?? new List<string>();
 
     string BuildDetailUrl(int index)
@@ -58,39 +58,39 @@
 
 <div class="space-y-6">
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Rezervasyon / Mazeret</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["Absence"]</h2>
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <section class="xl:col-span-2 bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-800">Temel Bilgiler</h3>
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["BasicInfo"]</h3>
             </div>
 
             <div class="p-4 space-y-3 text-sm">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">Fonksiyon</span>
+                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Function"]</span>
                     <span class="md:col-span-8 text-gray-900">@Model.FunctionName</span>
 
-                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">Baslangic Tarihi</span>
+                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["StartDate"]</span>
                     <span class="md:col-span-8 text-gray-900">@Model.StartDate.ToString("dd/MM/yyyy HH:mm dddd", uiCulture)</span>
 
-                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">Bitis Tarihi</span>
+                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["EndDate"]</span>
                     <span class="md:col-span-8 text-gray-900">@Model.EndDate.ToString("dd/MM/yyyy HH:mm dddd", uiCulture)</span>
 
-                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">Gerekce</span>
+                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Reason"]</span>
                     <span class="md:col-span-8 text-gray-900">@Model.ReasonName</span>
 
-                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">Ad</span>
+                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Name"]</span>
                     <span class="md:col-span-8 text-gray-900">@Model.Name</span>
 
-                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">Ilgili</span>
+                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Related"]</span>
                     <span class="md:col-span-8 text-gray-900">@Model.Contact</span>
 
-                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">Durum</span>
+                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Status"]</span>
                     <span class="md:col-span-8 text-gray-900">@Model.StateName</span>
 
-                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">Degerlendirildi</span>
+                    <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Evaluated"]</span>
                     <span class="md:col-span-8">
                         <input type="checkbox" disabled @(Model.Evaluated ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
                     </span>
@@ -100,7 +100,7 @@
 
         <section class="xl:col-span-1 bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-800">Notlar</h3>
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["Notes"]</h3>
             </div>
 
             <div class="p-4">
@@ -111,17 +111,17 @@
 
     <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
         <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-            <h3 class="text-lg font-semibold text-gray-800">Kaynak (@Model.Resources.Count)</h3>
+            <h3 class="text-lg font-semibold text-gray-800">@Localizer["Resource"] (@Model.Resources.Count)</h3>
         </div>
 
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kod</th>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ad</th>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Fonksiyon</th>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kategori</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Code"]</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Name"]</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Function"]</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Category"]</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
@@ -140,7 +140,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="4" class="px-4 py-4 text-sm text-gray-500 text-center">Kayit yok.</td>
+                            <td colspan="4" class="px-4 py-4 text-sm text-gray-500 text-center">@Localizer["NoRecordsFound"]</td>
                         </tr>
                     }
                 </tbody>
@@ -154,8 +154,6 @@
     }
 
     <div class="flex items-center justify-center gap-3">
-        <a href="@Model.ReturnUrl" class="inline-flex items-center px-5 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-            Geri
-        </a>
+        <a href="@Model.ReturnUrl" class="inline-flex items-center px-5 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">@Localizer["Back"]</a>
     </div>
 </div>
