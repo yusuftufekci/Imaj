@@ -903,5 +903,50 @@
   <data name="Selected" xml:space="preserve">
     <value>Seçili</value>
   </data>
+  <data name="Add" xml:space="preserve">
+    <value>Ekle</value>
+  </data>
+  <data name="AutomaticForward" xml:space="preserve">
+    <value>Otomatik İlerle</value>
+  </data>
+  <data name="BasicInfo" xml:space="preserve">
+    <value>Temel Bilgiler</value>
+  </data>
+  <data name="CreateNewEmployee" xml:space="preserve">
+    <value>Yeni Çalışan Yarat</value>
+  </data>
+  <data name="DefaultValue" xml:space="preserve">
+    <value>Varsayılan</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="EmployeeCreation" xml:space="preserve">
+    <value>Çalışan Yaratma</value>
+  </data>
+  <data name="Employees" xml:space="preserve">
+    <value>Çalışanlar</value>
+  </data>
+  <data name="NewEmployee" xml:space="preserve">
+    <value>Yeni Çalışan</value>
+  </data>
+  <data name="PleaseSelectAtLeastOneEmployee" xml:space="preserve">
+    <value>Lütfen en az bir çalışan seçin.</value>
+  </data>
+  <data name="PreInformation" xml:space="preserve">
+    <value>Ön Bilgiler</value>
+  </data>
+  <data name="SelectFunction" xml:space="preserve">
+    <value>Fonksiyon seçiniz</value>
+  </data>
+  <data name="SelectTimeType" xml:space="preserve">
+    <value>Mesai tipi seçiniz</value>
+  </data>
+  <data name="SelectWorkType" xml:space="preserve">
+    <value>Görev tipi seçiniz</value>
+  </data>
+  <data name="WorkAmountUpdate" xml:space="preserve">
+    <value>Mesai Ücreti</value>
+  </data>
 
 </root>

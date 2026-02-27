@@ -903,5 +903,50 @@
   <data name="Selected" xml:space="preserve">
     <value>Selected</value>
   </data>
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="AutomaticForward" xml:space="preserve">
+    <value>Automatic Forward</value>
+  </data>
+  <data name="BasicInfo" xml:space="preserve">
+    <value>Basic Information</value>
+  </data>
+  <data name="CreateNewEmployee" xml:space="preserve">
+    <value>Create New Employee</value>
+  </data>
+  <data name="DefaultValue" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="EmployeeCreation" xml:space="preserve">
+    <value>Employee Creation</value>
+  </data>
+  <data name="Employees" xml:space="preserve">
+    <value>Employees</value>
+  </data>
+  <data name="NewEmployee" xml:space="preserve">
+    <value>New Employee</value>
+  </data>
+  <data name="PleaseSelectAtLeastOneEmployee" xml:space="preserve">
+    <value>Please select at least one employee.</value>
+  </data>
+  <data name="PreInformation" xml:space="preserve">
+    <value>Pre-Information</value>
+  </data>
+  <data name="SelectFunction" xml:space="preserve">
+    <value>Select function</value>
+  </data>
+  <data name="SelectTimeType" xml:space="preserve">
+    <value>Select overtime type</value>
+  </data>
+  <data name="SelectWorkType" xml:space="preserve">
+    <value>Select work type</value>
+  </data>
+  <data name="WorkAmountUpdate" xml:space="preserve">
+    <value>Work Amount Update</value>
+  </data>
 
 </root>
