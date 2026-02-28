@@ -8,20 +8,30 @@
     ViewData["Title"] = Localizer["InvoiceOperations"];
 }
 
-<div x-data="invoicePage()" @@customer-selected.window="handleSelection($event.detail)" class="space-y-8">
-    <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">@Localizer["InvoiceOperations"]</h2>
+<div x-data="invoicePage()" @@customer-selected.window="handleSelection($event.detail)" class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                @Localizer["InvoiceOperations"]
+            </h2>
+        </div>
     </div>
 
     <!-- Section 1: Invoice Inquiry (@Localizer["InvoiceSearch"]) -->
-    <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 pb-2">
-                    <h3 class="text-lg font-semibold text-gray-700">@Localizer["MainCriteria"]</h3>
-                    <span class="text-xs text-gray-500">@Localizer["Last30DaysDefault"]</span>
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    @Localizer["InvoiceSearch"]
+                </h3>
+                <div class="text-xs text-gray-500">
+                    @Localizer["Last30DaysDefault"]
                 </div>
-                <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+            </div>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                 
                 <!-- Job Customer (Is Musterisi) -->
                 <div class="sm:col-span-6">
@@ -118,48 +128,45 @@
                     </div>
                 </div>
 
-                </div>
-
-                <div class="mt-6 flex flex-col items-center space-y-4 border-t border-blue-200 pt-4">
-                    <div class="flex flex-wrap items-center justify-center gap-3">
-                        <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
-                        <input type="number" x-model="filter.first" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
-                        <select x-model="filter.pageSize" class="shadow-sm border-gray-300 rounded-md sm:text-sm">
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button type="button" @@click="resetFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                            @Localizer["Clear"]
-                        </button>
-                        <button type="button" @@click="searchInvoices()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                            @Localizer["Search"]
-                        </button>
-                    </div>
-                    <div class="flex justify-center space-x-3">
-                        <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                            @Localizer["DetailedInvoiceReport"]
-                        </button>
-                        <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                            @Localizer["SummaryInvoiceReport"]
-                        </button>
-                    </div>
-                </div>
+            </div>
+            
+            <!-- Actions -->
+             <div class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between border-t border-gray-200 pt-4 gap-4">
+                 <div class="flex items-center space-x-2">
+                    <label class="text-sm text-gray-500">@Localizer["First"]</label>
+                    <input type="number" x-model="filter.first" min="1" class="w-20 shadow-sm border-gray-400 rounded-md sm:text-sm text-center">
+                     <label class="text-sm text-gray-500">@Localizer["PageSize"]</label>
+                    <input type="number" x-model="filter.pageSize" min="1" class="w-20 shadow-sm border-gray-400 rounded-md sm:text-sm text-center">
+                 </div>
+                 <div class="flex items-center space-x-3">
+                    <button type="button" @@click="resetFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        @Localizer["Clear"]
+                    </button>
+                    <button type="button" @@click="searchInvoices()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        @Localizer["Search"]
+                    </button>
+                 </div>
+            </div>
+             <div class="mt-4 flex justify-center space-x-3">
+                <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    @Localizer["DetailedInvoiceReport"]
+                </button>
+                <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    @Localizer["SummaryInvoiceReport"]
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Section 2: Invoice Creation (Fatura Yaratma) -->
-     <div class="bg-white border border-gray-200 shadow sm:rounded-lg mt-8">
+     <div class="bg-white shadow sm:rounded-lg mt-8">
+        <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+             <h3 class="text-lg leading-6 font-medium text-gray-900">
+                Fatura Yaratma
+            </h3>
+        </div>
         <div class="px-4 py-5 sm:p-6">
-             <h3 class="text-3xl font-bold text-orange-600 text-center mb-5">@Localizer["InvoiceCreation"]</h3>
-             <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                 <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["PreInformation"]</h4>
-                 <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 mb-4">
+             <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 mb-4">
                  <!-- New Job Customer -->
                 <div class="sm:col-span-6">
                     <label class="block text-sm font-medium text-gray-700">@Localizer["JobCustomer"]</label>
@@ -175,10 +182,9 @@
                         </button>
                     </div>
                 </div>
-                </div>
-                 <div class="flex justify-center">
-                     <button type="button" @@click="createInvoice()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">@Localizer["CreateNewInvoice"]</button>
-                 </div>
+            </div>
+             <div class="flex justify-center">
+                 <button type="button" @@click="createInvoice()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">@Localizer["CreateNewInvoice"]</button>
              </div>
         </div>
     </div>
