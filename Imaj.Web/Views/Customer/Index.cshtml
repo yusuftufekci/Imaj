@@ -140,9 +140,10 @@
              <div class="mt-8 flex justify-center space-x-3">
                  <div class="flex items-center space-x-2 mr-4">
                      <span class="text-sm text-gray-500">@Localizer["First"]</span>
-                     <input type="number" name="Page" value="1" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
+                     <input type="number" name="First" value="@(Model.First.HasValue && Model.First.Value > 0 ? Model.First.Value : (Model.PageSize > 0 ? Model.PageSize : 20))" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
                      <span class="text-sm text-gray-500">@Localizer["PageSize"]</span>
-                     <input type="number" name="PageSize" value="20" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
+                     <input type="number" name="PageSize" value="@(Model.PageSize > 0 ? Model.PageSize : 20)" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
+                     <input type="hidden" name="Page" value="1">
                  </div>
 
                  <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">

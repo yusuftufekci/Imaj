@@ -7,6 +7,7 @@ namespace Imaj.Service.DTOs
         public bool? Reservable { get; set; }
         public decimal? IntervalId { get; set; }
         public bool? IsInvalid { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
     }
@@ -45,6 +46,7 @@ namespace Imaj.Service.DTOs
         public string? Code { get; set; }
         public string? Name { get; set; }
         public bool? IsInvalid { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public IReadOnlyCollection<decimal> ExcludeIds { get; set; } = new List<decimal>();
@@ -62,6 +64,7 @@ namespace Imaj.Service.DTOs
     {
         public string? Name { get; set; }
         public bool? IsInvalid { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public IReadOnlyCollection<decimal> ExcludeIds { get; set; } = new List<decimal>();

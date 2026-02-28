@@ -62,6 +62,7 @@ namespace Imaj.Web.Controllers
             var normalizedFilter = filter ?? new AbsenceFilterModel();
             normalizedFilter.Page = normalizedFilter.Page > 0 ? normalizedFilter.Page : 1;
             normalizedFilter.PageSize = normalizedFilter.PageSize > 0 ? normalizedFilter.PageSize : 16;
+            normalizedFilter.First = normalizedFilter.First.HasValue && normalizedFilter.First.Value > 0 ? normalizedFilter.First.Value : normalizedFilter.PageSize;
             normalizedFilter.ResourceIds = normalizedFilter.ResourceIds
                 .Where(x => x > 0)
                 .Distinct()
@@ -97,7 +98,8 @@ namespace Imaj.Web.Controllers
                 Evaluated = normalizedFilter.Evaluated,
                 ResourceIds = normalizedFilter.ResourceIds,
                 Page = normalizedFilter.Page,
-                PageSize = normalizedFilter.PageSize
+                PageSize = normalizedFilter.PageSize,
+                First = normalizedFilter.First
             });
 
             var model = new AbsenceListViewModel
@@ -188,7 +190,8 @@ namespace Imaj.Web.Controllers
                 IsInvalid = normalizedFilter.IsInvalid,
                 ExcludeIds = ParseDecimalCsv(normalizedFilter.ExcludeIds),
                 Page = normalizedFilter.Page,
-                PageSize = normalizedFilter.PageSize
+                PageSize = normalizedFilter.PageSize,
+                First = normalizedFilter.First
             });
 
             if (!result.IsSuccess || result.Data == null)

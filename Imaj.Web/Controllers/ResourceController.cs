@@ -58,6 +58,7 @@ namespace Imaj.Web.Controllers
             var normalizedFilter = filter ?? new ResourceFilterModel();
             normalizedFilter.Page = normalizedFilter.Page > 0 ? normalizedFilter.Page : 1;
             normalizedFilter.PageSize = normalizedFilter.PageSize > 0 ? normalizedFilter.PageSize : 16;
+            normalizedFilter.First = normalizedFilter.First.HasValue && normalizedFilter.First.Value > 0 ? normalizedFilter.First.Value : normalizedFilter.PageSize;
 
             if (normalizedFilter.SequenceFrom.HasValue && normalizedFilter.SequenceTo.HasValue
                 && normalizedFilter.SequenceFrom.Value > normalizedFilter.SequenceTo.Value)
@@ -75,7 +76,8 @@ namespace Imaj.Web.Controllers
                 ResoCatId = normalizedFilter.ResoCatId,
                 IsInvalid = normalizedFilter.IsInvalid,
                 Page = normalizedFilter.Page,
-                PageSize = normalizedFilter.PageSize
+                PageSize = normalizedFilter.PageSize,
+                First = normalizedFilter.First
             });
 
             var model = new ResourceListViewModel

@@ -6,6 +6,7 @@ namespace Imaj.Web.Models
     public class ProdGrpFilterModel
     {
         public bool? IsInvalid { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
     }
@@ -25,6 +26,7 @@ namespace Imaj.Web.Models
     public class ProdGrpListViewModel
     {
         public List<ProdGrpListItemViewModel> Items { get; set; } = new();
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
         public int TotalCount { get; set; }

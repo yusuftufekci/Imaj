@@ -16,6 +16,7 @@ namespace Imaj.Service.DTOs
         public decimal? StateId { get; set; }
         public bool? Evaluated { get; set; }
         public List<decimal> ResourceIds { get; set; } = new();
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
     }
@@ -72,6 +73,7 @@ namespace Imaj.Service.DTOs
         public decimal? FunctionId { get; set; }
         public bool? IsInvalid { get; set; }
         public List<decimal> ExcludeIds { get; set; } = new();
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }

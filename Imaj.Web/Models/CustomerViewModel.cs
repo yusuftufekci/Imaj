@@ -75,6 +75,7 @@ namespace Imaj.Web.Models
         public List<CustomerViewModel> Items { get; set; } = new List<CustomerViewModel>();
         public int Page { get; set; }
         public int PageSize { get; set; }
+        public int? First { get; set; }
         public int TotalCount { get; set; }
         public CustomerFilterModel? Filter { get; set; } // To maintain filter state in pagination links
     }

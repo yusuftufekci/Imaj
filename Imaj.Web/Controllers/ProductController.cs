@@ -20,6 +20,9 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> Search([FromBody] ProductFilterModel? filter)
         {
             var f = filter ?? new ProductFilterModel();
+            f.Page = f.Page > 0 ? f.Page : 1;
+            f.PageSize = f.PageSize > 0 ? f.PageSize : 10;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
             
             var filterDto = new ProductFilterDto
             {
@@ -29,7 +32,8 @@ namespace Imaj.Web.Controllers
                 Function = IsAllOption(f.Function) ? null : f.Function,
                 IsInvalid = f.IsInvalid,
                 Page = f.Page,
-                PageSize = f.PageSize > 0 ? f.PageSize : 10
+                PageSize = f.PageSize > 0 ? f.PageSize : 10,
+                First = f.First
             };
 
             var result = await _productService.GetByFilterAsync(filterDto);

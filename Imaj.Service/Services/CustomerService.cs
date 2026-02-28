@@ -216,14 +216,21 @@ namespace Imaj.Service.Services
                 .WhereIfHasValue(filter.JobStateId, c => _unitOfWork.Repository<Job>().Query().Any(j => j.CustomerID == c.Id && j.StateID == filter.JobStateId!.Value))
                 .WhereIfHasValue(filter.IsInvalid, c => c.Invisible == filter.IsInvalid!.Value);
 
-            // Toplam kayıt sayısı (SQL COUNT)
-            var totalCount = await query.CountAsync();
-
-            // Sayfalama ve sıralama
+            // Sayfalama ve first kapsamı
+            var page = filter.Page > 0 ? filter.Page : 1;
             var pageSize = filter.PageSize > 0 ? filter.PageSize : _settings.DefaultPageSize;
-            var items = await query
-                .OrderByDescending(c => c.Id)
-                .Paginate(filter.Page, pageSize)
+            var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
+
+            IQueryable<Customer> scopedQuery = query.OrderByDescending(c => c.Id);
+            if (first.HasValue)
+            {
+                scopedQuery = scopedQuery.Take(first.Value);
+            }
+
+            var totalCount = await scopedQuery.CountAsync();
+            var items = await scopedQuery
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             // AutoMapper ile projection
@@ -233,7 +240,7 @@ namespace Imaj.Service.Services
             {
                 Items = dtos,
                 TotalCount = totalCount,
-                PageNumber = filter.Page,
+                PageNumber = page,
                 PageSize = pageSize
             };
 

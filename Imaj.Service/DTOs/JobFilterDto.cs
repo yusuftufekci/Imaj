@@ -39,6 +39,7 @@ namespace Imaj.Service.DTOs
         public string? ProductCode { get; set; }
         
         // Sayfalama
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
         public string? Sort { get; set; }

@@ -128,15 +128,22 @@ namespace Imaj.Service.Services
                     query = query.Where(x => x.Invoice.Evaluated == filter.Evaluated.Value);
                 }
 
-                var totalCount = await query.CountAsync();
-
                 var page = filter.Page > 0 ? filter.Page : 1;
                 var pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
+                var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
+
+                var orderedQuery = query
+                    .OrderByDescending(x => x.Invoice.IssueDate)
+                    .ThenByDescending(x => x.Invoice.Id);
+
+                var scopedQuery = first.HasValue
+                    ? orderedQuery.Take(first.Value)
+                    : orderedQuery;
+
+                var totalCount = await scopedQuery.CountAsync();
                 var skip = (page - 1) * pageSize;
 
-                var items = await query
-                    .OrderByDescending(x => x.Invoice.IssueDate)
-                    .ThenByDescending(x => x.Invoice.Id)
+                var items = await scopedQuery
                     .Skip(skip)
                     .Take(pageSize)
                     .Select(x => new InvoiceDto

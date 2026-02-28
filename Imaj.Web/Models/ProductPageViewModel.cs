@@ -10,6 +10,7 @@ namespace Imaj.Web.Models
         public decimal? ProductGroupId { get; set; }
         public decimal? FunctionId { get; set; }
         public bool? IsInvalid { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
     }
@@ -60,6 +61,7 @@ namespace Imaj.Web.Models
     public class ProductPageListViewModel
     {
         public List<ProductPageListItemViewModel> Items { get; set; } = new();
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
         public int TotalCount { get; set; }
@@ -147,6 +149,7 @@ namespace Imaj.Web.Models
         public string? Name { get; set; }
         public bool? IsInvalid { get; set; }
         public string? ExcludeIds { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }

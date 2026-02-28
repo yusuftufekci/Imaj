@@ -95,13 +95,18 @@ namespace Imaj.Service.Services
 
                 var page = filter.Page > 0 ? filter.Page : 1;
                 var pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
+                var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
-                // Helper to get total count
-                var totalCount = await query.CountAsync();
+                IQueryable<ProductDto> scopedQuery = query
+                    .OrderBy(x => x.Code);
 
-                // Pagination
-                var items = await query
-                    .OrderBy(x => x.Code)
+                if (first.HasValue)
+                {
+                    scopedQuery = scopedQuery.Take(first.Value);
+                }
+
+                var totalCount = await scopedQuery.CountAsync();
+                var items = await scopedQuery
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();

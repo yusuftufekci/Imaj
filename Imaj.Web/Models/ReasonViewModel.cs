@@ -8,6 +8,7 @@ namespace Imaj.Web.Models
         public string? Code { get; set; }
         public decimal? ReasonCatId { get; set; }
         public bool? IsInvalid { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
     }
@@ -41,6 +42,7 @@ namespace Imaj.Web.Models
     public class ReasonListViewModel
     {
         public List<ReasonListItemViewModel> Items { get; set; } = new();
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
         public int TotalCount { get; set; }

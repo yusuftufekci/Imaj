@@ -58,6 +58,7 @@ namespace Imaj.Web.Models
         public string? JobStatus { get; set; }
         
         // Paging
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }

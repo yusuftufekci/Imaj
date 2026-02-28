@@ -69,6 +69,9 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> Search([FromBody] CustomerFilterModel? filter)
         {
             var f = filter ?? new CustomerFilterModel();
+            f.Page = f.Page > 0 ? f.Page : 1;
+            f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
             
             var serviceFilter = new CustomerFilterDto
             {
@@ -88,7 +91,8 @@ namespace Imaj.Web.Controllers
                 JobStateId = decimal.TryParse(f.JobStatus, out var stateId) ? stateId : null,
                 IsInvalid = f.IsInvalid,
                 Page = f.Page,
-                PageSize = f.PageSize > 0 ? f.PageSize : 10
+                PageSize = f.PageSize > 0 ? f.PageSize : 10,
+                First = f.First
             };
 
             var result = await _customerService.GetByFilterAsync(serviceFilter);
@@ -115,6 +119,9 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> List(CustomerFilterModel filter)
         {
             var f = filter ?? new CustomerFilterModel();
+            f.Page = f.Page > 0 ? f.Page : 1;
+            f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
 
              var serviceFilter = new CustomerFilterDto
             {
@@ -134,7 +141,8 @@ namespace Imaj.Web.Controllers
                 JobStateId = decimal.TryParse(f.JobStatus, out var stateId) ? stateId : null,
                 IsInvalid = f.IsInvalid,
                 Page = f.Page,
-                PageSize = f.PageSize > 0 ? f.PageSize : 20
+                PageSize = f.PageSize > 0 ? f.PageSize : 20,
+                First = f.First
             };
 
             var result = await _customerService.GetByFilterAsync(serviceFilter);
@@ -166,6 +174,7 @@ namespace Imaj.Web.Controllers
                 Items = items,
                 Page = f.Page,
                 PageSize = f.PageSize > 0 ? f.PageSize : 20,
+                First = f.First,
                 TotalCount = totalCount,
                 Filter = f
             };

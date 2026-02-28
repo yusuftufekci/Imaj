@@ -9,6 +9,7 @@ namespace Imaj.Service.DTOs
         public decimal? FunctionID { get; set; }
         // 0: All, 1: Valid (Invisible=false), 2: Invalid (Invisible=true)
         public int Status { get; set; } = 1;
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         

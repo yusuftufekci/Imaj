@@ -26,6 +26,10 @@
     {
         queryParts.Add($"PageSize={Model.Filter.PageSize}");
     }
+    if (Model.Filter.First.HasValue && Model.Filter.First.Value > 0)
+    {
+        queryParts.Add($"First={Model.Filter.First.Value}");
+    }
 
     var queryString = string.Join("&", queryParts);
     var allIds = Model.Items.Select(x => $"'{x.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)}'");

@@ -18,6 +18,7 @@
     if (Model.IssueDateEnd.HasValue) query.Add("IssueDateEnd", Model.IssueDateEnd.Value.ToString("yyyy-MM-dd"));
     if (!string.IsNullOrWhiteSpace(Model.Status)) query.Add("Status", Model.Status);
     if (!string.IsNullOrWhiteSpace(Model.Evaluated)) query.Add("Evaluated", Model.Evaluated);
+    if (Model.First.HasValue && Model.First.Value > 0) query.Add("First", Model.First.Value.ToString());
 
     var queryString = string.Join("&", query.Select(x => x.Key + "=" + WebUtility.UrlEncode(x.Value)));
     var returnUrl = "/Invoice/Results" + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : string.Empty);

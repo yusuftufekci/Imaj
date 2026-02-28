@@ -16,6 +16,7 @@ namespace Imaj.Service.DTOs
         public DateTime? IssueDateEnd { get; set; }
         public decimal? StateId { get; set; }
         public bool? Evaluated { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }

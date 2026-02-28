@@ -258,14 +258,21 @@ namespace Imaj.Service.Services
                 }
 
                 // Toplam kayıt sayısı
-                var totalCount = await query.CountAsync();
-
-                // Sayfalama ve sıralama
+                var page = filter.Page > 0 ? filter.Page : 1;
                 var pageSize = filter.PageSize > 0 ? filter.PageSize : 20;
-                var skip = (filter.Page - 1) * pageSize;
+                var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
-                var items = await query
-                    .OrderByDescending(x => x.Job.StartDT)
+                var orderedQuery = query
+                    .OrderByDescending(x => x.Job.StartDT);
+
+                var scopedQuery = first.HasValue
+                    ? orderedQuery.Take(first.Value)
+                    : orderedQuery;
+
+                var totalCount = await scopedQuery.CountAsync();
+                var skip = (page - 1) * pageSize;
+
+                var items = await scopedQuery
                     .Skip(skip)
                     .Take(pageSize)
                     .Select(x => new JobDto
@@ -292,7 +299,7 @@ namespace Imaj.Service.Services
                 {
                     Items = items,
                     TotalCount = totalCount,
-                    PageNumber = filter.Page,
+                    PageNumber = page,
                     PageSize = pageSize
                 };
 

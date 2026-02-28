@@ -11,6 +11,7 @@ namespace Imaj.Web.Models
         public decimal? FunctionId { get; set; }
         public decimal? ResoCatId { get; set; }
         public bool? IsInvalid { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
     }
@@ -54,6 +55,7 @@ namespace Imaj.Web.Models
     public class ResourceListViewModel
     {
         public List<ResourceListItemViewModel> Items { get; set; } = new();
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
         public int TotalCount { get; set; }

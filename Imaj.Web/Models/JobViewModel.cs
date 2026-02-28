@@ -11,6 +11,7 @@ namespace Imaj.Web.Models
         public JobFilterModel Filter { get; set; } = new JobFilterModel();
         public List<JobSearchResult> Items { get; set; } = new List<JobSearchResult>();
         public int TotalCount { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         
@@ -60,6 +61,7 @@ namespace Imaj.Web.Models
         public string? ProductCode { get; set; }
         public string? ProductName { get; set; }
 
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public string? Sort { get; set; }

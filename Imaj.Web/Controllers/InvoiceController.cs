@@ -53,6 +53,7 @@ namespace Imaj.Web.Controllers
 
             f.Page = f.Page <= 0 ? 1 : f.Page;
             f.PageSize = f.PageSize <= 0 ? 10 : f.PageSize;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
 
             var serviceFilter = BuildFilter(f);
             var result = await _invoiceService.GetByFilterAsync(serviceFilter);
@@ -203,7 +204,8 @@ namespace Imaj.Web.Controllers
                 StateId = decimal.TryParse(f.Status, out var stateId) ? stateId : null,
                 Evaluated = f.Evaluated == "true" ? true : f.Evaluated == "false" ? false : null,
                 Page = f.Page,
-                PageSize = f.PageSize > 0 ? f.PageSize : 10
+                PageSize = f.PageSize > 0 ? f.PageSize : 10,
+                First = f.First
             };
         }
 

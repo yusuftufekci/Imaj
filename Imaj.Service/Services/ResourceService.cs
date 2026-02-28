@@ -117,11 +117,19 @@ namespace Imaj.Service.Services
                     Invisible = resource.Invisible
                 };
 
-            var totalCount = await query.CountAsync();
-            var items = await query
+            var first = normalizedFilter.First.HasValue && normalizedFilter.First.Value > 0 ? normalizedFilter.First.Value : (int?)null;
+            IQueryable<ResourceListItemDto> scopedQuery = query
                 .OrderBy(x => x.Sequence)
                 .ThenBy(x => x.Code)
-                .ThenBy(x => x.Id)
+                .ThenBy(x => x.Id);
+
+            if (first.HasValue)
+            {
+                scopedQuery = scopedQuery.Take(first.Value);
+            }
+
+            var totalCount = await scopedQuery.CountAsync();
+            var items = await scopedQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

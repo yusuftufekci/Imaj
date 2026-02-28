@@ -18,6 +18,7 @@ namespace Imaj.Service.DTOs
         public decimal? JobStateId { get; set; } // Job State ID filter
         public bool? IsInvalid { get; set; } // Maps to Invisible or !IsActive
         
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }

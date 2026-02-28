@@ -79,7 +79,8 @@
                 var query = new Dictionary<string, string>
                 {
                     { "Page", page.ToString() },
-                    { "PageSize", Model.PageSize.ToString() }
+                    { "PageSize", Model.PageSize.ToString() },
+                    { "First", (Model.Filter?.First.HasValue == true && Model.Filter.First.Value > 0 ? Model.Filter.First.Value : (Model.Filter?.PageSize ?? Model.PageSize)).ToString() }
                 };
                 
                 if (Model.Filter != null)

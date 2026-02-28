@@ -58,6 +58,7 @@ namespace Imaj.Web.Controllers
             var normalizedFilter = filter ?? new FunctionFilterModel();
             normalizedFilter.Page = normalizedFilter.Page > 0 ? normalizedFilter.Page : 1;
             normalizedFilter.PageSize = normalizedFilter.PageSize > 0 ? normalizedFilter.PageSize : 16;
+            normalizedFilter.First = normalizedFilter.First.HasValue && normalizedFilter.First.Value > 0 ? normalizedFilter.First.Value : normalizedFilter.PageSize;
 
             var result = await _functionService.GetFunctionsAsync(new FunctionFilterDto
             {
@@ -65,7 +66,8 @@ namespace Imaj.Web.Controllers
                 IntervalId = normalizedFilter.IntervalId,
                 IsInvalid = normalizedFilter.IsInvalid,
                 Page = normalizedFilter.Page,
-                PageSize = normalizedFilter.PageSize
+                PageSize = normalizedFilter.PageSize,
+                First = normalizedFilter.First
             });
 
             var model = new FunctionListViewModel
@@ -185,6 +187,7 @@ namespace Imaj.Web.Controllers
                 IsInvalid = normalizedFilter.IsInvalid,
                 Page = normalizedFilter.Page,
                 PageSize = normalizedFilter.PageSize,
+                First = normalizedFilter.First,
                 ExcludeIds = ParseDecimalCsv(normalizedFilter.ExcludeIds)
             });
 
@@ -214,6 +217,7 @@ namespace Imaj.Web.Controllers
                 IsInvalid = normalizedFilter.IsInvalid,
                 Page = normalizedFilter.Page,
                 PageSize = normalizedFilter.PageSize,
+                First = normalizedFilter.First,
                 ExcludeIds = ParseDecimalCsv(normalizedFilter.ExcludeIds)
             });
 

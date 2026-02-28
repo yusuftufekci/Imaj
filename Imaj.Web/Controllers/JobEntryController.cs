@@ -103,7 +103,7 @@ namespace Imaj.Web.Controllers
         /// </summary>
         [AcceptVerbs("GET", "POST")]
         [RequireMethodPermission(QueryMethodId)]
-        public async Task<IActionResult> List(JobViewModel model, int? page, int? pageSize)
+        public async Task<IActionResult> List(JobViewModel model, int? page, int? pageSize, int? first)
         {
             // Pagination değerlerini URL'den gelen değerlerle override et
             // Bu sayede /JobEntry/List?page=2&pageSize=10 şeklinde linkler çalışır
@@ -115,6 +115,13 @@ namespace Imaj.Web.Controllers
             {
                 model.Filter.PageSize = pageSize.Value;
             }
+            if (first.HasValue && first.Value > 0)
+            {
+                model.Filter.First = first.Value;
+            }
+            model.Filter.First = model.Filter.First.HasValue && model.Filter.First.Value > 0
+                ? model.Filter.First.Value
+                : (model.Filter.PageSize > 0 ? model.Filter.PageSize : 10);
             
             // Dropdown verilerini backend'den al (geri dönüşlerde gerekli)
             await LoadDropdownDataAsync();
@@ -170,7 +177,8 @@ namespace Imaj.Web.Controllers
                 
                 // Sayfalama
                 Page = model.Filter.Page > 0 ? model.Filter.Page : 1,
-                PageSize = model.Filter.PageSize > 0 ? model.Filter.PageSize : 10
+                PageSize = model.Filter.PageSize > 0 ? model.Filter.PageSize : 10,
+                First = model.Filter.First
             };
 
             // Veritabanından verileri getir

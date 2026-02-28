@@ -6,6 +6,7 @@ namespace Imaj.Web.Models
     public class TimeTypeFilterModel
     {
         public bool? IsInvalid { get; set; }
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
     }
@@ -25,6 +26,7 @@ namespace Imaj.Web.Models
     public class TimeTypeListViewModel
     {
         public List<TimeTypeListItemViewModel> Items { get; set; } = new();
+        public int? First { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 16;
         public int TotalCount { get; set; }

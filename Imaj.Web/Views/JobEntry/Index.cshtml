@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <form method="post" action="/JobEntry/List">
+    <form method="get" action="/JobEntry/List">
         <!-- Main Filter Card -->
         <div class="bg-white shadow sm:rounded-lg border border-gray-200">
             <div class="px-4 py-5 sm:p-6">
@@ -224,8 +224,10 @@
                 <div class="mt-8 flex flex-col items-center space-y-4 border-t border-gray-200 pt-6">
                     <div class="flex items-center space-x-3">
                         <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
-                        <input type="number" name="PageSize" x-model="pageSize" class="w-16 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
-                        <label class="text-sm text-blue-900 font-semibold">@Localizer["Page"]</label>
+                        <input type="number" name="Filter.First" x-model="filter.first" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
+                        <input type="number" name="Filter.PageSize" x-model="filter.pageSize" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        <input type="hidden" name="Filter.Page" value="1">
                         <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                             @Localizer["Search"]
                         </button>
@@ -290,10 +292,11 @@
                 productId: '', productCode: '', productName: '',
                 
                 page: 1,
+                first: @((Model.Filter.First.HasValue && Model.Filter.First.Value > 0 ? Model.Filter.First.Value : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 10))),
+                pageSize: @(Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 10),
             },
             
-            customerName: '', 
-            pageSize: 10,
+            customerName: '',
             
             init() {},
 

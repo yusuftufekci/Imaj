@@ -2,6 +2,14 @@
 
 @{
     ViewData["Title"] = Localizer["Jobs"];
+
+    var queryParts = Context.Request.Query
+        .Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase)
+                 && !string.Equals(q.Key, "pageSize", StringComparison.OrdinalIgnoreCase))
+        .SelectMany(q => q.Value
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => $"{q.Key}={Uri.EscapeDataString(v!)}"));
+    var paginationQuery = string.Join("&", queryParts);
 }
 
 <div x-data="jobList()" class="space-y-6">
@@ -84,7 +92,8 @@
                      CurrentPage = Model.Page, 
                      TotalCount = Model.TotalCount, 
                      PageSize = Model.PageSize,
-                     BaseUrl = @"/JobEntry/List"
+                     BaseUrl = @"/JobEntry/List",
+                     QueryString = paginationQuery
                  })" />
              }
              else

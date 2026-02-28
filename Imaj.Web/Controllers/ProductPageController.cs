@@ -59,6 +59,7 @@ namespace Imaj.Web.Controllers
             var normalizedFilter = filter ?? new ProductPageFilterModel();
             normalizedFilter.Page = normalizedFilter.Page > 0 ? normalizedFilter.Page : 1;
             normalizedFilter.PageSize = normalizedFilter.PageSize > 0 ? normalizedFilter.PageSize : 16;
+            normalizedFilter.First = normalizedFilter.First.HasValue && normalizedFilter.First.Value > 0 ? normalizedFilter.First.Value : normalizedFilter.PageSize;
 
             var result = await _productPageService.GetProductsAsync(new ProductPageFilterDto
             {
@@ -68,7 +69,8 @@ namespace Imaj.Web.Controllers
                 FunctionId = normalizedFilter.FunctionId,
                 IsInvalid = normalizedFilter.IsInvalid,
                 Page = normalizedFilter.Page,
-                PageSize = normalizedFilter.PageSize
+                PageSize = normalizedFilter.PageSize,
+                First = normalizedFilter.First
             });
 
             var model = new ProductPageListViewModel
@@ -169,7 +171,8 @@ namespace Imaj.Web.Controllers
                 IsInvalid = normalizedFilter.IsInvalid,
                 ExcludeIds = ParseDecimalCsv(normalizedFilter.ExcludeIds),
                 Page = normalizedFilter.Page,
-                PageSize = normalizedFilter.PageSize
+                PageSize = normalizedFilter.PageSize,
+                First = normalizedFilter.First
             });
 
             if (!result.IsSuccess || result.Data == null)
