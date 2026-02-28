@@ -35,6 +35,9 @@ namespace Imaj.Service.Services
 
         public async Task<ServiceResult<PagedResultDto<UserListItemDto>>> GetUsersAsync(UserFilterDto filter)
         {
+            var first = filter.First.HasValue && filter.First.Value > 0
+                ? filter.First.Value
+                : (int?)null;
             var page = filter.Page > 0 ? filter.Page : 1;
             var pageSize = filter.PageSize > 0 ? filter.PageSize : 16;
 
@@ -79,6 +82,28 @@ namespace Imaj.Service.Services
             if (filter.IsInvalid.HasValue)
             {
                 query = query.Where(x => x.Invisible == filter.IsInvalid.Value);
+            }
+
+            if (first.HasValue)
+            {
+                var firstScope = query
+                    .OrderBy(x => x.Code)
+                    .Take(first.Value);
+
+                var firstTotalCount = await firstScope.CountAsync();
+                var firstPageItems = await firstScope
+                    .OrderBy(x => x.Code)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return ServiceResult<PagedResultDto<UserListItemDto>>.Success(new PagedResultDto<UserListItemDto>
+                {
+                    Items = firstPageItems,
+                    TotalCount = firstTotalCount,
+                    Page = page,
+                    PageSize = pageSize
+                });
             }
 
             var totalCount = await query.CountAsync();

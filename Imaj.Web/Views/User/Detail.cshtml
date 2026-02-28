@@ -55,51 +55,49 @@
 }
 
 <div class="space-y-6">
-    <!-- Header -->
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
                 @Localizer["UserDetail"]
             </h2>
         </div>
     </div>
 
-    <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6 max-w-4xl mx-auto">
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["User"]</h3>
+    <div class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+        <div class="px-4 pt-4 sm:px-6">
+            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["User"]</h3>
+        </div>
+        <div class="px-4 pb-5 sm:px-6 sm:pb-6">
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-3 items-center text-sm">
+                <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Company"]</span>
+                <span class="md:col-span-9 text-gray-900">@Model.CompanyName</span>
 
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Company"]</span>
-                    <span class="md:col-span-9 text-gray-900">@Model.CompanyName</span>
+                <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Code"]</span>
+                <span class="md:col-span-9 text-gray-900">@Model.Code</span>
 
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Code"]</span>
-                    <span class="md:col-span-9 text-gray-900">@Model.Code</span>
+                <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Name"]</span>
+                <span class="md:col-span-9 text-gray-900">@Model.Name</span>
 
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Name"]</span>
-                    <span class="md:col-span-9 text-gray-900">@Model.Name</span>
+                <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Language"]</span>
+                <span class="md:col-span-9 text-gray-900">@Model.LanguageName</span>
 
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Language"]</span>
-                    <span class="md:col-span-9 text-gray-900">@Model.LanguageName</span>
+                <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["AllEmployees"]</span>
+                <span class="md:col-span-9">
+                    <input type="checkbox" disabled @(Model.AllEmployee ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                </span>
 
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["AllEmployees"]</span>
-                    <span class="md:col-span-9">
-                        <input type="checkbox" disabled @(Model.AllEmployee ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
-                    </span>
-
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</span>
-                    <span class="md:col-span-9">
-                        <input type="checkbox" disabled @(Model.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
-                    </span>
-                </div>
+                <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</span>
+                <span class="md:col-span-9">
+                    <input type="checkbox" disabled @(Model.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                </span>
             </div>
         </div>
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
-            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-800">@Localizer["Role"]</h3>
+            <div class="px-4 pt-4">
+                <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["Role"]</h3>
             </div>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -130,8 +128,8 @@
         </section>
 
         <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
-            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-800">@Localizer["Function"]</h3>
+            <div class="px-4 pt-4">
+                <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["Function"]</h3>
             </div>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -163,8 +161,8 @@
     </div>
 
     <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
-        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-            <h3 class="text-lg font-semibold text-gray-800">@Localizer["Employee"]</h3>
+        <div class="px-4 pt-4">
+            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["Employee"]</h3>
         </div>
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -211,10 +209,10 @@
             ReturnUrl = Model.ReturnUrl
         })" />
 
-        <div class="flex justify-center gap-2">
+        <div class="flex justify-center gap-2 flex-wrap">
             @if (canEdit)
             {
-                <a href="@BuildEditUrl()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">
+                <a href="@BuildEditUrl()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                     @Localizer["Edit"]
                 </a>
             }

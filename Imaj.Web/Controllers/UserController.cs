@@ -45,6 +45,7 @@ namespace Imaj.Web.Controllers
                 CompanyName = contextData.CompanyName,
                 Filter = new UserFilterModel
                 {
+                    First = 16,
                     Page = 1,
                     PageSize = 16
                 }
@@ -58,14 +59,19 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> List(UserFilterModel filter)
         {
             var normalizedFilter = filter ?? new UserFilterModel();
+
             normalizedFilter.Page = normalizedFilter.Page > 0 ? normalizedFilter.Page : 1;
             normalizedFilter.PageSize = normalizedFilter.PageSize > 0 ? normalizedFilter.PageSize : 16;
+            normalizedFilter.First = normalizedFilter.First.HasValue && normalizedFilter.First.Value > 0
+                ? normalizedFilter.First.Value
+                : 16;
 
             var serviceFilter = new UserFilterDto
             {
                 Code = normalizedFilter.Code,
                 Name = normalizedFilter.Name,
                 IsInvalid = normalizedFilter.IsInvalid,
+                First = normalizedFilter.First,
                 Page = normalizedFilter.Page,
                 PageSize = normalizedFilter.PageSize
             };

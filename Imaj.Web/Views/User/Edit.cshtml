@@ -91,10 +91,9 @@
      @@employee-selected.window="handleEmployeeSelection($event.detail)"
      class="space-y-6">
 
-    <!-- Header -->
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
                 @Localizer["UserEdit"]
             </h2>
         </div>
@@ -118,48 +117,47 @@
             <input type="hidden" name="SelectedIds" value="@selectedId" />
         }
 
-        <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6 max-w-4xl mx-auto">
-                <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["User"]</h3>
+        <div class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+            <div class="px-4 pt-4 sm:px-6">
+                <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["User"]</h3>
+            </div>
+            <div class="px-4 pb-5 sm:px-6 sm:pb-6">
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-3 items-center text-sm">
+                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Company"]</label>
+                    <div class="md:col-span-9 text-gray-900">@Model.CompanyName</div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Company"]</label>
-                        <div class="md:col-span-9 text-gray-900">@Model.CompanyName</div>
+                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Code"]</label>
+                    <div class="md:col-span-3">
+                        <input type="text" name="Code" value="@Model.Code" readonly class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm bg-gray-100">
+                    </div>
+                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Password"]</label>
+                    <div class="md:col-span-3">
+                        <input type="password" name="Password" value="@Model.Password" maxlength="32" autocomplete="new-password" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" placeholder="Bos birakilirsa degismez">
+                    </div>
 
-                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Code"]</label>
-                        <div class="md:col-span-3">
-                            <input type="text" name="Code" value="@Model.Code" readonly class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm bg-gray-100">
-                        </div>
-                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Password"]</label>
-                        <div class="md:col-span-3">
-                            <input type="password" name="Password" value="@Model.Password" maxlength="32" autocomplete="new-password" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" placeholder="Bos birakilirsa degismez">
-                        </div>
+                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Name"]</label>
+                    <div class="md:col-span-9">
+                        <input type="text" name="Name" x-model="form.name" maxlength="48" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                    </div>
 
-                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Name"]</label>
-                        <div class="md:col-span-9">
-                            <input type="text" name="Name" x-model="form.name" maxlength="48" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        </div>
+                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Language"]</label>
+                    <div class="md:col-span-3">
+                        <select name="LanguageId" x-model="form.languageId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
+                            @foreach (var language in Model.Languages)
+                            {
+                                <option value="@language.Id">@language.Name</option>
+                            }
+                        </select>
+                    </div>
 
-                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Language"]</label>
-                        <div class="md:col-span-3">
-                            <select name="LanguageId" x-model="form.languageId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
-                                @foreach (var language in Model.Languages)
-                                {
-                                    <option value="@language.Id">@language.Name</option>
-                                }
-                            </select>
-                        </div>
+                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["AllEmployees"]</label>
+                    <div class="md:col-span-3">
+                        <input type="checkbox" name="AllEmployee" x-model="form.allEmployee" @@change="toggleAllEmployee" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                    </div>
 
-                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["AllEmployees"]</label>
-                        <div class="md:col-span-3">
-                            <input type="checkbox" name="AllEmployee" x-model="form.allEmployee" @@change="toggleAllEmployee" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                        </div>
-
-                        <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</label>
-                        <div class="md:col-span-3">
-                            <input type="checkbox" name="IsInvalid" x-model="form.isInvalid" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                        </div>
+                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</label>
+                    <div class="md:col-span-3">
+                        <input type="checkbox" name="IsInvalid" x-model="form.isInvalid" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                     </div>
                 </div>
             </div>
@@ -167,8 +165,8 @@
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
-                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                    <h3 class="text-lg font-semibold text-gray-800">@Localizer["Role"]</h3>
+                <div class="px-4 pt-4">
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["Role"]</h3>
                 </div>
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -208,8 +206,8 @@
             </section>
 
             <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
-                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                    <h3 class="text-lg font-semibold text-gray-800">@Localizer["Function"]</h3>
+                <div class="px-4 pt-4">
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["Function"]</h3>
                 </div>
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -248,8 +246,8 @@
         </div>
 
         <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
-            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-800">@Localizer["Employee"]</h3>
+            <div class="px-4 pt-4">
+                <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["Employee"]</h3>
             </div>
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -302,13 +300,13 @@
                 ReturnUrl = Model.ReturnUrl
             })" />
 
-            <div class="flex items-center justify-center gap-4">
+            <div class="flex items-center justify-center gap-4 flex-wrap">
                 <label class="inline-flex items-center text-sm text-gray-700">
                     <input type="checkbox" name="AutomaticForward" x-model="form.automaticForward" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                     <span class="ml-2">@Localizer["AutomaticForward"]</span>
                 </label>
 
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                     @Localizer["Edit"]
                 </button>
                 <a href="@BuildDetailUrl()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">

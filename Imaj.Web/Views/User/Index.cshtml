@@ -5,121 +5,112 @@
 @{
     ViewData["Title"] = Localizer["UserOperations"];
     var canAdd = await PermissionViewService.CanExecuteMethodAsync(972);
+    var firstValue = Model.Filter.First.HasValue && Model.Filter.First.Value > 0
+        ? Model.Filter.First.Value
+        : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 16);
 }
 
 <div class="space-y-6">
-    <!-- Header -->
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
                 @Localizer["UserSearch"]
             </h2>
         </div>
     </div>
 
-    <div class="text-center">
-        <form method="get" action="/User/List" class="inline-block w-full max-w-4xl text-left">
-            <!-- Main Filter Card -->
-            <div class="bg-white shadow sm:rounded-lg border border-gray-200">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    
-                    <!-- COLUMN 1: Kriterler -->
-                    <div class="lg:col-span-12 space-y-4">
-                        <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-center">@Localizer["MainCriteria"]</h3>
-                        
-                        <!-- Kod -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 lg:col-start-3 text-right text-sm font-medium text-gray-700">@Localizer["Code"]</label>
-                            <div class="col-span-8 lg:col-span-4">
-                                <input type="text" name="Code" value="@Model.Filter.Code" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                            </div>
+    <form method="get" action="/User/List" class="w-full max-w-4xl mx-auto text-left">
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+            <div class="px-4 py-5 sm:p-6 space-y-6">
+                <div class="space-y-4">
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["MainCriteria"]</h3>
+
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["Code"]</label>
+                        <div class="col-span-8 lg:col-span-5">
+                            <input type="text" name="Code" value="@Model.Filter.Code" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                         </div>
+                    </div>
 
-                        <!-- Ad -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 lg:col-start-3 text-right text-sm font-medium text-gray-700">@Localizer["Name"]</label>
-                            <div class="col-span-8 lg:col-span-4">
-                                <input type="text" name="Name" value="@Model.Filter.Name" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                            </div>
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["Name"]</label>
+                        <div class="col-span-8 lg:col-span-5">
+                            <input type="text" name="Name" value="@Model.Filter.Name" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                         </div>
+                    </div>
 
-                        <!-- Geçersiz -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 lg:col-start-3 text-right text-sm font-medium text-gray-700">@Localizer["Invalid"]</label>
-                            <div class="col-span-8 lg:col-span-4">
-                                <select name="IsInvalid" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                    <option value="">@Localizer["AllOption"]</option>
-                                    @if (Model.Filter.IsInvalid == false)
-                                    {
-                                        <option value="false" selected>@Localizer["No"]</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="false">@Localizer["No"]</option>
-                                    }
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["Invalid"]</label>
+                        <div class="col-span-8 lg:col-span-5">
+                            <select name="IsInvalid" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <option value="">@Localizer["AllOption"]</option>
+                                @if (Model.Filter.IsInvalid == false)
+                                {
+                                    <option value="false" selected>@Localizer["No"]</option>
+                                }
+                                else
+                                {
+                                    <option value="false">@Localizer["No"]</option>
+                                }
 
-                                    @if (Model.Filter.IsInvalid == true)
-                                    {
-                                        <option value="true" selected>@Localizer["Yes"]</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="true">@Localizer["Yes"]</option>
-                                    }
-                                </select>
-                            </div>
+                                @if (Model.Filter.IsInvalid == true)
+                                {
+                                    <option value="true" selected>@Localizer["Yes"]</option>
+                                }
+                                else
+                                {
+                                    <option value="true">@Localizer["Yes"]</option>
+                                }
+                            </select>
                         </div>
                     </div>
                 </div>
-                
-                <!-- BUTTONS -->
-                <div class="mt-8 flex flex-col items-center space-y-4 border-t border-gray-200 pt-6">
-                    <div class="flex items-center space-x-3">
+
+                <div class="pt-6 border-t border-gray-200">
+                    <div class="flex flex-wrap items-center justify-center gap-3">
                         <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
-                        <input type="number" name="Page" value="@(Model.Filter.Page <= 0 ? 1 : Model.Filter.Page)" min="1" class="w-16 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        <input type="number" name="First" value="@firstValue" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
                         <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
-                        <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-16 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
-                        
+                        <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        <input type="hidden" name="Page" value="1">
+
                         <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                             @Localizer["Search"]
                         </button>
-                        <button type="reset" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                        <a href="/User" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                             @Localizer["Clear"]
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </form>
-    </div>
-    
+
     @if (canAdd)
     {
-        <!-- User Creation Section -->
         <div class="text-center mt-10">
-             <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["UserCreation"]</h2>
-             <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
-                 <form method="get" action="/User/Create">
-                     <div class="grid grid-cols-12 gap-4 items-center justify-center">
-                         <label class="col-span-4 text-right text-sm font-bold text-gray-700 bg-gray-200 px-2 py-1">@Localizer["PreInformation"]</label>
-                         <div class="col-span-8"></div> <!-- Spacer/Header effect -->
-                         
-                         <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Company"]</label>
-                         <div class="col-span-8 text-left text-sm text-gray-900 font-medium">@Model.CompanyName</div>
+            <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["UserCreation"]</h2>
+            <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
+                <form method="get" action="/User/Create" class="space-y-4">
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-left">@Localizer["PreInformation"]</h3>
 
-                         <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Code"]</label>
-                         <div class="col-span-6 lg:col-span-4">
-                             <input type="text" name="code" value="@Model.NewUserCode" maxlength="16" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md uppercase">
-                         </div>
-                     </div>
-                     <div class="mt-4 flex justify-center">
-                         <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["Company"]</label>
+                        <div class="col-span-8 lg:col-span-5 text-left text-sm text-gray-900 font-medium">@Model.CompanyName</div>
+
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["Code"]</label>
+                        <div class="col-span-8 lg:col-span-5">
+                            <input type="text" name="code" value="@Model.NewUserCode" maxlength="16" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md uppercase">
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex justify-center">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                             @Localizer["CreateNewUser"]
                         </button>
-                     </div>
-                 </form>
-             </div>
+                    </div>
+                </form>
+            </div>
         </div>
     }
 </div>
