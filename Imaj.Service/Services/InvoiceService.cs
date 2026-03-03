@@ -132,25 +132,26 @@ namespace Imaj.Service.Services
                     invoices = invoices.Where(i => i.Evaluated == filter.Evaluated.Value);
                 }
 
-                // Materialize the scoped invoice IDs in one DB round-trip.
-                // Because user filters (date range, customer, etc.) are already applied,
-                // the UNION scope query runs over a small candidate set instead of the full table.
-                // Having the IDs in memory means:
-                //   • totalCount is free (list.Count)
-                //   • every subsequent query uses a simple WHERE Id IN (...) — no nested subqueries.
-                var scopedIds = await ApplyInvoiceDataScope(invoices, activeSnapshot)
-                    .OrderByDescending(i => i.IssueDate)
-                    .ThenByDescending(i => i.Id)
-                    .Select(i => i.Id)
-                    .ToListAsync();
-                var scopeElapsedMs = stopwatch.ElapsedMilliseconds;
-
                 var page = filter.Page > 0 ? filter.Page : 1;
                 var pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
                 var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
-                // Apply first-cap in memory and get totalCount for free — zero extra DB queries.
-                var windowIds = first.HasValue ? scopedIds.Take(first.Value).ToList() : scopedIds;
+                // Materialize scoped IDs in one DB round-trip.
+                // Apply TOP (first) in SQL before materialization so DB does not process
+                // more rows than needed for the result window.
+                var scopedIdQuery = ApplyInvoiceDataScope(invoices, activeSnapshot)
+                    .OrderByDescending(i => i.IssueDate)
+                    .ThenByDescending(i => i.Id)
+                    .Select(i => i.Id);
+
+                if (first.HasValue)
+                {
+                    scopedIdQuery = scopedIdQuery.Take(first.Value);
+                }
+
+                var windowIds = await scopedIdQuery.ToListAsync();
+                var scopeElapsedMs = stopwatch.ElapsedMilliseconds;
+
                 var totalCount = windowIds.Count;
                 var countElapsedMs = stopwatch.ElapsedMilliseconds;
 
@@ -666,34 +667,35 @@ namespace Imaj.Service.Services
                 jobs = jobs.Where(j => j.CompanyID == snapshot.CompanyId.Value);
             }
 
-            // Join FROM invoiceQuery so the invoice-side predicates (date range, company, …)
-            // flow into the join path as regular JOIN conditions instead of a correlated
-            // IN(SELECT …) subquery on InvoLine. This lets SQL Server seek through the
-            // already-filtered invoice rows rather than evaluating the subquery per InvoLine row.
-            var allActiveLines = _unitOfWork.Repository<InvoLine>().Query()
+            var activeLines = _unitOfWork.Repository<InvoLine>().Query()
                 .AsNoTracking()
                 .Where(line => line.Deleted == 0);
 
-            // Path 1 – invoice linked via InvoJob bridge table
-            var invoiceIdsViaInvoJob =
-                from inv in invoiceQuery
-                join line in allActiveLines on inv.Id equals line.InvoiceID
-                join invoJob in _unitOfWork.Repository<InvoJob>().Query().AsNoTracking()
-                    on line.Id equals invoJob.InvoLineID
-                join job in jobs on invoJob.JobID equals job.Id
-                where invoJob.Deleted == 0
-                select inv.Id;
+            var activeInvoJobs = _unitOfWork.Repository<InvoJob>().Query()
+                .AsNoTracking()
+                .Where(invoJob => invoJob.Deleted == 0);
 
-            // Path 2 – invoice linked via Job.InvoLineID (legacy direct link)
-            var invoiceIdsViaJobLine =
-                from inv in invoiceQuery
-                join line in allActiveLines on inv.Id equals line.InvoiceID
-                join job in jobs.Where(j => j.InvoLineID.HasValue && j.InvoLineID.Value > 0)
-                    on line.Id equals job.InvoLineID!.Value
-                select inv.Id;
+            // Legacy-compatible behavior:
+            // 1) Invoices linked to at least one allowed job via InvoJob are visible.
+            // 2) Invoices with no active InvoJob link at all are also visible.
+            var invoiceIdsWithAllowedJobs =
+                (from inv in invoiceQuery
+                 join line in activeLines on inv.Id equals line.InvoiceID
+                 join invoJob in activeInvoJobs on line.Id equals invoJob.InvoLineID
+                 join job in jobs on invoJob.JobID equals job.Id
+                 select inv.Id)
+                .Distinct();
 
-            var scopedInvoiceIds = invoiceIdsViaInvoJob
-                .Union(invoiceIdsViaJobLine)
+            var invoiceIdsWithoutAnyInvoJob =
+                (from inv in invoiceQuery
+                 where !(from line in activeLines
+                         join invoJob in activeInvoJobs on line.Id equals invoJob.InvoLineID
+                         where line.InvoiceID == inv.Id
+                         select invoJob.Id).Any()
+                 select inv.Id);
+
+            var scopedInvoiceIds = invoiceIdsWithAllowedJobs
+                .Union(invoiceIdsWithoutAnyInvoJob)
                 .Distinct();
 
             return invoiceQuery.Where(i => scopedInvoiceIds.Contains(i.Id));
