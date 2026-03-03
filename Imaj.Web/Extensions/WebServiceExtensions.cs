@@ -50,6 +50,7 @@ namespace Imaj.Web.Extensions
             services.AddScoped<IPermissionViewService, PermissionViewService>();
             services.AddScoped<IOvertimeReportExcelService, OvertimeReportExcelService>();
             services.AddScoped<IProductReportExcelService, ProductReportExcelService>();
+            services.AddScoped<ICustomerReportExcelService, CustomerReportExcelService>();
 
             return services;
         }

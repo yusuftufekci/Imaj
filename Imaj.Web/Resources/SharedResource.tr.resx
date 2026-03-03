@@ -489,6 +489,15 @@
   <data name="DetailedProductFilePrefix" xml:space="preserve">
     <value>detayli-urun-raporu</value>
   </data>
+  <data name="CustomerReportFilePrefix" xml:space="preserve">
+    <value>musteri-bilgileri-raporu</value>
+  </data>
+  <data name="CustomerInfoSheet" xml:space="preserve">
+    <value>Müşteri Bilgileri</value>
+  </data>
+  <data name="CustomerInformationTitle" xml:space="preserve">
+    <value>Müşteri Bilgileri</value>
+  </data>
   <data name="FunctionUpdatedSuccess" xml:space="preserve">
     <value>Fonksiyon güncellendi.</value>
   </data>

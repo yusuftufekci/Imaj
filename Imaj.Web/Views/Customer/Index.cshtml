@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <form action="/Customer/List" method="get" class="w-full max-w-5xl mx-auto text-left">
+    <form id="customer-search-form" action="/Customer/List" method="get" class="w-full max-w-5xl mx-auto text-left">
         <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
             <div class="px-4 py-5 sm:p-6 space-y-6">
                 <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 text-center border-b pb-2">
@@ -220,7 +220,33 @@
             },
 
             printReport() {
-                alert('');
+                const form = document.getElementById('customer-search-form');
+                if (!form) {
+                    return;
+                }
+
+                const allowedKeys = new Set([
+                    'Code', 'Name', 'IsInvalid', 'City', 'AreaCode', 'Country',
+                    'Owner', 'RelatedPerson', 'Phone', 'Fax', 'Email',
+                    'TaxOffice', 'TaxNumber', 'JobStatus'
+                ]);
+
+                const params = new URLSearchParams();
+                const formData = new FormData(form);
+                for (const [key, rawValue] of formData.entries()) {
+                    if (!allowedKeys.has(key)) {
+                        continue;
+                    }
+
+                    const value = String(rawValue || '').trim();
+                    if (!value) {
+                        continue;
+                    }
+
+                    params.append(key, value);
+                }
+
+                window.location.href = `/Customer/DownloadReportExcel?${params.toString()}`;
             }
         }
     }

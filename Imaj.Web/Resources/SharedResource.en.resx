@@ -489,6 +489,15 @@
   <data name="DetailedProductFilePrefix" xml:space="preserve">
     <value>detailed-product-report</value>
   </data>
+  <data name="CustomerReportFilePrefix" xml:space="preserve">
+    <value>customer-information-report</value>
+  </data>
+  <data name="CustomerInfoSheet" xml:space="preserve">
+    <value>Customer Information</value>
+  </data>
+  <data name="CustomerInformationTitle" xml:space="preserve">
+    <value>Customer Information</value>
+  </data>
   <data name="FunctionUpdatedSuccess" xml:space="preserve">
     <value>Function updated.</value>
   </data>

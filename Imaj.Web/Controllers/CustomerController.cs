@@ -4,6 +4,7 @@ using Imaj.Service.Interfaces;
 using Imaj.Web;
 using Imaj.Web.Controllers.Base;
 using Imaj.Web.Models;
+using Imaj.Web.Services.Reports;
 using Imaj.Web.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -17,17 +18,22 @@ namespace Imaj.Web.Controllers
     /// </summary>
     public class CustomerController : BaseController
     {
+        private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
         private readonly ICustomerService _customerService;
         private readonly ILookupService _lookupService;
+        private readonly ICustomerReportExcelService _customerReportExcelService;
 
         public CustomerController(
             ICustomerService customerService,
             ILookupService lookupService,
+            ICustomerReportExcelService customerReportExcelService,
             ILogger<CustomerController> logger,
             IStringLocalizer<SharedResource> localizer) : base(logger, localizer)
         {
             _customerService = customerService;
             _lookupService = lookupService;
+            _customerReportExcelService = customerReportExcelService;
         }
 
 
@@ -73,27 +79,7 @@ namespace Imaj.Web.Controllers
             f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
             f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : null;
             
-            var serviceFilter = new CustomerFilterDto
-            {
-                Code = f.Code,
-                Name = f.Name,
-                City = f.City,
-                AreaCode = f.AreaCode,
-                Country = f.Country,
-                Owner = f.Owner,
-                RelatedPerson = f.RelatedPerson,
-                Phone = f.Phone,
-                Fax = f.Fax,
-                Email = f.Email,
-                TaxOffice = f.TaxOffice,
-                TaxNumber = f.TaxNumber,
-                JobStatus = f.JobStatus,
-                JobStateId = decimal.TryParse(f.JobStatus, out var stateId) ? stateId : null,
-                IsInvalid = f.IsInvalid,
-                Page = f.Page,
-                PageSize = f.PageSize > 0 ? f.PageSize : 10,
-                First = f.First
-            };
+            var serviceFilter = BuildServiceFilter(f, f.Page, f.PageSize > 0 ? f.PageSize : 10, f.First);
 
             var result = await _customerService.GetByFilterAsync(serviceFilter);
             
@@ -123,27 +109,7 @@ namespace Imaj.Web.Controllers
             f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
             f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : null;
 
-             var serviceFilter = new CustomerFilterDto
-            {
-                Code = f.Code,
-                Name = f.Name,
-                City = f.City,
-                AreaCode = f.AreaCode,
-                Country = f.Country,
-                Owner = f.Owner,
-                RelatedPerson = f.RelatedPerson,
-                Phone = f.Phone,
-                Fax = f.Fax,
-                Email = f.Email,
-                TaxOffice = f.TaxOffice,
-                TaxNumber = f.TaxNumber,
-                JobStatus = f.JobStatus,
-                JobStateId = decimal.TryParse(f.JobStatus, out var stateId) ? stateId : null,
-                IsInvalid = f.IsInvalid,
-                Page = f.Page,
-                PageSize = f.PageSize > 0 ? f.PageSize : 20,
-                First = f.First
-            };
+            var serviceFilter = BuildServiceFilter(f, f.Page, f.PageSize > 0 ? f.PageSize : 20, f.First);
 
             var result = await _customerService.GetByFilterAsync(serviceFilter);
              
@@ -177,6 +143,28 @@ namespace Imaj.Web.Controllers
             };
 
             return View(model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1090)]
+        public async Task<IActionResult> DownloadReportExcel([FromQuery] CustomerFilterModel? filter)
+        {
+            var normalizedFilter = filter ?? new CustomerFilterModel();
+
+            var allCustomers = await GetAllReportCustomersAsync(normalizedFilter);
+            if (allCustomers == null)
+            {
+                return BadRequest(L("ReportDataUnavailable"));
+            }
+
+            var fileBytes = _customerReportExcelService.BuildReport(
+                allCustomers,
+                new CustomerReportExcelContext
+                {
+                    GeneratedAt = DateTime.Now
+                });
+
+            return File(fileBytes, ExcelContentType, BuildReportFileName());
         }
 
         public async Task<IActionResult> Details(string id)
@@ -213,6 +201,73 @@ namespace Imaj.Web.Controllers
                  return View(MapToViewModel(codeResult.Data));
                  
              return NotFound();
+        }
+
+        private async Task<List<CustomerDto>?> GetAllReportCustomersAsync(CustomerFilterModel filter)
+        {
+            const int reportPageSize = 1000;
+            var allCustomers = new List<CustomerDto>();
+            var currentPage = 1;
+            int? totalCount = null;
+
+            while (true)
+            {
+                var serviceFilter = BuildServiceFilter(filter, currentPage, reportPageSize, null);
+                var pageResult = await _customerService.GetByFilterAsync(serviceFilter);
+
+                if (!pageResult.IsSuccess || pageResult.Data == null)
+                {
+                    return null;
+                }
+
+                totalCount ??= pageResult.Data.TotalCount;
+                if (pageResult.Data.Items.Count == 0)
+                {
+                    break;
+                }
+
+                allCustomers.AddRange(pageResult.Data.Items);
+                if (allCustomers.Count >= totalCount.Value)
+                {
+                    break;
+                }
+
+                currentPage++;
+            }
+
+            return allCustomers;
+        }
+
+        private static CustomerFilterDto BuildServiceFilter(CustomerFilterModel filter, int page, int pageSize, int? first)
+        {
+            var hasStateId = decimal.TryParse(filter.JobStatus, out var stateId);
+
+            return new CustomerFilterDto
+            {
+                Code = filter.Code,
+                Name = filter.Name,
+                City = filter.City,
+                AreaCode = filter.AreaCode,
+                Country = filter.Country,
+                Owner = filter.Owner,
+                RelatedPerson = filter.RelatedPerson,
+                Phone = filter.Phone,
+                Fax = filter.Fax,
+                Email = filter.Email,
+                TaxOffice = filter.TaxOffice,
+                TaxNumber = filter.TaxNumber,
+                JobStatus = filter.JobStatus,
+                JobStateId = hasStateId ? stateId : null,
+                IsInvalid = filter.IsInvalid,
+                Page = page,
+                PageSize = pageSize,
+                First = first
+            };
+        }
+
+        private string BuildReportFileName()
+        {
+            return $"{L("CustomerReportFilePrefix")}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
         }
 
         private CustomerViewModel MapToViewModel(CustomerDto c)
