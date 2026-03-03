@@ -182,6 +182,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
+        [RequireMethodPermission(1360, write: true)]
         public IActionResult Save(InvoiceCreateViewModel model)
         {
             return RedirectToAction("Index");

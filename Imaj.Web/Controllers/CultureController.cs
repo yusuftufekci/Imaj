@@ -14,6 +14,11 @@ namespace Imaj.Web.Controllers
                 new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1) }
             );
 
+            if (string.IsNullOrWhiteSpace(returnUrl) || !Url.IsLocalUrl(returnUrl))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
             return LocalRedirect(returnUrl);
         }
     }

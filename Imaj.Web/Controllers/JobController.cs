@@ -385,6 +385,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
+        [RequireMethodPermission(1397, write: true)]
         public async Task<IActionResult> Create(JobCreateViewModel model)
         {
             // AJAX isteği kontrolü
