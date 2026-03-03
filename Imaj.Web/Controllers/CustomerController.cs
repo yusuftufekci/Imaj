@@ -152,7 +152,7 @@ namespace Imaj.Web.Controllers
                 { 
                      Code = c.Code, 
                      Name = c.Name, 
-                     City = c.City, 
+                     RelatedPerson = c.Contact,
                      Phone = c.Phone, 
                      Email = c.Email,
                      Country = c.Country,
@@ -160,10 +160,7 @@ namespace Imaj.Web.Controllers
                      TaxNumber = c.TaxNumber,
                      Owner = c.Owner,
                      JobStatus = c.SelectFlag ? "Active" : "Passive", // Map SelectFlag
-                     IsInvalid = !c.SelectFlag, // Rough mapping, or maybe Invisible?
-                     // Note: ViewModel IsInvalid might strictly mean Invisible. 
-                     // Let's check CustomerDto. CustomerDto doesn't expose Invisible, but we can assume we might need it.
-                     // But for now, just mapping what's available.
+                     IsInvalid = c.Invisible
                 }).ToList() 
                 : new List<CustomerViewModel>();
 

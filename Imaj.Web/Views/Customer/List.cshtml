@@ -1,8 +1,15 @@
 @using Imaj.Web.Models
+@using System.Text.Json
 @model CustomerListViewModel
 
 @{
     ViewData["Title"] = Localizer["CustomerList"];
+    var listModel = Model ?? new CustomerListViewModel();
+    var rows = listModel.Items;
+    var allPageCodes = rows
+        .Select(x => x.Code)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .ToList();
 }
 
 <div x-data="customerList()" class="space-y-6">
@@ -21,6 +28,9 @@
     </div>
 
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-2 bg-blue-100 border-b border-blue-200 text-gray-900 font-semibold">
+            Müşteri (@listModel.TotalCount)
+        </div>
         <div class="flex flex-col">
             <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                 <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -28,35 +38,48 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Select"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left">
+                                        <div class="flex items-center">
+                                            <input type="checkbox" :checked="allSelected" @@change="toggleAll($event.target.checked)" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2">
+                                            <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Select"]</span>
+                                        </div>
+                                    </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Code"]</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Name"]</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["City"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Related"]</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Phone"]</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Email"]</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Invalid"]</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @if (Model.Items != null && Model.Items.Any())
+                                @if (rows.Any())
                                 {
-                                    foreach (var item in Model.Items)
+                                    foreach (var item in rows)
                                     {
-                                        <tr class="hover:bg-gray-50 cursor-pointer" @@click="selectedCode = '@item.Code'">
+                                        <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                <input type="radio" name="selectedCustomer" value="@item.Code" x-model="selectedCode" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                                <input type="checkbox" name="selectedCustomers" value="@item.Code" x-model="selectedCodes" @@change="syncSelectionState()" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@item.Code</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <a href="/Customer/Details/@Uri.EscapeDataString(item.Code)" class="text-blue-600 hover:text-blue-900 underline">
+                                                    @item.Code
+                                                </a>
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.Name</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.City</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.RelatedPerson</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.Phone</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.Email</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <input type="checkbox" disabled @(item.IsInvalid ? "checked" : "") class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                            </td>
                                         </tr>
                                     }
                                 }
                                 else
                                 {
                                     <tr>
-                                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
+                                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
                                     </tr>
                                 }
                             </tbody>
@@ -67,11 +90,11 @@
         </div>
         
         <!-- Pagination -->
-        @if (Model.TotalCount > 0)
+        @if (listModel.TotalCount > 0)
         {
-            var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
-            var prevDisabled = Model.Page <= 1 ? "pointer-events-none opacity-50" : "";
-            var nextDisabled = Model.Page >= totalPages ? "pointer-events-none opacity-50" : "";
+            var totalPages = (int)Math.Ceiling((double)listModel.TotalCount / listModel.PageSize);
+            var prevDisabled = listModel.Page <= 1 ? "pointer-events-none opacity-50" : "";
+            var nextDisabled = listModel.Page >= totalPages ? "pointer-events-none opacity-50" : "";
             
             // Helper function to build query string for pagination links
              string GetPageUrl(int page)
@@ -79,16 +102,16 @@
                 var query = new Dictionary<string, string>
                 {
                     { "Page", page.ToString() },
-                    { "PageSize", Model.PageSize.ToString() },
-                    { "First", (Model.Filter?.First.HasValue == true && Model.Filter.First.Value > 0 ? Model.Filter.First.Value : (Model.Filter?.PageSize ?? Model.PageSize)).ToString() }
+                    { "PageSize", listModel.PageSize.ToString() },
+                    { "First", (listModel.Filter?.First.HasValue == true && listModel.Filter.First.Value > 0 ? listModel.Filter.First.Value : (listModel.Filter?.PageSize ?? listModel.PageSize)).ToString() }
                 };
                 
-                if (Model.Filter != null)
+                if (listModel.Filter != null)
                 {
-                    if (!string.IsNullOrEmpty(Model.Filter.Code)) query.Add("Code", Model.Filter.Code);
-                    if (!string.IsNullOrEmpty(Model.Filter.Name)) query.Add("Name", Model.Filter.Name);
-                    if (!string.IsNullOrEmpty(Model.Filter.City)) query.Add("City", Model.Filter.City);
-                    if (Model.Filter.IsInvalid == true) query.Add("IsInvalid", "true");
+                    if (!string.IsNullOrEmpty(listModel.Filter.Code)) query.Add("Code", listModel.Filter.Code);
+                    if (!string.IsNullOrEmpty(listModel.Filter.Name)) query.Add("Name", listModel.Filter.Name);
+                    if (!string.IsNullOrEmpty(listModel.Filter.City)) query.Add("City", listModel.Filter.City);
+                    if (listModel.Filter.IsInvalid == true) query.Add("IsInvalid", "true");
                     // Add other filters...
                 }
                 
@@ -99,21 +122,21 @@
             <div class="px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
                 <div class="flex items-center justify-between">
                      <div class="flex-1 flex justify-between sm:hidden">
-                        <a href="@GetPageUrl(Model.Page - 1)" class="@prevDisabled relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <a href="@GetPageUrl(listModel.Page - 1)" class="@prevDisabled relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             @Localizer["Previous"]
                         </a>
-                        <a href="@GetPageUrl(Model.Page + 1)" class="@nextDisabled ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">@Localizer["Next"]</a>
+                        <a href="@GetPageUrl(listModel.Page + 1)" class="@nextDisabled ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">@Localizer["Next"]</a>
                     </div>
                     <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                          <div>
                             <p class="text-sm text-gray-700">
-                                @Localizer["Total"] <span class="font-medium">@Model.TotalCount</span> @Localizer["Records"],
-                                @Localizer["Page"] <span class="font-medium">@Model.Page</span> / <span class="font-medium">@totalPages</span>
+                                @Localizer["Total"] <span class="font-medium">@listModel.TotalCount</span> @Localizer["Records"],
+                                @Localizer["Page"] <span class="font-medium">@listModel.Page</span> / <span class="font-medium">@totalPages</span>
                             </p>
                         </div>
                         <div>
                             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                <a href="@GetPageUrl(Model.Page - 1)" class="@prevDisabled relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="@GetPageUrl(listModel.Page - 1)" class="@prevDisabled relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <span class="sr-only">@Localizer["Previous"]</span>
                                     <!-- Heroicon name: solid/chevron-left -->
                                     <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -124,19 +147,19 @@
                                 {
                                      // Simple pagination logic: show all or just around current
                                      // For now show all if pages < 10, else simplified
-                                     if(totalPages <= 10 || i == 1 || i == totalPages || (i >= Model.Page - 2 && i <= Model.Page + 2))
+                                     if(totalPages <= 10 || i == 1 || i == totalPages || (i >= listModel.Page - 2 && i <= listModel.Page + 2))
                                      {
-                                         var activeClass = i == Model.Page ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600" : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50";
+                                         var activeClass = i == listModel.Page ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600" : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50";
                                          <a href="@GetPageUrl(i)" aria-current="page" class="@activeClass relative inline-flex items-center px-4 py-2 border text-sm font-medium">
                                             @i
                                         </a>
                                      } 
-                                     else if (i == Model.Page - 3 || i == Model.Page + 3)
+                                     else if (i == listModel.Page - 3 || i == listModel.Page + 3)
                                      {
                                          <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
                                      }
                                 }
-                                <a href="@GetPageUrl(Model.Page + 1)" class="@nextDisabled relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="@GetPageUrl(listModel.Page + 1)" class="@nextDisabled relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <span class="sr-only">@Localizer["Next"]</span>
                                     <!-- Heroicon name: solid/chevron-right -->
                                     <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -152,10 +175,10 @@
 
         <!-- Action Buttons -->
         <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 space-x-3">
-             <button type="button" @@click="goToDetails()" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50" :disabled="!selectedCode">
+             <button type="button" @@click="goToDetails()" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50" :disabled="selectedCodes.length === 0">
                 @Localizer["View"]
             </button>
-            <button type="button" @@click="goToEdit()" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50" :disabled="!selectedCode">
+            <button type="button" @@click="goToEdit()" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50" :disabled="selectedCodes.length === 0">
                 @Localizer["Edit"]
             </button>
         </div>
@@ -165,17 +188,29 @@
 <script>
     function customerList() {
         return {
-            selectedCode: '',
+            selectedCodes: [],
+            allSelected: false,
+            allPageCodes: @Html.Raw(JsonSerializer.Serialize(allPageCodes)),
+
+            toggleAll(checked) {
+                this.allSelected = checked;
+                this.selectedCodes = checked ? [...this.allPageCodes] : [];
+            },
+
+            syncSelectionState() {
+                this.allSelected = this.allPageCodes.length > 0
+                    && this.allPageCodes.every(code => this.selectedCodes.includes(code));
+            },
             
             goToDetails() {
-                if(this.selectedCode) {
-                    window.location.href = '/Customer/Details/' + this.selectedCode;
+                if (this.selectedCodes.length > 0) {
+                    window.location.href = '/Customer/Details/' + encodeURIComponent(this.selectedCodes[0]);
                 }
             },
             
             goToEdit() {
-                if(this.selectedCode) {
-                    window.location.href = '/Customer/Edit/' + this.selectedCode;
+                if (this.selectedCodes.length > 0) {
+                    window.location.href = '/Customer/Edit/' + encodeURIComponent(this.selectedCodes[0]);
                 }
             }
         }
