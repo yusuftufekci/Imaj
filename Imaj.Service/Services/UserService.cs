@@ -732,6 +732,71 @@ namespace Imaj.Service.Services
             }
         }
 
+        public async Task<ServiceResult> ChangeCurrentUserPasswordAsync(ChangeCurrentUserPasswordDto input)
+        {
+            if (input == null)
+            {
+                return ServiceResult.Fail("Sifre degistirme bilgisi bos olamaz.");
+            }
+
+            if (!_currentPermissionContext.TryGetCurrentUserId(out var currentUserId))
+            {
+                return ServiceResult.Fail("Kullanici oturumu bulunamadi.");
+            }
+
+            var currentPassword = input.CurrentPassword ?? string.Empty;
+            var newPassword = input.NewPassword ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(currentPassword))
+            {
+                return ServiceResult.Fail("Mevcut sifre zorunludur.");
+            }
+
+            if (string.IsNullOrWhiteSpace(newPassword))
+            {
+                return ServiceResult.Fail("Yeni sifre zorunludur.");
+            }
+
+            if (newPassword.Length > 32)
+            {
+                return ServiceResult.Fail("Sifre en fazla 32 karakter olabilir.");
+            }
+
+            var userRepo = _unitOfWork.Repository<User>();
+            var user = await userRepo.Query().SingleOrDefaultAsync(x => x.Id == currentUserId);
+            if (user == null)
+            {
+                return ServiceResult.NotFound("Kullanici bulunamadi.");
+            }
+
+            if (!string.Equals(user.Password, currentPassword, StringComparison.Ordinal))
+            {
+                return ServiceResult.Fail("Mevcut sifre hatali.");
+            }
+
+            if (string.Equals(user.Password, newPassword, StringComparison.Ordinal))
+            {
+                return ServiceResult.Fail("Yeni sifre mevcut sifre ile ayni olamaz.");
+            }
+
+            try
+            {
+                user.Password = newPassword;
+                user.Stamp = 1;
+                userRepo.Update(user);
+
+                await _unitOfWork.CommitAsync();
+                await _permissionService.InvalidateAsync(user.Id);
+
+                return ServiceResult.Success("Sifre basariyla degistirildi.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Sifre degistirme hatasi. UserID={UserId}", currentUserId);
+                return ServiceResult.Fail("Sifre degistirilirken hata olustu.");
+            }
+        }
+
         private async Task<ServiceResult<List<decimal>>> ValidateFunctionAssignmentsAsync(
             IReadOnlyCollection<decimal> functionIds,
             decimal? targetCompanyId,

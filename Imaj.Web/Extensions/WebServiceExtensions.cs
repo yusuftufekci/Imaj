@@ -40,6 +40,7 @@ namespace Imaj.Web.Extensions
                 {
                     options.LoginPath = "/Auth/Login";
                     options.LogoutPath = "/Auth/Logout";
+                    options.AccessDeniedPath = "/Auth/AccessDenied";
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionTimeout);
                     options.SlidingExpiration = true;
                 });

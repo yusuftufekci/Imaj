@@ -993,6 +993,24 @@
   <data name="Password" xml:space="preserve">
     <value>Password</value>
   </data>
+  <data name="ChangePassword" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="CurrentPassword" xml:space="preserve">
+    <value>Current Password</value>
+  </data>
+  <data name="NewPassword" xml:space="preserve">
+    <value>New Password</value>
+  </data>
+  <data name="ConfirmNewPassword" xml:space="preserve">
+    <value>Confirm New Password</value>
+  </data>
+  <data name="PasswordChangedSuccess" xml:space="preserve">
+    <value>Password changed successfully.</value>
+  </data>
+  <data name="PasswordChangeFailed" xml:space="preserve">
+    <value>Password change failed.</value>
+  </data>
   <data name="Percentage" xml:space="preserve">
     <value>Percentage</value>
   </data>
@@ -1166,6 +1184,15 @@
   </data>
   <data name="ProductCategoryCreation" xml:space="preserve">
     <value>Product Category Creation</value>
+  </data>
+  <data name="AccessDeniedTitle" xml:space="preserve">
+    <value>Access Denied</value>
+  </data>
+  <data name="AccessDeniedMessage" xml:space="preserve">
+    <value>You do not have permission to perform this action.</value>
+  </data>
+  <data name="GoHome" xml:space="preserve">
+    <value>Go Home</value>
   </data>
 
 </root>

@@ -126,6 +126,21 @@ namespace Imaj.Web.Models
         public bool AutomaticForward { get; set; }
     }
 
+    public class UserChangePasswordViewModel
+    {
+        [Required(ErrorMessage = "Mevcut sifre zorunludur.")]
+        [StringLength(32, ErrorMessage = "Mevcut sifre en fazla 32 karakter olabilir.")]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Yeni sifre zorunludur.")]
+        [StringLength(32, ErrorMessage = "Yeni sifre en fazla 32 karakter olabilir.")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Yeni sifre tekrar zorunludur.")]
+        [Compare(nameof(NewPassword), ErrorMessage = "Yeni sifre ve tekrar alani ayni olmalidir.")]
+        public string ConfirmNewPassword { get; set; } = string.Empty;
+    }
+
     public class RoleLookupFilterModel
     {
         public string? Name { get; set; }
