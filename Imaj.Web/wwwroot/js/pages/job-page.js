@@ -6,6 +6,7 @@ function jobPage() {
     return {
         filter: {
             function: '',
+            customerId: '',
             customerCode: '',
             referenceStart: '',
             referenceEnd: '',
@@ -46,6 +47,7 @@ function jobPage() {
          */
         handleCustomerSelection(detail) {
             if (detail.targetId === 'jobFilter') {
+                this.filter.customerId = detail.customer.id || '';
                 this.filter.customerCode = detail.customer.code;
                 this.customerName = detail.customer.name;
             }
@@ -83,6 +85,7 @@ function jobPage() {
         resetFilter() {
             this.filter = {
                 function: '',
+                customerId: '',
                 customerCode: '',
                 referenceStart: '',
                 referenceEnd: '',

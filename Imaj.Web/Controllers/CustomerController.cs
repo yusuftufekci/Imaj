@@ -71,7 +71,7 @@ namespace Imaj.Web.Controllers
             var f = filter ?? new CustomerFilterModel();
             f.Page = f.Page > 0 ? f.Page : 1;
             f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
-            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : null;
             
             var serviceFilter = new CustomerFilterDto
             {
@@ -121,7 +121,7 @@ namespace Imaj.Web.Controllers
             var f = filter ?? new CustomerFilterModel();
             f.Page = f.Page > 0 ? f.Page : 1;
             f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
-            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : null;
 
              var serviceFilter = new CustomerFilterDto
             {

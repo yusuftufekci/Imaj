@@ -771,6 +771,12 @@
   <data name="Edit" xml:space="preserve">
     <value>Edit</value>
   </data>
+  <data name="ResoCatDetailEditButton" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="ResoCatDetailBackButton" xml:space="preserve">
+    <value>Back</value>
+  </data>
   <data name="ClearAll" xml:space="preserve">
     <value>Clear all</value>
   </data>
@@ -791,6 +797,9 @@
   </data>
   <data name="CreateNewJob" xml:space="preserve">
     <value>Create New Job</value>
+  </data>
+  <data name="CreateNewResourceCategory" xml:space="preserve">
+    <value>Create new resource category.</value>
   </data>
   <data name="CustomerCreation" xml:space="preserve">
     <value>Customer Creation</value>

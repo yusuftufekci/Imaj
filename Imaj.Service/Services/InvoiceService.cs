@@ -7,6 +7,7 @@ using Imaj.Service.Results;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Imaj.Service.Services
 {
@@ -28,6 +29,7 @@ namespace Imaj.Service.Services
         {
             try
             {
+                var stopwatch = Stopwatch.StartNew();
                 var snapshot = await _currentPermissionContext.GetSnapshotAsync();
                 if (IsDataScopeDenied(snapshot))
                 {
@@ -41,126 +43,193 @@ namespace Imaj.Service.Services
                 }
 
                 var activeSnapshot = snapshot!;
-                var invoices = BuildScopedInvoiceQuery(activeSnapshot);
-                var customers = _unitOfWork.Repository<Customer>().Query();
-                var states = _unitOfWork.Repository<XState>().Query();
+                var invoices = _unitOfWork.Repository<Invoice>().Query().AsNoTracking();
+                var customers = _unitOfWork.Repository<Customer>().Query().AsNoTracking();
 
-                var query = from inv in invoices
-                            join jobCust in customers on inv.JobCustomerID equals jobCust.Id into jobCustGroup
-                            from jobCustomer in jobCustGroup.DefaultIfEmpty()
-                            join invoCust in customers on inv.InvoCustomerID equals invoCust.Id into invoCustGroup
-                            from invoiceCustomer in invoCustGroup.DefaultIfEmpty()
-                            join xstate in states.Where(s => s.LanguageID == CurrentLanguageId)
-                                on inv.StateID equals xstate.StateID into stateGroup
-                            from state in stateGroup.DefaultIfEmpty()
-                            select new
-                            {
-                                Invoice = inv,
-                                JobCustomer = jobCustomer,
-                                InvoiceCustomer = invoiceCustomer,
-                                StateName = state != null ? state.Name : null
-                            };
-
-                // Filters
+                // Customer filters are applied with ID subqueries so the heavy joins
+                // are not part of the main count/paging query.
+                var hasJobCustomerFilter = false;
+                var jobCustomerFilterQuery = customers;
                 if (!string.IsNullOrWhiteSpace(filter.JobCustomerCode))
                 {
                     var code = filter.JobCustomerCode.Trim();
-                    query = query.Where(x => x.JobCustomer != null && x.JobCustomer.Code == code);
+                    jobCustomerFilterQuery = jobCustomerFilterQuery.Where(c => c.Code == code);
+                    hasJobCustomerFilter = true;
                 }
-
                 if (!string.IsNullOrWhiteSpace(filter.JobCustomerName))
                 {
                     var name = filter.JobCustomerName.Trim();
-                    query = query.Where(x => x.JobCustomer != null && x.JobCustomer.Name.Contains(name));
+                    jobCustomerFilterQuery = jobCustomerFilterQuery.Where(c => c.Name.Contains(name));
+                    hasJobCustomerFilter = true;
+                }
+                if (hasJobCustomerFilter)
+                {
+                    var jobCustomerIds = jobCustomerFilterQuery.Select(c => c.Id);
+                    invoices = invoices.Where(i => jobCustomerIds.Contains(i.JobCustomerID));
                 }
 
+                var hasInvoiceCustomerFilter = false;
+                var invoiceCustomerFilterQuery = customers;
                 if (!string.IsNullOrWhiteSpace(filter.InvoiceCustomerCode))
                 {
                     var code = filter.InvoiceCustomerCode.Trim();
-                    query = query.Where(x => x.InvoiceCustomer != null && x.InvoiceCustomer.Code == code);
+                    invoiceCustomerFilterQuery = invoiceCustomerFilterQuery.Where(c => c.Code == code);
+                    hasInvoiceCustomerFilter = true;
                 }
-
                 if (!string.IsNullOrWhiteSpace(filter.InvoiceCustomerName))
                 {
                     var name = filter.InvoiceCustomerName.Trim();
-                    query = query.Where(x => x.InvoiceCustomer != null && x.InvoiceCustomer.Name.Contains(name));
+                    invoiceCustomerFilterQuery = invoiceCustomerFilterQuery.Where(c => c.Name.Contains(name));
+                    hasInvoiceCustomerFilter = true;
+                }
+                if (hasInvoiceCustomerFilter)
+                {
+                    var invoiceCustomerIds = invoiceCustomerFilterQuery.Select(c => c.Id);
+                    invoices = invoices.Where(i => invoiceCustomerIds.Contains(i.InvoCustomerID));
                 }
 
                 if (filter.ReferenceStart.HasValue)
                 {
-                    query = query.Where(x => x.Invoice.Reference >= filter.ReferenceStart.Value);
+                    invoices = invoices.Where(i => i.Reference >= filter.ReferenceStart.Value);
                 }
 
                 if (filter.ReferenceEnd.HasValue)
                 {
-                    query = query.Where(x => x.Invoice.Reference <= filter.ReferenceEnd.Value);
+                    invoices = invoices.Where(i => i.Reference <= filter.ReferenceEnd.Value);
                 }
 
                 if (!string.IsNullOrWhiteSpace(filter.Name))
                 {
                     var name = filter.Name.Trim();
-                    query = query.Where(x => x.Invoice.Name.Contains(name));
+                    invoices = invoices.Where(i => i.Name.Contains(name));
                 }
 
                 if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
                 {
                     var related = filter.RelatedPerson.Trim();
-                    query = query.Where(x => x.Invoice.Contact.Contains(related));
+                    invoices = invoices.Where(i => i.Contact.Contains(related));
                 }
 
                 if (filter.IssueDateStart.HasValue)
                 {
-                    query = query.Where(x => x.Invoice.IssueDate >= filter.IssueDateStart.Value);
+                    var startDate = filter.IssueDateStart.Value.Date;
+                    invoices = invoices.Where(i => i.IssueDate.HasValue && i.IssueDate.Value >= startDate);
                 }
 
                 if (filter.IssueDateEnd.HasValue)
                 {
-                    query = query.Where(x => x.Invoice.IssueDate <= filter.IssueDateEnd.Value);
+                    var endExclusive = filter.IssueDateEnd.Value.Date.AddDays(1);
+                    invoices = invoices.Where(i => i.IssueDate.HasValue && i.IssueDate.Value < endExclusive);
                 }
 
                 if (filter.StateId.HasValue)
                 {
-                    query = query.Where(x => x.Invoice.StateID == filter.StateId.Value);
+                    invoices = invoices.Where(i => i.StateID == filter.StateId.Value);
                 }
 
                 if (filter.Evaluated.HasValue)
                 {
-                    query = query.Where(x => x.Invoice.Evaluated == filter.Evaluated.Value);
+                    invoices = invoices.Where(i => i.Evaluated == filter.Evaluated.Value);
                 }
+
+                // Materialize the scoped invoice IDs in one DB round-trip.
+                // Because user filters (date range, customer, etc.) are already applied,
+                // the UNION scope query runs over a small candidate set instead of the full table.
+                // Having the IDs in memory means:
+                //   • totalCount is free (list.Count)
+                //   • every subsequent query uses a simple WHERE Id IN (...) — no nested subqueries.
+                var scopedIds = await ApplyInvoiceDataScope(invoices, activeSnapshot)
+                    .OrderByDescending(i => i.IssueDate)
+                    .ThenByDescending(i => i.Id)
+                    .Select(i => i.Id)
+                    .ToListAsync();
+                var scopeElapsedMs = stopwatch.ElapsedMilliseconds;
 
                 var page = filter.Page > 0 ? filter.Page : 1;
                 var pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
                 var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
-                var orderedQuery = query
-                    .OrderByDescending(x => x.Invoice.IssueDate)
-                    .ThenByDescending(x => x.Invoice.Id);
+                // Apply first-cap in memory and get totalCount for free — zero extra DB queries.
+                var windowIds = first.HasValue ? scopedIds.Take(first.Value).ToList() : scopedIds;
+                var totalCount = windowIds.Count;
+                var countElapsedMs = stopwatch.ElapsedMilliseconds;
 
-                var scopedQuery = first.HasValue
-                    ? orderedQuery.Take(first.Value)
-                    : orderedQuery;
-
-                var totalCount = await scopedQuery.CountAsync();
                 var skip = (page - 1) * pageSize;
+                var pageIds = windowIds.Skip(skip).Take(pageSize).ToList();
 
-                var items = await scopedQuery
-                    .Skip(skip)
-                    .Take(pageSize)
-                    .Select(x => new InvoiceDto
+                // Simple lookup by PK — SQL Server resolves this with a clustered index seek per row.
+                var pageRows = pageIds.Count == 0
+                    ? new List<InvoiceWindowRow>()
+                    : await _unitOfWork.Repository<Invoice>().Query()
+                        .AsNoTracking()
+                        .Where(i => pageIds.Contains(i.Id))
+                        .Select(i => new InvoiceWindowRow
+                        {
+                            Id = i.Id,
+                            Reference = i.Reference,
+                            JobCustomerID = i.JobCustomerID,
+                            InvoCustomerID = i.InvoCustomerID,
+                            Name = i.Name,
+                            IssueDate = i.IssueDate,
+                            GrossAmount = i.GrossAmount,
+                            StateID = i.StateID,
+                            Evaluated = i.Evaluated
+                        })
+                        .ToListAsync();
+
+                // Re-apply the original sort order (DB may return rows in any order for IN queries).
+                var idOrder = pageIds.Select((id, idx) => (id, idx)).ToDictionary(x => x.id, x => x.idx);
+                pageRows = pageRows.OrderBy(r => idOrder.TryGetValue(r.Id, out var o) ? o : int.MaxValue).ToList();
+                var pageElapsedMs = stopwatch.ElapsedMilliseconds;
+
+                var customerIds = pageRows
+                    .SelectMany(x => new[] { x.JobCustomerID, x.InvoCustomerID })
+                    .Distinct()
+                    .ToList();
+
+                var customerMap = customerIds.Count == 0
+                    ? new Dictionary<decimal, (string? Code, string? Name)>()
+                    : await customers
+                        .Where(c => customerIds.Contains(c.Id))
+                        .Select(c => new { c.Id, c.Code, c.Name })
+                        .ToDictionaryAsync(c => c.Id, c => (Code: (string?)c.Code, Name: (string?)c.Name));
+                var customerLookupElapsedMs = stopwatch.ElapsedMilliseconds;
+
+                var stateIds = pageRows
+                    .Select(x => x.StateID)
+                    .Distinct()
+                    .ToList();
+
+                var stateMap = stateIds.Count == 0
+                    ? new Dictionary<decimal, string?>()
+                    : await _unitOfWork.Repository<XState>().Query()
+                        .AsNoTracking()
+                        .Where(s => s.LanguageID == CurrentLanguageId && stateIds.Contains(s.StateID))
+                        .GroupBy(s => s.StateID)
+                        .Select(g => new { StateId = g.Key, Name = g.Select(x => x.Name).FirstOrDefault() })
+                        .ToDictionaryAsync(x => x.StateId, x => x.Name);
+                var stateLookupElapsedMs = stopwatch.ElapsedMilliseconds;
+
+                var items = pageRows.Select(row =>
+                {
+                    var hasJobCustomer = customerMap.TryGetValue(row.JobCustomerID, out var jobCustomer);
+                    var hasInvoiceCustomer = customerMap.TryGetValue(row.InvoCustomerID, out var invoiceCustomer);
+
+                    return new InvoiceDto
                     {
-                        Id = x.Invoice.Id,
-                        Reference = x.Invoice.Reference,
-                        JobCustomerCode = x.JobCustomer != null ? x.JobCustomer.Code : null,
-                        JobCustomerName = x.JobCustomer != null ? x.JobCustomer.Name : null,
-                        InvoiceCustomerCode = x.InvoiceCustomer != null ? x.InvoiceCustomer.Code : null,
-                        InvoiceCustomerName = x.InvoiceCustomer != null ? x.InvoiceCustomer.Name : null,
-                        Name = x.Invoice.Name,
-                        IssueDate = x.Invoice.IssueDate,
-                        GrossAmount = x.Invoice.GrossAmount,
-                        StateName = x.StateName,
-                        Evaluated = x.Invoice.Evaluated
-                    })
-                    .ToListAsync();
+                        Id = row.Id,
+                        Reference = row.Reference,
+                        JobCustomerCode = hasJobCustomer ? jobCustomer.Code : null,
+                        JobCustomerName = hasJobCustomer ? jobCustomer.Name : null,
+                        InvoiceCustomerCode = hasInvoiceCustomer ? invoiceCustomer.Code : null,
+                        InvoiceCustomerName = hasInvoiceCustomer ? invoiceCustomer.Name : null,
+                        Name = row.Name,
+                        IssueDate = row.IssueDate,
+                        GrossAmount = row.GrossAmount,
+                        StateName = stateMap.TryGetValue(row.StateID, out var stateName) ? stateName : null,
+                        Evaluated = row.Evaluated
+                    };
+                }).ToList();
 
                 var result = new PagedResult<InvoiceDto>
                 {
@@ -169,6 +238,23 @@ namespace Imaj.Service.Services
                     PageNumber = page,
                     PageSize = pageSize
                 };
+
+                var countDurationMs = Math.Max(0, countElapsedMs - scopeElapsedMs);
+                var pageDurationMs = Math.Max(0, pageElapsedMs - countElapsedMs);
+                var customerDurationMs = Math.Max(0, customerLookupElapsedMs - pageElapsedMs);
+                var stateDurationMs = Math.Max(0, stateLookupElapsedMs - customerLookupElapsedMs);
+
+                _logger.LogInformation(
+                    "Invoice search perf: scope={ScopeMs}ms, count={CountMs}ms, page={PageMs}ms, customers={CustomerMs}ms, states={StateMs}ms, total={TotalMs}ms, page={Page}, pageSize={PageSize}, first={First}",
+                    scopeElapsedMs,
+                    countDurationMs,
+                    pageDurationMs,
+                    customerDurationMs,
+                    stateDurationMs,
+                    stopwatch.ElapsedMilliseconds,
+                    page,
+                    pageSize,
+                    first);
 
                 return ServiceResult<PagedResult<InvoiceDto>>.Success(result);
             }
@@ -198,7 +284,10 @@ namespace Imaj.Service.Services
                 var activeSnapshot = snapshot!;
                 var scopedJobsQuery = BuildScopedJobQuery(activeSnapshot);
                 var scopedJobIds = scopedJobsQuery.Select(j => j.Id);
-                var invoices = BuildScopedInvoiceQuery(activeSnapshot);
+                var invoiceCandidates = _unitOfWork.Repository<Invoice>().Query()
+                    .AsNoTracking()
+                    .Where(inv => refList.Contains(inv.Reference));
+                var invoices = ApplyInvoiceDataScope(invoiceCandidates, activeSnapshot);
                 var customers = _unitOfWork.Repository<Customer>().Query();
                 var states = _unitOfWork.Repository<XState>().Query();
 
@@ -480,8 +569,10 @@ namespace Imaj.Service.Services
                 }
 
                 var activeSnapshot = snapshot!;
-                var invoice = await BuildScopedInvoiceQuery(activeSnapshot)
-                    .FirstOrDefaultAsync(i => i.Reference == reference);
+                var invoiceCandidates = _unitOfWork.Repository<Invoice>().Query()
+                    .AsNoTracking()
+                    .Where(i => i.Reference == reference);
+                var invoice = await ApplyInvoiceDataScope(invoiceCandidates, activeSnapshot).FirstOrDefaultAsync();
 
                 if (invoice == null)
                 {
@@ -543,6 +634,7 @@ namespace Imaj.Service.Services
         private IQueryable<Job> BuildScopedJobQuery(PermissionSnapshotDto snapshot)
         {
             var query = _unitOfWork.Repository<Job>().Query()
+                .AsNoTracking()
                 .Where(j => snapshot.AllowedFunctionIds.Contains(j.FunctionID));
 
             if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound && snapshot.CompanyId.HasValue)
@@ -555,33 +647,69 @@ namespace Imaj.Service.Services
 
         private IQueryable<Invoice> BuildScopedInvoiceQuery(PermissionSnapshotDto snapshot)
         {
-            var invoiceQuery = _unitOfWork.Repository<Invoice>().Query();
+            var invoiceQuery = _unitOfWork.Repository<Invoice>().Query().AsNoTracking();
+            return ApplyInvoiceDataScope(invoiceQuery, snapshot);
+        }
 
+        private IQueryable<Invoice> ApplyInvoiceDataScope(IQueryable<Invoice> invoiceQuery, PermissionSnapshotDto snapshot)
+        {
             if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound && snapshot.CompanyId.HasValue)
             {
                 invoiceQuery = invoiceQuery.Where(i => i.CompanyID == snapshot.CompanyId.Value);
             }
 
-            var scopedJobs = BuildScopedJobQuery(snapshot);
-            var scopedJobIds = scopedJobs.Select(j => j.Id);
-            var scopedInvoLineIdsFromJobs = scopedJobs
-                .Select(j => j.InvoLineID ?? 0m)
-                .Where(invoLineId => invoLineId > 0);
+            var jobs = _unitOfWork.Repository<Job>().Query().AsNoTracking()
+                .Where(j => snapshot.AllowedFunctionIds.Contains(j.FunctionID));
 
-            var scopedInvoiceIds = _unitOfWork.Repository<InvoLine>().Query()
-                .Where(line =>
-                    line.Deleted == 0
-                    && (
-                        _unitOfWork.Repository<InvoJob>().Query().Any(invoJob =>
-                            invoJob.InvoLineID == line.Id
-                            && invoJob.Deleted == 0
-                            && scopedJobIds.Contains(invoJob.JobID))
-                        || scopedInvoLineIdsFromJobs.Contains(line.Id)
-                    ))
-                .Select(line => line.InvoiceID)
+            if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound && snapshot.CompanyId.HasValue)
+            {
+                jobs = jobs.Where(j => j.CompanyID == snapshot.CompanyId.Value);
+            }
+
+            // Join FROM invoiceQuery so the invoice-side predicates (date range, company, …)
+            // flow into the join path as regular JOIN conditions instead of a correlated
+            // IN(SELECT …) subquery on InvoLine. This lets SQL Server seek through the
+            // already-filtered invoice rows rather than evaluating the subquery per InvoLine row.
+            var allActiveLines = _unitOfWork.Repository<InvoLine>().Query()
+                .AsNoTracking()
+                .Where(line => line.Deleted == 0);
+
+            // Path 1 – invoice linked via InvoJob bridge table
+            var invoiceIdsViaInvoJob =
+                from inv in invoiceQuery
+                join line in allActiveLines on inv.Id equals line.InvoiceID
+                join invoJob in _unitOfWork.Repository<InvoJob>().Query().AsNoTracking()
+                    on line.Id equals invoJob.InvoLineID
+                join job in jobs on invoJob.JobID equals job.Id
+                where invoJob.Deleted == 0
+                select inv.Id;
+
+            // Path 2 – invoice linked via Job.InvoLineID (legacy direct link)
+            var invoiceIdsViaJobLine =
+                from inv in invoiceQuery
+                join line in allActiveLines on inv.Id equals line.InvoiceID
+                join job in jobs.Where(j => j.InvoLineID.HasValue && j.InvoLineID.Value > 0)
+                    on line.Id equals job.InvoLineID!.Value
+                select inv.Id;
+
+            var scopedInvoiceIds = invoiceIdsViaInvoJob
+                .Union(invoiceIdsViaJobLine)
                 .Distinct();
 
             return invoiceQuery.Where(i => scopedInvoiceIds.Contains(i.Id));
+        }
+
+        private sealed class InvoiceWindowRow
+        {
+            public decimal Id { get; init; }
+            public int Reference { get; init; }
+            public decimal JobCustomerID { get; init; }
+            public decimal InvoCustomerID { get; init; }
+            public string Name { get; init; } = string.Empty;
+            public DateTime? IssueDate { get; init; }
+            public decimal GrossAmount { get; init; }
+            public decimal StateID { get; init; }
+            public bool Evaluated { get; init; }
         }
 
     }

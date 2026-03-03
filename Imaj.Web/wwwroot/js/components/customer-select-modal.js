@@ -24,7 +24,6 @@ function customerSelectModal() {
             taxOffice: '',
             taxNumber: '',
             jobStatus: '',
-            jobStateId: null,
             isInvalid: null, // null = Tümü, false = Hayır, true = Evet
             page: 1,
             pageSize: 5
@@ -98,7 +97,6 @@ function customerSelectModal() {
                 taxOffice: '',
                 taxNumber: '',
                 jobStatus: '',
-                jobStateId: null,
                 isInvalid: null,
                 page: 1,
                 pageSize: 5
@@ -115,8 +113,17 @@ function customerSelectModal() {
 
             // Boş değerleri null'a çevir
             const filterToSend = { ...this.filter };
-            if (filterToSend.isInvalid === "") filterToSend.isInvalid = null;
-            if (filterToSend.jobStateId === "") filterToSend.jobStateId = null;
+            if (filterToSend.isInvalid === "") {
+                filterToSend.isInvalid = null;
+            } else if (filterToSend.isInvalid === "true") {
+                filterToSend.isInvalid = true;
+            } else if (filterToSend.isInvalid === "false") {
+                filterToSend.isInvalid = false;
+            }
+
+            if (filterToSend.jobStatus === "") {
+                filterToSend.jobStatus = null;
+            }
 
             try {
                 const result = await API.post('/Customer/Search', filterToSend);
