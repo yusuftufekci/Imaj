@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
@@ -43,6 +44,7 @@ namespace Imaj.Web.Controllers
 
         [AllowAnonymous]
         [HttpPost]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             var result = await _authService.LoginAsync(loginDto);
@@ -60,7 +62,7 @@ namespace Imaj.Web.Controllers
             
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true
+                IsPersistent = loginDto.RememberMe
             };
 
             await HttpContext.SignInAsync(

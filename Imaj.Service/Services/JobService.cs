@@ -308,7 +308,7 @@ namespace Imaj.Service.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "İş listesi alınırken hata oluştu");
-                return ServiceResult<PagedResult<JobDto>>.Fail($"Hata: {ex.Message} Inner: {ex.InnerException?.Message}");
+                return ServiceResult<PagedResult<JobDto>>.Fail("İş listesi alınırken bir hata oluştu.");
             }
         }
 
@@ -901,7 +901,7 @@ namespace Imaj.Service.Services
             {
                  await transaction.RollbackAsync();
                 _logger.LogError(ex, "İş yaratılırken hata oluştu.");
-                return ServiceResult<JobDto>.Fail("İş yaratılırken bir hata oluştu: " + ex.Message);
+                return ServiceResult<JobDto>.Fail("İş yaratılırken bir hata oluştu.");
             }
         }
         public async Task<ServiceResult<List<JobLogDto>>> GetJobHistoryAsync(decimal jobId)

@@ -37,7 +37,7 @@
 
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
-                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <input asp-for="RememberMe" id="remember-me" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                         <label for="remember-me" class="ml-2 block text-sm text-gray-900">@Localizer["RememberMe"]</label>
                     </div>
                 </div>
@@ -62,16 +62,23 @@
             const formData = new FormData(this);
             const data = Object.fromEntries(formData.entries());
             const csrfToken = formData.get('__RequestVerificationToken');
+            const rememberMeValues = formData.getAll('RememberMe');
+            const rememberMeRaw = rememberMeValues.length > 0 ? rememberMeValues[rememberMeValues.length - 1] : 'false';
+            data.RememberMe = rememberMeRaw === 'true' || rememberMeRaw === 'on';
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+
+            if (csrfToken) {
+                headers['X-CSRF-TOKEN'] = csrfToken;
+            }
 
             try {
                 const response = await fetch('/Auth/Login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
+                    headers,
                     body: JSON.stringify(data)
                 });
 

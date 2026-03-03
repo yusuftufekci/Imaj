@@ -1,10 +1,13 @@
 using Imaj.Data.Extensions;
 using Imaj.Service.Extensions;
+using Imaj.Service.Options;
 using Imaj.Web.Extensions;
 using Imaj.Web.Middlewares;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 using System.Globalization;
+using System.Threading.RateLimiting;
 
 // Serilog bootstrap logger (uygulama başlamadan önce)
 Log.Logger = new LoggerConfiguration()
@@ -16,6 +19,7 @@ try
     Log.Information("Uygulama başlatılıyor...");
     
     var builder = WebApplication.CreateBuilder(args);
+    var authSettings = builder.Configuration.GetSection(AuthSettings.SectionName).Get<AuthSettings>() ?? new AuthSettings();
 
     // Serilog - appsettings.json'dan konfigürasyon
     builder.Host.UseSerilog((context, services, configuration) => configuration
@@ -34,6 +38,23 @@ try
 
     // Web servisleri (Authentication)
     builder.Services.AddWebServices(builder.Configuration);
+
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddPolicy("login", context =>
+        {
+            var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = authSettings.LoginRateLimitPermitLimit > 0 ? authSettings.LoginRateLimitPermitLimit : 10,
+                Window = TimeSpan.FromMinutes(authSettings.LoginRateLimitWindowMinutes > 0 ? authSettings.LoginRateLimitWindowMinutes : 1),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                AutoReplenishment = true
+            });
+        });
+    });
 
     var app = builder.Build();
 
@@ -59,6 +80,7 @@ try
     });
 
     app.UseRouting();
+    app.UseRateLimiter();
 
     app.UseAuthentication();
     app.UseAuthorization();
