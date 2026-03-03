@@ -33,6 +33,18 @@ namespace Imaj.Web.Authorization
                 };
             }
 
+            if (string.Equals(controller, "User", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(action, "ChangePassword", StringComparison.OrdinalIgnoreCase))
+            {
+                return new PageRouteMatch
+                {
+                    IsMapped = false,
+                    MatchStatus = "Bypass-PasswordChange",
+                    AspPage = "Password.asp",
+                    Reason = "Password change sayfasi method yetkisi ile korunuyor."
+                };
+            }
+
             if (!LegacyPageCatalog.TryGetControllerRoute(controller, out var route))
             {
                 return new PageRouteMatch

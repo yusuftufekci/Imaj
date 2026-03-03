@@ -21,6 +21,7 @@ namespace Imaj.Web.Controllers
         private const double ViewMethodId = 970d;
         private const double EditMethodId = 971d;
         private const double AddMethodId = 972d;
+        private const double ChangePasswordMethodId = 1039d;
 
         private readonly IUserService _userService;
 
@@ -178,6 +179,39 @@ namespace Imaj.Web.Controllers
             };
 
             return View(model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(ChangePasswordMethodId)]
+        public IActionResult ChangePassword()
+        {
+            return View(new UserChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(ChangePasswordMethodId, write: true)]
+        public async Task<IActionResult> ChangePassword(UserChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var result = await _userService.ChangeCurrentUserPasswordAsync(new ChangeCurrentUserPasswordDto
+            {
+                CurrentPassword = model.CurrentPassword,
+                NewPassword = model.NewPassword
+            });
+
+            if (!result.IsSuccess)
+            {
+                ModelState.AddModelError(string.Empty, result.Message ?? L("PasswordChangeFailed"));
+                return View(model);
+            }
+
+            ShowSuccess(result.Message ?? L("PasswordChangedSuccess"));
+            return RedirectToAction(nameof(ChangePassword));
         }
 
         [HttpGet]

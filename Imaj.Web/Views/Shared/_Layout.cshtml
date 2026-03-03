@@ -7,6 +7,11 @@
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IPermissionViewService PermissionViewService
 
+@{
+    var canShowChangePassword = User.Identity?.IsAuthenticated == true &&
+        await PermissionViewService.CanExecuteMethodAsync(1039m);
+}
+
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.Name">
 <head>
@@ -37,6 +42,12 @@
                         <a href="/Culture/SetLanguage?culture=tr-TR&returnUrl=@Context.Request.Path" class="hover:text-white text-slate-300 transition-colors">TR</a>
                         <span class="text-slate-400">|</span>
                         <a href="/Culture/SetLanguage?culture=en-US&returnUrl=@Context.Request.Path" class="hover:text-white text-slate-300 transition-colors">EN</a>
+
+                        @if (canShowChangePassword)
+                        {
+                            <span class="text-slate-400">|</span>
+                            <a href="/User/ChangePassword" class="hover:text-white text-slate-300 transition-colors">@Localizer["ChangePassword"]</a>
+                        }
                         
                         @if (User.Identity?.IsAuthenticated == true)
                         {

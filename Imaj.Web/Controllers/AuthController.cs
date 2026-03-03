@@ -71,6 +71,14 @@ namespace Imaj.Web.Controllers
             return Json(ServiceResult<object>.Success(default!));
         }
 
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult AccessDenied(string? returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
+        }
+
         public async Task<IActionResult> Logout()
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

@@ -15,5 +15,6 @@ namespace Imaj.Service.Interfaces
         Task<ServiceResult<PagedResultDto<FunctionLookupItemDto>>> SearchFunctionsAsync(FunctionLookupFilterDto filter);
         Task<ServiceResult> CreateUserAsync(UserUpsertDto input);
         Task<ServiceResult> UpdateUserAsync(UserUpsertDto input);
+        Task<ServiceResult> ChangeCurrentUserPasswordAsync(ChangeCurrentUserPasswordDto input);
     }
 }
