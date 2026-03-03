@@ -14,18 +14,16 @@
 }
 
 <div x-data="overtimeReport()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="space-y-6">
-    <!-- Header -->
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
                 @Localizer["OvertimeReport"]
             </h2>
         </div>
     </div>
 
-    <!-- Main Query Card -->
-    <div class="bg-white shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
+    <div class="bg-white shadow sm:rounded-lg border border-gray-200 w-full max-w-5xl mx-auto text-left">
+        <div class="px-4 py-5 sm:p-6 space-y-6">
             <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                 
                 <!-- Date Range -->
@@ -77,24 +75,24 @@
                 </div>
 
             </div>
-            
-            <!-- Action Buttons -->
-            <div class="mt-8 flex justify-end space-x-3">
+
+            <div class="pt-6 border-t border-gray-200">
+                <div class="flex flex-wrap items-center justify-center gap-3">
                 @if (canDownloadDetailed)
                 {
-                    <button type="button" @@click="downloadDetailedReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button type="button" @@click="downloadDetailedReport()" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                         @Localizer["PrintReport"]
                     </button>
                 }
                 @if (canDownloadSummary)
                 {
-                    <button type="button" @@click="downloadSummaryReport()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button type="button" @@click="downloadSummaryReport()" class="inline-flex items-center px-4 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                         @Localizer["PrintReport"]
                     </button>
                 }
                 @if (canDownloadAdministrativeSummary)
                 {
-                    <button type="button" @@click="downloadAdministrativeSummaryReport()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button type="button" @@click="downloadAdministrativeSummaryReport()" class="inline-flex items-center px-4 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                         @Localizer["AdminSummaryReport"]
                     </button>
                 }
@@ -102,11 +100,11 @@
                 {
                     <span class="text-sm text-gray-500">@Localizer["ReportDataUnavailable"]</span>
                 }
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modals -->
     <partial name="_CustomerSelectModal" />
     <partial name="_EmployeeSelectModal" />
 </div>

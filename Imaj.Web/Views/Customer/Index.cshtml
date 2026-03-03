@@ -4,32 +4,32 @@
 
 @{
     ViewData["Title"] = Localizer["CustomerSearch"];
+    var firstValue = Model.First.HasValue && Model.First.Value > 0
+        ? Model.First.Value
+        : (Model.PageSize > 0 ? Model.PageSize : 20);
 }
 
 <div x-data="customerIndex()" class="space-y-6">
-    <!-- Header -->
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
                 @Localizer["CustomerOperations"]
             </h2>
         </div>
     </div>
 
-    <!-- @Localizer["CustomerSearch"] Bölümü -->
-    <form action="/Customer/List" method="get" class="bg-white shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 text-center border-b pb-2">
-                @Localizer["CustomerSearch"]
-            </h3>
-            
+    <form action="/Customer/List" method="get" class="w-full max-w-5xl mx-auto text-left">
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+            <div class="px-4 py-5 sm:p-6 space-y-6">
+                <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 text-center border-b pb-2">
+                    @Localizer["CustomerSearch"]
+                </h3>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                <!-- Sol Kolon -->
                 <div class="space-y-6">
-                    <!-- @Localizer["MainCriteria"] -->
-                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["MainCriteria"]</h4>
-                        <div class="space-y-2">
+                    <div class="space-y-3">
+                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["MainCriteria"]</h4>
+                        <div class="px-1 space-y-2">
                             <div class="form-group">
                                 <label class="form-label">@Localizer["Code"]</label>
                                 <input type="text" name="Code" class="form-input">
@@ -49,10 +49,9 @@
                         </div>
                     </div>
 
-                    <!-- @Localizer["ContactSearch"] -->
-                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["ContactSearch"]</h4>
-                        <div class="space-y-2">
+                    <div class="space-y-3">
+                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["ContactSearch"]</h4>
+                        <div class="px-1 space-y-2">
                             <div class="form-group">
                                 <label class="form-label">@Localizer["Owner"]</label>
                                 <input type="text" name="Owner" class="form-input">
@@ -77,12 +76,10 @@
                     </div>
                 </div>
 
-                <!-- Sağ Kolon -->
                 <div class="space-y-6">
-                    <!-- @Localizer["AddressSearch"] -->
-                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["AddressSearch"]</h4>
-                        <div class="space-y-2">
+                    <div class="space-y-3">
+                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["AddressSearch"]</h4>
+                        <div class="px-1 space-y-2">
                              <div class="form-group">
                                 <label class="form-label">@Localizer["City"]</label>
                                 <input type="text" name="City" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
@@ -98,10 +95,9 @@
                         </div>
                     </div>
 
-                    <!-- @Localizer["InvoiceSearch"] -->
-                     <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["InvoiceSearch"]</h4>
-                        <div class="space-y-2">
+                    <div class="space-y-3">
+                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["InvoiceSearch"]</h4>
+                        <div class="px-1 space-y-2">
                              <div class="form-group">
                                 <label class="form-label">Vergi Dairesi</label>
                                 <input type="text" name="TaxOffice" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
@@ -113,10 +109,9 @@
                         </div>
                     </div>
 
-                    <!-- @Localizer["JobSearch"] -->
-                    <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                        <h4 class="text-sm font-bold text-gray-700 mb-3 border-b border-blue-200 pb-1">@Localizer["JobSearch"]</h4>
-                        <div class="space-y-2">
+                    <div class="space-y-3">
+                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["JobSearch"]</h4>
+                        <div class="px-1 space-y-2">
                              <div class="form-group">
                                 <label class="form-label">@Localizer["Status"]</label>
                                 @{
@@ -136,50 +131,49 @@
                 </div>
             </div>
 
-            <!-- Butonlar -->
-             <div class="mt-8 flex justify-center space-x-3">
-                 <div class="flex items-center space-x-2 mr-4">
-                     <span class="text-sm text-gray-500">@Localizer["First"]</span>
-                     <input type="number" name="First" value="@(Model.First.HasValue && Model.First.Value > 0 ? Model.First.Value : (Model.PageSize > 0 ? Model.PageSize : 20))" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
-                     <span class="text-sm text-gray-500">@Localizer["PageSize"]</span>
-                     <input type="number" name="PageSize" value="@(Model.PageSize > 0 ? Model.PageSize : 20)" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-300 rounded-md">
-                     <input type="hidden" name="Page" value="1">
-                 </div>
+            <div class="pt-6 border-t border-gray-200">
+                <div class="flex flex-wrap items-center justify-center gap-3">
+                    <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
+                    <input type="number" name="First" value="@firstValue" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                    <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
+                    <input type="number" name="PageSize" value="@(Model.PageSize > 0 ? Model.PageSize : 20)" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                    <input type="hidden" name="Page" value="1">
 
-                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    @Localizer["Search"]
-                </button>
-                <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    @Localizer["Clear"]
-                </button>
+                    <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                        @Localizer["Search"]
+                    </button>
+                    <a href="/Customer" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                        @Localizer["Clear"]
+                    </a>
+                </div>
             </div>
-            
+
+            </div>
         </div>
     </form>
 
-    <!-- @Localizer["CustomerCreation"] -->
-    <div class="bg-white shadow sm:rounded-lg mt-6">
-        <div class="px-4 py-5 sm:p-6 text-center">
-             <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 border-b pb-2">
-                @Localizer["CustomerCreation"]
-            </h3>
-            
-            <a href="/Customer/Create" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                @Localizer["CreateNewCustomer"]
-            </a>
+    <div class="text-center mt-10">
+        <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["CustomerCreation"]</h2>
+        <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
+            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-left">@Localizer["CustomerCreation"]</h3>
+            <div class="pt-4 flex justify-center">
+                <a href="/Customer/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    @Localizer["CreateNewCustomer"]
+                </a>
+            </div>
         </div>
     </div>
 
-    <!-- @Localizer["CustomerReports"] -->
-    <div class="bg-white shadow sm:rounded-lg mt-6 text-center">
-         <div class="px-4 py-5 sm:p-6">
-             <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 border-b pb-2">
-                @Localizer["CustomerReports"]
-            </h3>
-            <button type="button" @@click="printReport()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                @Localizer["PrintReport"]
-            </button>
-         </div>
+    <div class="text-center mt-6">
+        <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["CustomerReports"]</h2>
+        <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
+            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-left">@Localizer["CustomerReports"]</h3>
+            <div class="pt-4 flex justify-center">
+                <button type="button" @@click="printReport()" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    @Localizer["PrintReport"]
+                </button>
+            </div>
+        </div>
     </div>
 
 </div>

@@ -5,122 +5,138 @@
 @{
     ViewData["Title"] = Localizer["Function"];
     var canAdd = await PermissionViewService.CanExecuteMethodAsync(1002);
+    var firstValue = Model.Filter.First.HasValue && Model.Filter.First.Value > 0
+        ? Model.Filter.First.Value
+        : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 16);
 }
 
-<div class="space-y-8" x-data="functionIndexPage()">
-    <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">@Localizer["FunctionSearch"]</h2>
+<div class="space-y-6" x-data="functionIndexPage()">
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
+                @Localizer["FunctionSearch"]
+            </h2>
+        </div>
     </div>
 
-    <form method="get" action="/Function/List" class="bg-white border border-gray-200 shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200 max-w-4xl mx-auto">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["MainCriteria"]</h3>
+    <form method="get" action="/Function/List" class="w-full max-w-4xl mx-auto text-left">
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+            <div class="px-4 py-5 sm:p-6 space-y-6">
+                <div class="space-y-4">
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["MainCriteria"]</h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">@Localizer["ReservationRange"]</label>
-                    <select name="IntervalId" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">@Localizer["AllOption"]</option>
-                        @foreach (var interval in Model.Intervals)
-                        {
-                            if (Model.Filter.IntervalId == interval.Id)
-                            {
-                                <option value="@interval.Id" selected>@interval.Name</option>
-                            }
-                            else
-                            {
-                                <option value="@interval.Id">@interval.Name</option>
-                            }
-                        }
-                    </select>
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["ReservationRange"]</label>
+                        <div class="col-span-8 lg:col-span-5">
+                            <select name="IntervalId" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <option value="">@Localizer["AllOption"]</option>
+                                @foreach (var interval in Model.Intervals)
+                                {
+                                    if (Model.Filter.IntervalId == interval.Id)
+                                    {
+                                        <option value="@interval.Id" selected>@interval.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@interval.Id">@interval.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["ReservationCompatible"]</label>
+                        <div class="col-span-8 lg:col-span-5">
+                            <select name="Reservable" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <option value="">@Localizer["AllOption"]</option>
+                                @if (Model.Filter.Reservable == false)
+                                {
+                                    <option value="false" selected>@Localizer["No"]</option>
+                                }
+                                else
+                                {
+                                    <option value="false">@Localizer["No"]</option>
+                                }
+
+                                @if (Model.Filter.Reservable == true)
+                                {
+                                    <option value="true" selected>@Localizer["Yes"]</option>
+                                }
+                                else
+                                {
+                                    <option value="true">@Localizer["Yes"]</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["Invalid"]</label>
+                        <div class="col-span-8 lg:col-span-5">
+                            <select name="IsInvalid" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                <option value="">@Localizer["AllOption"]</option>
+                                @if (Model.Filter.IsInvalid == false)
+                                {
+                                    <option value="false" selected>@Localizer["No"]</option>
+                                }
+                                else
+                                {
+                                    <option value="false">@Localizer["No"]</option>
+                                }
+
+                                @if (Model.Filter.IsInvalid == true)
+                                {
+                                    <option value="true" selected>@Localizer["Yes"]</option>
+                                }
+                                else
+                                {
+                                    <option value="true">@Localizer["Yes"]</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">@Localizer["ReservationCompatible"]</label>
-                    <select name="Reservable" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">@Localizer["AllOption"]</option>
-                        @if (Model.Filter.Reservable == false)
-                        {
-                            <option value="false" selected>@Localizer["No"]</option>
-                        }
-                        else
-                        {
-                            <option value="false">@Localizer["No"]</option>
-                        }
+                <div class="pt-6 border-t border-gray-200">
+                    <div class="flex flex-wrap items-center justify-center gap-3">
+                        <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
+                        <input type="number" name="First" value="@firstValue" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
+                        <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
+                        <input type="hidden" name="Page" value="1">
 
-                        @if (Model.Filter.Reservable == true)
-                        {
-                            <option value="true" selected>@Localizer["Yes"]</option>
-                        }
-                        else
-                        {
-                            <option value="true">@Localizer["Yes"]</option>
-                        }
-                    </select>
+                        <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                            @Localizer["Search"]
+                        </button>
+                        <a href="/Function" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                            @Localizer["Clear"]
+                        </a>
+                    </div>
                 </div>
-
-                <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                    <label class="md:col-span-4 text-sm font-medium text-blue-900 md:text-right">@Localizer["Invalid"]</label>
-                    <select name="IsInvalid" class="md:col-span-4 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">@Localizer["AllOption"]</option>
-                        @if (Model.Filter.IsInvalid == false)
-                        {
-                            <option value="false" selected>@Localizer["No"]</option>
-                        }
-                        else
-                        {
-                            <option value="false">@Localizer["No"]</option>
-                        }
-
-                        @if (Model.Filter.IsInvalid == true)
-                        {
-                            <option value="true" selected>@Localizer["Yes"]</option>
-                        }
-                        else
-                        {
-                            <option value="true">@Localizer["Yes"]</option>
-                        }
-                    </select>
-                </div>
-            </div>
-
-            <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <span class="text-sm text-blue-900 font-semibold">@Localizer["First"]</span>
-                <input type="number" name="First" value="@(Model.Filter.First.HasValue && Model.Filter.First.Value > 0 ? Model.Filter.First.Value : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 16))" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                <span class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</span>
-                <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                <input type="hidden" name="Page" value="1">
-
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                    @Localizer["Search"]
-                </button>
-                <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    @Localizer["Clear"]
-                </button>
             </div>
         </div>
     </form>
 
     @if (canAdd)
     {
-        <div class="bg-white border border-gray-200 shadow sm:rounded-lg" x-data="functionCreateStarter()">
-            <div class="px-4 py-5 sm:p-6 max-w-4xl mx-auto space-y-4">
-                <h3 class="text-3xl font-bold text-orange-600 text-center">@Localizer["FunctionCreation"]</h3>
-
+        <div class="text-center mt-10" x-data="functionCreateStarter()">
+            <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["FunctionCreation"]</h2>
+            <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
                 <form method="get"
                       action="/Function/Create"
-                      class="bg-blue-50 p-4 rounded-md border border-blue-200"
+                      class="space-y-4"
                       @@submit.prevent="submitCreate($event)">
-                    <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["PreInformation"]</h4>
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-left">@Localizer["PreInformation"]</h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["ReservationCompatible"]</label>
-                        <div class="md:col-span-2">
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["ReservationCompatible"]</label>
+                        <div class="col-span-8 lg:col-span-5 text-left">
                             <input type="checkbox" name="reservable" value="true" x-model="reservable" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                         </div>
 
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["ReservationRange"]</label>
-                        <div class="md:col-span-2">
+                        <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["ReservationRange"]</label>
+                        <div class="col-span-8 lg:col-span-5">
                             <select name="intervalId" x-model="intervalId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
                                 <option value="">@Localizer["SelectPrompt"]</option>
                                 @foreach (var interval in Model.Intervals)
@@ -131,8 +147,10 @@
                         </div>
                     </div>
 
-                    <div class="mt-4 text-center">
-                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">@Localizer["CreateNewFunction"]</button>
+                    <div class="pt-2 flex justify-center">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                            @Localizer["CreateNewFunction"]
+                        </button>
                     </div>
                 </form>
             </div>

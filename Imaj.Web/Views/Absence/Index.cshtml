@@ -6,6 +6,9 @@
 @{
     ViewData["Title"] = Localizer["Absence"];
     var canAdd = await PermissionViewService.CanExecuteMethodAsync(1086);
+    var firstValue = Model.Filter.First.HasValue && Model.Filter.First.Value > 0
+        ? Model.Filter.First.Value
+        : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 16);
 
     var initialState = new
     {
@@ -20,188 +23,195 @@
 
 <div x-data='absenceIndexPage(@Html.Raw(JsonSerializer.Serialize(initialState)))'
      @@absence-resource-selected.window="handleResourceSelection($event.detail)"
-     class="space-y-8">
+     class="space-y-6">
 
-    <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">@Localizer["AbsenceSearch"]</h2>
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
+                @Localizer["AbsenceSearch"]
+            </h2>
+        </div>
     </div>
 
-    <form method="get" action="/Absence/List" class="bg-white border border-gray-200 shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6 space-y-4">
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200 max-w-5xl mx-auto">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["AbsenceCriteria"]</h3>
+    <form method="get" action="/Absence/List" class="w-full max-w-4xl mx-auto text-left">
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+            <div class="px-4 py-5 sm:p-6 space-y-6">
+                <div class="space-y-4">
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["AbsenceCriteria"]</h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Function"]</label>
-                    <select name="FunctionId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">@Localizer["AllOption"]</option>
-                        @foreach (var option in Model.FunctionOptions)
-                        {
-                            if (Model.Filter.FunctionId == option.Id)
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
+                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["Function"]</label>
+                        <select name="FunctionId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                            <option value="">@Localizer["AllOption"]</option>
+                            @foreach (var option in Model.FunctionOptions)
                             {
-                                <option value="@option.Id" selected>@option.Name</option>
+                                if (Model.Filter.FunctionId == option.Id)
+                                {
+                                    <option value="@option.Id" selected>@option.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@option.Id">@option.Name</option>
+                                }
+                            }
+                        </select>
+
+                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["Reason"]</label>
+                        <select name="ReasonId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                            <option value="">@Localizer["AllOption"]</option>
+                            @foreach (var option in Model.ReasonOptions)
+                            {
+                                if (Model.Filter.ReasonId == option.Id)
+                                {
+                                    <option value="@option.Id" selected>@option.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@option.Id">@option.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
+                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["Name"]</label>
+                        <input type="text"
+                               name="Name"
+                               value="@Model.Filter.Name"
+                               maxlength="32"
+                               class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+
+                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["Related"]</label>
+                        <input type="text"
+                               name="Contact"
+                               value="@Model.Filter.Contact"
+                               maxlength="32"
+                               class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
+                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["StartDateRange"]</label>
+                        <div class="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input type="datetime-local"
+                                   name="StartDateFrom"
+                                   value="@(Model.Filter.StartDateFrom.HasValue ? Model.Filter.StartDateFrom.Value.ToString("yyyy-MM-ddTHH:mm") : string.Empty)"
+                                   class="shadow-sm border-gray-300 rounded-md sm:text-sm">
+                            <input type="datetime-local"
+                                   name="StartDateTo"
+                                   value="@(Model.Filter.StartDateTo.HasValue ? Model.Filter.StartDateTo.Value.ToString("yyyy-MM-ddTHH:mm") : string.Empty)"
+                                   class="shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
+                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["EndDateRange"]</label>
+                        <div class="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input type="datetime-local"
+                                   name="EndDateFrom"
+                                   value="@(Model.Filter.EndDateFrom.HasValue ? Model.Filter.EndDateFrom.Value.ToString("yyyy-MM-ddTHH:mm") : string.Empty)"
+                                   class="shadow-sm border-gray-300 rounded-md sm:text-sm">
+                            <input type="datetime-local"
+                                   name="EndDateTo"
+                                   value="@(Model.Filter.EndDateTo.HasValue ? Model.Filter.EndDateTo.Value.ToString("yyyy-MM-ddTHH:mm") : string.Empty)"
+                                   class="shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
+                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["Status"]</label>
+                        <select name="StateId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                            <option value="">@Localizer["AllOption"]</option>
+                            @foreach (var option in Model.StateOptions)
+                            {
+                                if (Model.Filter.StateId == option.Id)
+                                {
+                                    <option value="@option.Id" selected>@option.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@option.Id">@option.Name</option>
+                                }
+                            }
+                        </select>
+
+                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["Evaluated"]</label>
+                        <select name="Evaluated" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                            <option value="">@Localizer["AllOption"]</option>
+                            @if (Model.Filter.Evaluated == false)
+                            {
+                                <option value="false" selected>@Localizer["No"]</option>
                             }
                             else
                             {
-                                <option value="@option.Id">@option.Name</option>
+                                <option value="false">@Localizer["No"]</option>
                             }
-                        }
-                    </select>
 
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Reason"]</label>
-                    <select name="ReasonId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">@Localizer["AllOption"]</option>
-                        @foreach (var option in Model.ReasonOptions)
-                        {
-                            if (Model.Filter.ReasonId == option.Id)
+                            @if (Model.Filter.Evaluated == true)
                             {
-                                <option value="@option.Id" selected>@option.Name</option>
+                                <option value="true" selected>@Localizer["Yes"]</option>
                             }
                             else
                             {
-                                <option value="@option.Id">@option.Name</option>
+                                <option value="true">@Localizer["Yes"]</option>
                             }
-                        }
-                    </select>
-                </div>
-
-                <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Name"]</label>
-                    <input type="text"
-                           name="Name"
-                           value="@Model.Filter.Name"
-                           maxlength="32"
-                           class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Related"]</label>
-                    <input type="text"
-                           name="Contact"
-                           value="@Model.Filter.Contact"
-                           maxlength="32"
-                           class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                </div>
-
-                <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["StartDateRange"]</label>
-                    <div class="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input type="datetime-local"
-                               name="StartDateFrom"
-                               value="@(Model.Filter.StartDateFrom.HasValue ? Model.Filter.StartDateFrom.Value.ToString("yyyy-MM-ddTHH:mm") : string.Empty)"
-                               class="shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <input type="datetime-local"
-                               name="StartDateTo"
-                               value="@(Model.Filter.StartDateTo.HasValue ? Model.Filter.StartDateTo.Value.ToString("yyyy-MM-ddTHH:mm") : string.Empty)"
-                               class="shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        </select>
                     </div>
                 </div>
 
-                <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["EndDateRange"]</label>
-                    <div class="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input type="datetime-local"
-                               name="EndDateFrom"
-                               value="@(Model.Filter.EndDateFrom.HasValue ? Model.Filter.EndDateFrom.Value.ToString("yyyy-MM-ddTHH:mm") : string.Empty)"
-                               class="shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <input type="datetime-local"
-                               name="EndDateTo"
-                               value="@(Model.Filter.EndDateTo.HasValue ? Model.Filter.EndDateTo.Value.ToString("yyyy-MM-ddTHH:mm") : string.Empty)"
-                               class="shadow-sm border-gray-300 rounded-md sm:text-sm">
+                <div class="space-y-4">
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["ResourceCriteria"]</h3>
+
+                    <div class="flex flex-wrap items-center justify-center gap-3 text-sm">
+                        <span class="text-blue-900 font-semibold">@Localizer["Resource"]</span>
+                        <button type="button"
+                                @@click="openFilterResourceModal"
+                                class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">@Localizer["Select"]</button>
+
+                        <span class="text-gray-700" x-show="filterResourceIds.length > 0" x-text="formatSelectedResourceCount(filterResourceIds.length)"></span>
+
+                        <button x-show="filterResourceIds.length > 0"
+                                type="button"
+                                @@click="clearFilterResources"
+                                class="text-red-600 font-semibold hover:underline">
+                            @Localizer["Clear"]
+                        </button>
+
+                        <template x-for="resourceId in filterResourceIds" :key="resourceId">
+                            <input type="hidden" name="ResourceIds" :value="resourceId">
+                        </template>
                     </div>
                 </div>
 
-                <div class="mt-3 grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Status"]</label>
-                    <select name="StateId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">@Localizer["AllOption"]</option>
-                        @foreach (var option in Model.StateOptions)
-                        {
-                            if (Model.Filter.StateId == option.Id)
-                            {
-                                <option value="@option.Id" selected>@option.Name</option>
-                            }
-                            else
-                            {
-                                <option value="@option.Id">@option.Name</option>
-                            }
-                        }
-                    </select>
+                <div class="pt-6 border-t border-gray-200">
+                    <div class="flex flex-wrap items-center justify-center gap-3">
+                        <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
+                        <input type="number" name="First" value="@firstValue" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
+                        <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
+                        <input type="hidden" name="Page" value="1">
 
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Evaluated"]</label>
-                    <select name="Evaluated" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
-                        <option value="">@Localizer["AllOption"]</option>
-                        @if (Model.Filter.Evaluated == false)
-                        {
-                            <option value="false" selected>@Localizer["No"]</option>
-                        }
-                        else
-                        {
-                            <option value="false">@Localizer["No"]</option>
-                        }
-
-                        @if (Model.Filter.Evaluated == true)
-                        {
-                            <option value="true" selected>@Localizer["Yes"]</option>
-                        }
-                        else
-                        {
-                            <option value="true">@Localizer["Yes"]</option>
-                        }
-                    </select>
+                        <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                            @Localizer["Search"]
+                        </button>
+                        <a href="/Absence" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                            @Localizer["Clear"]
+                        </a>
+                    </div>
                 </div>
-            </div>
-
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200 max-w-5xl mx-auto">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["ResourceCriteria"]</h3>
-
-                <div class="flex flex-wrap items-center justify-center gap-3 text-sm">
-                    <span class="text-blue-900 font-semibold">@Localizer["Resource"]</span>
-                    <button type="button"
-                            @@click="openFilterResourceModal"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">@Localizer["Select"]</button>
-
-                    <span class="text-gray-700" x-show="filterResourceIds.length > 0" x-text="formatSelectedResourceCount(filterResourceIds.length)"></span>
-
-                    <button x-show="filterResourceIds.length > 0"
-                            type="button"
-                            @@click="clearFilterResources"
-                            class="text-red-600 font-semibold hover:underline">
-                        @Localizer["Clear"]
-                    </button>
-
-                    <template x-for="resourceId in filterResourceIds" :key="resourceId">
-                        <input type="hidden" name="ResourceIds" :value="resourceId">
-                    </template>
-                </div>
-            </div>
-
-            <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <span class="text-sm text-blue-900 font-semibold">@Localizer["First"]</span>
-                <input type="number" name="First" value="@(Model.Filter.First.HasValue && Model.Filter.First.Value > 0 ? Model.Filter.First.Value : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 16))" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                <span class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</span>
-                <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
-                <input type="hidden" name="Page" value="1">
-
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-                    @Localizer["Search"]
-                </button>
-                <button type="reset" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    @Localizer["Clear"]
-                </button>
             </div>
         </div>
     </form>
 
     @if (canAdd)
     {
-        <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
-            <div class="px-4 py-5 sm:p-6 max-w-5xl mx-auto space-y-4">
-                <h3 class="text-3xl font-bold text-orange-600 text-center">@Localizer["AbsenceCreation"]</h3>
-
-                <form method="get" action="/Absence/Create" class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                    <h4 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["PreInformation"]</h4>
+        <div class="text-center mt-10">
+            <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["AbsenceCreation"]</h2>
+            <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
+                <form method="get" action="/Absence/Create" class="space-y-4">
+                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-left">@Localizer["PreInformation"]</h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Function"]</label>
+                        <label class="md:col-span-4 text-gray-700 font-medium md:text-right">@Localizer["Function"]</label>
                         <div class="md:col-span-8">
                             <select name="functionId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
                                 <option value="">@Localizer["SelectPrompt"]</option>
@@ -219,7 +229,7 @@
                             </select>
                         </div>
 
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["StartDate"]</label>
+                        <label class="md:col-span-4 text-gray-700 font-medium md:text-right">@Localizer["StartDate"]</label>
                         <div class="md:col-span-8">
                             <input type="datetime-local"
                                    name="startDate"
@@ -227,7 +237,7 @@
                                    class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm">
                         </div>
 
-                        <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["EndDate"]</label>
+                        <label class="md:col-span-4 text-gray-700 font-medium md:text-right">@Localizer["EndDate"]</label>
                         <div class="md:col-span-8">
                             <input type="datetime-local"
                                    name="endDate"
@@ -236,8 +246,8 @@
                         </div>
                     </div>
 
-                    <div class="mt-4 text-center">
-                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                    <div class="pt-2 flex justify-center">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                             @Localizer["Absence"]
                         </button>
                     </div>
