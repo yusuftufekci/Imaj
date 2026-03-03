@@ -56,7 +56,8 @@ namespace Imaj.Web.Authorization
             if (string.Equals(routeMatch.MatchStatus, "Bypass-SecurityEndpoint", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(routeMatch.MatchStatus, "Bypass-Home", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(routeMatch.MatchStatus, "Bypass-Culture", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(routeMatch.MatchStatus, "Bypass-PasswordChange", StringComparison.OrdinalIgnoreCase))
+                || string.Equals(routeMatch.MatchStatus, "Bypass-PasswordChange", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(routeMatch.MatchStatus, "Bypass-EmployeeLookupApi", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }

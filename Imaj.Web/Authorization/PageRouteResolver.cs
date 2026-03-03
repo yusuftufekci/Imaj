@@ -45,6 +45,19 @@ namespace Imaj.Web.Authorization
                 };
             }
 
+            if (string.Equals(controller, "Employee", StringComparison.OrdinalIgnoreCase) &&
+                (string.Equals(action, "Search", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(action, "GetFunctions", StringComparison.OrdinalIgnoreCase)))
+            {
+                return new PageRouteMatch
+                {
+                    IsMapped = false,
+                    MatchStatus = "Bypass-EmployeeLookupApi",
+                    AspPage = "EmployeeLookupApi",
+                    Reason = "Employee lookup API ortak kullanim icin data-scope ile korunuyor."
+                };
+            }
+
             if (!LegacyPageCatalog.TryGetControllerRoute(controller, out var route))
             {
                 return new PageRouteMatch
