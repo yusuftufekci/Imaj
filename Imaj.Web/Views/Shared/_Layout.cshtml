@@ -1,15 +1,18 @@
 ﻿@using System.Globalization
 @using System.Text.Json
+@using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Imaj.Web
 @using Imaj.Web.Authorization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IPermissionViewService PermissionViewService
+@inject IAntiforgery Antiforgery
 
 @{
     var canShowChangePassword = User.Identity?.IsAuthenticated == true &&
         await PermissionViewService.CanExecuteMethodAsync(1039m);
+    var antiForgeryTokens = Antiforgery.GetAndStoreTokens(Context);
 }
 
 <!DOCTYPE html>
@@ -17,6 +20,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="@antiForgeryTokens.RequestToken" />
     <title>@ViewData["Title"] - Imaj</title>
     <!-- TailwindCSS (Local Build) -->
     <link rel="stylesheet" href="~/css/tailwind.output.css" asp-append-version="true" />

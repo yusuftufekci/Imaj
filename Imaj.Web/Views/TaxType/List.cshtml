@@ -38,6 +38,7 @@
     </div>
 
     <form x-ref="listForm" method="post" action="/TaxType/Detail" class="bg-white border border-gray-200 shadow sm:rounded-lg">
+        @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
         <div class="overflow-x-auto">

@@ -25,6 +25,7 @@
             </div>
 
             <form id="loginForm" class="space-y-6">
+                @Html.AntiForgeryToken()
                 <div class="mb-4">
                     <label asp-for="Username" class="block text-gray-700 text-sm font-bold mb-2">@Localizer["Username"]</label>
                     <input asp-for="Username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
@@ -60,6 +61,7 @@
             
             const formData = new FormData(this);
             const data = Object.fromEntries(formData.entries());
+            const csrfToken = formData.get('__RequestVerificationToken');
 
             try {
                 const response = await fetch('/Auth/Login', {
@@ -67,7 +69,8 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     body: JSON.stringify(data)
                 });

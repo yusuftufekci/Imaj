@@ -97,6 +97,7 @@
     </div>
 
     <form method="post" action="/Job/Create" x-ref="createJobForm" @@submit.prevent="validateAndSubmit()">
+        @Html.AntiForgeryToken()
         
         <!-- TOP SECTION: Basic Info & Notes -->
         <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">

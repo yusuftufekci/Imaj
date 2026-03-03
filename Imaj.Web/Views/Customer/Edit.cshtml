@@ -16,6 +16,7 @@
     </div>
 
     <form action="/Customer/Update" method="post" class="bg-white shadow sm:rounded-lg">
+        @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.CustomerId)
         
         <partial name="_CustomerForm" model="Model" />
