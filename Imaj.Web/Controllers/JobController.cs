@@ -46,32 +46,35 @@ namespace Imaj.Web.Controllers
             
             // Now get history using the actual Job.Id (PK)
             var historyResult = await _jobService.GetJobHistoryAsync(job.Id);
+            var historyItems = historyResult.IsSuccess && historyResult.Data != null
+                ? historyResult.Data
+                : new List<JobLogDto>();
 
             var model = new JobHistoryViewModel
             {
                 JobId = job.Id, // PK
                 Reference = job.Reference.ToString(),
-                Function = job.FunctionName,
-                CustomerName = job.CustomerName,
-                RelatedPerson = job.Contact, // "İlgili"
-                ContactName = job.Name, // "Ad" (Job.Name kişi adı gibi kullanılıyor screenshotta)
+                Function = job.FunctionName ?? string.Empty,
+                CustomerName = job.CustomerName ?? string.Empty,
+                RelatedPerson = job.Contact ?? string.Empty, // "İlgili"
+                ContactName = job.Name ?? string.Empty, // "Ad" (Job.Name kişi adı gibi kullanılıyor screenshotta)
                 StartDate = job.StartDate,
                 EndDate = job.EndDate,
-                Status = job.StatusName,
+                Status = job.StatusName ?? string.Empty,
                 IsEmailSent = job.IsEmailSent,
                 IsEvaluated = job.IsEvaluated,
                 InvoiceStatus = job.InvoLineId.HasValue ? L("Billed") : "-",
-                AdminNotes = job.IntNotes,
-                CustomerNotes = job.ExtNotes,
+                AdminNotes = job.IntNotes ?? string.Empty,
+                CustomerNotes = job.ExtNotes ?? string.Empty,
                 
-                Items = historyResult.IsSuccess ? historyResult.Data.Select(x => new JobHistoryItem
+                Items = historyItems.Select(x => new JobHistoryItem
                 {
                     Date = x.LogDate,
                     UserCode = x.UserCode,
                     UserName = x.UserName,
                     UserEmail = x.UserEmail,
                     Action = x.ActionName
-                }).ToList() : new List<JobHistoryItem>()
+                }).ToList()
             };
 
             return View("History", model);
