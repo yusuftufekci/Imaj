@@ -20,10 +20,12 @@
     </div>
 
     <form method="get" action="/ResoCat/List" class="w-full max-w-4xl mx-auto text-left">
-        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
+            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["MainCriteria"]</h3>
+            </div>
             <div class="px-4 py-5 sm:p-6 space-y-6">
                 <div class="space-y-4">
-                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["MainCriteria"]</h3>
 
                     <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-4 lg:col-start-2 text-right text-sm font-medium text-gray-700">@Localizer["Invalid"]</label>

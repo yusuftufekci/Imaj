@@ -20,13 +20,16 @@
 
     <form method="get" action="/Job/List">
         <!-- Main Filter Card -->
-        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
             <div class="px-4 py-5 sm:p-6">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     
                     <!-- COLUMN 1: İŞ KRİTERİ (Job Criteria) -->
-                    <div class="lg:col-span-6 space-y-4 border-r border-gray-200 pr-4">
-                        <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["JobCriteria"]</h3>
+                    <div class="lg:col-span-6 border border-blue-200 rounded-lg overflow-hidden bg-white">
+                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                            <h3 class="text-lg font-semibold text-gray-800">@Localizer["JobCriteria"]</h3>
+                        </div>
+                        <div class="p-4 space-y-4">
                         
                         <div class="grid grid-cols-12 gap-4 items-center">
                             <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Function"]</label>
@@ -146,72 +149,79 @@
                                 </select>
                             </div>
                         </div>
+                        </div>
                     </div>
 
                     <!-- RIGHT COLUMN WRAPPER -->
                     <div class="lg:col-span-6 space-y-6">
                         
                         <!-- COLUMN 2: MESAI KRİTERİ (Overtime Criteria) -->
-                        <div class="space-y-4">
-                            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["OvertimeCriteria"]</h3>
-                            
-                            <!-- Çalışan -->
-                            <div class="grid grid-cols-12 gap-4 items-center">
-                                <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Employee"]</label>
-                                <div class="col-span-8 flex space-x-2">
-                                    <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
-                                    <input type="text" readonly x-model="filter.employeeName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                    <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
-                                </div>
+                        <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                                <h3 class="text-lg font-semibold text-gray-800">@Localizer["OvertimeCriteria"]</h3>
                             </div>
-                            
-                            <!-- Görev Tipi -->
-                            <div class="grid grid-cols-12 gap-4 items-center">
-                                <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["WorkType"]</label>
-                                <div class="col-span-8">
-                                    <select name="Filter.TaskType" x-model="filter.taskType" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                        <option value="">@Localizer["AllOption"]</option>
-                                        @if (ViewBag.WorkTypes != null)
-                                        {
-                                            @foreach (var wt in ViewBag.WorkTypes)
-                                            {
-                                                <option value="@wt.Id">@wt.Name</option>
-                                            }
-                                        }
-                                    </select>
+                            <div class="p-4 space-y-4">
+                                <!-- Çalışan -->
+                                <div class="grid grid-cols-12 gap-4 items-center">
+                                    <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Employee"]</label>
+                                    <div class="col-span-8 flex space-x-2">
+                                        <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
+                                        <input type="text" readonly x-model="filter.employeeName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
+                                        <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Mesai Tipi -->
-                            <div class="grid grid-cols-12 gap-4 items-center">
-                                <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["TimeType"]</label>
-                                <div class="col-span-8">
-                                    <select name="Filter.OvertimeType" x-model="filter.overtimeType" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                        <option value="">@Localizer["AllOption"]</option>
-                                        @if (ViewBag.TimeTypes != null)
-                                        {
-                                            @foreach (var tt in ViewBag.TimeTypes)
+
+                                <!-- Görev Tipi -->
+                                <div class="grid grid-cols-12 gap-4 items-center">
+                                    <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["WorkType"]</label>
+                                    <div class="col-span-8">
+                                        <select name="Filter.TaskType" x-model="filter.taskType" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                            <option value="">@Localizer["AllOption"]</option>
+                                            @if (ViewBag.WorkTypes != null)
                                             {
-                                                <option value="@tt.Id">@tt.Name</option>
+                                                @foreach (var wt in ViewBag.WorkTypes)
+                                                {
+                                                    <option value="@wt.Id">@wt.Name</option>
+                                                }
                                             }
-                                        }
-                                    </select>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Mesai Tipi -->
+                                <div class="grid grid-cols-12 gap-4 items-center">
+                                    <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["TimeType"]</label>
+                                    <div class="col-span-8">
+                                        <select name="Filter.OvertimeType" x-model="filter.overtimeType" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                            <option value="">@Localizer["AllOption"]</option>
+                                            @if (ViewBag.TimeTypes != null)
+                                            {
+                                                @foreach (var tt in ViewBag.TimeTypes)
+                                                {
+                                                    <option value="@tt.Id">@tt.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- COLUMN 3: ÜRÜN KRİTERİ (Product Criteria) -->
-                        <div class="space-y-4">
-                            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["ProductCriteria"]</h3>
-                            
-                            <!-- Ürün -->
-                            <div class="grid grid-cols-12 gap-4 items-center">
-                                <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Product"]</label>
-                                <div class="col-span-8 flex space-x-2">
-                                    <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
-                                    <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
-                                    <input type="text" readonly x-model="filter.productName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                    <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
+                        <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                                <h3 class="text-lg font-semibold text-gray-800">@Localizer["ProductCriteria"]</h3>
+                            </div>
+                            <div class="p-4">
+                                <!-- Ürün -->
+                                <div class="grid grid-cols-12 gap-4 items-center">
+                                    <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Product"]</label>
+                                    <div class="col-span-8 flex space-x-2">
+                                        <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
+                                        <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
+                                        <input type="text" readonly x-model="filter.productName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
+                                        <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -240,29 +250,31 @@
     <!-- Job Creation Section -->
     <div class="text-center mt-10">
          <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["JobCreation"]</h2>
-         <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
-             <div class="grid grid-cols-12 gap-4 items-center justify-center">
-                 <label class="col-span-4 text-right text-sm font-bold text-gray-700 bg-gray-200 px-2 py-1">@Localizer["PreInformation"]</label>
-                 <div class="col-span-8"></div> <!-- Spacer/Header effect -->
-                 
-                 <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Function"]</label>
-                 <div class="col-span-6">
-                     <select x-model="filter.function" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                         <option value="">@Localizer["SelectPrompt"]</option>
-                         @if (ViewBag.Functions != null)
-                         {
-                             @foreach (var func in ViewBag.Functions)
-                             {
-                                 <option value="@func.Id">@func.Name</option>
-                             }
-                         }
-                     </select>
-                 </div>
+         <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl overflow-hidden">
+             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
+                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["PreInformation"]</h3>
              </div>
-             <div class="mt-4 flex justify-center">
-                 <a href="/Job/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                    @Localizer["CreateNewJob"]
-                </a>
+             <div class="p-6">
+                 <div class="grid grid-cols-12 gap-4 items-center justify-center">
+                     <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Function"]</label>
+                     <div class="col-span-6">
+                         <select x-model="filter.function" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                             <option value="">@Localizer["SelectPrompt"]</option>
+                             @if (ViewBag.Functions != null)
+                             {
+                                 @foreach (var func in ViewBag.Functions)
+                                 {
+                                     <option value="@func.Id">@func.Name</option>
+                                 }
+                             }
+                         </select>
+                     </div>
+                 </div>
+                 <div class="mt-4 flex justify-center">
+                     <a href="/Job/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                        @Localizer["CreateNewJob"]
+                    </a>
+                 </div>
              </div>
          </div>
     </div>

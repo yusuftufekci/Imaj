@@ -46,11 +46,11 @@
         @Html.AntiForgeryToken()
 
         <div class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
-            <div class="px-4 pt-4 sm:px-6">
-                <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["ResoCat"]</h3>
+            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["ResoCat"]</h3>
             </div>
-            <div class="px-4 pb-5 sm:px-6 sm:pb-6">
-                <div class="mt-4 overflow-x-auto">
+            <div class="p-4 space-y-4">
+                <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 resocat-names-table">
                         <colgroup>
                             <col class="resocat-names-language-col" />
@@ -91,7 +91,7 @@
                     </table>
                 </div>
 
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
                     <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</label>
                     <div class="md:col-span-3">
                         <input asp-for="IsInvalid" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />

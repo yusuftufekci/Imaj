@@ -34,10 +34,12 @@
     </div>
 
     <form method="get" action="/Absence/List" class="w-full max-w-4xl mx-auto text-left">
-        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
+            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["AbsenceCriteria"]</h3>
+            </div>
             <div class="px-4 py-5 sm:p-6 space-y-6">
                 <div class="space-y-4">
-                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["AbsenceCriteria"]</h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-sm">
                         <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["Function"]</label>
@@ -158,27 +160,31 @@
                     </div>
                 </div>
 
-                <div class="space-y-4">
-                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["ResourceCriteria"]</h3>
+                <div class="border border-blue-200 rounded-lg overflow-hidden">
+                    <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                        <h3 class="text-lg font-semibold text-gray-800">@Localizer["ResourceCriteria"]</h3>
+                    </div>
 
-                    <div class="flex flex-wrap items-center justify-center gap-3 text-sm">
-                        <span class="text-blue-900 font-semibold">@Localizer["Resource"]</span>
-                        <button type="button"
-                                @@click="openFilterResourceModal"
-                                class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">@Localizer["Select"]</button>
+                    <div class="p-4">
+                        <div class="flex flex-wrap items-center justify-center gap-3 text-sm">
+                            <span class="text-blue-900 font-semibold">@Localizer["Resource"]</span>
+                            <button type="button"
+                                    @@click="openFilterResourceModal"
+                                    class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">@Localizer["Select"]</button>
 
-                        <span class="text-gray-700" x-show="filterResourceIds.length > 0" x-text="formatSelectedResourceCount(filterResourceIds.length)"></span>
+                            <span class="text-gray-700" x-show="filterResourceIds.length > 0" x-text="formatSelectedResourceCount(filterResourceIds.length)"></span>
 
-                        <button x-show="filterResourceIds.length > 0"
-                                type="button"
-                                @@click="clearFilterResources"
-                                class="text-red-600 font-semibold hover:underline">
-                            @Localizer["Clear"]
-                        </button>
+                            <button x-show="filterResourceIds.length > 0"
+                                    type="button"
+                                    @@click="clearFilterResources"
+                                    class="text-red-600 font-semibold hover:underline">
+                                @Localizer["Clear"]
+                            </button>
 
-                        <template x-for="resourceId in filterResourceIds" :key="resourceId">
-                            <input type="hidden" name="ResourceIds" :value="resourceId">
-                        </template>
+                            <template x-for="resourceId in filterResourceIds" :key="resourceId">
+                                <input type="hidden" name="ResourceIds" :value="resourceId">
+                            </template>
+                        </div>
                     </div>
                 </div>
 
@@ -206,9 +212,11 @@
     {
         <div class="text-center mt-10">
             <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["AbsenceCreation"]</h2>
-            <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
-                <form method="get" action="/Absence/Create" class="space-y-4">
-                    <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-left">@Localizer["PreInformation"]</h3>
+            <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
+                    <h3 class="text-lg font-semibold text-gray-800">@Localizer["PreInformation"]</h3>
+                </div>
+                <form method="get" action="/Absence/Create" class="p-6 space-y-4">
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
                         <label class="md:col-span-4 text-gray-700 font-medium md:text-right">@Localizer["Function"]</label>

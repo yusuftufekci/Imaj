@@ -19,7 +19,7 @@
     </div>
 
     <form action="/Customer/List" method="get" class="w-full max-w-5xl mx-auto text-left">
-        <div class="bg-white shadow sm:rounded-lg border border-gray-200">
+        <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
             <div class="px-4 py-5 sm:p-6 space-y-6">
                 <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 text-center border-b pb-2">
                     @Localizer["CustomerSearch"]
@@ -27,9 +27,11 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 <div class="space-y-6">
-                    <div class="space-y-3">
-                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["MainCriteria"]</h4>
-                        <div class="px-1 space-y-2">
+                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["MainCriteria"]</h4>
+                        </div>
+                        <div class="p-4 space-y-2">
                             <div class="form-group">
                                 <label class="form-label">@Localizer["Code"]</label>
                                 <input type="text" name="Code" class="form-input">
@@ -49,9 +51,11 @@
                         </div>
                     </div>
 
-                    <div class="space-y-3">
-                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["ContactSearch"]</h4>
-                        <div class="px-1 space-y-2">
+                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["ContactSearch"]</h4>
+                        </div>
+                        <div class="p-4 space-y-2">
                             <div class="form-group">
                                 <label class="form-label">@Localizer["Owner"]</label>
                                 <input type="text" name="Owner" class="form-input">
@@ -77,9 +81,11 @@
                 </div>
 
                 <div class="space-y-6">
-                    <div class="space-y-3">
-                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["AddressSearch"]</h4>
-                        <div class="px-1 space-y-2">
+                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["AddressSearch"]</h4>
+                        </div>
+                        <div class="p-4 space-y-2">
                              <div class="form-group">
                                 <label class="form-label">@Localizer["City"]</label>
                                 <input type="text" name="City" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
@@ -95,9 +101,11 @@
                         </div>
                     </div>
 
-                    <div class="space-y-3">
-                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["InvoiceSearch"]</h4>
-                        <div class="px-1 space-y-2">
+                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["InvoiceSearch"]</h4>
+                        </div>
+                        <div class="p-4 space-y-2">
                              <div class="form-group">
                                 <label class="form-label">Vergi Dairesi</label>
                                 <input type="text" name="TaxOffice" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
@@ -109,9 +117,11 @@
                         </div>
                     </div>
 
-                    <div class="space-y-3">
-                        <h4 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["JobSearch"]</h4>
-                        <div class="px-1 space-y-2">
+                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["JobSearch"]</h4>
+                        </div>
+                        <div class="p-4 space-y-2">
                              <div class="form-group">
                                 <label class="form-label">@Localizer["Status"]</label>
                                 @{
@@ -154,28 +164,35 @@
 
     <div class="text-center mt-10">
         <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["CustomerCreation"]</h2>
-        <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
-            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-left">@Localizer["CustomerCreation"]</h3>
-            <div class="pt-4 flex justify-center">
-                <a href="/Customer/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                    @Localizer["CreateNewCustomer"]
-                </a>
+        <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl overflow-hidden">
+            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["CustomerCreation"]</h3>
+            </div>
+            <div class="p-6">
+                <div class="pt-4 flex justify-center">
+                    <a href="/Customer/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                        @Localizer["CreateNewCustomer"]
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="text-center mt-6">
         <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["CustomerReports"]</h2>
-        <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl p-6">
-            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded text-left">@Localizer["CustomerReports"]</h3>
-            <div class="pt-4 flex justify-center">
-                <button type="button" @@click="printReport()" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                    @Localizer["PrintReport"]
-                </button>
+        <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl overflow-hidden">
+            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["CustomerReports"]</h3>
+            </div>
+            <div class="p-6">
+                <div class="pt-4 flex justify-center">
+                    <button type="button" @@click="printReport()" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                        @Localizer["PrintReport"]
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-
 </div>
 
 <script>
