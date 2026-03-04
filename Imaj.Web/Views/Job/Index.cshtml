@@ -283,10 +283,10 @@
     <div class="text-center mt-10 mb-10">
          <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["JobReport"]</h2>
           <div class="flex justify-center space-x-4">
-              <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+              <button type="button" @@click="downloadDetailedPendingInvoiceJobsReport()" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                 @Localizer["DetailedPendingInvoiceJobsReport"]
             </button>
-            <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+            <button type="button" @@click="downloadSummaryPendingInvoiceJobsReport()" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                 @Localizer["SummaryPendingInvoiceJobsReport"]
             </button>
          </div>
@@ -356,6 +356,32 @@
                        this.filter.employeeCode = '';
                     }
                 }
+            },
+
+            buildPendingInvoiceReportParams() {
+                const params = new URLSearchParams();
+
+                if (this.filter.customerId) {
+                    params.append('customerId', this.filter.customerId);
+                }
+                if (this.filter.customerCode) {
+                    params.append('customerCode', this.filter.customerCode);
+                }
+                if (this.customerName) {
+                    params.append('customerName', this.customerName);
+                }
+
+                return params.toString();
+            },
+
+            downloadDetailedPendingInvoiceJobsReport() {
+                const query = this.buildPendingInvoiceReportParams();
+                window.location.href = '/Job/DownloadDetailedPendingInvoiceJobsExcel' + (query ? `?${query}` : '');
+            },
+
+            downloadSummaryPendingInvoiceJobsReport() {
+                const query = this.buildPendingInvoiceReportParams();
+                window.location.href = '/Job/DownloadSummaryPendingInvoiceJobsExcel' + (query ? `?${query}` : '');
             }
         }
     }

@@ -426,6 +426,18 @@
   <data name="AdminSummaryOvertimeReportTitle" xml:space="preserve">
     <value>Administrative Overtime Summary Report</value>
   </data>
+  <data name="DetailedPendingInvoiceJobsSheet" xml:space="preserve">
+    <value>Detailed Pending Invoice Jobs</value>
+  </data>
+  <data name="SummaryPendingInvoiceJobsSheet" xml:space="preserve">
+    <value>Summary Pending Invoice Jobs</value>
+  </data>
+  <data name="DetailedPendingInvoiceJobsReportTitle" xml:space="preserve">
+    <value>Detailed Pending Invoice Jobs Report</value>
+  </data>
+  <data name="SummaryPendingInvoiceJobsReportTitle" xml:space="preserve">
+    <value>Summary Pending Invoice Jobs Report</value>
+  </data>
   <data name="OvertimeType" xml:space="preserve">
     <value>Overtime Type</value>
   </data>
@@ -440,6 +452,9 @@
   </data>
   <data name="Quantity" xml:space="preserve">
     <value>Quantity</value>
+  </data>
+  <data name="Count" xml:space="preserve">
+    <value>Count</value>
   </data>
   <data name="Amount" xml:space="preserve">
     <value>Amount</value>
@@ -488,6 +503,12 @@
   </data>
   <data name="DetailedProductFilePrefix" xml:space="preserve">
     <value>detailed-product-report</value>
+  </data>
+  <data name="DetailedPendingInvoiceJobsFilePrefix" xml:space="preserve">
+    <value>detailed-pending-invoice-jobs-report</value>
+  </data>
+  <data name="SummaryPendingInvoiceJobsFilePrefix" xml:space="preserve">
+    <value>summary-pending-invoice-jobs-report</value>
   </data>
   <data name="CustomerReportFilePrefix" xml:space="preserve">
     <value>customer-information-report</value>

@@ -48,6 +48,16 @@ namespace Imaj.Service.Interfaces
         /// </summary>
         Task<ServiceResult<List<OvertimeAdministrativeSummaryReportRowDto>>> GetAdministrativeSummaryOvertimeReportAsync(OvertimeReportFilterDto filter);
 
+        /// <summary>
+        /// Detaylı fatura bekleyen işler raporu için satırları getirir.
+        /// </summary>
+        Task<ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>> GetDetailedPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter);
+
+        /// <summary>
+        /// Özet fatura bekleyen işler raporu için müşteri bazlı satırları getirir.
+        /// </summary>
+        Task<ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>> GetSummaryPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter);
+
         Task<List<string>> GetTableColumnsAsync(string tableName);
     }
 }

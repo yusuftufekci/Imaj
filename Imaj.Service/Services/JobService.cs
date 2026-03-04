@@ -586,6 +586,120 @@ namespace Imaj.Service.Services
             }
         }
 
+        /// <summary>
+        /// Detaylı fatura bekleyen işler raporu için filtrelenmiş satırları getirir.
+        /// </summary>
+        public async Task<ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>> GetDetailedPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter)
+        {
+            try
+            {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>.Success(new List<PendingInvoiceJobsDetailedReportRowDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+
+                var items = await BuildPendingInvoiceJobsReportBaseQuery(filter, activeSnapshot)
+                    .OrderBy(x => x.CustomerName)
+                    .ThenBy(x => x.Reference)
+                    .Select(x => new PendingInvoiceJobsDetailedReportRowDto
+                    {
+                        CustomerCode = x.CustomerCode,
+                        CustomerName = x.CustomerName,
+                        Reference = x.Reference,
+                        JobName = x.JobName,
+                        StartDate = x.StartDate,
+                        EndDate = x.EndDate,
+                        Amount = x.Amount
+                    })
+                    .ToListAsync();
+
+                return ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>.Success(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Detaylı fatura bekleyen işler raporu alınırken hata oluştu.");
+                return ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>.Fail("Detaylı fatura bekleyen işler raporu alınırken bir hata oluştu.");
+            }
+        }
+
+        /// <summary>
+        /// Özet fatura bekleyen işler raporu için müşteri bazlı gruplanmış satırları getirir.
+        /// </summary>
+        public async Task<ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>> GetSummaryPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter)
+        {
+            try
+            {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>.Success(new List<PendingInvoiceJobsSummaryReportRowDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+
+                var items = await BuildPendingInvoiceJobsReportBaseQuery(filter, activeSnapshot)
+                    .GroupBy(x => new { x.CustomerCode, x.CustomerName })
+                    .Select(g => new PendingInvoiceJobsSummaryReportRowDto
+                    {
+                        CustomerCode = g.Key.CustomerCode,
+                        CustomerName = g.Key.CustomerName,
+                        Count = g.Count(),
+                        Amount = g.Sum(x => x.Amount)
+                    })
+                    .OrderBy(x => x.CustomerName)
+                    .ToListAsync();
+
+                return ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>.Success(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Özet fatura bekleyen işler raporu alınırken hata oluştu.");
+                return ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>.Fail("Özet fatura bekleyen işler raporu alınırken bir hata oluştu.");
+            }
+        }
+
+        private IQueryable<PendingInvoiceJobsReportBaseRow> BuildPendingInvoiceJobsReportBaseQuery(
+            PendingInvoiceJobsReportFilterDto filter,
+            PermissionSnapshotDto snapshot)
+        {
+            var customerCode = filter.CustomerCode?.Trim();
+
+            var query = from j in _unitOfWork.Repository<Job>().Query()
+                        join c in _unitOfWork.Repository<Customer>().Query() on j.CustomerID equals c.Id into cGroup
+                        from customer in cGroup.DefaultIfEmpty()
+                        where j.InvoLineID == null
+                              && snapshot.AllowedFunctionIds.Contains(j.FunctionID)
+                              && (snapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound
+                                  || !snapshot.CompanyId.HasValue
+                                  || j.CompanyID == snapshot.CompanyId.Value)
+                        select new PendingInvoiceJobsReportBaseRow
+                        {
+                            CustomerId = j.CustomerID,
+                            CustomerCode = customer != null ? customer.Code : string.Empty,
+                            CustomerName = customer != null ? customer.Name : string.Empty,
+                            Reference = j.Reference,
+                            JobName = j.Name,
+                            StartDate = j.StartDT,
+                            EndDate = j.EndDT,
+                            Amount = j.ProdSum
+                        };
+
+            if (filter.CustomerId.HasValue)
+            {
+                query = query.Where(x => x.CustomerId == filter.CustomerId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(customerCode))
+            {
+                query = query.Where(x => x.CustomerCode == customerCode);
+            }
+
+            return query;
+        }
+
         private IQueryable<OvertimeReportBaseRow> BuildOvertimeReportBaseQuery(
             OvertimeReportFilterDto filter,
             PermissionSnapshotDto snapshot)
@@ -643,6 +757,18 @@ namespace Imaj.Service.Services
             }
 
             return query;
+        }
+
+        private sealed class PendingInvoiceJobsReportBaseRow
+        {
+            public decimal CustomerId { get; init; }
+            public string CustomerCode { get; init; } = string.Empty;
+            public string CustomerName { get; init; } = string.Empty;
+            public int Reference { get; init; }
+            public string JobName { get; init; } = string.Empty;
+            public DateTime StartDate { get; init; }
+            public DateTime? EndDate { get; init; }
+            public decimal Amount { get; init; }
         }
 
         private static List<string> NormalizeEmployeeCodes(List<string>? employeeCodes)

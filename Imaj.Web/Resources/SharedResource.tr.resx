@@ -426,6 +426,18 @@
   <data name="AdminSummaryOvertimeReportTitle" xml:space="preserve">
     <value>İdari Özet Mesai Raporu</value>
   </data>
+  <data name="DetailedPendingInvoiceJobsSheet" xml:space="preserve">
+    <value>Detaylı Fatura Bekleyen İşler</value>
+  </data>
+  <data name="SummaryPendingInvoiceJobsSheet" xml:space="preserve">
+    <value>Özet Fatura Bekleyen İşler</value>
+  </data>
+  <data name="DetailedPendingInvoiceJobsReportTitle" xml:space="preserve">
+    <value>Detaylı Fatura Bekleyen İşler Raporu</value>
+  </data>
+  <data name="SummaryPendingInvoiceJobsReportTitle" xml:space="preserve">
+    <value>Özet Fatura Bekleyen İşler Raporu</value>
+  </data>
   <data name="OvertimeType" xml:space="preserve">
     <value>Mesai Tipi</value>
   </data>
@@ -440,6 +452,9 @@
   </data>
   <data name="Quantity" xml:space="preserve">
     <value>Miktar</value>
+  </data>
+  <data name="Count" xml:space="preserve">
+    <value>Adet</value>
   </data>
   <data name="Amount" xml:space="preserve">
     <value>Tutar</value>
@@ -488,6 +503,12 @@
   </data>
   <data name="DetailedProductFilePrefix" xml:space="preserve">
     <value>detayli-urun-raporu</value>
+  </data>
+  <data name="DetailedPendingInvoiceJobsFilePrefix" xml:space="preserve">
+    <value>detayli-fatura-bekleyen-isler-raporu</value>
+  </data>
+  <data name="SummaryPendingInvoiceJobsFilePrefix" xml:space="preserve">
+    <value>ozet-fatura-bekleyen-isler-raporu</value>
   </data>
   <data name="CustomerReportFilePrefix" xml:space="preserve">
     <value>musteri-bilgileri-raporu</value>

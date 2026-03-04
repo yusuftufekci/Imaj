@@ -81,6 +81,13 @@ namespace Imaj.Web.Models
         public bool IsEvaluated { get; set; }
     }
 
+    public class PendingInvoiceJobsReportDownloadRequest
+    {
+        public decimal? CustomerId { get; set; }
+        public string? CustomerCode { get; set; }
+        public string? CustomerName { get; set; }
+    }
+
     public class JobDetailViewModel
     {
         // Navigation Props

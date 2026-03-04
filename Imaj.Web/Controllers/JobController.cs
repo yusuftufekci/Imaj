@@ -4,6 +4,7 @@ using Imaj.Service.Interfaces;
 using Imaj.Web;
 using Imaj.Web.Authorization;
 using Imaj.Web.Models;
+using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 
@@ -11,17 +12,22 @@ namespace Imaj.Web.Controllers
 {
     public class JobController : Controller
     {
+        private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
         private readonly IJobService _jobService;
         private readonly ILookupService _lookupService;
+        private readonly IPendingInvoiceJobsReportExcelService _pendingInvoiceJobsReportExcelService;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
         public JobController(
             IJobService jobService,
             ILookupService lookupService,
+            IPendingInvoiceJobsReportExcelService pendingInvoiceJobsReportExcelService,
             IStringLocalizer<SharedResource> localizer)
         {
             _jobService = jobService;
             _lookupService = lookupService;
+            _pendingInvoiceJobsReportExcelService = pendingInvoiceJobsReportExcelService;
             _localizer = localizer;
         }
 
@@ -92,6 +98,60 @@ namespace Imaj.Web.Controllers
             var model = new JobViewModel();
             // Varsayılan tarih filtresini kaldırdık - kullanıcı seçmedikçe filtre uygulanmasın
             return View(model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1397)]
+        public async Task<IActionResult> DownloadDetailedPendingInvoiceJobsExcel([FromQuery] PendingInvoiceJobsReportDownloadRequest request)
+        {
+            var filter = new PendingInvoiceJobsReportFilterDto
+            {
+                CustomerId = request.CustomerId,
+                CustomerCode = request.CustomerCode
+            };
+
+            var reportResult = await _jobService.GetDetailedPendingInvoiceJobsReportAsync(filter);
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+            }
+
+            var context = new PendingInvoiceJobsReportExcelContext
+            {
+                CustomerDisplay = !string.IsNullOrWhiteSpace(request.CustomerName)
+                    ? request.CustomerName!
+                    : (!string.IsNullOrWhiteSpace(request.CustomerCode) ? request.CustomerCode! : L("AllOption"))
+            };
+
+            var fileBytes = _pendingInvoiceJobsReportExcelService.BuildDetailedReport(reportResult.Data, context);
+            return File(fileBytes, ExcelContentType, BuildFileName(L("DetailedPendingInvoiceJobsFilePrefix")));
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1397)]
+        public async Task<IActionResult> DownloadSummaryPendingInvoiceJobsExcel([FromQuery] PendingInvoiceJobsReportDownloadRequest request)
+        {
+            var filter = new PendingInvoiceJobsReportFilterDto
+            {
+                CustomerId = request.CustomerId,
+                CustomerCode = request.CustomerCode
+            };
+
+            var reportResult = await _jobService.GetSummaryPendingInvoiceJobsReportAsync(filter);
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+            }
+
+            var context = new PendingInvoiceJobsReportExcelContext
+            {
+                CustomerDisplay = !string.IsNullOrWhiteSpace(request.CustomerName)
+                    ? request.CustomerName!
+                    : (!string.IsNullOrWhiteSpace(request.CustomerCode) ? request.CustomerCode! : L("AllOption"))
+            };
+
+            var fileBytes = _pendingInvoiceJobsReportExcelService.BuildSummaryReport(reportResult.Data, context);
+            return File(fileBytes, ExcelContentType, BuildFileName(L("SummaryPendingInvoiceJobsFilePrefix")));
         }
 
         /// <summary>
@@ -503,6 +563,11 @@ namespace Imaj.Web.Controllers
         private string L(string key)
         {
             return _localizer[key].Value;
+        }
+
+        private static string BuildFileName(string prefix)
+        {
+            return $"{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
         }
     }
 }
