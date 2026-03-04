@@ -1,3 +1,4 @@
+using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
@@ -14,15 +15,24 @@ namespace Imaj.Web.Controllers
         private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
         private readonly IJobService _jobService;
+        private readonly ICustomerService _customerService;
+        private readonly ILookupService _lookupService;
+        private readonly IPermissionViewService _permissionViewService;
         private readonly IOvertimeReportExcelService _overtimeReportExcelService;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
         public OvertimeReportController(
             IJobService jobService,
+            ICustomerService customerService,
+            ILookupService lookupService,
+            IPermissionViewService permissionViewService,
             IOvertimeReportExcelService overtimeReportExcelService,
             IStringLocalizer<SharedResource> localizer)
         {
             _jobService = jobService;
+            _customerService = customerService;
+            _lookupService = lookupService;
+            _permissionViewService = permissionViewService;
             _overtimeReportExcelService = overtimeReportExcelService;
             _localizer = localizer;
         }
@@ -31,6 +41,55 @@ namespace Imaj.Web.Controllers
         {
             var model = new OvertimeReportViewModel();
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CustomerJobStates()
+        {
+            if (!await CanUseCustomerLookupAsync())
+            {
+                return Forbid();
+            }
+
+            var result = await _lookupService.GetStatesAsync(StateCategories.Job);
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+
+            return BadRequest(result.Message ?? L("GenericError"));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CustomerSearch([FromBody] CustomerFilterModel? filter)
+        {
+            if (!await CanUseCustomerLookupAsync())
+            {
+                return Forbid();
+            }
+
+            var f = filter ?? new CustomerFilterModel();
+            f.Page = f.Page > 0 ? f.Page : 1;
+            f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : null;
+
+            var serviceFilter = BuildCustomerFilter(f);
+            var result = await _customerService.GetByFilterAsync(serviceFilter);
+
+            var items = result.IsSuccess && result.Data != null
+                ? result.Data.Items.Select(c => new CustomerSearchResult
+                {
+                    Id = c.Id,
+                    Code = c.Code,
+                    Name = c.Name,
+                    City = c.City,
+                    Phone = c.Phone,
+                    Email = c.Email
+                }).ToList()
+                : new List<CustomerSearchResult>();
+
+            var totalCount = result.IsSuccess && result.Data != null ? result.Data.TotalCount : 0;
+            return Json(new { items, totalCount, page = f.Page, pageSize = f.PageSize });
         }
 
         [HttpGet]
@@ -155,6 +214,40 @@ namespace Imaj.Web.Controllers
         private static string BuildFileName(string prefix)
         {
             return $"{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
+        }
+
+        private async Task<bool> CanUseCustomerLookupAsync()
+        {
+            return await _permissionViewService.CanExecuteMethodAsync(1698m)
+                || await _permissionViewService.CanExecuteMethodAsync(1745m)
+                || await _permissionViewService.CanExecuteMethodAsync(2917m);
+        }
+
+        private static CustomerFilterDto BuildCustomerFilter(CustomerFilterModel filter)
+        {
+            var hasStateId = decimal.TryParse(filter.JobStatus, out var stateId);
+
+            return new CustomerFilterDto
+            {
+                Code = filter.Code,
+                Name = filter.Name,
+                City = filter.City,
+                AreaCode = filter.AreaCode,
+                Country = filter.Country,
+                Owner = filter.Owner,
+                RelatedPerson = filter.RelatedPerson,
+                Phone = filter.Phone,
+                Fax = filter.Fax,
+                Email = filter.Email,
+                TaxOffice = filter.TaxOffice,
+                TaxNumber = filter.TaxNumber,
+                JobStatus = filter.JobStatus,
+                JobStateId = hasStateId ? stateId : null,
+                IsInvalid = filter.IsInvalid,
+                Page = filter.Page,
+                PageSize = filter.PageSize,
+                First = filter.First
+            };
         }
 
         private string L(string key)
