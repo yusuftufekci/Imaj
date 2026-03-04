@@ -11,6 +11,7 @@ namespace Imaj.Service.DTOs
         public decimal FunctionId { get; set; }
         public string? FunctionName { get; set; }
         public decimal CustomerId { get; set; }
+        public string? CustomerCode { get; set; }
         public string? CustomerName { get; set; }
         public string? Name { get; set; }
         public string? Contact { get; set; }
@@ -21,6 +22,8 @@ namespace Imaj.Service.DTOs
         public bool IsEmailSent { get; set; }
         public bool IsEvaluated { get; set; }
         public decimal? InvoLineId { get; set; }
+        public decimal WorkAmount { get; set; }
+        public decimal ProductAmount { get; set; }
         public string? IntNotes { get; set; }
         public string? ExtNotes { get; set; }
         

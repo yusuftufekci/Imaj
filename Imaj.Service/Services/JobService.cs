@@ -33,7 +33,7 @@ namespace Imaj.Service.Services
         /// İş kayıtlarını filtreleyerek getirir.
         /// Customer, Function, State tabloları ile join yaparak isim bilgilerini alır.
         /// </summary>
-        public async Task<ServiceResult<PagedResult<JobDto>>> GetByFilterAsync(JobFilterDto filter)
+        public async Task<ServiceResult<PagedResult<JobDto>>> GetByFilterAsync(JobFilterDto filter, CancellationToken cancellationToken = default)
         {
             // ... (existing code) ...
             try
@@ -179,7 +179,7 @@ namespace Imaj.Service.Services
                         .Where(jp => jp.ProductID == filter.ProductId.Value && jp.Deleted == 0)
                         .Select(jp => jp.JobID);
                     
-                    var matchingJobIds = await jobIdsWithProduct.ToListAsync();
+                    var matchingJobIds = await jobIdsWithProduct.ToListAsync(cancellationToken);
                     _logger.LogInformation("Ürün filtresi: {Count} iş bulundu. JobID'ler: {JobIds}", matchingJobIds.Count, string.Join(", ", matchingJobIds.Take(10)));
                     
                     query = query.Where(x => matchingJobIds.Contains(x.Job.Id));
@@ -203,7 +203,7 @@ namespace Imaj.Service.Services
                         var requestedEmployeeAllowed = await employeeRepo.Query()
                             .AnyAsync(e =>
                                 e.Code == filter.EmployeeCode
-                                && activeSnapshot.AllowedEmployeeIds.Contains(e.Id));
+                                && activeSnapshot.AllowedEmployeeIds.Contains(e.Id), cancellationToken);
 
                         if (!requestedEmployeeAllowed)
                         {
@@ -269,7 +269,7 @@ namespace Imaj.Service.Services
                     ? orderedQuery.Take(first.Value)
                     : orderedQuery;
 
-                var totalCount = await scopedQuery.CountAsync();
+                var totalCount = await scopedQuery.CountAsync(cancellationToken);
                 var skip = (page - 1) * pageSize;
 
                 var items = await scopedQuery
@@ -282,6 +282,7 @@ namespace Imaj.Service.Services
                         FunctionId = x.Job.FunctionID,
                         FunctionName = x.FunctionName,
                         CustomerId = x.Job.CustomerID,
+                        CustomerCode = x.CustomerCode,
                         CustomerName = x.CustomerName,
                         Name = x.Job.Name,
                         Contact = x.Job.Contact,
@@ -291,9 +292,11 @@ namespace Imaj.Service.Services
                         StatusName = x.StateName,
                         IsEmailSent = x.Job.Mailed,
                         IsEvaluated = x.Job.Evaluated,
-                        InvoLineId = x.Job.InvoLineID
+                        InvoLineId = x.Job.InvoLineID,
+                        WorkAmount = x.Job.WorkSum,
+                        ProductAmount = x.Job.ProdSum
                     })
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
 
                 var result = new PagedResult<JobDto>
                 {
@@ -304,6 +307,10 @@ namespace Imaj.Service.Services
                 };
 
                 return ServiceResult<PagedResult<JobDto>>.Success(result);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -587,9 +594,103 @@ namespace Imaj.Service.Services
         }
 
         /// <summary>
+        /// Detaylı iş raporu için filtrelenmiş satırları getirir.
+        /// </summary>
+        public async Task<ServiceResult<List<JobDetailedReportRowDto>>> GetDetailedJobReportAsync(JobFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var itemsResult = await GetAllJobsForReportAsync(filter, cancellationToken);
+                if (!itemsResult.IsSuccess || itemsResult.Data == null)
+                {
+                    return ServiceResult<List<JobDetailedReportRowDto>>.Fail(itemsResult.Message ?? "Detaylı iş raporu alınırken bir hata oluştu.");
+                }
+
+                var items = itemsResult.Data;
+                if (!items.Any())
+                {
+                    return ServiceResult<List<JobDetailedReportRowDto>>.Success(new List<JobDetailedReportRowDto>());
+                }
+
+                var rows = items
+                    .OrderBy(x => x.CustomerName)
+                    .ThenBy(x => x.StartDate)
+                    .ThenBy(x => x.Reference)
+                    .Select(x =>
+                    {
+                        return new JobDetailedReportRowDto
+                        {
+                            CustomerCode = x.CustomerCode ?? string.Empty,
+                            CustomerName = x.CustomerName ?? string.Empty,
+                            FunctionName = x.FunctionName ?? string.Empty,
+                            Reference = x.Reference,
+                            JobName = x.Name ?? string.Empty,
+                            StartDate = x.StartDate,
+                            EndDate = x.EndDate,
+                            StatusName = x.StatusName ?? string.Empty,
+                            IsEvaluated = x.IsEvaluated,
+                            WorkAmount = x.WorkAmount,
+                            ProductAmount = x.ProductAmount
+                        };
+                    })
+                    .ToList();
+
+                return ServiceResult<List<JobDetailedReportRowDto>>.Success(rows);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Detaylı iş raporu alınırken hata oluştu.");
+                return ServiceResult<List<JobDetailedReportRowDto>>.Fail("Detaylı iş raporu alınırken bir hata oluştu.");
+            }
+        }
+
+        /// <summary>
+        /// Özet iş raporu için müşteri bazlı satırları getirir.
+        /// </summary>
+        public async Task<ServiceResult<List<JobSummaryReportRowDto>>> GetSummaryJobReportAsync(JobFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var detailedResult = await GetDetailedJobReportAsync(filter, cancellationToken);
+                if (!detailedResult.IsSuccess || detailedResult.Data == null)
+                {
+                    return ServiceResult<List<JobSummaryReportRowDto>>.Fail(detailedResult.Message ?? "Özet iş raporu alınırken bir hata oluştu.");
+                }
+
+                var rows = detailedResult.Data
+                    .GroupBy(x => new { x.CustomerCode, x.CustomerName })
+                    .Select(g => new JobSummaryReportRowDto
+                    {
+                        CustomerCode = g.Key.CustomerCode,
+                        CustomerName = g.Key.CustomerName,
+                        Count = g.Count(),
+                        WorkAmount = g.Sum(x => x.WorkAmount),
+                        ProductAmount = g.Sum(x => x.ProductAmount)
+                    })
+                    .OrderBy(x => x.CustomerName)
+                    .ToList();
+
+                return ServiceResult<List<JobSummaryReportRowDto>>.Success(rows);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Özet iş raporu alınırken hata oluştu.");
+                return ServiceResult<List<JobSummaryReportRowDto>>.Fail("Özet iş raporu alınırken bir hata oluştu.");
+            }
+        }
+
+        /// <summary>
         /// Detaylı fatura bekleyen işler raporu için filtrelenmiş satırları getirir.
         /// </summary>
-        public async Task<ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>> GetDetailedPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter)
+        public async Task<ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>> GetDetailedPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -614,9 +715,13 @@ namespace Imaj.Service.Services
                         EndDate = x.EndDate,
                         Amount = x.Amount
                     })
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
 
                 return ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>.Success(items);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -628,7 +733,7 @@ namespace Imaj.Service.Services
         /// <summary>
         /// Özet fatura bekleyen işler raporu için müşteri bazlı gruplanmış satırları getirir.
         /// </summary>
-        public async Task<ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>> GetSummaryPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter)
+        public async Task<ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>> GetSummaryPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -650,9 +755,13 @@ namespace Imaj.Service.Services
                         Amount = g.Sum(x => x.Amount)
                     })
                     .OrderBy(x => x.CustomerName)
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
 
                 return ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>.Success(items);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -698,6 +807,64 @@ namespace Imaj.Service.Services
             }
 
             return query;
+        }
+
+        private async Task<ServiceResult<List<JobDto>>> GetAllJobsForReportAsync(JobFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            const int reportPageSize = 500;
+
+            var reportFilter = new JobFilterDto
+            {
+                FunctionId = filter.FunctionId,
+                CustomerCode = filter.CustomerCode,
+                CustomerId = filter.CustomerId,
+                ReferenceStart = filter.ReferenceStart,
+                ReferenceEnd = filter.ReferenceEnd,
+                ReferenceList = filter.ReferenceList,
+                JobName = filter.JobName,
+                RelatedPerson = filter.RelatedPerson,
+                StartDateStart = filter.StartDateStart,
+                StartDateEnd = filter.StartDateEnd,
+                EndDateStart = filter.EndDateStart,
+                EndDateEnd = filter.EndDateEnd,
+                StateId = filter.StateId,
+                IsEmailSent = filter.IsEmailSent,
+                IsEvaluated = filter.IsEvaluated,
+                HasInvoice = filter.HasInvoice,
+                EmployeeCode = filter.EmployeeCode,
+                WorkTypeId = filter.WorkTypeId,
+                TimeTypeId = filter.TimeTypeId,
+                ProductId = filter.ProductId,
+                ProductCode = filter.ProductCode,
+                First = null,
+                Page = 1,
+                PageSize = reportPageSize,
+                Sort = filter.Sort,
+                Ascending = filter.Ascending
+            };
+
+            var allItems = new List<JobDto>();
+
+            while (true)
+            {
+                var pageResult = await GetByFilterAsync(reportFilter, cancellationToken);
+                if (!pageResult.IsSuccess || pageResult.Data == null)
+                {
+                    return ServiceResult<List<JobDto>>.Fail(pageResult.Message ?? "İş raporu verileri alınırken bir hata oluştu.");
+                }
+
+                var pageItems = pageResult.Data.Items ?? new List<JobDto>();
+                allItems.AddRange(pageItems);
+
+                if (pageItems.Count == 0 || allItems.Count >= pageResult.Data.TotalCount)
+                {
+                    break;
+                }
+
+                reportFilter.Page++;
+            }
+
+            return ServiceResult<List<JobDto>>.Success(allItems);
         }
 
         private IQueryable<OvertimeReportBaseRow> BuildOvertimeReportBaseQuery(

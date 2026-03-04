@@ -61,6 +61,7 @@ namespace Imaj.Web.Extensions
             services.AddScoped<IProductReportExcelService, ProductReportExcelService>();
             services.AddScoped<ICustomerReportExcelService, CustomerReportExcelService>();
             services.AddScoped<IPendingInvoiceJobsReportExcelService, PendingInvoiceJobsReportExcelService>();
+            services.AddScoped<IJobReportExcelService, JobReportExcelService>();
 
             return services;
         }

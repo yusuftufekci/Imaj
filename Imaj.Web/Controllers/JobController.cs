@@ -1,6 +1,7 @@
 using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Service.Results;
 using Imaj.Web;
 using Imaj.Web.Authorization;
 using Imaj.Web.Models;
@@ -13,21 +14,25 @@ namespace Imaj.Web.Controllers
     public class JobController : Controller
     {
         private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        private static readonly TimeSpan ReportExecutionTimeout = TimeSpan.FromSeconds(45);
 
         private readonly IJobService _jobService;
         private readonly ILookupService _lookupService;
         private readonly IPendingInvoiceJobsReportExcelService _pendingInvoiceJobsReportExcelService;
+        private readonly IJobReportExcelService _jobReportExcelService;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
         public JobController(
             IJobService jobService,
             ILookupService lookupService,
             IPendingInvoiceJobsReportExcelService pendingInvoiceJobsReportExcelService,
+            IJobReportExcelService jobReportExcelService,
             IStringLocalizer<SharedResource> localizer)
         {
             _jobService = jobService;
             _lookupService = lookupService;
             _pendingInvoiceJobsReportExcelService = pendingInvoiceJobsReportExcelService;
+            _jobReportExcelService = jobReportExcelService;
             _localizer = localizer;
         }
 
@@ -110,7 +115,16 @@ namespace Imaj.Web.Controllers
                 CustomerCode = request.CustomerCode
             };
 
-            var reportResult = await _jobService.GetDetailedPendingInvoiceJobsReportAsync(filter);
+            ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>> reportResult;
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _jobService.GetDetailedPendingInvoiceJobsReportAsync(filter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
                 return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
@@ -137,7 +151,16 @@ namespace Imaj.Web.Controllers
                 CustomerCode = request.CustomerCode
             };
 
-            var reportResult = await _jobService.GetSummaryPendingInvoiceJobsReportAsync(filter);
+            ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>> reportResult;
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _jobService.GetSummaryPendingInvoiceJobsReportAsync(filter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
                 return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
@@ -152,6 +175,64 @@ namespace Imaj.Web.Controllers
 
             var fileBytes = _pendingInvoiceJobsReportExcelService.BuildSummaryReport(reportResult.Data, context);
             return File(fileBytes, ExcelContentType, BuildFileName(L("SummaryPendingInvoiceJobsFilePrefix")));
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1397)]
+        public async Task<IActionResult> DownloadDetailedJobReportExcel([FromQuery] JobFilterModel filter)
+        {
+            if (!TryValidateJobReportDateRanges(filter, out var badRequestResult))
+            {
+                return badRequestResult!;
+            }
+
+            var reportFilter = BuildJobFilterDto(filter, includeFirst: false);
+            ServiceResult<List<JobDetailedReportRowDto>> reportResult;
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _jobService.GetDetailedJobReportAsync(reportFilter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+            }
+
+            var fileBytes = _jobReportExcelService.BuildDetailedReport(reportResult.Data);
+            return File(fileBytes, ExcelContentType, BuildFileName(L("DetailedJobReportFilePrefix")));
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1397)]
+        public async Task<IActionResult> DownloadSummaryJobReportExcel([FromQuery] JobFilterModel filter)
+        {
+            if (!TryValidateJobReportDateRanges(filter, out var badRequestResult))
+            {
+                return badRequestResult!;
+            }
+
+            var reportFilter = BuildJobFilterDto(filter, includeFirst: false);
+            ServiceResult<List<JobSummaryReportRowDto>> reportResult;
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _jobService.GetSummaryJobReportAsync(reportFilter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+            }
+
+            var fileBytes = _jobReportExcelService.BuildSummaryReport(reportResult.Data);
+            return File(fileBytes, ExcelContentType, BuildFileName(L("SummaryJobReportFilePrefix")));
         }
 
         /// <summary>
@@ -182,60 +263,7 @@ namespace Imaj.Web.Controllers
             // Dropdown verilerini backend'den al (geri dönüşlerde gerekli)
             await LoadDropdownDataAsync();
 
-            // Filtre DTO'sunu hazırla
-            var filterDto = new JobFilterDto
-            {
-                // Fonksiyon ID string olarak geliyor, decimal'e çevir
-                FunctionId = decimal.TryParse(model.Filter.Function, out var funcId) ? funcId : null,
-                
-                // Müşteri ID
-                CustomerId = model.Filter.CustomerId,
-                
-                // Referans aralığı
-                ReferenceStart = int.TryParse(model.Filter.ReferenceStart, out var refStart) ? refStart : null,
-                ReferenceEnd = int.TryParse(model.Filter.ReferenceEnd, out var refEnd) ? refEnd : null,
-                ReferenceList = model.Filter.ReferenceList,
-                
-                // İş bilgileri
-                JobName = model.Filter.JobName,
-                RelatedPerson = model.Filter.RelatedPerson,
-                
-                // Tarih aralıkları
-                StartDateStart = model.Filter.StartDateStart,
-                StartDateEnd = model.Filter.StartDateEnd,
-                EndDateStart = model.Filter.EndDateStart,
-                EndDateEnd = model.Filter.EndDateEnd,
-                
-                // Durum ID string olarak geliyor
-                StateId = decimal.TryParse(model.Filter.Status, out var stateId) ? stateId : null,
-                
-                // Boolean filtreler
-                IsEmailSent = model.Filter.EmailSent switch
-                {
-                    "true" => true,
-                    "false" => false,
-                    _ => null
-                },
-                IsEvaluated = model.Filter.Evaluated switch
-                {
-                    "true" => true,
-                    "false" => false,
-                    _ => null
-                },
-                
-                // Ürün filtresi
-                ProductId = model.Filter.ProductId,
-                
-                // Mesai Kriteri filtreleri
-                EmployeeCode = model.Filter.EmployeeCode,
-                WorkTypeId = decimal.TryParse(model.Filter.TaskType, out var workTypeId) ? workTypeId : null,
-                TimeTypeId = decimal.TryParse(model.Filter.OvertimeType, out var timeTypeId) ? timeTypeId : null,
-                
-                // Sayfalama
-                Page = model.Filter.Page > 0 ? model.Filter.Page : 1,
-                PageSize = model.Filter.PageSize > 0 ? model.Filter.PageSize : 10,
-                First = model.Filter.First
-            };
+            var filterDto = BuildJobFilterDto(model.Filter, includeFirst: true);
 
             // Veritabanından verileri getir
             var result = await _jobService.GetByFilterAsync(filterDto);
@@ -558,6 +586,87 @@ namespace Imaj.Web.Controllers
             // Mesai Tipi listesi
             var timeTypesResult = await _lookupService.GetTimeTypesAsync();
             ViewBag.TimeTypes = timeTypesResult.IsSuccess ? timeTypesResult.Data : new List<TimeTypeDto>();
+        }
+
+        private static JobFilterDto BuildJobFilterDto(JobFilterModel filter, bool includeFirst)
+        {
+            return new JobFilterDto
+            {
+                FunctionId = decimal.TryParse(filter.Function, out var funcId) ? funcId : null,
+                CustomerId = filter.CustomerId,
+                CustomerCode = filter.CustomerCode,
+                ReferenceStart = int.TryParse(filter.ReferenceStart, out var refStart) ? refStart : null,
+                ReferenceEnd = int.TryParse(filter.ReferenceEnd, out var refEnd) ? refEnd : null,
+                ReferenceList = filter.ReferenceList,
+                JobName = filter.JobName,
+                RelatedPerson = filter.RelatedPerson,
+                StartDateStart = filter.StartDateStart,
+                StartDateEnd = filter.StartDateEnd,
+                EndDateStart = filter.EndDateStart,
+                EndDateEnd = filter.EndDateEnd,
+                StateId = decimal.TryParse(filter.Status, out var stateId) ? stateId : null,
+                IsEmailSent = filter.EmailSent switch
+                {
+                    "true" => true,
+                    "false" => false,
+                    _ => null
+                },
+                IsEvaluated = filter.Evaluated switch
+                {
+                    "true" => true,
+                    "false" => false,
+                    _ => null
+                },
+                ProductId = filter.ProductId,
+                EmployeeCode = filter.EmployeeCode,
+                WorkTypeId = decimal.TryParse(filter.TaskType, out var workTypeId) ? workTypeId : null,
+                TimeTypeId = decimal.TryParse(filter.OvertimeType, out var timeTypeId) ? timeTypeId : null,
+                Page = filter.Page > 0 ? filter.Page : 1,
+                PageSize = filter.PageSize > 0 ? filter.PageSize : 10,
+                First = includeFirst ? filter.First : null
+            };
+        }
+
+        private bool TryValidateJobReportDateRanges(JobFilterModel filter, out IActionResult? badRequestResult)
+        {
+            badRequestResult = null;
+
+            var hasStartRange = filter.StartDateStart.HasValue && filter.StartDateEnd.HasValue;
+            var hasEndRange = filter.EndDateStart.HasValue && filter.EndDateEnd.HasValue;
+            var hasStartRangeInput = filter.StartDateStart.HasValue || filter.StartDateEnd.HasValue;
+            var hasEndRangeInput = filter.EndDateStart.HasValue || filter.EndDateEnd.HasValue;
+
+            if (hasStartRangeInput && !hasStartRange)
+            {
+                badRequestResult = new BadRequestObjectResult(L("StartDateRangeInvalid"));
+                return false;
+            }
+
+            if (hasEndRangeInput && !hasEndRange)
+            {
+                badRequestResult = new BadRequestObjectResult(L("EndDateRangeInvalid"));
+                return false;
+            }
+
+            if (!hasStartRange && !hasEndRange)
+            {
+                badRequestResult = new BadRequestObjectResult(L("StartEndDateRequired"));
+                return false;
+            }
+
+            if (hasStartRange && filter.StartDateEnd!.Value.Date < filter.StartDateStart!.Value.Date)
+            {
+                badRequestResult = new BadRequestObjectResult(L("EndDateBeforeStart"));
+                return false;
+            }
+
+            if (hasEndRange && filter.EndDateEnd!.Value.Date < filter.EndDateStart!.Value.Date)
+            {
+                badRequestResult = new BadRequestObjectResult(L("EndDateBeforeStart"));
+                return false;
+            }
+
+            return true;
         }
 
         private string L(string key)

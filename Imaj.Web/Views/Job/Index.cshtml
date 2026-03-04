@@ -242,6 +242,14 @@
                             @Localizer["Search"]
                         </button>
                     </div>
+                    <div class="flex flex-wrap items-center justify-center gap-3">
+                        <button type="button" @@click="downloadDetailedJobReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                            @Localizer["DetailedJobReport"]
+                        </button>
+                        <button type="button" @@click="downloadSummaryJobReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                            @Localizer["SummaryJobReport"]
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -283,15 +291,15 @@
     <div class="text-center mt-10 mb-10">
          <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["JobReport"]</h2>
           <div class="flex justify-center space-x-4">
-              <button type="button" @@click="downloadDetailedPendingInvoiceJobsReport()" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+              <button type="button" @@click="downloadDetailedPendingInvoiceJobsReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                 @Localizer["DetailedPendingInvoiceJobsReport"]
             </button>
-            <button type="button" @@click="downloadSummaryPendingInvoiceJobsReport()" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+            <button type="button" @@click="downloadSummaryPendingInvoiceJobsReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                 @Localizer["SummaryPendingInvoiceJobsReport"]
             </button>
          </div>
     </div>
-    
+
     <!-- Shared Customer & Product & Employee Modal -->
     <partial name="_CustomerSelectModal" />
     <partial name="_ProductSelectModal" />
@@ -321,9 +329,68 @@
                 pageSize: @(Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 10),
             },
             
+            isReportLoading: false,
             customerName: '',
+            messages: {
+                startDateRangeInvalid: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["StartDateRangeInvalid"].Value)),
+                endDateRangeInvalid: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["EndDateRangeInvalid"].Value)),
+                startEndDateRequired: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["StartEndDateRequired"].Value)),
+                endDateBeforeStart: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["EndDateBeforeStart"].Value)),
+                reportDataUnavailable: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["ReportDataUnavailable"].Value)),
+                reportLoading: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Loading"].Value)),
+                reportLoadingDetail: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["PrintReportStarted"].Value))
+            },
             
             init() {},
+
+            showError(message) {
+                if (window.Toast && typeof window.Toast.error === 'function') {
+                    window.Toast.error(message);
+                    return;
+                }
+
+                alert(message);
+            },
+
+            normalizeErrorMessage(rawMessage, fallback) {
+                if (!rawMessage) {
+                    return fallback;
+                }
+
+                const text = rawMessage.trim();
+                if (!text) {
+                    return fallback;
+                }
+
+                if (text.startsWith('<')) {
+                    return fallback;
+                }
+
+                return text;
+            },
+
+            showLoading() {
+                if (typeof Swal === 'undefined') {
+                    return;
+                }
+
+                Swal.fire({
+                    title: this.messages.reportLoading,
+                    text: this.messages.reportLoadingDetail,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
+
+            hideLoading() {
+                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                    Swal.close();
+                }
+            },
 
             handleCustomerSelection(detail) {
                 if (detail.targetId === 'jobFilter') {
@@ -358,6 +425,140 @@
                 }
             },
 
+            buildJobReportParams() {
+                const hasStartInput = !!this.filter.startDateStart || !!this.filter.startDateEnd;
+                const hasEndInput = !!this.filter.endDateStart || !!this.filter.endDateEnd;
+                const hasStartRange = !!this.filter.startDateStart && !!this.filter.startDateEnd;
+                const hasEndRange = !!this.filter.endDateStart && !!this.filter.endDateEnd;
+
+                if (hasStartInput && !hasStartRange) {
+                    this.showError(this.messages.startDateRangeInvalid);
+                    return null;
+                }
+
+                if (hasEndInput && !hasEndRange) {
+                    this.showError(this.messages.endDateRangeInvalid);
+                    return null;
+                }
+
+                if (!hasStartRange && !hasEndRange) {
+                    this.showError(this.messages.startEndDateRequired);
+                    return null;
+                }
+
+                if (hasStartRange && new Date(this.filter.startDateEnd) < new Date(this.filter.startDateStart)) {
+                    this.showError(this.messages.endDateBeforeStart);
+                    return null;
+                }
+
+                if (hasEndRange && new Date(this.filter.endDateEnd) < new Date(this.filter.endDateStart)) {
+                    this.showError(this.messages.endDateBeforeStart);
+                    return null;
+                }
+
+                const params = new URLSearchParams();
+
+                if (this.filter.function) params.append('function', this.filter.function);
+                if (this.filter.customerCode) params.append('customerCode', this.filter.customerCode);
+                if (this.filter.customerId) params.append('customerId', this.filter.customerId);
+                if (this.customerName) params.append('customerName', this.customerName);
+                if (this.filter.referenceStart) params.append('referenceStart', this.filter.referenceStart);
+                if (this.filter.referenceEnd) params.append('referenceEnd', this.filter.referenceEnd);
+                if (this.filter.referenceList) params.append('referenceList', this.filter.referenceList);
+                if (this.filter.jobName) params.append('jobName', this.filter.jobName);
+                if (this.filter.relatedPerson) params.append('relatedPerson', this.filter.relatedPerson);
+                if (this.filter.startDateStart) params.append('startDateStart', this.filter.startDateStart);
+                if (this.filter.startDateEnd) params.append('startDateEnd', this.filter.startDateEnd);
+                if (this.filter.endDateStart) params.append('endDateStart', this.filter.endDateStart);
+                if (this.filter.endDateEnd) params.append('endDateEnd', this.filter.endDateEnd);
+                if (this.filter.status) params.append('status', this.filter.status);
+                if (this.filter.emailSent) params.append('emailSent', this.filter.emailSent);
+                if (this.filter.evaluated) params.append('evaluated', this.filter.evaluated);
+                if (this.filter.employeeCode) params.append('employeeCode', this.filter.employeeCode);
+                if (this.filter.taskType) params.append('taskType', this.filter.taskType);
+                if (this.filter.overtimeType) params.append('overtimeType', this.filter.overtimeType);
+                if (this.filter.productId) params.append('productId', this.filter.productId);
+                if (this.filter.productCode) params.append('productCode', this.filter.productCode);
+
+                return params.toString();
+            },
+
+            async downloadReport(url) {
+                if (this.isReportLoading) {
+                    return;
+                }
+
+                this.isReportLoading = true;
+                this.showLoading();
+                let loadingClosed = false;
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const rawMessage = await response.text();
+                        const fallback = this.messages.reportDataUnavailable;
+                        this.hideLoading();
+                        loadingClosed = true;
+                        this.showError(this.normalizeErrorMessage(rawMessage, fallback));
+                        return;
+                    }
+
+                    const blob = await response.blob();
+                    const contentDisposition = response.headers.get('content-disposition') || '';
+                    const fileNameUtfMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+                    const fileNameMatch = contentDisposition.match(/filename="?([^\";]+)"?/i);
+
+                    let fileName = 'report.xlsx';
+                    if (fileNameUtfMatch && fileNameUtfMatch[1]) {
+                        fileName = decodeURIComponent(fileNameUtfMatch[1]);
+                    } else if (fileNameMatch && fileNameMatch[1]) {
+                        fileName = fileNameMatch[1];
+                    }
+
+                    const objectUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = objectUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(objectUrl);
+                } catch (error) {
+                    const fallback = (window.imajTexts && window.imajTexts.connectionError)
+                        || (window.imajTexts && window.imajTexts.genericError)
+                        || this.messages.reportDataUnavailable;
+                    this.hideLoading();
+                    loadingClosed = true;
+                    this.showError(fallback);
+                } finally {
+                    if (!loadingClosed) {
+                        this.hideLoading();
+                    }
+                    this.isReportLoading = false;
+                }
+            },
+
+            async downloadDetailedJobReport() {
+                const query = this.buildJobReportParams();
+                if (query === null) {
+                    return;
+                }
+                await this.downloadReport('/Job/DownloadDetailedJobReportExcel' + (query ? `?${query}` : ''));
+            },
+
+            async downloadSummaryJobReport() {
+                const query = this.buildJobReportParams();
+                if (query === null) {
+                    return;
+                }
+                await this.downloadReport('/Job/DownloadSummaryJobReportExcel' + (query ? `?${query}` : ''));
+            },
+
             buildPendingInvoiceReportParams() {
                 const params = new URLSearchParams();
 
@@ -374,14 +575,14 @@
                 return params.toString();
             },
 
-            downloadDetailedPendingInvoiceJobsReport() {
+            async downloadDetailedPendingInvoiceJobsReport() {
                 const query = this.buildPendingInvoiceReportParams();
-                window.location.href = '/Job/DownloadDetailedPendingInvoiceJobsExcel' + (query ? `?${query}` : '');
+                await this.downloadReport('/Job/DownloadDetailedPendingInvoiceJobsExcel' + (query ? `?${query}` : ''));
             },
 
-            downloadSummaryPendingInvoiceJobsReport() {
+            async downloadSummaryPendingInvoiceJobsReport() {
                 const query = this.buildPendingInvoiceReportParams();
-                window.location.href = '/Job/DownloadSummaryPendingInvoiceJobsExcel' + (query ? `?${query}` : '');
+                await this.downloadReport('/Job/DownloadSummaryPendingInvoiceJobsExcel' + (query ? `?${query}` : ''));
             }
         }
     }

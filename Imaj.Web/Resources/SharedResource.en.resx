@@ -381,6 +381,9 @@
   <data name="ReportDataUnavailable" xml:space="preserve">
     <value>Report data could not be retrieved.</value>
   </data>
+  <data name="ReportRequestTimedOut" xml:space="preserve">
+    <value>The report request timed out. Please narrow the date range and try again.</value>
+  </data>
   <data name="StartEndDateRequired" xml:space="preserve">
     <value>Start and end dates are required.</value>
   </data>
@@ -438,6 +441,18 @@
   <data name="SummaryPendingInvoiceJobsReportTitle" xml:space="preserve">
     <value>Summary Pending Invoice Jobs Report</value>
   </data>
+  <data name="DetailedJobSheet" xml:space="preserve">
+    <value>Detailed Jobs</value>
+  </data>
+  <data name="SummaryJobSheet" xml:space="preserve">
+    <value>Summary Jobs</value>
+  </data>
+  <data name="DetailedJobReportTitle" xml:space="preserve">
+    <value>Detailed Job Report</value>
+  </data>
+  <data name="SummaryJobReportTitle" xml:space="preserve">
+    <value>Summary Job Report</value>
+  </data>
   <data name="OvertimeType" xml:space="preserve">
     <value>Overtime Type</value>
   </data>
@@ -456,10 +471,19 @@
   <data name="Count" xml:space="preserve">
     <value>Count</value>
   </data>
+  <data name="WorkAmount" xml:space="preserve">
+    <value>Work Amount</value>
+  </data>
+  <data name="ProductAmount" xml:space="preserve">
+    <value>Product Amount</value>
+  </data>
   <data name="Amount" xml:space="preserve">
     <value>Amount</value>
   </data>
   <data name="EmployeeTotalFormat" xml:space="preserve">
+    <value>{0} Total</value>
+  </data>
+  <data name="CustomerTotalFormat" xml:space="preserve">
     <value>{0} Total</value>
   </data>
   <data name="DateRange" xml:space="preserve">
@@ -509,6 +533,12 @@
   </data>
   <data name="SummaryPendingInvoiceJobsFilePrefix" xml:space="preserve">
     <value>summary-pending-invoice-jobs-report</value>
+  </data>
+  <data name="DetailedJobReportFilePrefix" xml:space="preserve">
+    <value>detailed-job-report</value>
+  </data>
+  <data name="SummaryJobReportFilePrefix" xml:space="preserve">
+    <value>summary-job-report</value>
   </data>
   <data name="CustomerReportFilePrefix" xml:space="preserve">
     <value>customer-information-report</value>
@@ -1098,6 +1128,9 @@
   <data name="DetailedPendingInvoiceJobsReport" xml:space="preserve">
     <value>Print Detailed Pending Invoice Jobs Report</value>
   </data>
+  <data name="DetailedJobReport" xml:space="preserve">
+    <value>Print Detailed Job Report</value>
+  </data>
   <data name="PrintReport" xml:space="preserve">
     <value>Print Report</value>
   </data>
@@ -1106,6 +1139,9 @@
   </data>
   <data name="SummaryPendingInvoiceJobsReport" xml:space="preserve">
     <value>Print Summary Pending Invoice Jobs Report</value>
+  </data>
+  <data name="SummaryJobReport" xml:space="preserve">
+    <value>Print Summary Job Report</value>
   </data>
   <data name="AllEmployeesSelectedMessage" xml:space="preserve">
     <value>Assignment list is disabled because all employees are selected.</value>

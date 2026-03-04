@@ -381,6 +381,9 @@
   <data name="ReportDataUnavailable" xml:space="preserve">
     <value>Rapor verisi alınamadı.</value>
   </data>
+  <data name="ReportRequestTimedOut" xml:space="preserve">
+    <value>Rapor işlemi zaman aşımına uğradı. Lütfen tarih aralığını daraltıp tekrar deneyin.</value>
+  </data>
   <data name="StartEndDateRequired" xml:space="preserve">
     <value>Başlangıç ve bitiş tarihi zorunludur.</value>
   </data>
@@ -438,6 +441,18 @@
   <data name="SummaryPendingInvoiceJobsReportTitle" xml:space="preserve">
     <value>Özet Fatura Bekleyen İşler Raporu</value>
   </data>
+  <data name="DetailedJobSheet" xml:space="preserve">
+    <value>Detaylı İş</value>
+  </data>
+  <data name="SummaryJobSheet" xml:space="preserve">
+    <value>Özet İş</value>
+  </data>
+  <data name="DetailedJobReportTitle" xml:space="preserve">
+    <value>Detaylı İş Raporu</value>
+  </data>
+  <data name="SummaryJobReportTitle" xml:space="preserve">
+    <value>Özet İş Raporu</value>
+  </data>
   <data name="OvertimeType" xml:space="preserve">
     <value>Mesai Tipi</value>
   </data>
@@ -456,10 +471,19 @@
   <data name="Count" xml:space="preserve">
     <value>Adet</value>
   </data>
+  <data name="WorkAmount" xml:space="preserve">
+    <value>Mesai Tutarı</value>
+  </data>
+  <data name="ProductAmount" xml:space="preserve">
+    <value>Ürün Tutarı</value>
+  </data>
   <data name="Amount" xml:space="preserve">
     <value>Tutar</value>
   </data>
   <data name="EmployeeTotalFormat" xml:space="preserve">
+    <value>{0} Toplamı</value>
+  </data>
+  <data name="CustomerTotalFormat" xml:space="preserve">
     <value>{0} Toplamı</value>
   </data>
   <data name="DateRange" xml:space="preserve">
@@ -509,6 +533,12 @@
   </data>
   <data name="SummaryPendingInvoiceJobsFilePrefix" xml:space="preserve">
     <value>ozet-fatura-bekleyen-isler-raporu</value>
+  </data>
+  <data name="DetailedJobReportFilePrefix" xml:space="preserve">
+    <value>detayli-is-raporu</value>
+  </data>
+  <data name="SummaryJobReportFilePrefix" xml:space="preserve">
+    <value>ozet-is-raporu</value>
   </data>
   <data name="CustomerReportFilePrefix" xml:space="preserve">
     <value>musteri-bilgileri-raporu</value>
@@ -1098,6 +1128,9 @@
   <data name="DetailedPendingInvoiceJobsReport" xml:space="preserve">
     <value>Detaylı Fatura Bekleyen İşler Raporu Bas</value>
   </data>
+  <data name="DetailedJobReport" xml:space="preserve">
+    <value>Detaylı İş Raporu Bas</value>
+  </data>
   <data name="PrintReport" xml:space="preserve">
     <value>Rapor Bas</value>
   </data>
@@ -1106,6 +1139,9 @@
   </data>
   <data name="SummaryPendingInvoiceJobsReport" xml:space="preserve">
     <value>Özet Fatura Bekleyen İşler Raporu Bas</value>
+  </data>
+  <data name="SummaryJobReport" xml:space="preserve">
+    <value>Özet İş Raporu Bas</value>
   </data>
   <data name="AllEmployeesSelectedMessage" xml:space="preserve">
     <value>Tüm çalışanlar seçili olduğu için atama listesi kullanılmıyor.</value>

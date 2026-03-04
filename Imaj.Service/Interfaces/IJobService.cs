@@ -14,7 +14,7 @@ namespace Imaj.Service.Interfaces
         /// İş kayıtlarını filtreleyerek getirir.
         /// Sayfalama destekli.
         /// </summary>
-        Task<ServiceResult<PagedResult<JobDto>>> GetByFilterAsync(JobFilterDto filter);
+        Task<ServiceResult<PagedResult<JobDto>>> GetByFilterAsync(JobFilterDto filter, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Referans numarasına göre tekil iş detayını getirir.
@@ -51,12 +51,22 @@ namespace Imaj.Service.Interfaces
         /// <summary>
         /// Detaylı fatura bekleyen işler raporu için satırları getirir.
         /// </summary>
-        Task<ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>> GetDetailedPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter);
+        Task<ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>>> GetDetailedPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Özet fatura bekleyen işler raporu için müşteri bazlı satırları getirir.
         /// </summary>
-        Task<ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>> GetSummaryPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter);
+        Task<ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>>> GetSummaryPendingInvoiceJobsReportAsync(PendingInvoiceJobsReportFilterDto filter, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Detaylı iş raporu için filtrelenmiş satırları getirir.
+        /// </summary>
+        Task<ServiceResult<List<JobDetailedReportRowDto>>> GetDetailedJobReportAsync(JobFilterDto filter, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Özet iş raporu için müşteri bazlı satırları getirir.
+        /// </summary>
+        Task<ServiceResult<List<JobSummaryReportRowDto>>> GetSummaryJobReportAsync(JobFilterDto filter, CancellationToken cancellationToken = default);
 
         Task<List<string>> GetTableColumnsAsync(string tableName);
     }
