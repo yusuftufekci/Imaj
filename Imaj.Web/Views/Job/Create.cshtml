@@ -1,22 +1,32 @@
+@using System.Text.Json
 @model JobCreateViewModel
 
 @{
     ViewData["Title"] = Localizer["CreateNewJob"];
+    var defaultWorkTypeId = (ViewBag.WorkTypes != null && ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).Count > 0)
+        ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes)[0].Id
+        : 0;
+    var defaultTimeTypeId = (ViewBag.TimeTypes != null && ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes).Count > 0)
+        ? ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes)[0].Id
+        : 0;
+    var initialStateJson = JsonSerializer.Serialize(new
+    {
+        defaultWorkTypeId,
+        defaultTimeTypeId,
+        form = new
+        {
+            customerId = Model.CustomerId,
+            customerCode = Model.CustomerCode ?? string.Empty,
+            customerName = Model.CustomerName ?? string.Empty,
+            name = Model.Name ?? string.Empty,
+            relatedPerson = Model.RelatedPerson ?? string.Empty,
+            startDate = Model.StartDate.ToString("yyyy-MM-ddTHH:mm"),
+            endDate = Model.EndDate.ToString("yyyy-MM-ddTHH:mm")
+        }
+    });
 }
 
-<div x-data="jobCreate({
-        defaultWorkTypeId: @((ViewBag.WorkTypes != null && ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).Count > 0) ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes)[0].Id : 0),
-        defaultTimeTypeId: @((ViewBag.TimeTypes != null && ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes).Count > 0) ? ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes)[0].Id : 0),
-        form: {
-            customerId: @(Model.CustomerId),
-            customerCode: '@(Model.CustomerCode ?? "")',
-            customerName: '@(Model.CustomerName ?? "")',
-            name: '@(Model.Name ?? "")',
-            relatedPerson: '@(Model.RelatedPerson ?? "")',
-            startDate: '@(Model.StartDate.ToString("yyyy-MM-ddTHH:mm"))',
-            endDate: '@(Model.EndDate.ToString("yyyy-MM-ddTHH:mm"))'
-        }
-     })" 
+<div x-data='jobCreate(@Html.Raw(initialStateJson))'
      @@customer-selected.window="handleCustomer($event.detail)"
      @@employee-selected.window="addEmployee($event.detail)"
      @@product-selected.window="addProduct($event.detail)"
@@ -87,6 +97,7 @@
     </div>
 
     <form method="post" action="/Job/Create" x-ref="createJobForm" @@submit.prevent="validateAndSubmit()">
+        @Html.AntiForgeryToken()
         
         <!-- TOP SECTION: Basic Info & Notes -->
         <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">

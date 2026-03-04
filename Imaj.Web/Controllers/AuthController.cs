@@ -6,10 +6,12 @@ using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
 using Imaj.Web;
 using Imaj.Web.Controllers.Base;
+using Imaj.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
@@ -43,24 +45,25 @@ namespace Imaj.Web.Controllers
 
         [AllowAnonymous]
         [HttpPost]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             var result = await _authService.LoginAsync(loginDto);
             if (!result.IsSuccess)
             {
-                return Json(result);
+                return Json(ApiResponse<object>.Fail(result.Message, result.Errors));
             }
 
             if (result.Data == null)
             {
-                 return Json(ServiceResult<object>.Fail(L("GenericError")));
+                 return Json(ApiResponse<object>.Fail(L("GenericError")));
             }
 
             var principal = _authService.CreatePrincipal(result.Data);
             
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true
+                IsPersistent = loginDto.RememberMe
             };
 
             await HttpContext.SignInAsync(
@@ -68,7 +71,7 @@ namespace Imaj.Web.Controllers
                 principal,
                 authProperties);
 
-            return Json(ServiceResult<object>.Success(default!));
+            return Json(ApiResponse<object>.Ok(default));
         }
 
         [AllowAnonymous]

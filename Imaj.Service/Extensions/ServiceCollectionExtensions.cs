@@ -26,6 +26,7 @@ namespace Imaj.Service.Extensions
             // Options Pattern - Configuration binding
             services.Configure<CustomerSettings>(configuration.GetSection(CustomerSettings.SectionName));
             services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.SectionName));
+            services.Configure<SecurityHeadersSettings>(configuration.GetSection(SecurityHeadersSettings.SectionName));
             services.AddMemoryCache();
             services.AddHttpContextAccessor();
 

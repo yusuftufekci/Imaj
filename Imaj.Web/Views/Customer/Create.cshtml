@@ -16,6 +16,7 @@
     </div>
 
     <form action="/Customer/Create" method="post" class="bg-white shadow sm:rounded-lg">
+        @Html.AntiForgeryToken()
         
         <partial name="_CustomerForm" model="Model" />
 @section Scripts {

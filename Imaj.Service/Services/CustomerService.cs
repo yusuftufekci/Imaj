@@ -188,7 +188,11 @@ namespace Imaj.Service.Services
 
         public async Task<ServiceResult<List<CustomerDto>>> GetAllAsync()
         {
-            var customers = await _customerRepository.GetAllAsync();
+            var maxRows = _settings.DefaultPageSize > 0
+                ? Math.Max(_settings.DefaultPageSize, 500)
+                : 500;
+
+            var customers = await _customerRepository.GetAllAsync(maxRows);
             var dtos = _mapper.Map<List<CustomerDto>>(customers);
             return ServiceResult<List<CustomerDto>>.Success(dtos);
         }

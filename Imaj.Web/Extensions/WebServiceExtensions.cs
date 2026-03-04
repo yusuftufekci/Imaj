@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
@@ -43,7 +44,15 @@ namespace Imaj.Web.Extensions
                     options.AccessDeniedPath = "/Auth/AccessDenied";
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionTimeout);
                     options.SlidingExpiration = true;
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SameSite = SameSiteMode.Lax;
                 });
+
+            services.AddAntiforgery(options =>
+            {
+                options.HeaderName = "X-CSRF-TOKEN";
+            });
 
             services.AddScoped<IPageRouteResolver, PageRouteResolver>();
             services.AddScoped<ImajAuthorizationFilter>();
@@ -68,6 +77,7 @@ namespace Imaj.Web.Extensions
             services.AddControllersWithViews(options =>
                 {
                     options.Filters.Add(new AuthorizeFilter());
+                    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
                     options.Filters.AddService<ImajAuthorizationFilter>();
                 })
                 .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)

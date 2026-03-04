@@ -308,7 +308,7 @@ namespace Imaj.Service.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "İş listesi alınırken hata oluştu");
-                return ServiceResult<PagedResult<JobDto>>.Fail($"Hata: {ex.Message} Inner: {ex.InnerException?.Message}");
+                return ServiceResult<PagedResult<JobDto>>.Fail("İş listesi alınırken bir hata oluştu.");
             }
         }
 
@@ -901,7 +901,7 @@ namespace Imaj.Service.Services
             {
                  await transaction.RollbackAsync();
                 _logger.LogError(ex, "İş yaratılırken hata oluştu.");
-                return ServiceResult<JobDto>.Fail("İş yaratılırken bir hata oluştu: " + ex.Message);
+                return ServiceResult<JobDto>.Fail("İş yaratılırken bir hata oluştu.");
             }
         }
         public async Task<ServiceResult<List<JobLogDto>>> GetJobHistoryAsync(decimal jobId)
@@ -960,24 +960,52 @@ namespace Imaj.Service.Services
         public async Task<List<string>> GetTableColumnsAsync(string tableName)
         {
             var columns = new List<string>();
-            var connectionString = _configuration.GetConnectionString("DefaultConnection");
-
-            using (var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString))
+            if (string.IsNullOrWhiteSpace(tableName))
             {
-                await connection.OpenAsync();
-                using (var command = new Microsoft.Data.SqlClient.SqlCommand(
-                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tableName", connection))
+                _logger.LogWarning("Tablo kolonları alınamadı: tableName boş.");
+                return columns;
+            }
+
+            var connectionString = _configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                _logger.LogError("Tablo kolonları alınamadı: DefaultConnection tanımlı değil.");
+                return columns;
+            }
+
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                await using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+                await connection.OpenAsync(cts.Token);
+
+                await using var command = new Microsoft.Data.SqlClient.SqlCommand(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tableName",
+                    connection)
                 {
-                    command.Parameters.AddWithValue("@tableName", tableName);
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            columns.Add(reader.GetString(0));
-                        }
-                    }
+                    CommandTimeout = 15
+                };
+
+                command.Parameters.AddWithValue("@tableName", tableName);
+                await using var reader = await command.ExecuteReaderAsync(cts.Token);
+                while (await reader.ReadAsync(cts.Token))
+                {
+                    columns.Add(reader.GetString(0));
                 }
             }
+            catch (OperationCanceledException ex)
+            {
+                _logger.LogWarning(ex, "Tablo kolonları sorgusu timeout. TableName: {TableName}", tableName);
+            }
+            catch (Microsoft.Data.SqlClient.SqlException ex)
+            {
+                _logger.LogError(ex, "Tablo kolonları alınırken SQL hatası oluştu. TableName: {TableName}", tableName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Tablo kolonları alınırken beklenmeyen hata oluştu. TableName: {TableName}", tableName);
+            }
+
             return columns;
         }
     }

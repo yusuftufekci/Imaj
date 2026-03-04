@@ -5,6 +5,15 @@
 
 const ImajTexts = window.imajTexts || {};
 const t = (key, fallback) => ImajTexts[key] || fallback;
+const getCsrfToken = () => {
+    const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (metaToken) {
+        return metaToken;
+    }
+
+    const formToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    return formToken || '';
+};
 
 // ============================================
 // Mobile Menu Toggle
@@ -42,12 +51,19 @@ const API = {
      */
     async post(url, data) {
         try {
+            const csrfToken = getCsrfToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+
+            if (csrfToken) {
+                headers['X-CSRF-TOKEN'] = csrfToken;
+            }
+
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
+                headers,
                 body: JSON.stringify(data)
             });
 

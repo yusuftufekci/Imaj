@@ -8,6 +8,8 @@ function customerSelectModal() {
         // Modal State
         showModal: false,
         targetId: null,
+        searchEndpoint: '/Customer/Search',
+        jobStatesEndpoint: '/Customer/GetJobStates',
 
         // Filtre alanları - Customer'a özel geniş filtre
         filter: {
@@ -42,7 +44,7 @@ function customerSelectModal() {
          * Component başlatma - Dropdown verilerini yükler
          */
         async init() {
-            await this.loadDropdowns();
+            // Endpoints target'e göre değişebildiği için dropdownları modal açılışında yüklüyoruz.
         },
 
         /**
@@ -50,12 +52,15 @@ function customerSelectModal() {
          */
         async loadDropdowns() {
             try {
-                const response = await fetch('/Customer/GetJobStates');
+                const response = await fetch(this.jobStatesEndpoint);
                 if (response.ok) {
                     this.jobStatuses = await response.json();
+                } else {
+                    this.jobStatuses = [];
                 }
             } catch (error) {
                 console.error('Durum listesi yüklenemedi:', error);
+                this.jobStatuses = [];
             }
         },
 
@@ -63,12 +68,15 @@ function customerSelectModal() {
          * Modal'ı açar
          * @param {Object} detail - Event detail (targetId içerir)
          */
-        openModal(detail) {
-            this.targetId = detail.targetId;
+        async openModal(detail) {
+            this.targetId = detail?.targetId || null;
+            this.searchEndpoint = detail?.searchEndpoint || '/Customer/Search';
+            this.jobStatesEndpoint = detail?.jobStatesEndpoint || '/Customer/GetJobStates';
             this.showModal = true;
             this.resetFilter();
             this.hasSearched = false;
             this.items = [];
+            await this.loadDropdowns();
         },
 
         /**
@@ -126,7 +134,7 @@ function customerSelectModal() {
             }
 
             try {
-                const result = await API.post('/Customer/Search', filterToSend);
+                const result = await API.post(this.searchEndpoint, filterToSend);
                 this.items = result.items || [];
                 this.totalCount = result.totalCount || 0;
                 this.page = result.page || 1;

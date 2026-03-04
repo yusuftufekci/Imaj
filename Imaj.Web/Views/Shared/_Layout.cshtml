@@ -1,15 +1,18 @@
 ﻿@using System.Globalization
 @using System.Text.Json
+@using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Imaj.Web
 @using Imaj.Web.Authorization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResource> Localizer
 @inject IPermissionViewService PermissionViewService
+@inject IAntiforgery Antiforgery
 
 @{
     var canShowChangePassword = User.Identity?.IsAuthenticated == true &&
         await PermissionViewService.CanExecuteMethodAsync(1039m);
+    var antiForgeryTokens = Antiforgery.GetAndStoreTokens(Context);
 }
 
 <!DOCTYPE html>
@@ -17,11 +20,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="@antiForgeryTokens.RequestToken" />
     <title>@ViewData["Title"] - Imaj</title>
     <!-- TailwindCSS (Local Build) -->
     <link rel="stylesheet" href="~/css/tailwind.output.css" asp-append-version="true" />
-    <script src="//unpkg.com/alpinejs" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js" integrity="sha384-9Ax3MmS9AClxJyd5/zafcXXjxmwFhZCdsT6HJoJjarvCaAkJlk5QDzjLJm+Wdx5F" crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.3/dist/sweetalert2.all.min.js" integrity="sha384-BX77tysPwMmjY87hyuYr8cUvUQiHJMvAjLu9iWF4Ls6HQLzalVw0fm/Ez1VwzAv7" crossorigin="anonymous"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
@@ -204,29 +208,30 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            @if (TempData["SuccessMessage"] != null)
+            const flashMessages = @Html.Raw(JsonSerializer.Serialize(new
             {
-                <text>
+                success = TempData["SuccessMessage"]?.ToString(),
+                error = TempData["ErrorMessage"]?.ToString()
+            }));
+
+            if (flashMessages.success) {
                 Swal.fire({
                     icon: 'success',
                     title: '@Localizer["SuccessTitle"]',
-                    text: '@Html.Raw(TempData["SuccessMessage"])',
+                    text: flashMessages.success,
                     confirmButtonColor: '#3085d6',
                     confirmButtonText: '@Localizer["Ok"]'
                 });
-                </text>
             }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <text>
+
+            if (flashMessages.error) {
                 Swal.fire({
                     icon: 'error',
                     title: '@Localizer["ErrorTitle"]',
-                    text: '@Html.Raw(TempData["ErrorMessage"])',
+                    text: flashMessages.error,
                     confirmButtonColor: '#d33',
                     confirmButtonText: '@Localizer["Ok"]'
                 });
-                </text>
             }
         });
     </script>

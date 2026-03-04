@@ -1,5 +1,6 @@
 @using Imaj.Web.Authorization
 @using Imaj.Web.Models.Components
+@using System.Text.Json
 @model UserListViewModel
 @inject IPermissionViewService PermissionViewService
 
@@ -30,7 +31,7 @@
     }
 
     var queryString = string.Join("&", queryParts);
-    var allCodes = Model.Items.Select(x => $"'{x.Code}'");
+    var allCodesJson = JsonSerializer.Serialize(Model.Items.Select(x => x.Code).ToList());
 }
 
 <div x-data="userListPage()" class="space-y-6">
@@ -43,6 +44,7 @@
     </div>
 
     <form x-ref="listForm" method="post" action="/User/Detail">
+        @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
         <div class="bg-white shadow sm:rounded-lg border border-gray-200 mt-6">
@@ -143,7 +145,7 @@
     function userListPage() {
         return {
             selectedIds: [],
-            allPageIds: [@Html.Raw(string.Join(",", allCodes))],
+            allPageIds: @Html.Raw(allCodesJson),
 
             get allSelected() {
                 return this.allPageIds.length > 0 && this.selectedIds.length === this.allPageIds.length;

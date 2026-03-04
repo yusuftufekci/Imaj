@@ -297,6 +297,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
+        [RequireMethodPermission(1090, write: true)]
         public async Task<IActionResult> Update(CustomerViewModel model) 
         {
             if (!ModelState.IsValid)
@@ -351,6 +352,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
+        [RequireMethodPermission(1090, write: true)]
         public async Task<IActionResult> Create(CustomerViewModel model)
         {
             if (!ModelState.IsValid)

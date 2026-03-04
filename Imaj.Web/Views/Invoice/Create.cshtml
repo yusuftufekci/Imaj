@@ -19,6 +19,7 @@
     </div>
 
     <form method="post" action="/Invoice/Save">
+        @Html.AntiForgeryToken()
         <!-- Main Grid -->
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             

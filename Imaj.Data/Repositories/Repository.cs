@@ -12,6 +12,9 @@ namespace Imaj.Data.Repositories
 {
     public class Repository<T> : IRepository<T> where T : BaseEntity
     {
+        private const int DefaultMaxRows = 500;
+        private const int MaxAllowedRows = 5000;
+
         protected readonly ImajDbContext _context;
         private readonly DbSet<T> _dbSet;
 
@@ -31,9 +34,17 @@ namespace Imaj.Data.Repositories
             return await _dbSet.Where(predicate).ToListAsync();
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync()
+        public async Task<IEnumerable<T>> GetAllAsync(int maxRows = DefaultMaxRows)
         {
-            return await _dbSet.ToListAsync();
+            var boundedMaxRows = maxRows <= 0
+                ? DefaultMaxRows
+                : Math.Min(maxRows, MaxAllowedRows);
+
+            return await _dbSet
+                .AsNoTracking()
+                .OrderBy(x => x.Id)
+                .Take(boundedMaxRows)
+                .ToListAsync();
         }
 
         public async Task<T?> GetByIdAsync(decimal id)

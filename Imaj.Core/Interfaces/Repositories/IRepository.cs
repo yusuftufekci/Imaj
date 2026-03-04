@@ -9,7 +9,7 @@ namespace Imaj.Core.Interfaces.Repositories
     public interface IRepository<T> where T : BaseEntity
     {
         Task<T?> GetByIdAsync(decimal id);
-        Task<IEnumerable<T>> GetAllAsync();
+        Task<IEnumerable<T>> GetAllAsync(int maxRows = 500);
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
         Task<T?> SingleOrDefaultAsync(Expression<Func<T, bool>> predicate);
         Task AddAsync(T entity);
