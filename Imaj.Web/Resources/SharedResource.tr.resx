@@ -441,6 +441,18 @@
   <data name="SummaryPendingInvoiceJobsReportTitle" xml:space="preserve">
     <value>Özet Fatura Bekleyen İşler Raporu</value>
   </data>
+  <data name="DetailedInvoiceSheet" xml:space="preserve">
+    <value>Detaylı Fatura</value>
+  </data>
+  <data name="SummaryInvoiceSheet" xml:space="preserve">
+    <value>Özet Fatura</value>
+  </data>
+  <data name="DetailedInvoiceReportTitle" xml:space="preserve">
+    <value>Detaylı Fatura Raporu</value>
+  </data>
+  <data name="SummaryInvoiceReportTitle" xml:space="preserve">
+    <value>Özet Fatura Raporu</value>
+  </data>
   <data name="DetailedJobSheet" xml:space="preserve">
     <value>Detaylı İş</value>
   </data>
@@ -527,6 +539,12 @@
   </data>
   <data name="DetailedProductFilePrefix" xml:space="preserve">
     <value>detayli-urun-raporu</value>
+  </data>
+  <data name="DetailedInvoiceReportFilePrefix" xml:space="preserve">
+    <value>detayli-fatura-raporu</value>
+  </data>
+  <data name="SummaryInvoiceReportFilePrefix" xml:space="preserve">
+    <value>ozet-fatura-raporu</value>
   </data>
   <data name="DetailedPendingInvoiceJobsFilePrefix" xml:space="preserve">
     <value>detayli-fatura-bekleyen-isler-raporu</value>
@@ -746,6 +764,9 @@
   </data>
   <data name="StartDateRangeInvalid" xml:space="preserve">
     <value>Başlangıç tarihi aralığında ilk tarih ikinci tarihten büyük olamaz.</value>
+  </data>
+  <data name="IssueDateRangeInvalid" xml:space="preserve">
+    <value>Fatura tarihi aralığında başlangıç ve bitiş birlikte girilmelidir.</value>
   </data>
   <data name="TaxRateRangeInvalid" xml:space="preserve">
     <value>Vergi oranı 0 ile 100 arasında olmalıdır.</value>

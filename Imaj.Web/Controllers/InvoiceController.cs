@@ -6,6 +6,7 @@ using Imaj.Web.Authorization;
 using Imaj.Web.Controllers.Base;
 using Imaj.Web;
 using Imaj.Web.Models;
+using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -14,16 +15,22 @@ namespace Imaj.Web.Controllers
 {
     public class InvoiceController : BaseController
     {
+        private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        private static readonly TimeSpan ReportExecutionTimeout = TimeSpan.FromSeconds(45);
+
         private readonly IInvoiceService _invoiceService;
         private readonly ILookupService _lookupService;
+        private readonly IInvoiceReportExcelService _invoiceReportExcelService;
 
         public InvoiceController(
             IInvoiceService invoiceService,
             ILookupService lookupService,
+            IInvoiceReportExcelService invoiceReportExcelService,
             ILogger<InvoiceController> logger, IStringLocalizer<SharedResource> localizer) : base(logger, localizer)
         {
             _invoiceService = invoiceService;
             _lookupService = lookupService;
+            _invoiceReportExcelService = invoiceReportExcelService;
         }
 
         public async Task<IActionResult> Index()
@@ -55,7 +62,7 @@ namespace Imaj.Web.Controllers
             f.PageSize = f.PageSize <= 0 ? 10 : f.PageSize;
             f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
 
-            var serviceFilter = BuildFilter(f);
+            var serviceFilter = BuildFilter(f, includeFirst: true);
             var result = await _invoiceService.GetByFilterAsync(serviceFilter);
 
             f.Items = MapItems(result);
@@ -72,7 +79,7 @@ namespace Imaj.Web.Controllers
         {
             var f = filter ?? new InvoiceViewModel();
 
-            var serviceFilter = BuildFilter(f);
+            var serviceFilter = BuildFilter(f, includeFirst: true);
 
             var result = await _invoiceService.GetByFilterAsync(serviceFilter);
 
@@ -86,6 +93,70 @@ namespace Imaj.Web.Controllers
                 page = result.Data?.PageNumber ?? f.Page,
                 pageSize = result.Data?.PageSize ?? f.PageSize
             });
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1360)]
+        public async Task<IActionResult> DownloadDetailedInvoiceReportExcel([FromQuery] InvoiceViewModel? filter)
+        {
+            var f = filter ?? new InvoiceViewModel();
+            if (!TryValidateIssueDateRange(f, out var badRequestResult))
+            {
+                return badRequestResult!;
+            }
+
+            var reportFilter = BuildFilter(f, includeFirst: false);
+            ServiceResult<List<InvoiceDetailedReportRowDto>> reportResult;
+
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _invoiceService.GetDetailedInvoiceReportAsync(reportFilter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+            }
+
+            var fileBytes = _invoiceReportExcelService.BuildDetailedReport(reportResult.Data);
+            return File(fileBytes, ExcelContentType, BuildFileName(L("DetailedInvoiceReportFilePrefix")));
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1360)]
+        public async Task<IActionResult> DownloadSummaryInvoiceReportExcel([FromQuery] InvoiceViewModel? filter)
+        {
+            var f = filter ?? new InvoiceViewModel();
+            if (!TryValidateIssueDateRange(f, out var badRequestResult))
+            {
+                return badRequestResult!;
+            }
+
+            var reportFilter = BuildFilter(f, includeFirst: false);
+            ServiceResult<List<InvoiceSummaryReportRowDto>> reportResult;
+
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _invoiceService.GetSummaryInvoiceReportAsync(reportFilter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+            }
+
+            var fileBytes = _invoiceReportExcelService.BuildSummaryReport(reportResult.Data);
+            return File(fileBytes, ExcelContentType, BuildFileName(L("SummaryInvoiceReportFilePrefix")));
         }
 
         [HttpGet]
@@ -188,7 +259,7 @@ namespace Imaj.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        private static InvoiceFilterDto BuildFilter(InvoiceViewModel f)
+        private static InvoiceFilterDto BuildFilter(InvoiceViewModel f, bool includeFirst)
         {
             return new InvoiceFilterDto
             {
@@ -206,8 +277,36 @@ namespace Imaj.Web.Controllers
                 Evaluated = f.Evaluated == "true" ? true : f.Evaluated == "false" ? false : null,
                 Page = f.Page,
                 PageSize = f.PageSize > 0 ? f.PageSize : 10,
-                First = f.First
+                First = includeFirst ? f.First : null
             };
+        }
+
+        private bool TryValidateIssueDateRange(InvoiceViewModel filter, out IActionResult? badRequestResult)
+        {
+            badRequestResult = null;
+
+            var hasStartDate = filter.IssueDateStart.HasValue;
+            var hasEndDate = filter.IssueDateEnd.HasValue;
+
+            if (hasStartDate != hasEndDate)
+            {
+                badRequestResult = new BadRequestObjectResult(L("IssueDateRangeInvalid"));
+                return false;
+            }
+
+            if (!hasStartDate)
+            {
+                badRequestResult = new BadRequestObjectResult(L("StartEndDateRequired"));
+                return false;
+            }
+
+            if (filter.IssueDateEnd!.Value.Date < filter.IssueDateStart!.Value.Date)
+            {
+                badRequestResult = new BadRequestObjectResult(L("EndDateBeforeStart"));
+                return false;
+            }
+
+            return true;
         }
 
         private static List<InvoiceSearchResult> MapItems(ServiceResult<PagedResult<InvoiceDto>> result)
@@ -315,6 +414,11 @@ namespace Imaj.Web.Controllers
                     NetTotal = t.NetTotal
                 }).ToList()
             }).ToList();
+        }
+
+        private static string BuildFileName(string prefix)
+        {
+            return $"{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
         }
     }
 }

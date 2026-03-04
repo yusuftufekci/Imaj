@@ -144,10 +144,10 @@
             </div>
 
             <div class="mt-4 flex justify-center space-x-3">
-                <button type="button" class="inline-flex items-center px-4 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                <button type="button" @@click="downloadDetailedInvoiceReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                     @Localizer["DetailedInvoiceReport"]
                 </button>
-                <button type="button" class="inline-flex items-center px-4 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                <button type="button" @@click="downloadSummaryInvoiceReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                     @Localizer["SummaryInvoiceReport"]
                 </button>
             </div>
@@ -201,6 +201,8 @@
             newJobCustomerCode: '',
             newJobCustomerName: '',
 
+            isReportLoading: false,
+
             filter: {
                  referenceStart: '', referenceEnd: '',
                  name: '', relatedPerson: '',
@@ -208,6 +210,16 @@
                  status: '', evaluated: '',
                  first: @firstValue,
                  pageSize: @(Model.PageSize > 0 ? Model.PageSize : 10)
+            },
+
+            messages: {
+                issueDateRangeInvalid: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["IssueDateRangeInvalid"].Value)),
+                startEndDateRequired: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["StartEndDateRequired"].Value)),
+                endDateBeforeStart: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["EndDateBeforeStart"].Value)),
+                reportDataUnavailable: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["ReportDataUnavailable"].Value)),
+                reportLoading: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["Loading"].Value)),
+                reportLoadingDetail: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["PrintReportStarted"].Value)),
+                pleaseSelectCustomer: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["PleaseSelectCustomer"].Value))
             },
 
             handleSelection(detail) {
@@ -223,6 +235,52 @@
                 } else if (target === 'newJob') {
                     this.newJobCustomerName = cust.name;
                     this.newJobCustomerCode = cust.code;
+                }
+            },
+
+            showError(message) {
+                if (window.Toast && typeof window.Toast.error === 'function') {
+                    window.Toast.error(message);
+                    return;
+                }
+
+                alert(message);
+            },
+
+            normalizeErrorMessage(rawMessage, fallback) {
+                if (!rawMessage) {
+                    return fallback;
+                }
+
+                const text = rawMessage.trim();
+                if (!text || text.startsWith('<')) {
+                    return fallback;
+                }
+
+                return text;
+            },
+
+            showLoading() {
+                if (typeof Swal === 'undefined') {
+                    return;
+                }
+
+                Swal.fire({
+                    title: this.messages.reportLoading,
+                    text: this.messages.reportLoadingDetail,
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
+
+            hideLoading() {
+                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                    Swal.close();
                 }
             },
 
@@ -249,6 +307,121 @@
                 window.location.href = '/Invoice/Results' + (query ? '?' + query : '');
             },
 
+            buildInvoiceReportParams() {
+                const hasStartDate = !!this.filter.issueDateStart;
+                const hasEndDate = !!this.filter.issueDateEnd;
+
+                if (hasStartDate !== hasEndDate) {
+                    this.showError(this.messages.issueDateRangeInvalid);
+                    return null;
+                }
+
+                if (!hasStartDate) {
+                    this.showError(this.messages.startEndDateRequired);
+                    return null;
+                }
+
+                if (new Date(this.filter.issueDateEnd) < new Date(this.filter.issueDateStart)) {
+                    this.showError(this.messages.endDateBeforeStart);
+                    return null;
+                }
+
+                const params = new URLSearchParams();
+                if (this.jobCustomerCode) params.set('JobCustomerCode', this.jobCustomerCode);
+                if (this.jobCustomerName) params.set('JobCustomerName', this.jobCustomerName);
+                if (this.invoiceCustomerCode) params.set('InvoiceCustomerCode', this.invoiceCustomerCode);
+                if (this.invoiceCustomerName) params.set('InvoiceCustomerName', this.invoiceCustomerName);
+                if (this.filter.referenceStart) params.set('ReferenceStart', this.filter.referenceStart);
+                if (this.filter.referenceEnd) params.set('ReferenceEnd', this.filter.referenceEnd);
+                if (this.filter.name) params.set('Name', this.filter.name);
+                if (this.filter.relatedPerson) params.set('RelatedPerson', this.filter.relatedPerson);
+                if (this.filter.issueDateStart) params.set('IssueDateStart', this.filter.issueDateStart);
+                if (this.filter.issueDateEnd) params.set('IssueDateEnd', this.filter.issueDateEnd);
+                if (this.filter.status) params.set('Status', this.filter.status);
+                if (this.filter.evaluated) params.set('Evaluated', this.filter.evaluated);
+
+                return params.toString();
+            },
+
+            async downloadReport(url) {
+                if (this.isReportLoading) {
+                    return;
+                }
+
+                this.isReportLoading = true;
+                this.showLoading();
+                let loadingClosed = false;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const rawMessage = await response.text();
+                        const fallback = this.messages.reportDataUnavailable;
+                        this.hideLoading();
+                        loadingClosed = true;
+                        this.showError(this.normalizeErrorMessage(rawMessage, fallback));
+                        return;
+                    }
+
+                    const blob = await response.blob();
+                    const contentDisposition = response.headers.get('content-disposition') || '';
+                    const fileNameUtfMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+                    const fileNameMatch = contentDisposition.match(/filename="?([^\";]+)"?/i);
+
+                    let fileName = 'report.xlsx';
+                    if (fileNameUtfMatch && fileNameUtfMatch[1]) {
+                        fileName = decodeURIComponent(fileNameUtfMatch[1]);
+                    } else if (fileNameMatch && fileNameMatch[1]) {
+                        fileName = fileNameMatch[1];
+                    }
+
+                    const objectUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = objectUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(objectUrl);
+                } catch (error) {
+                    const fallback = (window.imajTexts && window.imajTexts.connectionError)
+                        || (window.imajTexts && window.imajTexts.genericError)
+                        || this.messages.reportDataUnavailable;
+                    this.hideLoading();
+                    loadingClosed = true;
+                    this.showError(fallback);
+                } finally {
+                    if (!loadingClosed) {
+                        this.hideLoading();
+                    }
+                    this.isReportLoading = false;
+                }
+            },
+
+            async downloadDetailedInvoiceReport() {
+                const query = this.buildInvoiceReportParams();
+                if (query === null) {
+                    return;
+                }
+
+                await this.downloadReport('/Invoice/DownloadDetailedInvoiceReportExcel' + (query ? `?${query}` : ''));
+            },
+
+            async downloadSummaryInvoiceReport() {
+                const query = this.buildInvoiceReportParams();
+                if (query === null) {
+                    return;
+                }
+
+                await this.downloadReport('/Invoice/DownloadSummaryInvoiceReportExcel' + (query ? `?${query}` : ''));
+            },
+
             resetFilters() {
                 this.jobCustomerCode = '';
                 this.jobCustomerName = '';
@@ -268,7 +441,7 @@
 
             createInvoice() {
                 if (!this.newJobCustomerCode) {
-                    alert('');
+                    this.showError(this.messages.pleaseSelectCustomer);
                     return;
                 }
                 window.location.href = '/Invoice/Create?jobCustomerCode=' + encodeURIComponent(this.newJobCustomerCode) + '&jobCustomerName=' + encodeURIComponent(this.newJobCustomerName);

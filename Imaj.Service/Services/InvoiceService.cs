@@ -266,6 +266,87 @@ namespace Imaj.Service.Services
             }
         }
 
+        public async Task<ServiceResult<List<InvoiceDetailedReportRowDto>>> GetDetailedInvoiceReportAsync(InvoiceFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<InvoiceDetailedReportRowDto>>.Success(new List<InvoiceDetailedReportRowDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+                var items = await BuildInvoiceReportBaseQuery(filter, activeSnapshot)
+                    .OrderBy(x => x.CustomerName)
+                    .ThenBy(x => x.IssueDate)
+                    .ThenBy(x => x.Reference)
+                    .Select(x => new InvoiceDetailedReportRowDto
+                    {
+                        CustomerCode = x.CustomerCode,
+                        CustomerName = x.CustomerName,
+                        Reference = x.Reference,
+                        Name = x.Name,
+                        IssueDate = x.IssueDate,
+                        StatusName = x.StatusName,
+                        Evaluated = x.Evaluated,
+                        TaxAmount = x.TaxAmount,
+                        SubTotal = x.SubTotal,
+                        NetTotal = x.NetTotal
+                    })
+                    .ToListAsync(cancellationToken);
+
+                return ServiceResult<List<InvoiceDetailedReportRowDto>>.Success(items);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Detaylı fatura raporu alınırken hata oluştu.");
+                return ServiceResult<List<InvoiceDetailedReportRowDto>>.Fail("Detaylı fatura raporu alınırken bir hata oluştu.");
+            }
+        }
+
+        public async Task<ServiceResult<List<InvoiceSummaryReportRowDto>>> GetSummaryInvoiceReportAsync(InvoiceFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<InvoiceSummaryReportRowDto>>.Success(new List<InvoiceSummaryReportRowDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+                var items = await BuildInvoiceReportBaseQuery(filter, activeSnapshot)
+                    .GroupBy(x => new { x.CustomerCode, x.CustomerName })
+                    .Select(g => new InvoiceSummaryReportRowDto
+                    {
+                        CustomerCode = g.Key.CustomerCode,
+                        CustomerName = g.Key.CustomerName,
+                        Count = g.Count(),
+                        TaxAmount = g.Sum(x => x.TaxAmount),
+                        SubTotal = g.Sum(x => x.SubTotal),
+                        NetTotal = g.Sum(x => x.NetTotal)
+                    })
+                    .OrderBy(x => x.CustomerName)
+                    .ToListAsync(cancellationToken);
+
+                return ServiceResult<List<InvoiceSummaryReportRowDto>>.Success(items);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Özet fatura raporu alınırken hata oluştu.");
+                return ServiceResult<List<InvoiceSummaryReportRowDto>>.Fail("Özet fatura raporu alınırken bir hata oluştu.");
+            }
+        }
+
         public async Task<ServiceResult<List<InvoiceDetailDto>>> GetDetailsByReferencesAsync(List<int> references)
         {
             try
@@ -624,6 +705,115 @@ namespace Imaj.Service.Services
             }
         }
 
+        private IQueryable<InvoiceReportBaseRow> BuildInvoiceReportBaseQuery(
+            InvoiceFilterDto filter,
+            PermissionSnapshotDto snapshot)
+        {
+            var invoices = BuildScopedInvoiceQuery(snapshot);
+            var customers = _unitOfWork.Repository<Customer>().Query().AsNoTracking();
+            var states = _unitOfWork.Repository<XState>().Query()
+                .AsNoTracking()
+                .Where(x => x.LanguageID == CurrentLanguageId);
+
+            var query =
+                from inv in invoices
+                join jobCustomer in customers on inv.JobCustomerID equals jobCustomer.Id into jobCustomerGroup
+                from jobCustomer in jobCustomerGroup.DefaultIfEmpty()
+                join invoiceCustomer in customers on inv.InvoCustomerID equals invoiceCustomer.Id into invoiceCustomerGroup
+                from invoiceCustomer in invoiceCustomerGroup.DefaultIfEmpty()
+                join state in states on inv.StateID equals state.StateID into stateGroup
+                from state in stateGroup.DefaultIfEmpty()
+                select new InvoiceReportBaseRow
+                {
+                    JobCustomerCode = jobCustomer != null ? jobCustomer.Code : string.Empty,
+                    JobCustomerName = jobCustomer != null ? jobCustomer.Name : string.Empty,
+                    InvoiceCustomerCode = invoiceCustomer != null ? invoiceCustomer.Code : string.Empty,
+                    InvoiceCustomerName = invoiceCustomer != null ? invoiceCustomer.Name : string.Empty,
+                    CustomerCode = invoiceCustomer != null ? invoiceCustomer.Code : (jobCustomer != null ? jobCustomer.Code : string.Empty),
+                    CustomerName = invoiceCustomer != null ? invoiceCustomer.Name : (jobCustomer != null ? jobCustomer.Name : string.Empty),
+                    Reference = inv.Reference,
+                    Name = inv.Name,
+                    RelatedPerson = inv.Contact,
+                    IssueDate = inv.IssueDate,
+                    StateId = inv.StateID,
+                    StatusName = state != null ? state.Name : string.Empty,
+                    Evaluated = inv.Evaluated,
+                    TaxAmount = inv.TaxAmount,
+                    SubTotal = inv.NetAmount,
+                    NetTotal = inv.GrossAmount
+                };
+
+            if (!string.IsNullOrWhiteSpace(filter.JobCustomerCode))
+            {
+                var code = filter.JobCustomerCode.Trim();
+                query = query.Where(x => x.JobCustomerCode == code);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.JobCustomerName))
+            {
+                var name = filter.JobCustomerName.Trim();
+                query = query.Where(x => x.JobCustomerName.Contains(name));
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.InvoiceCustomerCode))
+            {
+                var code = filter.InvoiceCustomerCode.Trim();
+                query = query.Where(x => x.InvoiceCustomerCode == code);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.InvoiceCustomerName))
+            {
+                var name = filter.InvoiceCustomerName.Trim();
+                query = query.Where(x => x.InvoiceCustomerName.Contains(name));
+            }
+
+            if (filter.ReferenceStart.HasValue)
+            {
+                query = query.Where(x => x.Reference >= filter.ReferenceStart.Value);
+            }
+
+            if (filter.ReferenceEnd.HasValue)
+            {
+                query = query.Where(x => x.Reference <= filter.ReferenceEnd.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Name))
+            {
+                var name = filter.Name.Trim();
+                query = query.Where(x => x.Name.Contains(name));
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
+            {
+                var relatedPerson = filter.RelatedPerson.Trim();
+                query = query.Where(x => x.RelatedPerson.Contains(relatedPerson));
+            }
+
+            if (filter.IssueDateStart.HasValue)
+            {
+                var startDate = filter.IssueDateStart.Value.Date;
+                query = query.Where(x => x.IssueDate.HasValue && x.IssueDate.Value >= startDate);
+            }
+
+            if (filter.IssueDateEnd.HasValue)
+            {
+                var endDateExclusive = filter.IssueDateEnd.Value.Date.AddDays(1);
+                query = query.Where(x => x.IssueDate.HasValue && x.IssueDate.Value < endDateExclusive);
+            }
+
+            if (filter.StateId.HasValue)
+            {
+                query = query.Where(x => x.StateId == filter.StateId.Value);
+            }
+
+            if (filter.Evaluated.HasValue)
+            {
+                query = query.Where(x => x.Evaluated == filter.Evaluated.Value);
+            }
+
+            return query;
+        }
+
         private static bool IsDataScopeDenied(PermissionSnapshotDto? snapshot)
         {
             return snapshot == null
@@ -699,6 +889,26 @@ namespace Imaj.Service.Services
                 .Distinct();
 
             return invoiceQuery.Where(i => scopedInvoiceIds.Contains(i.Id));
+        }
+
+        private sealed class InvoiceReportBaseRow
+        {
+            public string JobCustomerCode { get; init; } = string.Empty;
+            public string JobCustomerName { get; init; } = string.Empty;
+            public string InvoiceCustomerCode { get; init; } = string.Empty;
+            public string InvoiceCustomerName { get; init; } = string.Empty;
+            public string CustomerCode { get; init; } = string.Empty;
+            public string CustomerName { get; init; } = string.Empty;
+            public int Reference { get; init; }
+            public string Name { get; init; } = string.Empty;
+            public string RelatedPerson { get; init; } = string.Empty;
+            public DateTime? IssueDate { get; init; }
+            public decimal StateId { get; init; }
+            public string StatusName { get; init; } = string.Empty;
+            public bool Evaluated { get; init; }
+            public decimal TaxAmount { get; init; }
+            public decimal SubTotal { get; init; }
+            public decimal NetTotal { get; init; }
         }
 
         private sealed class InvoiceWindowRow

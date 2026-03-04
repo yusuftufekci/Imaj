@@ -441,6 +441,18 @@
   <data name="SummaryPendingInvoiceJobsReportTitle" xml:space="preserve">
     <value>Summary Pending Invoice Jobs Report</value>
   </data>
+  <data name="DetailedInvoiceSheet" xml:space="preserve">
+    <value>Detailed Invoices</value>
+  </data>
+  <data name="SummaryInvoiceSheet" xml:space="preserve">
+    <value>Summary Invoices</value>
+  </data>
+  <data name="DetailedInvoiceReportTitle" xml:space="preserve">
+    <value>Detailed Invoice Report</value>
+  </data>
+  <data name="SummaryInvoiceReportTitle" xml:space="preserve">
+    <value>Summary Invoice Report</value>
+  </data>
   <data name="DetailedJobSheet" xml:space="preserve">
     <value>Detailed Jobs</value>
   </data>
@@ -527,6 +539,12 @@
   </data>
   <data name="DetailedProductFilePrefix" xml:space="preserve">
     <value>detailed-product-report</value>
+  </data>
+  <data name="DetailedInvoiceReportFilePrefix" xml:space="preserve">
+    <value>detailed-invoice-report</value>
+  </data>
+  <data name="SummaryInvoiceReportFilePrefix" xml:space="preserve">
+    <value>summary-invoice-report</value>
   </data>
   <data name="DetailedPendingInvoiceJobsFilePrefix" xml:space="preserve">
     <value>detailed-pending-invoice-jobs-report</value>
@@ -746,6 +764,9 @@
   </data>
   <data name="StartDateRangeInvalid" xml:space="preserve">
     <value>In start date range, first date cannot be later than second date.</value>
+  </data>
+  <data name="IssueDateRangeInvalid" xml:space="preserve">
+    <value>Both start and end must be entered for the invoice date range.</value>
   </data>
   <data name="TaxRateRangeInvalid" xml:space="preserve">
     <value>Tax rate must be between 0 and 100.</value>
