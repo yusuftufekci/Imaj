@@ -1,7 +1,10 @@
 @using System.Net
 @using System.Collections.Generic
 @using System.Globalization
+@using Imaj.Web.Authorization
+@using Imaj.Service.DTOs
 @model AbsenceDetailViewModel
+@inject IPermissionViewService PermissionViewService
 
 @{
     ViewData["Title"] = Localizer["Absence"];
@@ -54,6 +57,64 @@
     };
 
     var uiCulture = CultureInfo.CurrentUICulture;
+    var stateId = Model.StateId;
+    var historyQuery = new List<string>
+    {
+        "id=" + Model.Id?.ToString(CultureInfo.InvariantCulture),
+        "currentIndex=" + Model.CurrentIndex.ToString(CultureInfo.InvariantCulture)
+    };
+
+    if (selectedIds.Count > 0)
+    {
+        historyQuery.AddRange(selectedIds.Select(x => "selectedIds=" + WebUtility.UrlEncode(x)));
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+    {
+        historyQuery.Add("returnUrl=" + WebUtility.UrlEncode(Model.ReturnUrl));
+    }
+
+    var historyUrl = "/Absence/History?" + string.Join("&", historyQuery);
+
+    var canConfirm = await PermissionViewService.CanExecuteMethodAsync(1133m, write: true);
+    var canUndoConfirm = await PermissionViewService.CanExecuteMethodAsync(1132m, write: true);
+    var canUtilize = await PermissionViewService.CanExecuteMethodAsync(1135m, write: true);
+    var canUndoUtilize = await PermissionViewService.CanExecuteMethodAsync(1134m, write: true);
+    var canWaste = await PermissionViewService.CanExecuteMethodAsync(1136m, write: true);
+    var canUndoWaste = await PermissionViewService.CanExecuteMethodAsync(1137m, write: true);
+    var canDrop = await PermissionViewService.CanExecuteMethodAsync(1138m, write: true);
+    var canDiscard = await PermissionViewService.CanExecuteMethodAsync(1123m, write: true);
+    var canEvaluate = await PermissionViewService.CanExecuteMethodAsync(1140m, write: true);
+    var canUndoEvaluate = await PermissionViewService.CanExecuteMethodAsync(1486m, write: true);
+    var canEdit = await PermissionViewService.CanExecuteMethodAsync(1100m, write: true);
+    var canChangeStartDate = await PermissionViewService.CanExecuteMethodAsync(1177m, write: true);
+    var canChangeEndDate = await PermissionViewService.CanExecuteMethodAsync(1178m, write: true);
+    var canMoveStartDate = await PermissionViewService.CanExecuteMethodAsync(2972m, write: true);
+    var canViewHistory = await PermissionViewService.CanExecuteMethodAsync(1124m);
+
+    // Legacy absence detail button matrix is state-driven.
+    var isOpen = stateId == 10m;
+    var isConfirmed = stateId == 20m;
+    var isUtilized = stateId == 30m;
+    var isWasted = stateId == 40m;
+    var isDropped = stateId == 50m;
+    var isDiscarded = stateId == 60m;
+
+    var canShowScheduleActions = isOpen
+        && !Model.Evaluated
+        && (canChangeStartDate || canChangeEndDate || canMoveStartDate);
+    var scheduleDefault = Model.StartDate.ToString("yyyy-MM-ddTHH:mm");
+
+    var canDoConfirm = canConfirm && !Model.Evaluated && isOpen;
+    var canDoUndoConfirm = canUndoConfirm && !Model.Evaluated && isConfirmed;
+    var canDoUtilize = canUtilize && !Model.Evaluated && isConfirmed;
+    var canDoUndoUtilize = canUndoUtilize && !Model.Evaluated && isUtilized;
+    var canDoWaste = canWaste && !Model.Evaluated && isConfirmed;
+    var canDoUndoWaste = canUndoWaste && !Model.Evaluated && isWasted;
+    var canDoDrop = canDrop && !Model.Evaluated && isConfirmed;
+    var canDoDiscard = canDiscard && !Model.Evaluated && isOpen;
+    var canDoEvaluate = canEvaluate && !Model.Evaluated && (isUtilized || isWasted || isDropped || isDiscarded);
+    var canDoUndoEvaluate = canUndoEvaluate && Model.Evaluated && (isUtilized || isWasted || isDropped || isDiscarded);
 }
 
 <div class="space-y-6">
@@ -153,7 +214,229 @@
         <partial name="~/Views/Shared/_DetailNavigator.cshtml" model="navigatorModel" />
     }
 
-    <div class="flex items-center justify-center gap-3">
+    <div class="flex flex-wrap items-center justify-center gap-3">
+        @if (canEdit && isOpen && !Model.Evaluated)
+        {
+            <button type="button"
+                    onclick="document.getElementById('absence-new-date')?.focus();"
+                    class="inline-flex items-center px-5 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">
+                @Localizer["Edit"]
+            </button>
+        }
         <a href="@Model.ReturnUrl" class="inline-flex items-center px-5 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">@Localizer["Back"]</a>
+    </div>
+
+    @if (canShowScheduleActions)
+    {
+        <form method="post" action="/Absence/ScheduleAction" class="flex flex-wrap items-center justify-center gap-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+            <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+            @foreach (var selectedId in selectedIds)
+            {
+                <input type="hidden" name="SelectedIds" value="@selectedId" />
+            }
+            <label for="absence-new-date" class="text-sm font-semibold text-gray-700">@Localizer["NewDate"]</label>
+            <input id="absence-new-date"
+                   name="NewDate"
+                   type="datetime-local"
+                   value="@scheduleDefault"
+                   class="shadow-sm border-gray-300 rounded-md sm:text-sm" />
+            @if (canChangeStartDate)
+            {
+                <button type="submit"
+                        name="Action"
+                        value="@((int)AbsenceScheduleAction.ChangeStartDate)"
+                        class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">
+                    @Localizer["ChangeStartDateButton"]
+                </button>
+            }
+            @if (canChangeEndDate)
+            {
+                <button type="submit"
+                        name="Action"
+                        value="@((int)AbsenceScheduleAction.ChangeEndDate)"
+                        class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">
+                    @Localizer["ChangeEndDateButton"]
+                </button>
+            }
+            @if (canMoveStartDate)
+            {
+                <button type="submit"
+                        name="Action"
+                        value="@((int)AbsenceScheduleAction.MoveStartDate)"
+                        class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">
+                    @Localizer["MoveStartDateButton"]
+                </button>
+            }
+        </form>
+    }
+
+    <div class="flex flex-wrap items-center justify-center gap-3">
+        @if (canDoConfirm)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.Confirm)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowConfirm"]</button>
+            </form>
+        }
+
+        @if (canDoUndoConfirm)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.UndoConfirm)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoConfirm"]</button>
+            </form>
+        }
+
+        @if (canDoUtilize)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.Utilize)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUtilize"]</button>
+            </form>
+        }
+
+        @if (canDoUndoUtilize)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.UndoUtilize)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoUtilize"]</button>
+            </form>
+        }
+
+        @if (canDoWaste)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.Waste)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowWaste"]</button>
+            </form>
+        }
+
+        @if (canDoUndoWaste)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.UndoWaste)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-blue-400 text-sm font-medium rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoWaste"]</button>
+            </form>
+        }
+
+        @if (canDoDrop)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.Drop)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-red-400 text-sm font-medium rounded-md shadow-sm text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowDrop"]</button>
+            </form>
+        }
+
+        @if (canDoDiscard)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.Discard)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-red-400 text-sm font-medium rounded-md shadow-sm text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowDiscard"]</button>
+            </form>
+        }
+
+        @if (canDoEvaluate)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.Evaluate)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-emerald-400 text-sm font-medium rounded-md shadow-sm text-emerald-900 bg-emerald-100 hover:bg-emerald-200">@Localizer["WorkflowEvaluate"]</button>
+            </form>
+        }
+
+        @if (canDoUndoEvaluate)
+        {
+            <form method="post" action="/Absence/WorkflowAction" class="workflow-action-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@Model.Id?.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Action" value="@((int)AbsenceWorkflowAction.UndoEvaluate)" />
+                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                @foreach (var selectedId in selectedIds)
+                {
+                    <input type="hidden" name="SelectedIds" value="@selectedId" />
+                }
+                <button type="submit" class="inline-flex items-center px-5 py-2 border border-amber-400 text-sm font-medium rounded-md shadow-sm text-amber-900 bg-amber-100 hover:bg-amber-200">@Localizer["WorkflowUndoEvaluate"]</button>
+            </form>
+        }
+
+        @if (canViewHistory)
+        {
+            <a href="@historyUrl" class="inline-flex items-center px-5 py-2 border border-blue-500 text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">@Localizer["ViewHistory"]</a>
+        }
     </div>
 </div>

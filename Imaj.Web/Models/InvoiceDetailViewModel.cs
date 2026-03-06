@@ -8,6 +8,7 @@ namespace Imaj.Web.Models
         public List<InvoiceDetailViewModel> Invoices { get; set; } = new List<InvoiceDetailViewModel>();
         public List<string> SelectedReferences { get; set; } = new List<string>();
         public int CurrentIndex { get; set; }
+        public string SourceView { get; set; } = "Detail";
         public string? ReturnUrl { get; set; }
     }
 
@@ -19,6 +20,7 @@ namespace Imaj.Web.Models
         public string Name { get; set; } = string.Empty;
         public string RelatedPerson { get; set; } = string.Empty;
         public DateTime? IssueDate { get; set; }
+        public decimal StateId { get; set; }
         public string Status { get; set; } = string.Empty;
         public bool Evaluated { get; set; }
         public string Notes { get; set; } = string.Empty;

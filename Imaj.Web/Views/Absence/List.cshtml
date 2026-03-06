@@ -114,7 +114,20 @@
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.StartDate.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.EndDate.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.ReasonName</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 underline decoration-dotted">@item.Name</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                    @if (canView)
+                                    {
+                                        <button type="button"
+                                                @@click.stop="viewItem('@itemId')"
+                                                class="underline decoration-dotted hover:text-indigo-600 focus:outline-none focus:text-indigo-600">
+                                            @item.Name
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="underline decoration-dotted">@item.Name</span>
+                                    }
+                                </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.StateName</td>
                                 <td class="px-4 py-3 whitespace-nowrap text-center">
                                     <input type="checkbox" disabled @(item.Evaluated ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
@@ -195,6 +208,11 @@
 
                 this.$refs.listForm.action = action;
                 this.$refs.listForm.submit();
+            },
+
+            viewItem(id) {
+                this.selectedIds = [id];
+                this.$nextTick(() => this.submitTo('/Absence/Detail'));
             }
         };
     }

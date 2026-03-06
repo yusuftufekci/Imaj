@@ -104,11 +104,13 @@ namespace Imaj.Web.Models
         public string? Name { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public decimal StateId { get; set; }
         public string? Status { get; set; }
         
         public bool IsEmailSent { get; set; }
         public bool IsEvaluated { get; set; }
         public string? InvoiceStatus { get; set; }
+        public bool HasInvoiceLink { get; set; }
 
         // Notes
         public string? AdminNotes { get; set; }

@@ -13,5 +13,6 @@ namespace Imaj.Service.Interfaces
         Task<ServiceResult<List<InvoiceSummaryReportRowDto>>> GetSummaryInvoiceReportAsync(InvoiceFilterDto filter, CancellationToken cancellationToken = default);
         Task<ServiceResult<List<InvoiceDetailDto>>> GetDetailsByReferencesAsync(List<int> references);
         Task<ServiceResult<InvoiceHistoryDto>> GetHistoryByReferenceAsync(int reference);
+        Task<ServiceResult> ExecuteWorkflowActionAsync(int reference, InvoiceWorkflowAction action, DateTime? issueDate = null);
     }
 }

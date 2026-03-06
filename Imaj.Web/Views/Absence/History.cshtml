@@ -1,0 +1,111 @@
+@using System.Globalization
+@model AbsenceHistoryViewModel
+
+@{
+    ViewData["Title"] = Localizer["AbsenceHistory"];
+    var uiCulture = CultureInfo.CurrentUICulture;
+}
+
+<div class="space-y-6">
+    <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
+                @Localizer["AbsenceHistory"]
+            </h2>
+        </div>
+    </div>
+
+    <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm">
+                <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">@Localizer["BasicInfo"]</h3>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">@Localizer["Function"]</span>
+                    <span class="col-span-2 text-gray-900">@Model.Absence.FunctionName</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">@Localizer["Reason"]</span>
+                    <span class="col-span-2 text-gray-900">@Model.Absence.ReasonName</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">@Localizer["Name"]</span>
+                    <span class="col-span-2 text-gray-900">@Model.Absence.Name</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">@Localizer["Related"]</span>
+                    <span class="col-span-2 text-gray-900">@Model.Absence.Contact</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">@Localizer["StartDate"]</span>
+                    <span class="col-span-2 text-gray-900">@Model.Absence.StartDate.ToString("dd/MM/yyyy HH:mm dddd", uiCulture)</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">@Localizer["EndDate"]</span>
+                    <span class="col-span-2 text-gray-900">@Model.Absence.EndDate.ToString("dd/MM/yyyy HH:mm dddd", uiCulture)</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">@Localizer["Status"]</span>
+                    <span class="col-span-2 text-gray-900">@Model.Absence.StateName</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <span class="font-bold text-right text-blue-900">@Localizer["Evaluated"]</span>
+                    <span class="col-span-2">
+                        <input type="checkbox" disabled @(Model.Absence.Evaluated ? "checked" : string.Empty) class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                    </span>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-gray-50 border border-gray-200 rounded p-2">
+                    <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["Notes"]</h3>
+                    <textarea readonly rows="14" class="w-full text-sm border-gray-300 rounded bg-white">@Model.Absence.Notes</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-6">
+        <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
+            <h3 class="font-bold text-gray-800 text-sm">@Localizer["ViewHistory"] (@Model.Items.Count)</h3>
+        </div>
+        <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-yellow-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Code"]</th>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Name"]</th>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Date"]</th>
+                        <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Description"]</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @if (Model.Items.Any())
+                    {
+                        foreach (var item in Model.Items)
+                        {
+                            <tr class="hover:bg-blue-50 even:bg-yellow-50">
+                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@item.UserCode</td>
+                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@item.UserName</td>
+                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@item.Date.ToString("dd/MM/yyyy HH:mm dddd", uiCulture)</td>
+                                <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 font-bold">@item.Action</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                                @Localizer["HistoryRecordNotFound"]
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="flex justify-center py-4">
+        <a href="@Model.ReturnUrl" class="inline-flex items-center px-4 py-1 border border-blue-600 text-sm font-bold rounded shadow-sm text-white bg-blue-500 hover:bg-blue-700 focus:outline-none">@Localizer["Back"]</a>
+    </div>
+</div>

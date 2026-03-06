@@ -17,6 +17,28 @@ namespace Imaj.Service.Services
     /// </summary>
     public class JobService : BaseService, IJobService
     {
+        private const decimal LegacyActiveStateId = 1m;
+        private const decimal OpenStateId = 110m;
+        private const decimal CompletedStateId = 120m;
+        private const decimal PricedStateId = 130m;
+        private const decimal InvoicedStateId = 140m;
+        private const decimal ClosedStateId = 150m;
+        private const decimal DiscardedStateId = 160m;
+
+        private const decimal CreateLogActionId = 510m;
+        private const decimal CompleteLogActionId = 610m;
+        private const decimal UndoCompleteLogActionId = 620m;
+        private const decimal PriceLogActionId = 630m;
+        private const decimal UndoPriceLogActionId = 640m;
+        private const decimal InvoiceLogActionId = 650m;
+        private const decimal UndoInvoiceLogActionId = 660m;
+        private const decimal CloseLogActionId = 670m;
+        private const decimal UndoCloseLogActionId = 680m;
+        private const decimal DiscardLogActionId = 690m;
+        private const decimal UndoDiscardLogActionId = 700m;
+        private const decimal EvaluateLogActionId = 710m;
+        private const decimal UndoEvaluateLogActionId = 720m;
+
         private readonly ICurrentPermissionContext _currentPermissionContext;
 
         public JobService(
@@ -141,7 +163,14 @@ namespace Imaj.Service.Services
                 // Durum filtresi
                 if (filter.StateId.HasValue)
                 {
-                    query = query.Where(x => x.Job.StateID == filter.StateId.Value);
+                    if (IsOpenJobState(filter.StateId.Value))
+                    {
+                        query = query.Where(x => x.Job.StateID == OpenStateId || x.Job.StateID == LegacyActiveStateId);
+                    }
+                    else
+                    {
+                        query = query.Where(x => x.Job.StateID == filter.StateId.Value);
+                    }
                 }
 
                 // E-Posta gönderildi filtresi
@@ -159,13 +188,17 @@ namespace Imaj.Service.Services
                 // Fatura durumu filtresi
                 if (filter.HasInvoice.HasValue)
                 {
+                    var invoicedJobIds = _unitOfWork.Repository<InvoJob>().Query()
+                        .Where(ij => ij.Deleted == 0)
+                        .Select(ij => ij.JobID);
+
                     if (filter.HasInvoice.Value)
                     {
-                        query = query.Where(x => x.Job.InvoLineID != null);
+                        query = query.Where(x => x.Job.InvoLineID != null || invoicedJobIds.Contains(x.Job.Id));
                     }
                     else
                     {
-                        query = query.Where(x => x.Job.InvoLineID == null);
+                        query = query.Where(x => x.Job.InvoLineID == null && !invoicedJobIds.Contains(x.Job.Id));
                     }
                 }
 
@@ -293,6 +326,7 @@ namespace Imaj.Service.Services
                         IsEmailSent = x.Job.Mailed,
                         IsEvaluated = x.Job.Evaluated,
                         InvoLineId = x.Job.InvoLineID,
+                        HasInvoiceLink = x.Job.InvoLineID != null,
                         WorkAmount = x.Job.WorkSum,
                         ProductAmount = x.Job.ProdSum
                     })
@@ -375,6 +409,12 @@ namespace Imaj.Service.Services
                 {
                     return ServiceResult<JobDto>.Fail("İş bulunamadı.");
                 }
+
+                var invoiceInfo = await ResolveJobInvoiceInfoAsync(jobDto.Id, jobDto.InvoLineId);
+                jobDto.HasInvoiceLink = invoiceInfo.HasInvoiceLink;
+                jobDto.InvoLineId = invoiceInfo.InvoLineId;
+                jobDto.InvoiceReference = invoiceInfo.InvoiceReference;
+                jobDto.InvoiceName = invoiceInfo.InvoiceName;
 
                 // 2. Mesai (JobWork) Bilgileri
                 var workQuery = from jw in _unitOfWork.Repository<JobWork>().Query()
@@ -1247,6 +1287,307 @@ namespace Imaj.Service.Services
                 _logger.LogError(ex, "İş geçmişi getirilirken hata oluştu. JobId: {JobId}", jobId);
                 return ServiceResult<List<JobLogDto>>.Fail("İş geçmişi yüklenirken bir hata oluştu.");
             }
+        }
+
+        public async Task<ServiceResult> ExecuteWorkflowActionAsync(int reference, JobWorkflowAction action)
+        {
+            if (reference <= 0)
+            {
+                return ServiceResult.Fail("İş referansı zorunludur.");
+            }
+
+            if (!_currentPermissionContext.TryGetCurrentUserId(out var userId))
+            {
+                return ServiceResult.Fail("Kullanıcı bilgisi doğrulanamadı.");
+            }
+
+            var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+            if (IsDataScopeDenied(snapshot))
+            {
+                return ServiceResult.Fail("İş kaydı kapsam dışında.");
+            }
+
+            var activeSnapshot = snapshot!;
+            var jobRepo = _unitOfWork.Repository<Job>();
+            var job = await ApplyJobDataScope(jobRepo.Query(), activeSnapshot)
+                .SingleOrDefaultAsync(x => x.Reference == reference);
+            if (job == null)
+            {
+                return ServiceResult.Fail("İş bulunamadı.");
+            }
+
+            var hasInvoiceLink = await HasActiveInvoiceLinkAsync(job.Id, job.InvoLineID);
+            if (job.Evaluated && action != JobWorkflowAction.UndoEvaluate)
+            {
+                return ServiceResult.Fail("Değerlendirilmiş işlerde sadece değerlendirmeyi geri alma işlemi yapılabilir.");
+            }
+
+            var nextStateId = job.StateID;
+            var nextEvaluated = job.Evaluated;
+            decimal logActionId;
+
+            switch (action)
+            {
+                case JobWorkflowAction.Complete:
+                    if (job.StateID != OpenStateId && job.StateID != LegacyActiveStateId)
+                    {
+                        return ServiceResult.Fail("Tamamlama işlemi için iş açık durumda olmalıdır.");
+                    }
+                    if (hasInvoiceLink)
+                    {
+                        return ServiceResult.Fail("Faturalı işte tamamlama işlemi yapılamaz.");
+                    }
+                    nextStateId = CompletedStateId;
+                    logActionId = CompleteLogActionId;
+                    break;
+                case JobWorkflowAction.UndoComplete:
+                    if (job.StateID != CompletedStateId)
+                    {
+                        return ServiceResult.Fail("Tamamlamayı geri alma işlemi için iş tamamlandı durumda olmalıdır.");
+                    }
+                    if (hasInvoiceLink)
+                    {
+                        return ServiceResult.Fail("Faturalı işte tamamlamayı geri alma işlemi yapılamaz.");
+                    }
+                    nextStateId = OpenStateId;
+                    logActionId = UndoCompleteLogActionId;
+                    break;
+                case JobWorkflowAction.Price:
+                    if (job.StateID != CompletedStateId)
+                    {
+                        return ServiceResult.Fail("Fiyatlama işlemi için iş tamamlandı durumda olmalıdır.");
+                    }
+                    if (hasInvoiceLink)
+                    {
+                        return ServiceResult.Fail("Faturalı işte fiyatlama işlemi yapılamaz.");
+                    }
+                    nextStateId = PricedStateId;
+                    logActionId = PriceLogActionId;
+                    break;
+                case JobWorkflowAction.UndoPrice:
+                    if (job.StateID != PricedStateId)
+                    {
+                        return ServiceResult.Fail("Fiyatlamayı geri alma işlemi için iş fiyatlandı durumda olmalıdır.");
+                    }
+                    if (hasInvoiceLink)
+                    {
+                        return ServiceResult.Fail("Faturalı işte fiyatlamayı geri alma işlemi yapılamaz.");
+                    }
+                    nextStateId = CompletedStateId;
+                    logActionId = UndoPriceLogActionId;
+                    break;
+                case JobWorkflowAction.Close:
+                    if (job.StateID != CompletedStateId)
+                    {
+                        return ServiceResult.Fail("Kapatma işlemi için iş tamamlandı durumda olmalıdır.");
+                    }
+                    nextStateId = ClosedStateId;
+                    logActionId = CloseLogActionId;
+                    break;
+                case JobWorkflowAction.UndoClose:
+                    if (job.StateID != ClosedStateId)
+                    {
+                        return ServiceResult.Fail("Kapatmayı geri alma işlemi için iş kapatıldı durumda olmalıdır.");
+                    }
+                    nextStateId = CompletedStateId;
+                    logActionId = UndoCloseLogActionId;
+                    break;
+                case JobWorkflowAction.Discard:
+                    if (!CanDiscardJobState(job.StateID))
+                    {
+                        return ServiceResult.Fail("İptal et işlemi bu durum için geçerli değildir.");
+                    }
+                    if (hasInvoiceLink)
+                    {
+                        return ServiceResult.Fail("Faturalı işte iptal işlemi yapılamaz.");
+                    }
+                    nextStateId = DiscardedStateId;
+                    logActionId = DiscardLogActionId;
+                    break;
+                case JobWorkflowAction.UndoDiscard:
+                    if (job.StateID != DiscardedStateId)
+                    {
+                        return ServiceResult.Fail("İptali geri alma işlemi için iş iptal edildi durumda olmalıdır.");
+                    }
+                    nextStateId = await ResolvePreviousJobStateForUndoDiscardAsync(job.Id);
+                    logActionId = UndoDiscardLogActionId;
+                    break;
+                case JobWorkflowAction.Evaluate:
+                    if (!CanEvaluateJobState(job.StateID) || job.Evaluated)
+                    {
+                        return ServiceResult.Fail("Değerlendirme işlemi bu iş için uygun değildir.");
+                    }
+                    nextEvaluated = true;
+                    logActionId = EvaluateLogActionId;
+                    break;
+                case JobWorkflowAction.UndoEvaluate:
+                    if (!CanEvaluateJobState(job.StateID) || !job.Evaluated)
+                    {
+                        return ServiceResult.Fail("Değerlendirmeyi geri alma işlemi bu iş için uygun değildir.");
+                    }
+                    nextEvaluated = false;
+                    logActionId = UndoEvaluateLogActionId;
+                    break;
+                default:
+                    return ServiceResult.Fail("Geçersiz işlem.");
+            }
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                job.StateID = nextStateId;
+                job.Evaluated = nextEvaluated;
+                job.Stamp = 1;
+                jobRepo.Update(job);
+
+                var jobLogRepo = _unitOfWork.Repository<JobLog>();
+                var nextJobLogId = (await jobLogRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                await jobLogRepo.AddAsync(new JobLog
+                {
+                    Id = nextJobLogId,
+                    JobID = job.Id,
+                    ActionDT = DateTime.Now,
+                    LogActionID = logActionId,
+                    UserID = userId,
+                    Destination = string.Empty,
+                    Stamp = 1
+                });
+
+                await _unitOfWork.CommitAsync();
+                await transaction.CommitAsync();
+                return ServiceResult.Success("İş durumu güncellendi.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "İş workflow işlemi sırasında hata oluştu. Reference={Reference}, Action={Action}", reference, action);
+                return ServiceResult.Fail("İş durumu güncellenemedi.");
+            }
+        }
+
+        private async Task<decimal> ResolvePreviousJobStateForUndoDiscardAsync(decimal jobId)
+        {
+            var jobLogRepo = _unitOfWork.Repository<JobLog>();
+            var latestDiscard = await jobLogRepo.Query()
+                .Where(x => x.JobID == jobId && x.LogActionID == DiscardLogActionId)
+                .OrderByDescending(x => x.ActionDT)
+                .ThenByDescending(x => x.Id)
+                .FirstOrDefaultAsync();
+
+            if (latestDiscard == null)
+            {
+                return OpenStateId;
+            }
+
+            var priorLogActionIds = await jobLogRepo.Query()
+                .Where(x => x.JobID == jobId
+                            && (x.ActionDT < latestDiscard.ActionDT
+                                || (x.ActionDT == latestDiscard.ActionDT && x.Id < latestDiscard.Id)))
+                .OrderByDescending(x => x.ActionDT)
+                .ThenByDescending(x => x.Id)
+                .Select(x => x.LogActionID)
+                .ToListAsync();
+
+            foreach (var actionId in priorLogActionIds)
+            {
+                var inferredState = ResolveStateFromJobLogAction(actionId);
+                if (inferredState.HasValue && inferredState.Value != DiscardedStateId)
+                {
+                    return inferredState.Value == LegacyActiveStateId ? OpenStateId : inferredState.Value;
+                }
+            }
+
+            return OpenStateId;
+        }
+
+        private static decimal? ResolveStateFromJobLogAction(decimal logActionId)
+        {
+            return logActionId switch
+            {
+                CreateLogActionId => OpenStateId,
+                CompleteLogActionId => CompletedStateId,
+                UndoCompleteLogActionId => OpenStateId,
+                PriceLogActionId => PricedStateId,
+                UndoPriceLogActionId => CompletedStateId,
+                InvoiceLogActionId => InvoicedStateId,
+                UndoInvoiceLogActionId => PricedStateId,
+                CloseLogActionId => ClosedStateId,
+                UndoCloseLogActionId => CompletedStateId,
+                DiscardLogActionId => DiscardedStateId,
+                _ => null
+            };
+        }
+
+        private static bool IsOpenJobState(decimal stateId)
+        {
+            return stateId == LegacyActiveStateId || stateId == OpenStateId;
+        }
+
+        private static bool CanDiscardJobState(decimal stateId)
+        {
+            return IsOpenJobState(stateId);
+        }
+
+        private static bool CanEvaluateJobState(decimal stateId)
+        {
+            return stateId == ClosedStateId || stateId == DiscardedStateId;
+        }
+
+        private async Task<bool> HasActiveInvoiceLinkAsync(decimal jobId, decimal? invoLineId)
+        {
+            if (invoLineId.HasValue)
+            {
+                return true;
+            }
+
+            return await _unitOfWork.Repository<InvoJob>().Query()
+                .AnyAsync(x => x.JobID == jobId && x.Deleted == 0);
+        }
+
+        private async Task<(decimal? InvoLineId, int? InvoiceReference, string? InvoiceName, bool HasInvoiceLink)> ResolveJobInvoiceInfoAsync(decimal jobId, decimal? currentInvoLineId)
+        {
+            var invoLineIds = new HashSet<decimal>();
+            if (currentInvoLineId.HasValue)
+            {
+                invoLineIds.Add(currentInvoLineId.Value);
+            }
+
+            var linkedInvoLineIds = await _unitOfWork.Repository<InvoJob>().Query()
+                .Where(x => x.JobID == jobId && x.Deleted == 0)
+                .Select(x => x.InvoLineID)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var lineId in linkedInvoLineIds)
+            {
+                invoLineIds.Add(lineId);
+            }
+
+            if (invoLineIds.Count == 0)
+            {
+                return (null, null, null, false);
+            }
+
+            var invoiceInfo = await (
+                from line in _unitOfWork.Repository<InvoLine>().Query()
+                where invoLineIds.Contains(line.Id) && line.Deleted == 0
+                join invoice in _unitOfWork.Repository<Invoice>().Query()
+                    on line.InvoiceID equals invoice.Id
+                orderby invoice.IssueDate descending, invoice.Id descending
+                select new
+                {
+                    InvoLineId = (decimal?)line.Id,
+                    InvoiceReference = (int?)invoice.Reference,
+                    InvoiceName = invoice.Name
+                })
+                .FirstOrDefaultAsync();
+
+            if (invoiceInfo == null)
+            {
+                return (invoLineIds.First(), null, null, true);
+            }
+
+            return (invoiceInfo.InvoLineId, invoiceInfo.InvoiceReference, invoiceInfo.InvoiceName, true);
         }
 
 
