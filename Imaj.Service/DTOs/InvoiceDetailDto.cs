@@ -11,6 +11,7 @@ namespace Imaj.Service.DTOs
         public string? Name { get; set; }
         public string? RelatedPerson { get; set; }
         public DateTime? IssueDate { get; set; }
+        public decimal StateId { get; set; }
         public string? StateName { get; set; }
         public bool Evaluated { get; set; }
         public string? Notes { get; set; }

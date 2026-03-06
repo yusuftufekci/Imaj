@@ -32,6 +32,7 @@ namespace Imaj.Service.Interfaces
         /// İş geçmişini (loglarını) getirir.
         /// </summary>
         Task<ServiceResult<List<JobLogDto>>> GetJobHistoryAsync(decimal jobId);
+        Task<ServiceResult> ExecuteWorkflowActionAsync(int reference, JobWorkflowAction action);
 
         /// <summary>
         /// Detaylı mesai raporu için filtrelenmiş satırları getirir.

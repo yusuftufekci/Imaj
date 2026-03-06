@@ -142,6 +142,21 @@ namespace Imaj.Web.Models
     {
     }
 
+    public class AbsenceHistoryItemViewModel
+    {
+        public DateTime Date { get; set; }
+        public string UserCode { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty;
+    }
+
+    public class AbsenceHistoryViewModel
+    {
+        public AbsenceDetailViewModel Absence { get; set; } = new();
+        public List<AbsenceHistoryItemViewModel> Items { get; set; } = new();
+        public string ReturnUrl { get; set; } = "/Absence/List";
+    }
+
     public class AbsenceResourceLookupFilterModel
     {
         public string? Code { get; set; }

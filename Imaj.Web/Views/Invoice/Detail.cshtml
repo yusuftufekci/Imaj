@@ -1,5 +1,9 @@
 @using System.Net
+@using System.Collections.Generic
+@using Imaj.Web.Authorization
+@using Imaj.Service.DTOs
 @model InvoiceDisplayViewModel
+@inject IPermissionViewService PermissionViewService
 
 @{
     ViewData["Title"] = Localizer["Invoice"];
@@ -19,6 +23,33 @@
     }
     var queryString = string.Join("&", queryParts);
     var currentUrl = "/Invoice/Detail?reference=" + invoice?.Reference + "&page=" + (Model.CurrentIndex + 1) + (string.IsNullOrWhiteSpace(queryString) ? string.Empty : "&" + queryString);
+    var selectedReferences = Model.SelectedReferences ?? new List<string>();
+    var parsedReference = int.TryParse(invoice?.Reference, out var reference);
+    var stateId = invoice?.StateId ?? 0m;
+    var isEvaluated = invoice?.Evaluated ?? false;
+    var isOpen = stateId == 210m;
+    var isConfirmed = stateId == 220m;
+    var isIssued = stateId == 230m;
+    var isKilled = stateId == 240m;
+    var isDiscarded = stateId == 250m;
+    var issueDateValue = (invoice?.IssueDate ?? DateTime.Today).ToString("yyyy-MM-dd");
+
+    var canConfirm = await PermissionViewService.CanExecuteMethodAsync(1385m, write: true);
+    var canUndoConfirm = await PermissionViewService.CanExecuteMethodAsync(1386m, write: true);
+    var canIssue = await PermissionViewService.CanExecuteMethodAsync(1388m, write: true);
+    var canKill = await PermissionViewService.CanExecuteMethodAsync(1389m, write: true);
+    var canDiscard = await PermissionViewService.CanExecuteMethodAsync(1387m, write: true);
+    var canEvaluate = await PermissionViewService.CanExecuteMethodAsync(1390m, write: true);
+    var canUndoEvaluate = await PermissionViewService.CanExecuteMethodAsync(1490m, write: true);
+
+    var canDoConfirm = parsedReference && canConfirm && !isEvaluated && isOpen;
+    var canDoUndoConfirm = parsedReference && canUndoConfirm && !isEvaluated && isConfirmed;
+    var canDoIssue = parsedReference && canIssue && !isEvaluated && isConfirmed;
+    var canDoKill = parsedReference && canKill && !isEvaluated && isIssued;
+    var canDoDiscard = parsedReference && canDiscard && !isEvaluated && isOpen;
+    var canDoEvaluate = parsedReference && canEvaluate && !isEvaluated && (isIssued || isKilled || isDiscarded);
+    var canDoUndoEvaluate = parsedReference && canUndoEvaluate && isEvaluated && (isIssued || isKilled || isDiscarded);
+    var canPrintInvoice = parsedReference && !isEvaluated && (isOpen || isConfirmed || isIssued);
 }
 
 <div class="space-y-8">
@@ -263,13 +294,13 @@
                 </div>
             </div>
 
-            @if (Model.SelectedReferences.Count > 1)
+            @if (selectedReferences.Count > 1)
             {
                 <div class="mt-4">
                     <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel
                     {
                         CurrentPage = Model.CurrentIndex + 1,
-                        TotalCount = Model.SelectedReferences.Count,
+                        TotalCount = selectedReferences.Count,
                         PageSize = 1,
                         BaseUrl = "/Invoice/Detail",
                         QueryString = queryString
@@ -277,14 +308,147 @@
                 </div>
             }
 
-            <div class="flex justify-center space-x-2">
+            <div class="flex flex-wrap justify-center gap-2">
                 <a href="@returnUrl" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">@Localizer["Back"]</a>
                 <a href="/Invoice/Summary?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     @Localizer["ViewSummary"]
                 </a>
-                <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    @Localizer["UndoEvaluation"]
-                </button>
+
+                @if (canPrintInvoice)
+                {
+                    <button type="button"
+                            onclick="window.print()"
+                            class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
+                        @Localizer["PrintInvoice"]
+                    </button>
+                }
+
+                @if (canDoConfirm)
+                {
+                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Reference" value="@reference" />
+                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Confirm)" />
+                        <input type="hidden" name="SourceView" value="Detail" />
+                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                        @foreach (var selectedReference in selectedReferences)
+                        {
+                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                        }
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowConfirm"]</button>
+                    </form>
+                }
+
+                @if (canDoUndoConfirm)
+                {
+                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Reference" value="@reference" />
+                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.UndoConfirm)" />
+                        <input type="hidden" name="SourceView" value="Detail" />
+                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                        @foreach (var selectedReference in selectedReferences)
+                        {
+                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                        }
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoConfirm"]</button>
+                    </form>
+                }
+
+                @if (canDoIssue)
+                {
+                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex items-center gap-2 flex-wrap justify-center">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Reference" value="@reference" />
+                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Issue)" />
+                        <input type="hidden" name="SourceView" value="Detail" />
+                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                        @foreach (var selectedReference in selectedReferences)
+                        {
+                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                        }
+                        <label for="invoice-issue-date-detail" class="text-sm font-medium text-gray-700">@Localizer["InvoiceIssueDate"]</label>
+                        <input id="invoice-issue-date-detail"
+                               type="date"
+                               name="IssueDate"
+                               value="@issueDateValue"
+                               required
+                               class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm rounded-md text-gray-900 bg-white" />
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowIssue"]</button>
+                    </form>
+                }
+
+                @if (canDoKill)
+                {
+                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Reference" value="@reference" />
+                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Kill)" />
+                        <input type="hidden" name="SourceView" value="Detail" />
+                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                        @foreach (var selectedReference in selectedReferences)
+                        {
+                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                        }
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-red-400 text-sm font-medium rounded-md text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowKill"]</button>
+                    </form>
+                }
+
+                @if (canDoDiscard)
+                {
+                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Reference" value="@reference" />
+                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Discard)" />
+                        <input type="hidden" name="SourceView" value="Detail" />
+                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                        @foreach (var selectedReference in selectedReferences)
+                        {
+                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                        }
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-red-400 text-sm font-medium rounded-md text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowDiscard"]</button>
+                    </form>
+                }
+
+                @if (canDoEvaluate)
+                {
+                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Reference" value="@reference" />
+                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Evaluate)" />
+                        <input type="hidden" name="SourceView" value="Detail" />
+                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                        @foreach (var selectedReference in selectedReferences)
+                        {
+                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                        }
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-emerald-400 text-sm font-medium rounded-md text-emerald-900 bg-emerald-100 hover:bg-emerald-200">@Localizer["WorkflowEvaluate"]</button>
+                    </form>
+                }
+
+                @if (canDoUndoEvaluate)
+                {
+                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Reference" value="@reference" />
+                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.UndoEvaluate)" />
+                        <input type="hidden" name="SourceView" value="Detail" />
+                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                        @foreach (var selectedReference in selectedReferences)
+                        {
+                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                        }
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-amber-400 text-sm font-medium rounded-md text-amber-900 bg-amber-100 hover:bg-amber-200">@Localizer["WorkflowUndoEvaluate"]</button>
+                    </form>
+                }
+
                 <a href="/Invoice/History?reference=@invoice.Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     @Localizer["ViewHistory"]
                 </a>

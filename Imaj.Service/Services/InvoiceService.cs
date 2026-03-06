@@ -13,6 +13,20 @@ namespace Imaj.Service.Services
 {
     public class InvoiceService : BaseService, IInvoiceService
     {
+        private const decimal OpenStateId = 210m;
+        private const decimal ConfirmedStateId = 220m;
+        private const decimal IssuedStateId = 230m;
+        private const decimal KilledStateId = 240m;
+        private const decimal DiscardedStateId = 250m;
+
+        private const decimal ConfirmLogActionId = 1110m;
+        private const decimal UndoConfirmLogActionId = 1120m;
+        private const decimal IssueLogActionId = 1130m;
+        private const decimal KillLogActionId = 1140m;
+        private const decimal DiscardLogActionId = 1150m;
+        private const decimal EvaluateLogActionId = 1160m;
+        private const decimal UndoEvaluateLogActionId = 1170m;
+
         private readonly ICurrentPermissionContext _currentPermissionContext;
 
         public InvoiceService(
@@ -620,6 +634,7 @@ namespace Imaj.Service.Services
                         Name = invoice.Name,
                         RelatedPerson = invoice.Contact,
                         IssueDate = invoice.IssueDate,
+                        StateId = invoice.StateID,
                         StateName = row.StateName,
                         Evaluated = invoice.Evaluated,
                         Notes = invoice.Notes,
@@ -703,6 +718,160 @@ namespace Imaj.Service.Services
                 _logger.LogError(ex, "Invoice history fetch failed. Reference: {Reference}", reference);
                 return ServiceResult<InvoiceHistoryDto>.Fail("Fatura geçmişi yüklenirken hata oluştu.");
             }
+        }
+
+        public async Task<ServiceResult> ExecuteWorkflowActionAsync(int reference, InvoiceWorkflowAction action, DateTime? issueDate = null)
+        {
+            if (reference <= 0)
+            {
+                return ServiceResult.Fail("Fatura referansı zorunludur.");
+            }
+
+            if (!_currentPermissionContext.TryGetCurrentUserId(out var userId))
+            {
+                return ServiceResult.Fail("Kullanıcı bilgisi doğrulanamadı.");
+            }
+
+            var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+            if (IsDataScopeDenied(snapshot))
+            {
+                return ServiceResult.Fail("Fatura kaydı kapsam dışında.");
+            }
+
+            var activeSnapshot = snapshot!;
+            var invoiceRepo = _unitOfWork.Repository<Invoice>();
+            var invoice = await ApplyInvoiceDataScope(invoiceRepo.Query(), activeSnapshot)
+                .SingleOrDefaultAsync(x => x.Reference == reference);
+            if (invoice == null)
+            {
+                return ServiceResult.Fail("Fatura bulunamadı.");
+            }
+
+            if (invoice.Evaluated && action != InvoiceWorkflowAction.UndoEvaluate)
+            {
+                return ServiceResult.Fail("Değerlendirilmiş faturalarda sadece değerlendirmeyi geri alma işlemi yapılabilir.");
+            }
+
+            var nextStateId = invoice.StateID;
+            var nextEvaluated = invoice.Evaluated;
+            var nextIssueDate = invoice.IssueDate;
+            decimal logActionId;
+
+            switch (action)
+            {
+                case InvoiceWorkflowAction.Confirm:
+                    if (invoice.StateID != OpenStateId)
+                    {
+                        return ServiceResult.Fail("Onaylama işlemi için fatura açık durumda olmalıdır.");
+                    }
+                    nextStateId = ConfirmedStateId;
+                    logActionId = ConfirmLogActionId;
+                    break;
+                case InvoiceWorkflowAction.UndoConfirm:
+                    if (invoice.StateID != ConfirmedStateId)
+                    {
+                        return ServiceResult.Fail("Onayı geri alma işlemi için fatura onaylandı durumda olmalıdır.");
+                    }
+                    nextStateId = OpenStateId;
+                    logActionId = UndoConfirmLogActionId;
+                    break;
+                case InvoiceWorkflowAction.Issue:
+                    if (invoice.StateID != ConfirmedStateId)
+                    {
+                        return ServiceResult.Fail("Kesme işlemi için fatura onaylandı durumda olmalıdır.");
+                    }
+                    if (!issueDate.HasValue)
+                    {
+                        return ServiceResult.Fail("Kesilme tarihi zorunludur.");
+                    }
+                    nextStateId = IssuedStateId;
+                    nextIssueDate = issueDate.Value.Date;
+                    logActionId = IssueLogActionId;
+                    break;
+                case InvoiceWorkflowAction.Kill:
+                    if (!CanKillInvoiceState(invoice.StateID))
+                    {
+                        return ServiceResult.Fail("İptal et işlemi bu durum için geçerli değildir.");
+                    }
+                    nextStateId = KilledStateId;
+                    logActionId = KillLogActionId;
+                    break;
+                case InvoiceWorkflowAction.Discard:
+                    if (!CanDiscardInvoiceState(invoice.StateID))
+                    {
+                        return ServiceResult.Fail("Reddet işlemi bu durum için geçerli değildir.");
+                    }
+                    nextStateId = DiscardedStateId;
+                    logActionId = DiscardLogActionId;
+                    break;
+                case InvoiceWorkflowAction.Evaluate:
+                    if (!CanEvaluateInvoiceState(invoice.StateID) || invoice.Evaluated)
+                    {
+                        return ServiceResult.Fail("Değerlendirme işlemi bu fatura için uygun değildir.");
+                    }
+                    nextEvaluated = true;
+                    logActionId = EvaluateLogActionId;
+                    break;
+                case InvoiceWorkflowAction.UndoEvaluate:
+                    if (!CanEvaluateInvoiceState(invoice.StateID) || !invoice.Evaluated)
+                    {
+                        return ServiceResult.Fail("Değerlendirmeyi geri alma işlemi bu fatura için uygun değildir.");
+                    }
+                    nextEvaluated = false;
+                    logActionId = UndoEvaluateLogActionId;
+                    break;
+                default:
+                    return ServiceResult.Fail("Geçersiz işlem.");
+            }
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                invoice.StateID = nextStateId;
+                invoice.Evaluated = nextEvaluated;
+                invoice.IssueDate = nextIssueDate;
+                invoice.Stamp = 1;
+                invoiceRepo.Update(invoice);
+
+                var invoiceLogRepo = _unitOfWork.Repository<InvoiceLog>();
+                var nextInvoiceLogId = (await invoiceLogRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                await invoiceLogRepo.AddAsync(new InvoiceLog
+                {
+                    Id = nextInvoiceLogId,
+                    InvoiceID = invoice.Id,
+                    UserID = userId,
+                    LogActionID = logActionId,
+                    ActionDT = DateTime.Now,
+                    Stamp = 1
+                });
+
+                await _unitOfWork.CommitAsync();
+                await transaction.CommitAsync();
+                return ServiceResult.Success("Fatura durumu güncellendi.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Fatura workflow işlemi sırasında hata oluştu. Reference={Reference}, Action={Action}", reference, action);
+                return ServiceResult.Fail("Fatura durumu güncellenemedi.");
+            }
+        }
+
+        private static bool CanKillInvoiceState(decimal stateId)
+        {
+            return stateId == IssuedStateId;
+        }
+
+        private static bool CanDiscardInvoiceState(decimal stateId)
+        {
+            return stateId == OpenStateId;
+        }
+
+        private static bool CanEvaluateInvoiceState(decimal stateId)
+        {
+            return stateId == IssuedStateId
+                || stateId == KilledStateId
+                || stateId == DiscardedStateId;
         }
 
         private IQueryable<InvoiceReportBaseRow> BuildInvoiceReportBaseQuery(

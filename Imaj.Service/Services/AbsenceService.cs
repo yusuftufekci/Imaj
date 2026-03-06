@@ -17,6 +17,22 @@ namespace Imaj.Service.Services
     public class AbsenceService : IAbsenceService
     {
         private const decimal OpenStateId = 10m;
+        private const decimal ConfirmedStateId = 20m;
+        private const decimal UtilizedStateId = 30m;
+        private const decimal WastedStateId = 40m;
+        private const decimal DroppedStateId = 50m;
+        private const decimal DiscardedStateId = 60m;
+
+        private const decimal ConfirmLogActionId = 110m;
+        private const decimal UndoConfirmLogActionId = 120m;
+        private const decimal UtilizeLogActionId = 130m;
+        private const decimal UndoUtilizeLogActionId = 140m;
+        private const decimal WasteLogActionId = 150m;
+        private const decimal UndoWasteLogActionId = 160m;
+        private const decimal DropLogActionId = 170m;
+        private const decimal DiscardLogActionId = 180m;
+        private const decimal EvaluateLogActionId = 190m;
+        private const decimal UndoEvaluateLogActionId = 200m;
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentPermissionContext _currentPermissionContext;
@@ -280,6 +296,284 @@ namespace Imaj.Service.Services
                 Notes = row.Notes,
                 Resources = resources
             });
+        }
+
+        public async Task<ServiceResult<List<AbsenceLogDto>>> GetAbsenceHistoryAsync(decimal id)
+        {
+            if (id <= 0)
+            {
+                return ServiceResult<List<AbsenceLogDto>>.Fail("Mazeret ID zorunludur.");
+            }
+
+            var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+            if (IsScopeDenied(snapshot))
+            {
+                return ServiceResult<List<AbsenceLogDto>>.Success(new List<AbsenceLogDto>());
+            }
+
+            var canAccess = await ApplyAbsenceScope(_unitOfWork.Repository<Reserve>().Query(), snapshot!)
+                .AnyAsync(x => x.Id == id);
+            if (!canAccess)
+            {
+                return ServiceResult<List<AbsenceLogDto>>.Success(new List<AbsenceLogDto>());
+            }
+
+            var languageId = ResolveUiLanguageId();
+            var fallbackLanguageId = 1m;
+
+            var logs = await (from log in _unitOfWork.Repository<ReserveLog>().Query()
+                              where log.ReserveID == id
+                              join user in _unitOfWork.Repository<User>().Query()
+                                  on log.UserID equals user.Id
+                              join preferredAction in _unitOfWork.Repository<XLogAction>().Query().Where(x => x.LanguageID == languageId)
+                                  on log.LogActionID equals preferredAction.LogActionID into preferredActionGroup
+                              from preferredAction in preferredActionGroup.DefaultIfEmpty()
+                              join fallbackAction in _unitOfWork.Repository<XLogAction>().Query().Where(x => x.LanguageID == fallbackLanguageId)
+                                  on log.LogActionID equals fallbackAction.LogActionID into fallbackActionGroup
+                              from fallbackAction in fallbackActionGroup.DefaultIfEmpty()
+                              join logAction in _unitOfWork.Repository<LogAction>().Query()
+                                  on log.LogActionID equals logAction.Id into logActionGroup
+                              from logAction in logActionGroup.DefaultIfEmpty()
+                              orderby log.ActionDT descending, log.Id descending
+                              select new AbsenceLogDto
+                              {
+                                  Id = log.Id,
+                                  LogDate = log.ActionDT,
+                                  UserId = log.UserID,
+                                  UserCode = user.Code,
+                                  UserName = user.Name,
+                                  LogActionId = log.LogActionID,
+                                  ActionName = preferredAction != null
+                                      ? preferredAction.Name
+                                      : (fallbackAction != null
+                                          ? fallbackAction.Name
+                                          : (logAction != null ? logAction.Descr : "Bilinmiyor"))
+                              }).ToListAsync();
+
+            return ServiceResult<List<AbsenceLogDto>>.Success(logs);
+        }
+
+        public async Task<ServiceResult> ExecuteWorkflowActionAsync(decimal id, AbsenceWorkflowAction action)
+        {
+            if (id <= 0)
+            {
+                return ServiceResult.Fail("Mazeret ID zorunludur.");
+            }
+
+            if (!_currentPermissionContext.TryGetCurrentUserId(out var userId))
+            {
+                return ServiceResult.Fail("Kullanıcı bilgisi doğrulanamadı.");
+            }
+
+            var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+            if (IsScopeDenied(snapshot))
+            {
+                return ServiceResult.Fail("Mazeret kaydı kapsam dışında.");
+            }
+
+            var reserveRepo = _unitOfWork.Repository<Reserve>();
+            var reserve = await ApplyAbsenceScope(reserveRepo.Query(), snapshot!)
+                .SingleOrDefaultAsync(x => x.Id == id);
+            if (reserve == null)
+            {
+                return ServiceResult.Fail("Mazeret bulunamadı.");
+            }
+
+            if (reserve.Evaluated && action != AbsenceWorkflowAction.UndoEvaluate)
+            {
+                return ServiceResult.Fail("Değerlendirilen mazerette önce değerlendirmeyi geri alın.");
+            }
+
+            var nextStateId = reserve.StateID;
+            var nextEvaluated = reserve.Evaluated;
+            decimal logActionId;
+
+            switch (action)
+            {
+                case AbsenceWorkflowAction.Confirm:
+                    if (reserve.StateID != OpenStateId)
+                    {
+                        return ServiceResult.Fail("Onaylama işlemi için kayıt açık durumda olmalıdır.");
+                    }
+                    nextStateId = ConfirmedStateId;
+                    logActionId = ConfirmLogActionId;
+                    break;
+                case AbsenceWorkflowAction.UndoConfirm:
+                    if (reserve.StateID != ConfirmedStateId)
+                    {
+                        return ServiceResult.Fail("Onay geri alma işlemi için kayıt onaylandı durumda olmalıdır.");
+                    }
+                    nextStateId = OpenStateId;
+                    logActionId = UndoConfirmLogActionId;
+                    break;
+                case AbsenceWorkflowAction.Utilize:
+                    if (reserve.StateID != ConfirmedStateId)
+                    {
+                        return ServiceResult.Fail("Kullan işlemi için kayıt onaylandı durumda olmalıdır.");
+                    }
+                    nextStateId = UtilizedStateId;
+                    logActionId = UtilizeLogActionId;
+                    break;
+                case AbsenceWorkflowAction.UndoUtilize:
+                    if (reserve.StateID != UtilizedStateId)
+                    {
+                        return ServiceResult.Fail("Kullanımı geri alma işlemi için kayıt kullanıldı durumda olmalıdır.");
+                    }
+                    nextStateId = ConfirmedStateId;
+                    logActionId = UndoUtilizeLogActionId;
+                    break;
+                case AbsenceWorkflowAction.Waste:
+                    if (reserve.StateID != ConfirmedStateId)
+                    {
+                        return ServiceResult.Fail("Harca işlemi için kayıt onaylandı durumda olmalıdır.");
+                    }
+                    nextStateId = WastedStateId;
+                    logActionId = WasteLogActionId;
+                    break;
+                case AbsenceWorkflowAction.UndoWaste:
+                    if (reserve.StateID != WastedStateId)
+                    {
+                        return ServiceResult.Fail("Harcamayı geri alma işlemi için kayıt harcandı durumda olmalıdır.");
+                    }
+                    nextStateId = ConfirmedStateId;
+                    logActionId = UndoWasteLogActionId;
+                    break;
+                case AbsenceWorkflowAction.Drop:
+                    if (!CanDropAbsenceState(reserve.StateID))
+                    {
+                        return ServiceResult.Fail("İptal et işlemi bu durum için geçerli değildir.");
+                    }
+                    nextStateId = DroppedStateId;
+                    logActionId = DropLogActionId;
+                    break;
+                case AbsenceWorkflowAction.Discard:
+                    if (!CanDiscardAbsenceState(reserve.StateID))
+                    {
+                        return ServiceResult.Fail("Reddet işlemi bu durum için geçerli değildir.");
+                    }
+                    nextStateId = DiscardedStateId;
+                    logActionId = DiscardLogActionId;
+                    break;
+                case AbsenceWorkflowAction.Evaluate:
+                    if (!CanEvaluateAbsenceState(reserve.StateID) || reserve.Evaluated)
+                    {
+                        return ServiceResult.Fail("Değerlendirme işlemi bu kayıt için uygun değildir.");
+                    }
+                    nextEvaluated = true;
+                    logActionId = EvaluateLogActionId;
+                    break;
+                case AbsenceWorkflowAction.UndoEvaluate:
+                    if (!CanEvaluateAbsenceState(reserve.StateID) || !reserve.Evaluated)
+                    {
+                        return ServiceResult.Fail("Değerlendirmeyi geri alma işlemi bu kayıt için uygun değildir.");
+                    }
+                    nextEvaluated = false;
+                    logActionId = UndoEvaluateLogActionId;
+                    break;
+                default:
+                    return ServiceResult.Fail("Geçersiz işlem.");
+            }
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                reserve.StateID = nextStateId;
+                reserve.Evaluated = nextEvaluated;
+                reserve.Stamp = 1;
+                reserveRepo.Update(reserve);
+
+                var reserveLogRepo = _unitOfWork.Repository<ReserveLog>();
+                var nextReserveLogId = (await reserveLogRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                await reserveLogRepo.AddAsync(new ReserveLog
+                {
+                    Id = nextReserveLogId,
+                    ReserveID = reserve.Id,
+                    UserID = userId,
+                    LogActionID = logActionId,
+                    ActionDT = DateTime.Now,
+                    Stamp = 1
+                });
+
+                await _unitOfWork.CommitAsync();
+                await transaction.CommitAsync();
+                return ServiceResult.Success("Mazeret durumu güncellendi.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Mazeret workflow işlemi sırasında hata oluştu. ReserveId={ReserveId}, Action={Action}", id, action);
+                return ServiceResult.Fail("Mazeret durumu güncellenemedi.");
+            }
+        }
+
+        public async Task<ServiceResult> UpdateAbsenceScheduleAsync(decimal id, DateTime newDate, AbsenceScheduleAction action)
+        {
+            if (id <= 0)
+            {
+                return ServiceResult.Fail("Mazeret ID zorunludur.");
+            }
+
+            if (!_currentPermissionContext.TryGetCurrentUserId(out _))
+            {
+                return ServiceResult.Fail("Kullanıcı bilgisi doğrulanamadı.");
+            }
+
+            var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+            if (IsScopeDenied(snapshot))
+            {
+                return ServiceResult.Fail("Mazeret kaydı kapsam dışında.");
+            }
+
+            var reserveRepo = _unitOfWork.Repository<Reserve>();
+            var reserve = await ApplyAbsenceScope(reserveRepo.Query(), snapshot!)
+                .SingleOrDefaultAsync(x => x.Id == id);
+            if (reserve == null)
+            {
+                return ServiceResult.Fail("Mazeret bulunamadı.");
+            }
+
+            if (reserve.StateID != OpenStateId)
+            {
+                return ServiceResult.Fail("Tarih değişikliği yalnız açık durumdaki mazeretlerde yapılabilir.");
+            }
+
+            if (reserve.Evaluated)
+            {
+                return ServiceResult.Fail("Değerlendirilen mazerette tarih değişikliği yapılamaz.");
+            }
+
+            var currentDuration = reserve.EndDT - reserve.StartDT;
+            if (currentDuration < TimeSpan.Zero)
+            {
+                currentDuration = TimeSpan.Zero;
+            }
+
+            switch (action)
+            {
+                case AbsenceScheduleAction.ChangeStartDate:
+                    reserve.StartDT = newDate;
+                    break;
+                case AbsenceScheduleAction.ChangeEndDate:
+                    reserve.EndDT = newDate;
+                    break;
+                case AbsenceScheduleAction.MoveStartDate:
+                    reserve.StartDT = newDate;
+                    reserve.EndDT = newDate.Add(currentDuration);
+                    break;
+                default:
+                    return ServiceResult.Fail("Geçersiz işlem.");
+            }
+
+            if (reserve.EndDT <= reserve.StartDT)
+            {
+                return ServiceResult.Fail("Bitiş tarihi başlangıç tarihinden büyük olmalıdır.");
+            }
+
+            reserve.Stamp = 1;
+            reserveRepo.Update(reserve);
+            await _unitOfWork.CommitAsync();
+
+            return ServiceResult.Success("Mazeret tarihi güncellendi.");
         }
 
         public async Task<ServiceResult<List<AbsenceFunctionOptionDto>>> GetFunctionOptionsAsync()
@@ -819,6 +1113,24 @@ namespace Imaj.Service.Services
             }
 
             return snapshot.CompanyId;
+        }
+
+        private static bool CanDropAbsenceState(decimal stateId)
+        {
+            return stateId == ConfirmedStateId;
+        }
+
+        private static bool CanDiscardAbsenceState(decimal stateId)
+        {
+            return stateId == OpenStateId;
+        }
+
+        private static bool CanEvaluateAbsenceState(decimal stateId)
+        {
+            return stateId == UtilizedStateId
+                || stateId == WastedStateId
+                || stateId == DroppedStateId
+                || stateId == DiscardedStateId;
         }
 
         private static IQueryable<Reserve> ApplyAbsenceScope(IQueryable<Reserve> query, PermissionSnapshotDto snapshot)

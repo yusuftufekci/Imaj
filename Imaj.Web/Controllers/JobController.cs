@@ -15,11 +15,23 @@ namespace Imaj.Web.Controllers
     {
         private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
         private static readonly TimeSpan ReportExecutionTimeout = TimeSpan.FromSeconds(45);
+        private static readonly decimal[] JobStateDisplayOrder = { 110m, 120m, 130m, 140m, 150m, 160m };
+        private const decimal CompleteMethodId = 1334m;
+        private const decimal UndoCompleteMethodId = 1333m;
+        private const decimal PriceMethodId = 1336m;
+        private const decimal UndoPriceMethodId = 1335m;
+        private const decimal CloseMethodId = 1344m;
+        private const decimal UndoCloseMethodId = 1338m;
+        private const decimal DiscardMethodId = 1340m;
+        private const decimal UndoDiscardMethodId = 1339m;
+        private const decimal EvaluateMethodId = 1341m;
+        private const decimal UndoEvaluateMethodId = 1488m;
 
         private readonly IJobService _jobService;
         private readonly ILookupService _lookupService;
         private readonly IPendingInvoiceJobsReportExcelService _pendingInvoiceJobsReportExcelService;
         private readonly IJobReportExcelService _jobReportExcelService;
+        private readonly IPermissionViewService _permissionViewService;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
         public JobController(
@@ -27,12 +39,14 @@ namespace Imaj.Web.Controllers
             ILookupService lookupService,
             IPendingInvoiceJobsReportExcelService pendingInvoiceJobsReportExcelService,
             IJobReportExcelService jobReportExcelService,
+            IPermissionViewService permissionViewService,
             IStringLocalizer<SharedResource> localizer)
         {
             _jobService = jobService;
             _lookupService = lookupService;
             _pendingInvoiceJobsReportExcelService = pendingInvoiceJobsReportExcelService;
             _jobReportExcelService = jobReportExcelService;
+            _permissionViewService = permissionViewService;
             _localizer = localizer;
         }
 
@@ -71,10 +85,10 @@ namespace Imaj.Web.Controllers
                 ContactName = job.Name ?? string.Empty, // "Ad" (Job.Name kişi adı gibi kullanılıyor screenshotta)
                 StartDate = job.StartDate,
                 EndDate = job.EndDate,
-                Status = job.StatusName ?? string.Empty,
+                Status = NormalizeJobStatusName(job.StateId, job.StatusName),
                 IsEmailSent = job.IsEmailSent,
                 IsEvaluated = job.IsEvaluated,
-                InvoiceStatus = job.InvoLineId.HasValue ? L("Billed") : "-",
+                InvoiceStatus = BuildInvoiceDisplay(job),
                 AdminNotes = job.IntNotes ?? string.Empty,
                 CustomerNotes = job.ExtNotes ?? string.Empty,
                 
@@ -279,7 +293,7 @@ namespace Imaj.Web.Controllers
                     CustomerName = j.CustomerName,
                     StartDate = j.StartDate,
                     EndDate = j.EndDate,
-                    Status = j.StatusName,
+                    Status = NormalizeJobStatusName(j.StateId, j.StatusName),
                     IsEmailSent = j.IsEmailSent,
                     IsEvaluated = j.IsEvaluated
                 }).ToList();
@@ -354,10 +368,12 @@ namespace Imaj.Web.Controllers
                 RelatedPerson = job.Contact,
                 StartDate = job.StartDate,
                 EndDate = job.EndDate,
-                Status = job.StatusName,
+                StateId = job.StateId,
+                Status = NormalizeJobStatusName(job.StateId, job.StatusName),
                 IsEmailSent = job.IsEmailSent,
                 IsEvaluated = job.IsEvaluated,
-                InvoiceStatus = job.InvoLineId.HasValue ? L("Billed") : "-",
+                InvoiceStatus = BuildInvoiceDisplay(job),
+                HasInvoiceLink = job.HasInvoiceLink || job.InvoLineId.HasValue,
                 
                 // Mapped Notes
                 AdminNotes = job.IntNotes,
@@ -458,6 +474,36 @@ namespace Imaj.Web.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> WorkflowAction(JobWorkflowActionRequest request)
+        {
+            if (request.Reference <= 0)
+            {
+                TempData["ErrorMessage"] = L("JobNotFound");
+                return RedirectToAction("List");
+            }
+
+            var methodId = ResolveWorkflowMethodId(request.Action);
+            if (!methodId.HasValue)
+            {
+                TempData["ErrorMessage"] = L("GenericError");
+                return RedirectToDetailWithContext(request);
+            }
+
+            var hasPermission = await _permissionViewService.CanExecuteMethodAsync(methodId.Value, write: true);
+            if (!hasPermission)
+            {
+                TempData["ErrorMessage"] = L("AccessDeniedMessage");
+                return RedirectToDetailWithContext(request);
+            }
+
+            var result = await _jobService.ExecuteWorkflowActionAsync(request.Reference, request.Action);
+            TempData[result.IsSuccess ? "SuccessMessage" : "ErrorMessage"] = result.Message ?? (result.IsSuccess ? L("SuccessTitle") : L("GenericError"));
+
+            return RedirectToDetailWithContext(request);
         }
 
         /// <summary>
@@ -573,7 +619,12 @@ namespace Imaj.Web.Controllers
         {
             // Durum listesi - Job kategorisi (StateCategories constant kullanılıyor)
             var statesResult = await _lookupService.GetStatesAsync(StateCategories.Job);
-            ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<StateDto>();
+            ViewBag.States = statesResult.IsSuccess && statesResult.Data != null
+                ? statesResult.Data
+                    .Where(x => JobStateDisplayOrder.Contains(x.Id))
+                    .OrderBy(x => Array.IndexOf(JobStateDisplayOrder, x.Id))
+                    .ToList()
+                : new List<StateDto>();
 
             // Fonksiyon listesi
             var functionsResult = await _lookupService.GetFunctionsAsync();
@@ -669,9 +720,87 @@ namespace Imaj.Web.Controllers
             return true;
         }
 
+        private IActionResult RedirectToDetailWithContext(JobWorkflowActionRequest request)
+        {
+            var selectedIds = request.SelectedIds?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            var referenceText = request.Reference.ToString();
+            if (!selectedIds.Contains(referenceText))
+            {
+                selectedIds.Add(referenceText);
+            }
+
+            var currentIndex = request.CurrentIndex;
+            if (currentIndex < 0)
+            {
+                currentIndex = 0;
+            }
+            if (currentIndex >= selectedIds.Count)
+            {
+                currentIndex = selectedIds.Count - 1;
+            }
+
+            var returnUrl = string.IsNullOrWhiteSpace(request.ReturnUrl) || !request.ReturnUrl.StartsWith('/')
+                ? "/Job/List"
+                : request.ReturnUrl;
+
+            return RedirectToAction("Detail", new
+            {
+                id = referenceText,
+                selectedIds,
+                currentIndex,
+                returnUrl
+            });
+        }
+
+        private static decimal? ResolveWorkflowMethodId(JobWorkflowAction action)
+        {
+            return action switch
+            {
+                JobWorkflowAction.Complete => CompleteMethodId,
+                JobWorkflowAction.UndoComplete => UndoCompleteMethodId,
+                JobWorkflowAction.Price => PriceMethodId,
+                JobWorkflowAction.UndoPrice => UndoPriceMethodId,
+                JobWorkflowAction.Close => CloseMethodId,
+                JobWorkflowAction.UndoClose => UndoCloseMethodId,
+                JobWorkflowAction.Discard => DiscardMethodId,
+                JobWorkflowAction.UndoDiscard => UndoDiscardMethodId,
+                JobWorkflowAction.Evaluate => EvaluateMethodId,
+                JobWorkflowAction.UndoEvaluate => UndoEvaluateMethodId,
+                _ => null
+            };
+        }
+
         private string L(string key)
         {
             return _localizer[key].Value;
+        }
+
+        private string BuildInvoiceDisplay(JobDto job)
+        {
+            if (job.InvoiceReference.HasValue)
+            {
+                if (!string.IsNullOrWhiteSpace(job.InvoiceName))
+                {
+                    return $"{job.InvoiceReference.Value} - {job.InvoiceName}";
+                }
+
+                return job.InvoiceReference.Value.ToString();
+            }
+
+            return job.HasInvoiceLink || job.InvoLineId.HasValue
+                ? L("Billed")
+                : "-";
+        }
+
+        private string NormalizeJobStatusName(decimal stateId, string? statusName)
+        {
+            return stateId == 1m
+                ? L("OpenStatus")
+                : (statusName ?? string.Empty);
         }
 
         private static string BuildFileName(string prefix)

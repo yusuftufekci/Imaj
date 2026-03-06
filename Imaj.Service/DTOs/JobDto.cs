@@ -22,6 +22,9 @@ namespace Imaj.Service.DTOs
         public bool IsEmailSent { get; set; }
         public bool IsEvaluated { get; set; }
         public decimal? InvoLineId { get; set; }
+        public bool HasInvoiceLink { get; set; }
+        public int? InvoiceReference { get; set; }
+        public string? InvoiceName { get; set; }
         public decimal WorkAmount { get; set; }
         public decimal ProductAmount { get; set; }
         public string? IntNotes { get; set; }

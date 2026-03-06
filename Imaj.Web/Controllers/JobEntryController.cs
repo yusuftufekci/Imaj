@@ -274,6 +274,7 @@ namespace Imaj.Web.Controllers
                 RelatedPerson = job.Contact,
                 StartDate = job.StartDate,
                 EndDate = job.EndDate,
+                StateId = job.StateId,
                 Status = job.StatusName,
                 IsEmailSent = job.IsEmailSent,
                 IsEvaluated = job.IsEvaluated,

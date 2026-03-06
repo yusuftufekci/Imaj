@@ -17,26 +17,42 @@ namespace Imaj.Web.Controllers
     {
         private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
         private static readonly TimeSpan ReportExecutionTimeout = TimeSpan.FromSeconds(45);
+        private static readonly decimal[] InvoiceStateDisplayOrder = { 210m, 220m, 230m, 240m, 250m };
+        private const decimal ConfirmMethodId = 1385m;
+        private const decimal UndoConfirmMethodId = 1386m;
+        private const decimal IssueMethodId = 1388m;
+        private const decimal KillMethodId = 1389m;
+        private const decimal DiscardMethodId = 1387m;
+        private const decimal EvaluateMethodId = 1390m;
+        private const decimal UndoEvaluateMethodId = 1490m;
 
         private readonly IInvoiceService _invoiceService;
         private readonly ILookupService _lookupService;
         private readonly IInvoiceReportExcelService _invoiceReportExcelService;
+        private readonly IPermissionViewService _permissionViewService;
 
         public InvoiceController(
             IInvoiceService invoiceService,
             ILookupService lookupService,
             IInvoiceReportExcelService invoiceReportExcelService,
+            IPermissionViewService permissionViewService,
             ILogger<InvoiceController> logger, IStringLocalizer<SharedResource> localizer) : base(logger, localizer)
         {
             _invoiceService = invoiceService;
             _lookupService = lookupService;
             _invoiceReportExcelService = invoiceReportExcelService;
+            _permissionViewService = permissionViewService;
         }
 
         public async Task<IActionResult> Index()
         {
             var statesResult = await _lookupService.GetStatesAsync(StateCategories.Invoice);
-            ViewBag.InvoiceStates = statesResult.IsSuccess ? statesResult.Data : new List<Imaj.Service.DTOs.StateDto>();
+            ViewBag.InvoiceStates = statesResult.IsSuccess && statesResult.Data != null
+                ? statesResult.Data
+                    .Where(x => InvoiceStateDisplayOrder.Contains(x.Id))
+                    .OrderBy(x => Array.IndexOf(InvoiceStateDisplayOrder, x.Id))
+                    .ToList()
+                : new List<Imaj.Service.DTOs.StateDto>();
 
             var model = new InvoiceViewModel
             {
@@ -177,6 +193,7 @@ namespace Imaj.Web.Controllers
                 Invoices = MapDetails(result.Data ?? new List<InvoiceDetailDto>()),
                 SelectedReferences = refs,
                 CurrentIndex = currentIndex,
+                SourceView = "Detail",
                 ReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/Invoice/Results" : returnUrl
             };
 
@@ -201,10 +218,48 @@ namespace Imaj.Web.Controllers
                 Invoices = MapDetails(result.Data ?? new List<InvoiceDetailDto>()),
                 SelectedReferences = refs,
                 CurrentIndex = currentIndex,
+                SourceView = "Summary",
                 ReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/Invoice/Results" : returnUrl
             };
 
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> WorkflowAction(InvoiceWorkflowActionRequest request)
+        {
+            if (request.Reference <= 0)
+            {
+                ShowError(L("HistoryRecordNotFound"));
+                return RedirectToAction("Results");
+            }
+
+            var methodId = ResolveWorkflowMethodId(request.Action);
+            if (!methodId.HasValue)
+            {
+                ShowError(L("GenericError"));
+                return RedirectToInvoiceSource(request);
+            }
+
+            var hasPermission = await _permissionViewService.CanExecuteMethodAsync(methodId.Value, write: true);
+            if (!hasPermission)
+            {
+                ShowError(L("AccessDeniedMessage"));
+                return RedirectToInvoiceSource(request);
+            }
+
+            var result = await _invoiceService.ExecuteWorkflowActionAsync(request.Reference, request.Action, request.IssueDate);
+            if (result.IsSuccess)
+            {
+                ShowSuccess(result.Message ?? L("SuccessTitle"));
+            }
+            else
+            {
+                ShowError(result.Message ?? L("GenericError"));
+            }
+
+            return RedirectToInvoiceSource(request);
         }
 
         [HttpGet]
@@ -377,6 +432,7 @@ namespace Imaj.Web.Controllers
                 Name = invoice.Name ?? "-",
                 RelatedPerson = invoice.RelatedPerson ?? "-",
                 IssueDate = invoice.IssueDate,
+                StateId = invoice.StateId,
                 Status = invoice.StateName ?? "-",
                 Evaluated = invoice.Evaluated,
                 Notes = invoice.Notes ?? string.Empty,
@@ -414,6 +470,61 @@ namespace Imaj.Web.Controllers
                     NetTotal = t.NetTotal
                 }).ToList()
             }).ToList();
+        }
+
+        private IActionResult RedirectToInvoiceSource(InvoiceWorkflowActionRequest request)
+        {
+            var targetAction = string.Equals(request.SourceView, "Summary", StringComparison.OrdinalIgnoreCase)
+                ? "Summary"
+                : "Detail";
+
+            var selectedReferences = request.SelectedReferences?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            var referenceText = request.Reference.ToString();
+            if (!selectedReferences.Contains(referenceText))
+            {
+                selectedReferences.Add(referenceText);
+            }
+
+            var currentIndex = request.CurrentIndex;
+            if (currentIndex < 0)
+            {
+                currentIndex = 0;
+            }
+            if (currentIndex >= selectedReferences.Count)
+            {
+                currentIndex = selectedReferences.Count - 1;
+            }
+
+            var returnUrl = string.IsNullOrWhiteSpace(request.ReturnUrl) || !request.ReturnUrl.StartsWith('/')
+                ? "/Invoice/Results"
+                : request.ReturnUrl;
+
+            return RedirectToAction(targetAction, new
+            {
+                reference = referenceText,
+                selectedReferences,
+                page = currentIndex + 1,
+                returnUrl
+            });
+        }
+
+        private static decimal? ResolveWorkflowMethodId(InvoiceWorkflowAction action)
+        {
+            return action switch
+            {
+                InvoiceWorkflowAction.Confirm => ConfirmMethodId,
+                InvoiceWorkflowAction.UndoConfirm => UndoConfirmMethodId,
+                InvoiceWorkflowAction.Issue => IssueMethodId,
+                InvoiceWorkflowAction.Kill => KillMethodId,
+                InvoiceWorkflowAction.Discard => DiscardMethodId,
+                InvoiceWorkflowAction.Evaluate => EvaluateMethodId,
+                InvoiceWorkflowAction.UndoEvaluate => UndoEvaluateMethodId,
+                _ => null
+            };
         }
 
         private static string BuildFileName(string prefix)

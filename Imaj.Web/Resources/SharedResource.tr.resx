@@ -1164,6 +1164,15 @@
   <data name="SummaryJobReport" xml:space="preserve">
     <value>Özet İş Raporu Bas</value>
   </data>
+  <data name="PrintJobForm" xml:space="preserve">
+    <value>İş Formu Bas</value>
+  </data>
+  <data name="PrintInvoice" xml:space="preserve">
+    <value>Fatura Bas</value>
+  </data>
+  <data name="InvoiceIssueDate" xml:space="preserve">
+    <value>Kesilme Tarihi</value>
+  </data>
   <data name="AllEmployeesSelectedMessage" xml:space="preserve">
     <value>Tüm çalışanlar seçili olduğu için atama listesi kullanılmıyor.</value>
   </data>
@@ -1280,6 +1289,90 @@
   </data>
   <data name="ProductCategoryCreation" xml:space="preserve">
     <value>Ürün Kategorisi Yaratma</value>
+  </data>
+  <data name="AbsenceHistory" xml:space="preserve">
+    <value>Mazeret Geçmişi</value>
+  </data>
+  <data name="WorkflowConfirm" xml:space="preserve">
+    <value>Onayla</value>
+  </data>
+  <data name="WorkflowUndoConfirm" xml:space="preserve">
+    <value>Onayı Geri Al</value>
+  </data>
+  <data name="WorkflowUtilize" xml:space="preserve">
+    <value>Kullan</value>
+  </data>
+  <data name="WorkflowUndoUtilize" xml:space="preserve">
+    <value>Kullanımı Geri Al</value>
+  </data>
+  <data name="WorkflowWaste" xml:space="preserve">
+    <value>Harca</value>
+  </data>
+  <data name="WorkflowUndoWaste" xml:space="preserve">
+    <value>Harcamayı Geri Al</value>
+  </data>
+  <data name="WorkflowDrop" xml:space="preserve">
+    <value>İptal Et</value>
+  </data>
+  <data name="WorkflowDiscard" xml:space="preserve">
+    <value>Reddet</value>
+  </data>
+  <data name="WorkflowComplete" xml:space="preserve">
+    <value>Tamamla</value>
+  </data>
+  <data name="WorkflowUndoComplete" xml:space="preserve">
+    <value>Tamamlamayı Geri Al</value>
+  </data>
+  <data name="WorkflowPrice" xml:space="preserve">
+    <value>Fiyatla</value>
+  </data>
+  <data name="WorkflowUndoPrice" xml:space="preserve">
+    <value>Fiyatlamayı Geri Al</value>
+  </data>
+  <data name="WorkflowClose" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="WorkflowUndoClose" xml:space="preserve">
+    <value>Kapatmayı Geri Al</value>
+  </data>
+  <data name="WorkflowUndoDiscard" xml:space="preserve">
+    <value>İptali Geri Al</value>
+  </data>
+  <data name="WorkflowIssue" xml:space="preserve">
+    <value>Kes</value>
+  </data>
+  <data name="WorkflowKill" xml:space="preserve">
+    <value>İptal Et</value>
+  </data>
+  <data name="WorkflowEvaluate" xml:space="preserve">
+    <value>Değerlendir</value>
+  </data>
+  <data name="WorkflowUndoEvaluate" xml:space="preserve">
+    <value>Değerlendirmeyi Geri Al</value>
+  </data>
+  <data name="WorkflowConfirmTitle" xml:space="preserve">
+    <value>Emin misiniz?</value>
+  </data>
+  <data name="WorkflowConfirmText" xml:space="preserve">
+    <value>Bu işlem uygulanacaktır. Devam etmek istiyor musunuz?</value>
+  </data>
+  <data name="WorkflowLoadingTitle" xml:space="preserve">
+    <value>İşlem yapılıyor</value>
+  </data>
+  <data name="WorkflowLoadingText" xml:space="preserve">
+    <value>Lütfen bekleyiniz...</value>
+  </data>
+  <data name="NewDate" xml:space="preserve">
+    <value>Yeni Tarih</value>
+  </data>
+  <data name="ChangeStartDateButton" xml:space="preserve">
+    <value>Başlangıç Tarihini Değiştir</value>
+  </data>
+  <data name="ChangeEndDateButton" xml:space="preserve">
+    <value>Bitiş Tarihini Değiştir</value>
+  </data>
+  <data name="MoveStartDateButton" xml:space="preserve">
+    <value>Kaydır</value>
   </data>
   <data name="AccessDeniedTitle" xml:space="preserve">
     <value>Erişim Engellendi</value>

@@ -20,14 +20,34 @@ namespace Imaj.Web.Controllers
         private const double AddMethodId = 1086d;
         private const double BrowseMethodId = 1087d;
         private const double ViewMethodId = 1105d;
+        private const decimal ConfirmMethodId = 1133m;
+        private const decimal UndoConfirmMethodId = 1132m;
+        private const decimal UtilizeMethodId = 1135m;
+        private const decimal UndoUtilizeMethodId = 1134m;
+        private const decimal WasteMethodId = 1136m;
+        private const decimal UndoWasteMethodId = 1137m;
+        private const decimal DropMethodId = 1138m;
+        private const decimal DiscardMethodId = 1123m;
+        private const decimal EvaluateMethodId = 1140m;
+        private const decimal UndoEvaluateMethodId = 1486m;
+        private const decimal ChangeStartDateMethodId = 1177m;
+        private const decimal ChangeEndDateMethodId = 1178m;
+        private const decimal MoveStartDateMethodId = 2972m;
+        private const double ViewLogMethodId = 1124d;
         private const decimal OpenStateId = 10m;
 
         private readonly IAbsenceService _absenceService;
+        private readonly IPermissionViewService _permissionViewService;
 
-        public AbsenceController(IAbsenceService absenceService, ILogger<AbsenceController> logger, IStringLocalizer<SharedResource> localizer)
+        public AbsenceController(
+            IAbsenceService absenceService,
+            IPermissionViewService permissionViewService,
+            ILogger<AbsenceController> logger,
+            IStringLocalizer<SharedResource> localizer)
             : base(logger, localizer)
         {
             _absenceService = absenceService;
+            _permissionViewService = permissionViewService;
         }
 
         [HttpGet]
@@ -144,6 +164,162 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        [RequireMethodPermission(ViewLogMethodId)]
+        public async Task<IActionResult> History(decimal? id, string[]? selectedIds = null, int currentIndex = 0, string? returnUrl = null)
+        {
+            var resolved = ResolveSelection(id, selectedIds, currentIndex);
+            if (!resolved.ResolvedId.HasValue)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var detailResult = await _absenceService.GetAbsenceDetailAsync(resolved.ResolvedId.Value);
+            if (!detailResult.IsSuccess || detailResult.Data == null)
+            {
+                ShowError(detailResult.Message ?? L("AbsenceNotFound"));
+                return RedirectToAction("List");
+            }
+
+            var historyResult = await _absenceService.GetAbsenceHistoryAsync(resolved.ResolvedId.Value);
+            if (!historyResult.IsSuccess || historyResult.Data == null)
+            {
+                ShowError(historyResult.Message ?? L("GenericError"));
+                return RedirectToAction("Detail", new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = NormalizeReturnUrl(returnUrl, "/Absence/List")
+                });
+            }
+
+            var detailModel = MapDetail(detailResult.Data);
+            detailModel.SelectedIds = resolved.SelectedIds;
+            detailModel.CurrentIndex = resolved.CurrentIndex;
+            detailModel.TotalSelected = resolved.SelectedIds.Count;
+            detailModel.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Absence/List");
+
+            var model = new AbsenceHistoryViewModel
+            {
+                Absence = detailModel,
+                Items = historyResult.Data.Select(x => new AbsenceHistoryItemViewModel
+                {
+                    Date = x.LogDate,
+                    UserCode = x.UserCode,
+                    UserName = x.UserName,
+                    Action = x.ActionName
+                }).ToList(),
+                ReturnUrl = NormalizeReturnUrl(returnUrl, "/Absence/List")
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> WorkflowAction(AbsenceWorkflowActionRequest request)
+        {
+            if (request.Id <= 0)
+            {
+                ShowError(L("AbsenceNotFound"));
+                return RedirectToAction("List");
+            }
+
+            var methodId = ResolveWorkflowMethodId(request.Action);
+            if (!methodId.HasValue)
+            {
+                ShowError(L("GenericError"));
+                return RedirectToAbsenceDetail(request);
+            }
+
+            var hasPermission = await _permissionViewService.CanExecuteMethodAsync(methodId.Value, write: true);
+            if (!hasPermission)
+            {
+                ShowError(L("AccessDeniedMessage"));
+                return RedirectToAbsenceDetail(request);
+            }
+
+            var result = await _absenceService.ExecuteWorkflowActionAsync(request.Id, request.Action);
+            if (result.IsSuccess)
+            {
+                ShowSuccess(result.Message ?? L("SuccessTitle"));
+            }
+            else
+            {
+                ShowError(result.Message ?? L("GenericError"));
+            }
+
+            return RedirectToAbsenceDetail(request);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ScheduleAction(AbsenceScheduleActionRequest request)
+        {
+            if (request.Id <= 0)
+            {
+                ShowError(L("AbsenceNotFound"));
+                return RedirectToAction("List");
+            }
+
+            if (request.NewDate == default)
+            {
+                ShowError(L("PleaseEnterStartDate"));
+                return RedirectToAbsenceDetail(new AbsenceWorkflowActionRequest
+                {
+                    Id = request.Id,
+                    SelectedIds = request.SelectedIds,
+                    CurrentIndex = request.CurrentIndex,
+                    ReturnUrl = request.ReturnUrl
+                });
+            }
+
+            var methodId = ResolveScheduleMethodId(request.Action);
+            if (!methodId.HasValue)
+            {
+                ShowError(L("GenericError"));
+                return RedirectToAbsenceDetail(new AbsenceWorkflowActionRequest
+                {
+                    Id = request.Id,
+                    SelectedIds = request.SelectedIds,
+                    CurrentIndex = request.CurrentIndex,
+                    ReturnUrl = request.ReturnUrl
+                });
+            }
+
+            var hasPermission = await _permissionViewService.CanExecuteMethodAsync(methodId.Value, write: true);
+            if (!hasPermission)
+            {
+                ShowError(L("AccessDeniedMessage"));
+                return RedirectToAbsenceDetail(new AbsenceWorkflowActionRequest
+                {
+                    Id = request.Id,
+                    SelectedIds = request.SelectedIds,
+                    CurrentIndex = request.CurrentIndex,
+                    ReturnUrl = request.ReturnUrl
+                });
+            }
+
+            var result = await _absenceService.UpdateAbsenceScheduleAsync(request.Id, request.NewDate, request.Action);
+            if (result.IsSuccess)
+            {
+                ShowSuccess(result.Message ?? L("SuccessTitle"));
+            }
+            else
+            {
+                ShowError(result.Message ?? L("GenericError"));
+            }
+
+            return RedirectToAbsenceDetail(new AbsenceWorkflowActionRequest
+            {
+                Id = request.Id,
+                SelectedIds = request.SelectedIds,
+                CurrentIndex = request.CurrentIndex,
+                ReturnUrl = request.ReturnUrl
+            });
+        }
+
+        [HttpGet]
         [RequireMethodPermission(AddMethodId)]
         public async Task<IActionResult> Create(decimal? functionId = null, DateTime? startDate = null, DateTime? endDate = null, string? returnUrl = null)
         {
@@ -230,6 +406,71 @@ namespace Imaj.Web.Controllers
 
             ShowSuccess(result.Message ?? L("AbsenceSavedSuccess"));
             return RedirectToAction("Index");
+        }
+
+        private IActionResult RedirectToAbsenceDetail(AbsenceWorkflowActionRequest request)
+        {
+            var selectedIds = request.SelectedIds?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            var idText = request.Id.ToString(CultureInfo.InvariantCulture);
+            if (!selectedIds.Contains(idText))
+            {
+                selectedIds.Add(idText);
+            }
+
+            var currentIndex = request.CurrentIndex;
+            if (currentIndex < 0)
+            {
+                currentIndex = 0;
+            }
+            if (currentIndex >= selectedIds.Count)
+            {
+                currentIndex = selectedIds.Count - 1;
+            }
+
+            var returnUrl = string.IsNullOrWhiteSpace(request.ReturnUrl) || !request.ReturnUrl.StartsWith('/')
+                ? "/Absence/List"
+                : request.ReturnUrl;
+
+            return RedirectToAction("Detail", new
+            {
+                id = idText,
+                selectedIds,
+                currentIndex,
+                returnUrl
+            });
+        }
+
+        private static decimal? ResolveWorkflowMethodId(AbsenceWorkflowAction action)
+        {
+            return action switch
+            {
+                AbsenceWorkflowAction.Confirm => ConfirmMethodId,
+                AbsenceWorkflowAction.UndoConfirm => UndoConfirmMethodId,
+                AbsenceWorkflowAction.Utilize => UtilizeMethodId,
+                AbsenceWorkflowAction.UndoUtilize => UndoUtilizeMethodId,
+                AbsenceWorkflowAction.Waste => WasteMethodId,
+                AbsenceWorkflowAction.UndoWaste => UndoWasteMethodId,
+                AbsenceWorkflowAction.Drop => DropMethodId,
+                AbsenceWorkflowAction.Discard => DiscardMethodId,
+                AbsenceWorkflowAction.Evaluate => EvaluateMethodId,
+                AbsenceWorkflowAction.UndoEvaluate => UndoEvaluateMethodId,
+                _ => null
+            };
+        }
+
+        private static decimal? ResolveScheduleMethodId(AbsenceScheduleAction action)
+        {
+            return action switch
+            {
+                AbsenceScheduleAction.ChangeStartDate => ChangeStartDateMethodId,
+                AbsenceScheduleAction.ChangeEndDate => ChangeEndDateMethodId,
+                AbsenceScheduleAction.MoveStartDate => MoveStartDateMethodId,
+                _ => null
+            };
         }
 
         private string BuildCurrentReturnUrl()
