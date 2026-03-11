@@ -21,7 +21,7 @@
     <form method="get" action="/JobEntry/List">
         <!-- Main Filter Card -->
         <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
-            <div class="px-4 py-5 sm:p-6">
+            <div class="px-4 py-5 sm:p-6 mobile-stack-form">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     
                     <!-- COLUMN 1: İŞ KRİTERİ (Job Criteria) -->
@@ -50,7 +50,7 @@
                         <!-- Müşteri -->
                         <div class="grid grid-cols-12 gap-4 items-center">
                             <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Customer"]</label>
-                            <div class="col-span-8 flex space-x-2">
+                            <div class="col-span-8 flex space-x-2 picker-inline">
                                 <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
                                 <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
                                 <input type="text" readonly x-model="customerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
@@ -61,7 +61,7 @@
                         <!-- @Localizer["ReferenceRange"] -->
                         <div class="grid grid-cols-12 gap-4 items-center">
                             <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["ReferenceRange"]</label>
-                            <div class="col-span-8 flex space-x-2">
+                            <div class="col-span-8 flex space-x-2 picker-inline">
                                 <input type="text" name="Filter.ReferenceStart" x-model="filter.referenceStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md">
                                 <input type="text" name="Filter.ReferenceEnd" x-model="filter.referenceEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md">
                             </div>
@@ -94,7 +94,7 @@
                         <!-- @Localizer["StartDate"] -->
                         <div class="grid grid-cols-12 gap-4 items-center">
                             <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["StartDateRange"]</label>
-                            <div class="col-span-8 flex space-x-2">
+                            <div class="col-span-8 flex space-x-2 picker-inline">
                                 <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")">
                                 <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")">
                             </div>
@@ -103,7 +103,7 @@
                         <!-- @Localizer["EndDate"] -->
                         <div class="grid grid-cols-12 gap-4 items-center">
                             <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["EndDateRange"]</label>
-                            <div class="col-span-8 flex space-x-2">
+                            <div class="col-span-8 flex space-x-2 picker-inline">
                                 <input type="date" name="Filter.EndDateStart" x-model="filter.endDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                                 <input type="date" name="Filter.EndDateEnd" x-model="filter.endDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             </div>
@@ -164,7 +164,7 @@
                                 <!-- Çalışan -->
                                 <div class="grid grid-cols-12 gap-4 items-center">
                                     <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Employee"]</label>
-                                    <div class="col-span-8 flex space-x-2">
+                                    <div class="col-span-8 flex space-x-2 picker-inline">
                                         <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
                                         <input type="text" readonly x-model="filter.employeeName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
                                         <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
@@ -216,7 +216,7 @@
                                 <!-- Ürün -->
                                 <div class="grid grid-cols-12 gap-4 items-center">
                                     <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Product"]</label>
-                                    <div class="col-span-8 flex space-x-2">
+                                    <div class="col-span-8 flex space-x-2 picker-inline">
                                         <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
                                         <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
                                         <input type="text" readonly x-model="filter.productName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
@@ -232,7 +232,7 @@
                 
                 <!-- BUTTONS -->
                 <div class="mt-8 flex flex-col items-center space-y-4 border-t border-gray-200 pt-6">
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-3 responsive-inline-group">
                         <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
                         <input type="number" name="Filter.First" x-model="filter.first" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
                         <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
@@ -254,7 +254,7 @@
              <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
                  <h3 class="text-lg font-semibold text-gray-800">@Localizer["PreInformation"]</h3>
              </div>
-             <div class="p-6">
+             <div class="p-6 mobile-stack-form">
                  <div class="grid grid-cols-12 gap-4 items-center justify-center">
                      <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Function"]</label>
                      <div class="col-span-6">
@@ -270,7 +270,7 @@
                          </select>
                      </div>
                  </div>
-                 <div class="mt-4 flex justify-center">
+                 <div class="mt-4 flex justify-center responsive-action-group">
                      <a href="/JobEntry/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                         @Localizer["CreateNewJob"]
                     </a>

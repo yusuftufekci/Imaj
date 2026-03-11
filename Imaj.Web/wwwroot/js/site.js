@@ -16,30 +16,6 @@ const getCsrfToken = () => {
 };
 
 // ============================================
-// Mobile Menu Toggle
-// ============================================
-document.addEventListener('DOMContentLoaded', function () {
-    const mobileMenuButton = document.querySelector('[aria-controls="mobile-menu"]');
-    const mobileMenu = document.getElementById('mobile-menu');
-
-    if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', function () {
-            const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
-
-            // Toggle menu visibility
-            mobileMenu.classList.toggle('hidden');
-
-            // Update aria-expanded attribute
-            mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
-
-            // Toggle hamburger/close icon
-            const icons = mobileMenuButton.querySelectorAll('svg');
-            icons.forEach(icon => icon.classList.toggle('hidden'));
-        });
-    }
-});
-
-// ============================================
 // API Service - Merkezi fetch wrapper
 // ============================================
 const API = {

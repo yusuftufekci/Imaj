@@ -24,7 +24,7 @@
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["MainCriteria"]</h3>
             </div>
-            <div class="px-4 py-5 sm:p-6 space-y-6">
+            <div class="px-4 py-5 sm:p-6 space-y-6 mobile-stack-form">
                 <div class="space-y-4">
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
@@ -102,7 +102,7 @@
                 </div>
 
                 <div class="pt-6 border-t border-gray-200">
-                    <div class="flex flex-wrap items-center justify-center gap-3">
+                    <div class="flex flex-wrap items-center justify-center gap-3 responsive-inline-group">
                         <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
                         <input type="number" name="First" value="@firstValue" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm">
                         <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
@@ -129,7 +129,7 @@
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
                     <h3 class="text-lg font-semibold text-gray-800">@Localizer["Resource"]</h3>
                 </div>
-                <form method="get" action="/Resource/Create" class="p-6 space-y-4">
+                <form method="get" action="/Resource/Create" class="p-6 space-y-4 mobile-stack-form">
 
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
                         <label class="md:col-span-4 text-gray-700 font-medium md:text-right">@Localizer["Function"]</label>

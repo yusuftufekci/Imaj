@@ -29,37 +29,42 @@
     string BuildUrl(int page) => $"{Model.BaseUrl}{queryString}{separator}page={page}&pageSize={Model.PageSize}";
 }
 
-<div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+<div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
     <!-- Mobile -->
-    <div class="flex-1 flex justify-between sm:hidden">
-        @if (showFirst)
-        {
-            <a href="@BuildUrl(1)" 
-               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                @Localizer["First"]
-            </a>
-        }
-        @if (showPrevious)
-        {
-            <a href="@BuildUrl(Model.CurrentPage - 1)" 
-               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                @Localizer["Previous"]
-            </a>
-        }
-        @if (showNext)
-        {
-            <a href="@BuildUrl(Model.CurrentPage + 1)" 
-               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                @Localizer["Next"]
-            </a>
-        }
-        @if (showLast)
-        {
-            <a href="@BuildUrl(totalPages)" 
-               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                @Localizer["Last"]
-            </a>
-        }
+    <div class="space-y-3 sm:hidden">
+        <p class="text-center text-sm text-gray-700">
+            @Localizer["Page"] <span class="font-medium">@Model.CurrentPage</span> / <span class="font-medium">@Math.Max(totalPages, 1)</span>
+            · @Localizer["Total"] <span class="font-medium">@Model.TotalCount</span> @Localizer["Records"]
+        </p>
+        <div class="grid grid-cols-2 gap-2">
+            @if (showPrevious)
+            {
+                <a href="@BuildUrl(Model.CurrentPage - 1)"
+                   class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    @Localizer["Previous"]
+                </a>
+            }
+            else
+            {
+                <span class="inline-flex items-center justify-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+                    @Localizer["Previous"]
+                </span>
+            }
+
+            @if (showNext)
+            {
+                <a href="@BuildUrl(Model.CurrentPage + 1)"
+                   class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    @Localizer["Next"]
+                </a>
+            }
+            else
+            {
+                <span class="inline-flex items-center justify-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-md text-gray-400 bg-gray-50 cursor-not-allowed">
+                    @Localizer["Next"]
+                </span>
+            }
+        </div>
     </div>
     
     <!-- Desktop -->

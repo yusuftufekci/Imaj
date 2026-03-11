@@ -76,13 +76,13 @@
     };
 }
 
-<div class="space-y-6">
+<div class="space-y-6 mobile-stack-form">
     <div class="text-center">
         <h2 class="text-3xl font-bold text-orange-600">@Localizer["Employee"]</h2>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mobile-detail-grid">
+        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["BasicInfo"]</h3>
             </div>
@@ -100,7 +100,7 @@
             </div>
         </section>
 
-        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["Function"] (@Model.Functions.Count)</h3>
             </div>
@@ -139,7 +139,7 @@
             </div>
         </section>
 
-        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["WorkType"] (@Model.WorkTypes.Count)</h3>
             </div>
@@ -178,7 +178,7 @@
             </div>
         </section>
 
-        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["OvertimeType"] (@Model.TimeTypes.Count)</h3>
             </div>
@@ -223,7 +223,7 @@
         <partial name="~/Views/Shared/_DetailNavigator.cshtml" model="navigatorModel" />
     }
 
-    <div class="flex items-center justify-center gap-3">
+    <div class="flex items-center justify-center gap-3 responsive-action-group">
         @if (canEdit)
         {
             <a href="@BuildEditUrl()" class="inline-flex items-center px-5 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">
