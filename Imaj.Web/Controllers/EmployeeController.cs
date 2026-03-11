@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
+using Imaj.Web.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Imaj.Web.Controllers
@@ -24,7 +25,7 @@ namespace Imaj.Web.Controllers
             {
                 return Ok(result.Data);
             }
-            return BadRequest(result.Message);
+            return BadRequest(this.LocalizeUiMessage(result.Message));
         }
 
         [HttpGet("functions")]
@@ -35,7 +36,7 @@ namespace Imaj.Web.Controllers
             {
                 return Ok(result.Data);
             }
-            return BadRequest(result.Message);
+            return BadRequest(this.LocalizeUiMessage(result.Message));
         }
     }
 }

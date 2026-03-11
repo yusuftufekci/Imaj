@@ -177,7 +177,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? L("FunctionListUnavailable"));
+                return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, result.Message, L("FunctionListUnavailable")));
             }
 
             return Json(new

@@ -136,7 +136,7 @@ namespace Imaj.Web.Controllers
 
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var fileBytes = _invoiceReportExcelService.BuildDetailedReport(reportResult.Data);
@@ -168,7 +168,7 @@ namespace Imaj.Web.Controllers
 
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var fileBytes = _invoiceReportExcelService.BuildSummaryReport(reportResult.Data);

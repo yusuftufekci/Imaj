@@ -1,4 +1,5 @@
 using Imaj.Web.Models;
+using Imaj.Web.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Threading.Tasks;
@@ -66,7 +67,7 @@ namespace Imaj.Web.Controllers
             {
                 return Json(result.Data);
             }
-            return BadRequest(result.Message);
+            return BadRequest(this.LocalizeUiMessage(result.Message));
         }
 
         [HttpGet]
@@ -78,7 +79,7 @@ namespace Imaj.Web.Controllers
             {
                 return Json(result.Data);
             }
-            return BadRequest(result.Message);
+            return BadRequest(this.LocalizeUiMessage(result.Message));
         }
 
         [HttpGet]
@@ -90,7 +91,7 @@ namespace Imaj.Web.Controllers
             {
                 return Json(result.Data);
             }
-            return BadRequest(result.Message);
+            return BadRequest(this.LocalizeUiMessage(result.Message));
         }
 
         private static bool IsAllOption(string? value)

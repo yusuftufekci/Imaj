@@ -1383,5 +1383,161 @@
   <data name="GoHome" xml:space="preserve">
     <value>Go Home</value>
   </data>
+  <data name="UserValidationFailed" xml:space="preserve">
+    <value>User information could not be validated.</value>
+  </data>
+  <data name="InvalidAction" xml:space="preserve">
+    <value>Invalid operation.</value>
+  </data>
+  <data name="JobReferenceRequired" xml:space="preserve">
+    <value>Job reference is required.</value>
+  </data>
+  <data name="JobNotFound" xml:space="preserve">
+    <value>Job not found.</value>
+  </data>
+  <data name="JobOutOfScope" xml:space="preserve">
+    <value>Job record is out of scope.</value>
+  </data>
+  <data name="JobAlreadyEvaluatedUndoOnly" xml:space="preserve">
+    <value>Only undo evaluate is allowed for evaluated jobs.</value>
+  </data>
+  <data name="JobCompleteRequiresOpen" xml:space="preserve">
+    <value>The job must be open to complete it.</value>
+  </data>
+  <data name="JobCompleteNotAllowedWhenInvoiced" xml:space="preserve">
+    <value>You cannot complete an invoiced job.</value>
+  </data>
+  <data name="JobUndoCompleteRequiresCompleted" xml:space="preserve">
+    <value>The job must be completed to undo completion.</value>
+  </data>
+  <data name="JobUndoCompleteNotAllowedWhenInvoiced" xml:space="preserve">
+    <value>You cannot undo completion for an invoiced job.</value>
+  </data>
+  <data name="JobPriceRequiresCompleted" xml:space="preserve">
+    <value>The job must be completed to price it.</value>
+  </data>
+  <data name="JobPriceNotAllowedWhenInvoiced" xml:space="preserve">
+    <value>You cannot price an invoiced job.</value>
+  </data>
+  <data name="JobUndoPriceRequiresPriced" xml:space="preserve">
+    <value>The job must be priced to undo pricing.</value>
+  </data>
+  <data name="JobUndoPriceNotAllowedWhenInvoiced" xml:space="preserve">
+    <value>You cannot undo pricing for an invoiced job.</value>
+  </data>
+  <data name="JobCloseRequiresCompleted" xml:space="preserve">
+    <value>The job must be completed to close it.</value>
+  </data>
+  <data name="JobUndoCloseRequiresClosed" xml:space="preserve">
+    <value>The job must be closed to undo closing.</value>
+  </data>
+  <data name="JobCancelNotAllowed" xml:space="preserve">
+    <value>Cancel is not valid for this state.</value>
+  </data>
+  <data name="JobCancelNotAllowedWhenInvoiced" xml:space="preserve">
+    <value>You cannot cancel an invoiced job.</value>
+  </data>
+  <data name="JobUndoCancelRequiresCancelled" xml:space="preserve">
+    <value>The job must be cancelled to undo cancellation.</value>
+  </data>
+  <data name="JobEvaluateNotAllowed" xml:space="preserve">
+    <value>Evaluate is not valid for this job.</value>
+  </data>
+  <data name="JobUndoEvaluateNotAllowed" xml:space="preserve">
+    <value>Undo evaluate is not valid for this job.</value>
+  </data>
+  <data name="JobStatusUpdateFailed" xml:space="preserve">
+    <value>Job status could not be updated.</value>
+  </data>
+  <data name="InvoiceReferenceRequired" xml:space="preserve">
+    <value>Invoice reference is required.</value>
+  </data>
+  <data name="InvoiceNotFound" xml:space="preserve">
+    <value>Invoice not found.</value>
+  </data>
+  <data name="InvoiceOutOfScope" xml:space="preserve">
+    <value>Invoice record is out of scope.</value>
+  </data>
+  <data name="InvoiceAlreadyEvaluatedUndoOnly" xml:space="preserve">
+    <value>Only undo evaluate is allowed for evaluated invoices.</value>
+  </data>
+  <data name="InvoiceConfirmRequiresOpen" xml:space="preserve">
+    <value>The invoice must be open to confirm it.</value>
+  </data>
+  <data name="InvoiceUndoConfirmRequiresApproved" xml:space="preserve">
+    <value>The invoice must be approved to undo confirmation.</value>
+  </data>
+  <data name="InvoiceIssueRequiresApproved" xml:space="preserve">
+    <value>The invoice must be approved to issue it.</value>
+  </data>
+  <data name="InvoiceIssueDateRequired" xml:space="preserve">
+    <value>Issue date is required.</value>
+  </data>
+  <data name="InvoiceCancelNotAllowed" xml:space="preserve">
+    <value>Cancel is not valid for this state.</value>
+  </data>
+  <data name="InvoiceRejectNotAllowed" xml:space="preserve">
+    <value>Reject is not valid for this state.</value>
+  </data>
+  <data name="InvoiceEvaluateNotAllowed" xml:space="preserve">
+    <value>Evaluate is not valid for this invoice.</value>
+  </data>
+  <data name="InvoiceUndoEvaluateNotAllowed" xml:space="preserve">
+    <value>Undo evaluate is not valid for this invoice.</value>
+  </data>
+  <data name="InvoiceStatusUpdateFailed" xml:space="preserve">
+    <value>Invoice status could not be updated.</value>
+  </data>
+  <data name="AbsenceIdRequired" xml:space="preserve">
+    <value>Absence ID is required.</value>
+  </data>
+  <data name="AbsenceOutOfScope" xml:space="preserve">
+    <value>Absence record is out of scope.</value>
+  </data>
+  <data name="AbsenceAlreadyEvaluatedUndoOnly" xml:space="preserve">
+    <value>Undo evaluate must be applied first for evaluated absences.</value>
+  </data>
+  <data name="AbsenceConfirmRequiresOpen" xml:space="preserve">
+    <value>The record must be open to confirm it.</value>
+  </data>
+  <data name="AbsenceUndoConfirmRequiresApproved" xml:space="preserve">
+    <value>The record must be approved to undo confirmation.</value>
+  </data>
+  <data name="AbsenceUseRequiresApproved" xml:space="preserve">
+    <value>The record must be approved to use it.</value>
+  </data>
+  <data name="AbsenceUndoUseRequiresUsed" xml:space="preserve">
+    <value>The record must be used to undo utilization.</value>
+  </data>
+  <data name="AbsenceSpendRequiresApproved" xml:space="preserve">
+    <value>The record must be approved to spend it.</value>
+  </data>
+  <data name="AbsenceUndoSpendRequiresSpent" xml:space="preserve">
+    <value>The record must be spent to undo spending.</value>
+  </data>
+  <data name="AbsenceCancelNotAllowed" xml:space="preserve">
+    <value>Cancel is not valid for this state.</value>
+  </data>
+  <data name="AbsenceRejectNotAllowed" xml:space="preserve">
+    <value>Reject is not valid for this state.</value>
+  </data>
+  <data name="AbsenceEvaluateNotAllowed" xml:space="preserve">
+    <value>Evaluate is not valid for this record.</value>
+  </data>
+  <data name="AbsenceUndoEvaluateNotAllowed" xml:space="preserve">
+    <value>Undo evaluate is not valid for this record.</value>
+  </data>
+  <data name="AbsenceStatusUpdateFailed" xml:space="preserve">
+    <value>Absence status could not be updated.</value>
+  </data>
+  <data name="AbsenceDateChangeOnlyOpen" xml:space="preserve">
+    <value>Date change is only allowed for open absences.</value>
+  </data>
+  <data name="AbsenceDateChangeNotAllowedWhenEvaluated" xml:space="preserve">
+    <value>Date change is not allowed for evaluated absences.</value>
+  </data>
+  <data name="EndDateAfterStartRequired" xml:space="preserve">
+    <value>End date must be greater than start date.</value>
+  </data>
 
 </root>

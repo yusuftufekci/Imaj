@@ -1,6 +1,7 @@
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
+using Imaj.Web.Extensions;
 using Imaj.Web;
 using Imaj.Web.Models;
 using Imaj.Web.Services.Reports;
@@ -44,7 +45,7 @@ namespace Imaj.Web.Controllers
             var reportResult = await _productReportService.GetDetailedReportAsync(filter);
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var fileBytes = _productReportExcelService.BuildDetailedReport(reportResult.Data, excelContext);

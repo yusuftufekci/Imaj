@@ -4,6 +4,7 @@ using Imaj.Service.Interfaces;
 using Imaj.Service.Results;
 using Imaj.Web;
 using Imaj.Web.Authorization;
+using Imaj.Web.Extensions;
 using Imaj.Web.Models;
 using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
@@ -141,7 +142,7 @@ namespace Imaj.Web.Controllers
             }
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var context = new PendingInvoiceJobsReportExcelContext
@@ -177,7 +178,7 @@ namespace Imaj.Web.Controllers
             }
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var context = new PendingInvoiceJobsReportExcelContext
@@ -213,7 +214,7 @@ namespace Imaj.Web.Controllers
             }
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var fileBytes = _jobReportExcelService.BuildDetailedReport(reportResult.Data);
@@ -242,7 +243,7 @@ namespace Imaj.Web.Controllers
             }
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var fileBytes = _jobReportExcelService.BuildSummaryReport(reportResult.Data);
@@ -601,7 +602,7 @@ namespace Imaj.Web.Controllers
             // Başarısız
             if (isAjax)
             {
-                return Json(new { success = false, message = result.Message ?? L("SaveError") });
+                return Json(new { success = false, message = this.LocalizeUiMessage(result.Message, L("SaveError")) });
             }
 
             // TempData ile error mesajı set et

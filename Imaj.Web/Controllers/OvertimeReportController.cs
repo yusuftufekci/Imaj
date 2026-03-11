@@ -2,6 +2,7 @@ using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web.Authorization;
+using Imaj.Web.Extensions;
 using Imaj.Web.Models;
 using Imaj.Web;
 using Imaj.Web.Services.Reports;
@@ -57,7 +58,7 @@ namespace Imaj.Web.Controllers
                 return Json(result.Data);
             }
 
-            return BadRequest(result.Message ?? L("GenericError"));
+            return BadRequest(this.LocalizeUiMessage(result.Message, L("GenericError")));
         }
 
         [HttpPost]
@@ -104,7 +105,7 @@ namespace Imaj.Web.Controllers
             var reportResult = await _jobService.GetDetailedOvertimeReportAsync(reportFilter);
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var fileBytes = _overtimeReportExcelService.BuildDetailedReport(reportResult.Data, excelContext);
@@ -123,7 +124,7 @@ namespace Imaj.Web.Controllers
             var reportResult = await _jobService.GetSummaryOvertimeReportAsync(reportFilter);
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var fileBytes = _overtimeReportExcelService.BuildSummaryReport(reportResult.Data, excelContext);
@@ -142,7 +143,7 @@ namespace Imaj.Web.Controllers
             var reportResult = await _jobService.GetAdministrativeSummaryOvertimeReportAsync(reportFilter);
             if (!reportResult.IsSuccess || reportResult.Data == null)
             {
-                return BadRequest(reportResult.Message ?? L("ReportDataUnavailable"));
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
             }
 
             var fileBytes = _overtimeReportExcelService.BuildAdministrativeSummaryReport(reportResult.Data, excelContext);

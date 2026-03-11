@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Imaj.Service.Options;
 using Imaj.Web.Authorization;
+using Imaj.Web.Services.Localization;
 using Imaj.Web.Services.Reports;
 
 namespace Imaj.Web.Extensions
@@ -60,6 +61,7 @@ namespace Imaj.Web.Extensions
             services.AddScoped<IPageRouteResolver, PageRouteResolver>();
             services.AddScoped<ImajAuthorizationFilter>();
             services.AddScoped<IPermissionViewService, PermissionViewService>();
+            services.AddSingleton<IUiMessageLocalizer, UiMessageLocalizer>();
             services.AddScoped<IOvertimeReportExcelService, OvertimeReportExcelService>();
             services.AddScoped<IProductReportExcelService, ProductReportExcelService>();
             services.AddScoped<ICustomerReportExcelService, CustomerReportExcelService>();

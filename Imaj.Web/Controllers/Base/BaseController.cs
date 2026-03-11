@@ -1,5 +1,6 @@
 using Imaj.Service.Results;
 using Imaj.Web;
+using Imaj.Web.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -88,7 +89,7 @@ namespace Imaj.Web.Controllers.Base
         /// <param name="message">Gösterilecek mesaj</param>
         protected void ShowSuccess(string message)
         {
-            TempData["SuccessMessage"] = WebUtility.HtmlDecode(message);
+            TempData["SuccessMessage"] = ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, WebUtility.HtmlDecode(message));
         }
 
         /// <summary>
@@ -97,7 +98,7 @@ namespace Imaj.Web.Controllers.Base
         /// <param name="message">Gösterilecek mesaj</param>
         protected void ShowError(string message)
         {
-            TempData["ErrorMessage"] = WebUtility.HtmlDecode(message);
+            TempData["ErrorMessage"] = ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, WebUtility.HtmlDecode(message));
         }
     }
 }

@@ -372,7 +372,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? L("ResourceListUnavailable"));
+                return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, result.Message, L("ResourceListUnavailable")));
             }
 
             return Json(new

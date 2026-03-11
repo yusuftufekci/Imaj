@@ -3,6 +3,7 @@ using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
 using Imaj.Web;
 using Imaj.Web.Authorization;
+using Imaj.Web.Extensions;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -477,7 +478,7 @@ namespace Imaj.Web.Controllers
             // Başarısız
             if (isAjax)
             {
-                return Json(new { success = false, message = result.Message ?? L("SaveError") });
+                return Json(new { success = false, message = this.LocalizeUiMessage(result.Message, L("SaveError")) });
             }
 
             // TempData ile error mesajı set et

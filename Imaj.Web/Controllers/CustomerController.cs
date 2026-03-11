@@ -55,7 +55,7 @@ namespace Imaj.Web.Controllers
             {
                 return Json(result.Data);
             }
-            return BadRequest(result.Message);
+            return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, result.Message));
         }
 
         [HttpGet]
@@ -67,7 +67,7 @@ namespace Imaj.Web.Controllers
             {
                 return Json(result.Data);
             }
-            return BadRequest(result.Message);
+            return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, result.Message));
         }
 
         [HttpPost]

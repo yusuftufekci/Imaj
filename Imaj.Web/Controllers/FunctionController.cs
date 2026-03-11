@@ -193,7 +193,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? L("ProductListUnavailable"));
+                return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, result.Message, L("ProductListUnavailable")));
             }
 
             return Json(new
@@ -223,7 +223,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess || result.Data == null)
             {
-                return BadRequest(result.Message ?? L("ResoCatListUnavailable"));
+                return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, result.Message, L("ResoCatListUnavailable")));
             }
 
             return Json(new
