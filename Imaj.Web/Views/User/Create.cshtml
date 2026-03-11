@@ -42,7 +42,7 @@
      @@role-selected.window="handleRoleSelection($event.detail)"
      @@user-function-selected.window="handleFunctionSelection($event.detail)"
      @@employee-selected.window="handleEmployeeSelection($event.detail)"
-     class="space-y-6">
+     class="space-y-6 mobile-stack-form">
 
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
@@ -59,7 +59,7 @@
         </div>
     }
 
-    <form method="post" action="/User/Save" class="space-y-4">
+    <form method="post" action="/User/Save" class="space-y-4 mobile-stack-form">
         @Html.AntiForgeryToken()
         <input type="hidden" name="CompanyId" value="@Model.CompanyId" />
 
@@ -112,7 +112,7 @@
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                     <h3 class="text-lg font-semibold text-gray-800">@Localizer["Role"]</h3>
                 </div>
@@ -142,7 +142,7 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm">
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm responsive-action-group">
                     <span class="text-blue-900 font-semibold">@Localizer["PageSize"]</span>
                     <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
                     <button type="button" @@click="removeSelectedRoles" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
@@ -150,7 +150,7 @@
                 </div>
             </section>
 
-            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                     <h3 class="text-lg font-semibold text-gray-800">@Localizer["Function"]</h3>
                 </div>
@@ -178,7 +178,7 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm">
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm responsive-action-group">
                     <span class="text-blue-900 font-semibold">@Localizer["PageSize"]</span>
                     <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
                     <button type="button" @@click="removeSelectedFunctions" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
@@ -187,7 +187,7 @@
             </section>
         </div>
 
-        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+        <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["Employee"]</h3>
             </div>
@@ -218,13 +218,13 @@
                     </tr>
                 </tbody>
             </table>
-            <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm">
+            <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm responsive-action-group">
                 <button type="button" @@click="removeSelectedEmployees" class="text-red-600 font-semibold hover:underline" :disabled="form.allEmployee">@Localizer["Delete"]</button>
                 <button type="button" @@click="openEmployeeModal" class="text-blue-700 font-semibold hover:underline" :disabled="form.allEmployee">@Localizer["Add"]</button>
             </div>
         </section>
 
-        <div class="flex items-center justify-center gap-4 py-2 flex-wrap">
+        <div class="flex items-center justify-center gap-4 py-2 flex-wrap responsive-action-group">
             <label class="inline-flex items-center text-sm text-gray-700">
                 <input type="checkbox" name="AutomaticForward" x-model="form.automaticForward" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                 <span class="ml-2">@Localizer["AutomaticForward"]</span>

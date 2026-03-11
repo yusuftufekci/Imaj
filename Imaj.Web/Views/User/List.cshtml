@@ -35,77 +35,67 @@
 }
 
 <div x-data="userListPage()" class="space-y-6">
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
-                @Localizer["UserList"]
-            </h2>
-        </div>
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["UserList"]</h2>
     </div>
 
-    <form x-ref="listForm" method="post" action="/User/Detail">
+    <form x-ref="listForm" method="post" action="/User/Detail" class="bg-white border border-gray-200 shadow sm:rounded-lg">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
-        <div class="bg-white shadow sm:rounded-lg border border-gray-200 mt-6">
-            <div class="px-4 py-5 sm:p-6 space-y-4">
-                <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["UserList"]</h3>
-
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-blue-100">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">
-                                    <input type="checkbox" @@click="toggleAll" :checked="allSelected" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Code"]</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Language"]</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["AllEmployees"]</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Invalid"]</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Company"]</th>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-blue-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">
+                            <input type="checkbox" @@click="toggleAll" :checked="allSelected" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Code"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Language"]</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["AllEmployees"]</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Invalid"]</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Company"]</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    @if (Model.Items.Count > 0)
+                    {
+                        foreach (var item in Model.Items)
+                        {
+                            <tr class="hover:bg-gray-50 cursor-pointer" @@click="toggleRow('@item.Code')">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <input type="checkbox"
+                                           name="selectedIds"
+                                           value="@item.Code"
+                                           x-model="selectedIds"
+                                           @@click.stop
+                                           class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">@item.Code</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.Name</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.LanguageName</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <input type="checkbox" disabled @(item.AllEmployee ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <input type="checkbox" disabled @(item.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">@item.CompanyName</td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            @if (Model.Items.Count > 0)
-                            {
-                                foreach (var item in Model.Items)
-                                {
-                                    <tr class="hover:bg-gray-50 cursor-pointer" @@click="toggleRow('@item.Code')">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <input type="checkbox"
-                                                   name="selectedIds"
-                                                   value="@item.Code"
-                                                   x-model="selectedIds"
-                                                   @@click.stop
-                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">@item.Code</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.Name</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.LanguageName</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <input type="checkbox" disabled @(item.AllEmployee ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <input type="checkbox" disabled @(item.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.CompanyName</td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="px-4 py-10 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
 
-        <div class="mt-4 space-y-4">
+        <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
             @if (Model.TotalCount > 0)
             {
                 <partial name="Components/_Pagination" model="@(new PaginationModel
@@ -117,15 +107,11 @@
                     QueryString = queryString
                 })" />
             }
-            else
-            {
-                <p class="text-center text-gray-500 text-sm">@Localizer["NoRecordsFound"]</p>
-            }
 
-            <div class="flex justify-center flex-wrap gap-2">
+            <div class="mt-4 flex justify-center gap-2 responsive-action-group">
                 @if (canView)
                 {
-                    <button type="button" @@click="submitTo('/User/Detail')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    <button type="button" @@click="submitTo('/User/Detail')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
                         @Localizer["View"]
                     </button>
                 }

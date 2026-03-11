@@ -1,53 +1,19 @@
 @using Imaj.Web
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResource> Localizer
-<style>
-    [x-cloak] { display: none !important; }
-
-    .product-function-modal-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 70;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        overflow-y: auto;
-    }
-
-    .product-function-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background-color: rgba(107, 114, 128, 0.75);
-        z-index: 60;
-    }
-
-    .product-function-modal-content {
-        position: relative;
-        z-index: 70;
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        width: 100%;
-        max-width: 48rem;
-        max-height: 90vh;
-        overflow-y: auto;
-        margin: auto;
-    }
-</style>
-
 <div x-data="productFunctionSelectModal()"
      @@product-function-select-open.window="openModal($event.detail)"
      x-show="isOpen"
      x-cloak
-     class="product-function-modal-overlay"
+     class="modal-overlay"
+     x-on:keydown.escape.window="closeModal()"
      aria-labelledby="product-function-modal-title"
      role="dialog"
      aria-modal="true">
 
-    <div x-show="isOpen" x-on:click="closeModal()" class="product-function-modal-backdrop" aria-hidden="true"></div>
+    <div x-show="isOpen" x-on:click="closeModal()" class="modal-backdrop" aria-hidden="true"></div>
 
-    <div x-show="isOpen" class="product-function-modal-content">
+    <div x-show="isOpen" class="modal-content modal-content--md" tabindex="-1">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100">
             <div class="flex justify-between items-center mb-2">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 font-bold text-orange-600" id="product-function-modal-title">
@@ -85,7 +51,7 @@
             </div>
 
             <div class="flex flex-col">
-                <div class="overflow-x-auto">
+                <div class="modal-table-wrap">
                     <div class="inline-block min-w-full align-middle">
                         <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -126,7 +92,7 @@
                 </div>
             </div>
 
-            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2">
+            <div class="modal-pagination bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2">
                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-start">
                     <p class="text-sm text-gray-700">
                         @Localizer["Total"] <span class="font-medium" x-text="totalCount"></span> @Localizer["Records"], @Localizer["Page"] <span class="font-medium" x-text="page"></span>

@@ -58,7 +58,7 @@
         </div>
     }
 
-    <form method="post" action="/Absence/Save" class="space-y-4">
+    <form method="post" action="/Absence/Save" class="space-y-4 mobile-stack-form">
         @Html.AntiForgeryToken()
         <input type="hidden" name="ReturnUrl" :value="returnUrl" />
 
@@ -68,7 +68,7 @@
                     <h3 class="text-lg font-semibold text-gray-800">@Localizer["BasicInfo"]</h3>
                 </div>
 
-                <div class="p-4 space-y-3 text-sm">
+                <div class="p-4 space-y-3 text-sm mobile-stack-form">
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                         <label class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Function"]</label>
                         <div class="md:col-span-8">
@@ -180,13 +180,13 @@
                 </table>
             </div>
 
-            <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center gap-3 text-sm">
+            <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center gap-3 text-sm responsive-action-group">
                 <button type="button" @@click="removeSelectedResources" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
                 <button type="button" @@click="openResourceModal" class="text-blue-700 font-semibold hover:underline">@Localizer["Add"]</button>
             </div>
         </section>
 
-        <div class="flex items-center justify-center gap-3 py-2">
+        <div class="flex items-center justify-center gap-3 py-2 responsive-action-group">
             <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
                 @Localizer["Save"]
             </button>

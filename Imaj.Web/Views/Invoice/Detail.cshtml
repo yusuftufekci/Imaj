@@ -72,7 +72,7 @@
 
             <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm">
+                    <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm mobile-detail-grid">
                         <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">@Localizer["BasicInfo"]</h3>
                         <div class="grid grid-cols-3 gap-2">
                             <span class="font-bold text-right text-blue-900">@Localizer["Reference"]</span>
@@ -127,7 +127,7 @@
                 <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
                     <h3 class="font-bold text-gray-800 text-sm">@Localizer["Line"] (@invoice.Lines.Count)</h3>
                 </div>
-                <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+                <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg mobile-table-panel">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-yellow-50">
                             <tr>
@@ -256,7 +256,7 @@
                 <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
                     <h3 class="font-bold text-gray-800 text-sm">Vergi (@invoice.Taxes.Count)</h3>
                 </div>
-                <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
+                <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg mobile-table-panel">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-yellow-50">
                             <tr>
@@ -308,7 +308,7 @@
                 </div>
             }
 
-            <div class="flex flex-wrap justify-center gap-2">
+            <div class="flex flex-wrap justify-center gap-2 responsive-action-group">
                 <a href="@returnUrl" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">@Localizer["Back"]</a>
                 <a href="/Invoice/Summary?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     @Localizer["ViewSummary"]

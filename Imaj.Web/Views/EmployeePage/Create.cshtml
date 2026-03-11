@@ -56,7 +56,7 @@
     };
 }
 
-<div x-data='employeeCreatePage(@Html.Raw(JsonSerializer.Serialize(initialState)))' class="space-y-6">
+<div x-data='employeeCreatePage(@Html.Raw(JsonSerializer.Serialize(initialState)))' class="space-y-6 mobile-stack-form">
     <div class="text-center">
         <h2 class="text-3xl font-bold text-orange-600">@Localizer["Employee"]</h2>
     </div>
@@ -68,11 +68,11 @@
         </div>
     }
 
-    <form method="post" action="/Employee/Save" class="space-y-4">
+    <form method="post" action="/Employee/Save" class="space-y-4 mobile-stack-form">
         @Html.AntiForgeryToken()
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mobile-detail-grid">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                     <h3 class="text-lg font-semibold text-gray-800">@Localizer["BasicInfo"]</h3>
                 </div>
@@ -94,7 +94,7 @@
                 </div>
             </section>
 
-            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                     <h3 class="text-lg font-semibold text-gray-800">@Localizer["Function"] (<span x-text="functions.length"></span>)</h3>
                 </div>
@@ -125,7 +125,7 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm">
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm responsive-action-group">
                     <span class="text-blue-900 font-semibold">@Localizer["PageSize"]</span>
                     <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
                     <button type="button" @@click="removeSelectedFunctions" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
@@ -139,7 +139,7 @@
                 </div>
             </section>
 
-            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                     <h3 class="text-lg font-semibold text-gray-800">@Localizer["WorkType"] (<span x-text="workTypes.length"></span>)</h3>
                 </div>
@@ -170,7 +170,7 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm">
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm responsive-action-group">
                     <span class="text-blue-900 font-semibold">@Localizer["PageSize"]</span>
                     <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
                     <button type="button" @@click="removeSelectedWorkTypes" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
@@ -184,7 +184,7 @@
                 </div>
             </section>
 
-            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
+            <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                     <h3 class="text-lg font-semibold text-gray-800">@Localizer["OvertimeType"] (<span x-text="timeTypes.length"></span>)</h3>
                 </div>
@@ -215,7 +215,7 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm">
+                <div class="px-4 py-2 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center gap-2 text-sm responsive-action-group">
                     <span class="text-blue-900 font-semibold">@Localizer["PageSize"]</span>
                     <span class="w-10 text-center border border-gray-300 rounded bg-white">16</span>
                     <button type="button" @@click="removeSelectedTimeTypes" class="text-red-600 font-semibold hover:underline">@Localizer["Delete"]</button>
@@ -230,7 +230,7 @@
             </section>
         </div>
 
-        <div class="flex items-center justify-center gap-3">
+        <div class="flex items-center justify-center gap-3 responsive-action-group">
             <label class="inline-flex items-center text-sm text-gray-700">
                 <input type="checkbox" name="AutomaticForward" x-model="form.automaticForward" value="true" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
                 <span class="ml-2">@Localizer["AutomaticForward"]</span>

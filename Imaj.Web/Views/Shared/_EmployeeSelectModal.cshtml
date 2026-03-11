@@ -1,48 +1,11 @@
 @using Imaj.Web
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResource> Localizer
-<!-- Employee Selection Modal (v6.0 - Full Screen Fix) -->
-<!-- x-cloak style: Alpine yüklenene kadar gizli kalmasını sağlar -->
-<style>
-    [x-cloak] { display: none !important; }
-    
-    /* Modal ortalama için özel stil - tüm ekran boyutlarında çalışır */
-    .modal-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 50;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        overflow-y: auto;
-    }
-    
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background-color: rgba(107, 114, 128, 0.75);
-        z-index: 40;
-    }
-    
-    .modal-content {
-        position: relative;
-        z-index: 50;
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        width: 100%;
-        max-width: 64rem; /* max-w-5xl */
-        max-height: 90vh;
-        overflow-y: auto;
-        margin: auto;
-    }
-</style>
-
 <div x-data 
      x-show="$store.employeeModal.isOpen" 
      x-cloak 
      class="modal-overlay"
+     x-on:keydown.escape.window="$store.employeeModal.close()"
      aria-labelledby="modal-title" 
      role="dialog" 
      aria-modal="true">
@@ -55,7 +18,8 @@
 
     <!-- Modal Panel: Her zaman ekranın ortasında görünür -->
     <div x-show="$store.employeeModal.isOpen" 
-         class="modal-content">
+         class="modal-content modal-content--xl"
+         tabindex="-1">
          
         <!-- Header -->
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100">
@@ -119,7 +83,7 @@
             
             <!-- Table -->
             <div class="flex flex-col">
-                <div class="overflow-x-auto">
+                <div class="modal-table-wrap">
                     <div class="inline-block min-w-full align-middle">
                         <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -166,7 +130,7 @@
             </div>
             
             <!-- Pagination -->
-            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2">
+            <div class="modal-pagination bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2">
                 <div class="flex items-center space-x-2">
                      <span class="text-sm text-gray-700">@Localizer["PageSize"]:</span>
                     <select x-model="$store.employeeModal.filter.pageSize" x-on:change="$store.employeeModal.search(1)" class="block w-20 py-1 px-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">

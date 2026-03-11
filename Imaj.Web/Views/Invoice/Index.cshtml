@@ -24,7 +24,7 @@
         <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
             <h3 class="text-lg font-semibold text-gray-800">@Localizer["MainCriteria"]</h3>
         </div>
-        <div class="px-4 py-5 sm:p-6 space-y-4">
+        <div class="px-4 py-5 sm:p-6 space-y-4 mobile-stack-form">
             <div class="text-xs text-gray-500 text-right">
                 @Localizer["Last30DaysDefault"]
             </div>
@@ -33,7 +33,7 @@
                 <!-- Job Customer (Is Musterisi) -->
                 <div class="sm:col-span-6">
                     <label class="block text-sm font-medium text-gray-700">@Localizer["JobCustomer"]</label>
-                     <div class="mt-1 flex rounded-md shadow-sm">
+                     <div class="mt-1 flex rounded-md shadow-sm picker-combo">
                         <div class="relative flex-grow focus-within:z-10">
                              <input type="text" readonly x-model="jobCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400" placeholder="@Localizer["AllOption"]">
                         </div>
@@ -49,7 +49,7 @@
                 <!-- Invoice Customer (Fatura Musterisi) -->
                 <div class="sm:col-span-6">
                     <label class="block text-sm font-medium text-gray-700">@Localizer["InvoiceCustomer"]</label>
-                     <div class="mt-1 flex rounded-md shadow-sm">
+                     <div class="mt-1 flex rounded-md shadow-sm picker-combo">
                         <div class="relative flex-grow focus-within:z-10">
                              <input type="text" readonly x-model="invoiceCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400" placeholder="@Localizer["AllOption"]">
                         </div>
@@ -65,7 +65,7 @@
                 <!-- Reference Range -->
                 <div class="sm:col-span-3">
                     <label class="block text-sm font-medium text-gray-700">@Localizer["ReferenceRange"]</label>
-                    <div class="mt-1 flex space-x-2">
+                    <div class="mt-1 flex space-x-2 responsive-inline-group">
                         <input type="text" x-model="filter.referenceStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md" placeholder="@Localizer["StartDate"]">
                         <input type="text" x-model="filter.referenceEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md" placeholder="@Localizer["EndDate"]">
                     </div>
@@ -90,7 +90,7 @@
                 <!-- Date Range -->
                 <div class="sm:col-span-3">
                     <label class="block text-sm font-medium text-gray-700">@Localizer["Date"]</label>
-                    <div class="mt-1 flex space-x-2">
+                    <div class="mt-1 flex space-x-2 responsive-inline-group">
                          <input type="date" x-model="filter.issueDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                          <input type="date" x-model="filter.issueDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                     </div>
@@ -128,7 +128,7 @@
             </div>
 
             <div class="pt-6 border-t border-gray-200">
-                <div class="flex flex-wrap items-center justify-center gap-3">
+                <div class="flex flex-wrap items-center justify-center gap-3 responsive-inline-group">
                     <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
                     <input type="number" x-model="filter.first" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
                     <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
@@ -143,7 +143,7 @@
                 </div>
             </div>
 
-            <div class="mt-4 flex justify-center space-x-3">
+            <div class="mt-4 flex justify-center space-x-3 responsive-action-group">
                 <button type="button" @@click="downloadDetailedInvoiceReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                     @Localizer["DetailedInvoiceReport"]
                 </button>
@@ -160,11 +160,11 @@
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
                 <h3 class="text-lg font-semibold text-gray-800">Ön Bilgiler</h3>
             </div>
-            <div class="p-6">
+            <div class="p-6 mobile-stack-form">
             <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 mb-4 mt-4">
                 <div class="sm:col-span-6">
                     <label class="block text-sm font-medium text-gray-700">@Localizer["JobCustomer"]</label>
-                     <div class="mt-1 flex rounded-md shadow-sm">
+                     <div class="mt-1 flex rounded-md shadow-sm picker-combo">
                         <div class="relative flex-grow focus-within:z-10">
                              <input type="text" readonly x-model="newJobCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400" placeholder="@Localizer["PleaseSelectCustomer"]">
                         </div>

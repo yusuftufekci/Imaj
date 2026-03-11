@@ -1,48 +1,12 @@
 @using Imaj.Web
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResource> Localizer
-<!-- Product Category Selection Modal -->
-<!-- x-cloak style: Alpine yüklenene kadar gizli kalmasını sağlar -->
-<style>
-    [x-cloak] { display: none !important; }
-    
-    .modal-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 50;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        overflow-y: auto;
-    }
-    
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background-color: rgba(107, 114, 128, 0.75);
-        z-index: 40;
-    }
-    
-    .modal-content {
-        position: relative;
-        z-index: 50;
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        width: 100%;
-        max-width: 48rem; /* max-w-4xl */
-        max-height: 90vh;
-        overflow-y: auto;
-        margin: auto;
-    }
-</style>
-
 <div x-data="productCategoryModal()" 
      x-show="isOpen" 
      x-on:open-product-category-modal.window="open()"
      x-cloak 
      class="modal-overlay"
+     x-on:keydown.escape.window="close()"
      aria-labelledby="modal-title" 
      role="dialog" 
      aria-modal="true">
@@ -55,7 +19,8 @@
 
     <!-- Modal Panel -->
     <div x-show="isOpen" 
-         class="modal-content">
+         class="modal-content modal-content--md"
+         tabindex="-1">
          
         <!-- Header -->
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100 flex justify-between items-center">
@@ -82,8 +47,8 @@
             </div>
 
             <!-- Table -->
-            <div x-show="!isLoading" class="flex flex-col">
-                <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div x-show="!isLoading" class="flex flex-col">
+                <div class="modal-table-wrap -my-2 sm:-mx-6 lg:-mx-8">
                     <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                         <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">

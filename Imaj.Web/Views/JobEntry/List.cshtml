@@ -102,7 +102,7 @@
                  <p class="text-center text-gray-500 text-sm">@Localizer["NoRecordsFound"]</p>
              }
 
-             <div class="flex justify-center space-x-2">
+             <div class="flex justify-center gap-2 responsive-action-group">
                  <!-- Must submit to use selectedIds -->
                  <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     @Localizer["View"]
@@ -110,6 +110,9 @@
                  <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     @Localizer["Edit"]
                 </button>
+                <a href="/JobEntry" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                    @Localizer["Back"]
+                </a>
              </div>
         </div>
         
