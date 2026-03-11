@@ -27,6 +27,7 @@ namespace Imaj.Service.Extensions
             services.Configure<CustomerSettings>(configuration.GetSection(CustomerSettings.SectionName));
             services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.SectionName));
             services.Configure<SecurityHeadersSettings>(configuration.GetSection(SecurityHeadersSettings.SectionName));
+            services.Configure<DeploymentSettings>(configuration.GetSection(DeploymentSettings.SectionName));
             services.AddMemoryCache();
             services.AddHttpContextAccessor();
 

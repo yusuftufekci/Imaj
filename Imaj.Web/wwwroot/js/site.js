@@ -121,11 +121,23 @@ const API = {
 // Toast/Notification Helper
 // ============================================
 const Toast = {
+    decodeMessage(message) {
+        if (typeof message !== 'string' || !message) {
+            return message;
+        }
+
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = message;
+        return textarea.value;
+    },
+
     /**
      * Başarı mesajı gösterir
      * @param {string} message - Gösterilecek mesaj
      */
     success(message) {
+        message = this.decodeMessage(message);
+
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'success',
@@ -144,6 +156,8 @@ const Toast = {
      * @param {string} message - Gösterilecek mesaj
      */
     error(message) {
+        message = this.decodeMessage(message);
+
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'error',
@@ -164,6 +178,9 @@ const Toast = {
      * @returns {Promise<boolean>} - Onay verildi mi
      */
     async confirm(title, text) {
+        title = this.decodeMessage(title);
+        text = this.decodeMessage(text);
+
         if (typeof Swal !== 'undefined') {
             const result = await Swal.fire({
                 title: title,

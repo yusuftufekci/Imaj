@@ -25,6 +25,7 @@ try
     var builder = WebApplication.CreateBuilder(args);
     var authSettings = builder.Configuration.GetSection(AuthSettings.SectionName).Get<AuthSettings>() ?? new AuthSettings();
     var securityHeadersSettings = builder.Configuration.GetSection(SecurityHeadersSettings.SectionName).Get<SecurityHeadersSettings>() ?? new SecurityHeadersSettings();
+    var deploymentSettings = builder.Configuration.GetSection(DeploymentSettings.SectionName).Get<DeploymentSettings>() ?? new DeploymentSettings();
 
     // Serilog - appsettings.json'dan konfigürasyon
     builder.Host.UseSerilog((context, services, configuration) => configuration
@@ -71,7 +72,7 @@ try
     app.UseMiddleware<ExceptionMiddleware>();
 
     // HTTP pipeline konfigürasyonu
-    if (!app.Environment.IsDevelopment())
+    if (!app.Environment.IsDevelopment() && deploymentSettings.UseHsts)
     {
         app.UseHsts();
     }
@@ -94,7 +95,10 @@ try
         await next();
     });
 
-    app.UseHttpsRedirection();
+    if (deploymentSettings.RequireHttps)
+    {
+        app.UseHttpsRedirection();
+    }
     app.UseStaticFiles();
 
     // Localization middleware

@@ -26,6 +26,7 @@ namespace Imaj.Web.Extensions
         public static IServiceCollection AddWebServices(this IServiceCollection services, IConfiguration configuration)
         {
             var authSettings = configuration.GetSection(AuthSettings.SectionName).Get<AuthSettings>() ?? new AuthSettings();
+            var deploymentSettings = configuration.GetSection(DeploymentSettings.SectionName).Get<DeploymentSettings>() ?? new DeploymentSettings();
             var sessionTimeout = authSettings.SessionTimeoutMinutes <= 0 ? 45 : authSettings.SessionTimeoutMinutes;
 
             services.AddAuthorization(options =>
@@ -45,7 +46,9 @@ namespace Imaj.Web.Extensions
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(sessionTimeout);
                     options.SlidingExpiration = true;
                     options.Cookie.HttpOnly = true;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SecurePolicy = deploymentSettings.SecureCookies
+                        ? CookieSecurePolicy.Always
+                        : CookieSecurePolicy.SameAsRequest;
                     options.Cookie.SameSite = SameSiteMode.Lax;
                 });
 

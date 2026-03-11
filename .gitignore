@@ -83,3 +83,6 @@ package-lock.json
 # Logs (Serilog)
 logs/
 *.log
+
+# Local publish output
+publish/
