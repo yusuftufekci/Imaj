@@ -80,9 +80,20 @@ namespace Imaj.Service.Services
             }
 
             var totalCount = await scopedQuery.CountAsync();
-            var items = await scopedQuery
+            var rows = await scopedQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(x => new
+                {
+                    Id = x.Id,
+                    Code = x.Code,
+                    Name = x.Name,
+                    CompanyId = x.CompanyID,
+                    Invisible = x.Invisible
+                })
+                .ToListAsync();
+
+            var items = rows
                 .Select(x => new EmployeeDto
                 {
                     Id = x.Id,
@@ -90,7 +101,59 @@ namespace Imaj.Service.Services
                     Name = x.Name,
                     Invisible = x.Invisible
                 })
-                .ToListAsync();
+                .ToList();
+
+            if (items.Count > 0)
+            {
+                var employeeIds = items.Select(x => x.Id).ToList();
+                var languageId = ResolveUiLanguageId();
+                var fallbackLanguageId = 1m;
+
+                var workTypeSelections = await (
+                    from empWork in _unitOfWork.Repository<EmpWork>().Query()
+                    join workType in _unitOfWork.Repository<WorkType>().Query()
+                        on empWork.WorkTypeID equals workType.Id
+                    join preferredName in _unitOfWork.Repository<XWorkType>().Query().Where(x => x.LanguageID == languageId)
+                        on workType.Id equals preferredName.WorkTypeID into preferredNameGroup
+                    from preferredName in preferredNameGroup.DefaultIfEmpty()
+                    join fallbackName in _unitOfWork.Repository<XWorkType>().Query().Where(x => x.LanguageID == fallbackLanguageId)
+                        on workType.Id equals fallbackName.WorkTypeID into fallbackNameGroup
+                    from fallbackName in fallbackNameGroup.DefaultIfEmpty()
+                    where employeeIds.Contains(empWork.EmployeeID)
+                          && empWork.Deleted == 0
+                    select new
+                    {
+                        empWork.EmployeeID,
+                        empWork.Default,
+                        WorkTypeId = workType.Id,
+                        WorkTypeName = preferredName != null
+                            ? preferredName.Name
+                            : (fallbackName != null ? fallbackName.Name : string.Empty)
+                    })
+                    .ToListAsync();
+
+                var workTypeMap = workTypeSelections
+                    .GroupBy(x => x.EmployeeID)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g
+                            .OrderByDescending(x => x.Default)
+                            .ThenBy(x => string.IsNullOrWhiteSpace(x.WorkTypeName) ? 1 : 0)
+                            .ThenBy(x => x.WorkTypeName)
+                            .ThenBy(x => x.WorkTypeId)
+                            .First());
+
+                foreach (var item in items)
+                {
+                    if (workTypeMap.TryGetValue(item.Id, out var workType))
+                    {
+                        item.DefaultWorkTypeId = workType.WorkTypeId;
+                        item.DefaultWorkTypeName = string.IsNullOrWhiteSpace(workType.WorkTypeName)
+                            ? workType.WorkTypeId.ToString(CultureInfo.InvariantCulture)
+                            : workType.WorkTypeName;
+                    }
+                }
+            }
 
             return ServiceResult<PagedResultDto<EmployeeDto>>.Success(new PagedResultDto<EmployeeDto>
             {

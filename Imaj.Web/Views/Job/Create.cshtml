@@ -7,12 +7,22 @@
     var defaultWorkTypeId = (ViewBag.WorkTypes != null && ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).Count > 0)
         ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes)[0].Id
         : 0;
+    var defaultWorkTypeName = (ViewBag.WorkTypes != null && ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).Count > 0)
+        ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes)[0].Name
+        : string.Empty;
     var defaultTimeTypeId = (ViewBag.TimeTypes != null && ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes).Count > 0)
         ? ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes)[0].Id
         : 0;
+    var workTypeNames = (ViewBag.WorkTypes != null
+        ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).ToDictionary(
+            x => x.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            x => x.Name)
+        : new Dictionary<string, string>());
     var initialStateJson = JsonSerializer.Serialize(new
     {
         defaultWorkTypeId,
+        defaultWorkTypeName,
+        workTypeNames,
         defaultTimeTypeId,
         form = new
         {
@@ -23,7 +33,16 @@
             relatedPerson = Model.RelatedPerson ?? string.Empty,
             startDate = Model.StartDate.ToString("yyyy-MM-ddTHH:mm"),
             endDate = Model.EndDate.ToString("yyyy-MM-ddTHH:mm")
-        }
+        },
+        products = Model.Products.Select(x => new
+        {
+            id = x.ProductId,
+            code = x.Code ?? string.Empty,
+            name = x.Name ?? string.Empty,
+            quantity = x.Quantity,
+            price = x.Price,
+            notes = x.Notes ?? string.Empty
+        }).ToList()
     });
 }
 
@@ -226,15 +245,8 @@
                                     <input type="hidden" :name="'Overtimes[' + index + '].EmployeeName'" :value="item.name">
                                 </td>
                                 <td class="px-4 py-2">
-                                     <select x-model="item.taskType" :name="'Overtimes[' + index + '].WorkTypeId'" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
-                                         @if (ViewBag.WorkTypes != null)
-                                         {
-                                             @foreach (var wt in ViewBag.WorkTypes)
-                                             {
-                                                 <option value="@wt.Id">@wt.Name</option>
-                                             }
-                                         }
-                                     </select>
+                                    <span x-text="item.taskTypeName || resolveWorkTypeName(item.taskType) || '-'" class="text-xs text-gray-900"></span>
+                                    <input type="hidden" :name="'Overtimes[' + index + '].WorkTypeId'" :value="item.taskType">
                                 </td>
                                  <td class="px-4 py-2">
                                      <select x-model="item.overtimeType" :name="'Overtimes[' + index + '].TimeTypeId'" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">

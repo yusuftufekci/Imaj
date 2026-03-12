@@ -15,6 +15,7 @@ namespace Imaj.Web.Controllers
         private const double QueryMethodId = 1397;
         private const double AddJobEntryMethodId = 1710;
         private const double ViewJobEntryMethodId = 1711;
+        private static readonly string[] DefaultCreateProductCodes = { "OPERATOR", "CAFE" };
 
         private readonly IJobService _jobService;
         private readonly ICustomerService _customerService;
@@ -541,6 +542,7 @@ namespace Imaj.Web.Controllers
             };
             model.StartDate = DateTime.Now;
             model.EndDate = DateTime.Now;
+            model.Products = await GetDefaultCreateProductsAsync();
             return View(model);
         }
 
@@ -657,6 +659,43 @@ namespace Imaj.Web.Controllers
             // Mesai Tipi listesi
             var timeTypesResult = await _lookupService.GetTimeTypesAsync();
             ViewBag.TimeTypes = timeTypesResult.IsSuccess ? timeTypesResult.Data : new List<TimeTypeDto>();
+        }
+
+        private async Task<List<JobProductInput>> GetDefaultCreateProductsAsync()
+        {
+            var items = new List<JobProductInput>();
+
+            foreach (var productCode in DefaultCreateProductCodes)
+            {
+                var result = await _productService.GetByFilterAsync(new ProductFilterDto
+                {
+                    Code = productCode,
+                    IsInvalid = false,
+                    Page = 1,
+                    PageSize = 20,
+                    First = 20
+                });
+
+                var product = result.IsSuccess && result.Data != null
+                    ? result.Data.Items.FirstOrDefault(x => string.Equals(x.Code, productCode, StringComparison.OrdinalIgnoreCase))
+                    : null;
+
+                if (product == null)
+                {
+                    continue;
+                }
+
+                items.Add(new JobProductInput
+                {
+                    ProductId = product.Id,
+                    Code = product.Code,
+                    Name = product.Name,
+                    Quantity = 1,
+                    Price = product.Price
+                });
+            }
+
+            return items;
         }
 
         private void ApplyFunctionSelection(JobCreateViewModel model)

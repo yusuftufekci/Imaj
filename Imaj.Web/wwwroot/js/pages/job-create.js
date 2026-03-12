@@ -3,6 +3,8 @@ const jobCreateText = (key, fallback) => (window.imajTexts && window.imajTexts[k
 function jobCreate(config) {
     return {
         defaultWorkTypeId: config.defaultWorkTypeId || 0,
+        defaultWorkTypeName: config.defaultWorkTypeName || '',
+        workTypeNames: config.workTypeNames || {},
         defaultTimeTypeId: config.defaultTimeTypeId || 0,
 
         // Validasyon hatası mesajı
@@ -21,7 +23,14 @@ function jobCreate(config) {
             endDate: config.form.endDate || ''
         },
         overtimes: [],
-        products: [],
+        products: (config.products || []).map(prod => ({
+            id: prod.id || 0,
+            code: prod.code || '',
+            name: prod.name || '',
+            quantity: prod.quantity || 1,
+            price: prod.price || 0,
+            notes: prod.notes || ''
+        })),
 
         // Form validation - müşteri seçilmeden ve isim girilmeden gönderilmez
         async validateAndSubmit() {
@@ -110,11 +119,19 @@ function jobCreate(config) {
 
                 employees.forEach(emp => {
                     // Check dupe if needed, but allowing for now.
+                    const taskTypeId = emp.defaultWorkTypeId || emp.DefaultWorkTypeId || this.defaultWorkTypeId;
+                    const taskTypeName = emp.defaultWorkTypeName
+                        || emp.DefaultWorkTypeName
+                        || this.resolveWorkTypeName(taskTypeId)
+                        || this.defaultWorkTypeName
+                        || '';
+
                     this.overtimes.push({
                         id: emp.id || 0,
                         code: emp.code,
                         name: emp.name,
-                        taskType: this.defaultWorkTypeId,
+                        taskType: taskTypeId,
+                        taskTypeName: taskTypeName,
                         overtimeType: this.defaultTimeTypeId,
                         quantity: 1,
                         amount: 0,
@@ -126,6 +143,14 @@ function jobCreate(config) {
 
         removeOvertime(index) {
             this.overtimes.splice(index, 1);
+        },
+
+        resolveWorkTypeName(workTypeId) {
+            if (!workTypeId) {
+                return '';
+            }
+
+            return this.workTypeNames[String(workTypeId)] || '';
         },
 
         calculateOvertimeTotal() {
