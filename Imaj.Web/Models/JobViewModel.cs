@@ -176,7 +176,8 @@ namespace Imaj.Web.Models
 
     public class JobCreateViewModel
     {
-        public string Function { get; set; } = "Mesai";
+        public decimal? FunctionId { get; set; }
+        public string FunctionName { get; set; } = "Mesai";
         public string? Reference { get; set; } // Generated or Input
         public string? PageSize { get; set; } = "16";
 

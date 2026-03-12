@@ -76,20 +76,16 @@
 }
 
 <div class="space-y-6">
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
-                @Localizer["ResoCat"]
-            </h2>
-        </div>
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["ResoCat"]</h2>
     </div>
 
-    <div class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
-        <div class="px-4 pt-4 sm:px-6">
-            <h3 class="text-md font-bold text-gray-700 bg-blue-100 p-2 rounded">@Localizer["ResoCat"]</h3>
+    <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
+        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+            <h3 class="text-lg font-semibold text-gray-800">@Localizer["ResoCat"]</h3>
         </div>
-        <div class="px-4 pb-5 sm:px-6 sm:pb-6">
-            <div class="mt-4 overflow-x-auto">
+        <div class="px-4 py-4 space-y-4">
+            <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 resocat-names-table">
                     <colgroup>
                         <col class="resocat-names-language-col" />
@@ -122,21 +118,21 @@
                 </table>
             </div>
 
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</span>
-                <span class="md:col-span-9">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
+                <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</span>
+                <span class="md:col-span-8">
                     <input type="checkbox" disabled @(Model.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
                 </span>
             </div>
         </div>
-    </div>
+    </section>
 
     @if (Model.TotalSelected > 0)
     {
         <partial name="~/Views/Shared/_DetailNavigator.cshtml" model="navigatorModel" />
     }
 
-    <div class="flex items-center justify-center gap-3">
+    <div class="flex items-center justify-center gap-3 responsive-action-group">
         @if (canEdit)
         {
             <a href="@BuildEditUrl()" class="inline-flex items-center px-5 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">

@@ -10,6 +10,10 @@ function productSelectModal() {
         isOpen: false,
         targetId: '',
         isMultiSelect: false,
+        searchEndpoint: '/Product/Search',
+        categoriesEndpoint: '/Product/GetCategories',
+        productGroupsEndpoint: '/Product/GetProductGroups',
+        functionsEndpoint: '/Product/GetFunctions',
 
         // Filtre alanları
         filter: {
@@ -40,7 +44,7 @@ function productSelectModal() {
          * Component başlatma - Dropdown verilerini yükler
          */
         async init() {
-            await this.loadDropdowns();
+            // Endpoints ekran bazli degisebildigi icin dropdownlari modal acilisinda yüklüyoruz.
         },
 
         /**
@@ -56,48 +60,62 @@ function productSelectModal() {
 
         async loadCategories() {
             try {
-                const response = await fetch('/Product/GetCategories');
+                const response = await fetch(this.categoriesEndpoint);
                 if (response.ok) {
                     this.categories = await response.json();
+                } else {
+                    this.categories = [];
                 }
             } catch (e) {
                 console.error('Kategoriler yüklenirken hata:', e);
+                this.categories = [];
             }
         },
 
         async loadProductGroups() {
             try {
-                const response = await fetch('/Product/GetProductGroups');
+                const response = await fetch(this.productGroupsEndpoint);
                 if (response.ok) {
                     this.productGroups = await response.json();
+                } else {
+                    this.productGroups = [];
                 }
             } catch (e) {
                 console.error('Ürün grupları yüklenirken hata:', e);
+                this.productGroups = [];
             }
         },
 
         async loadFunctions() {
             try {
-                const response = await fetch('/Product/GetFunctions');
+                const response = await fetch(this.functionsEndpoint);
                 if (response.ok) {
                     this.functions = await response.json();
+                } else {
+                    this.functions = [];
                 }
             } catch (e) {
                 console.error('Fonksiyonlar yüklenirken hata:', e);
+                this.functions = [];
             }
         },
 
         /**
          * Modal'ı açar
          */
-        openModal(detail) {
+        async openModal(detail) {
             this.isOpen = true;
             this.targetId = detail.targetId;
             this.isMultiSelect = detail.isMultiSelect || false;
+            this.searchEndpoint = detail?.searchEndpoint || '/Product/Search';
+            this.categoriesEndpoint = detail?.categoriesEndpoint || '/Product/GetCategories';
+            this.productGroupsEndpoint = detail?.productGroupsEndpoint || '/Product/GetProductGroups';
+            this.functionsEndpoint = detail?.functionsEndpoint || '/Product/GetFunctions';
             this.selectedItems = [];
             this.resetFilter();
             this.items = [];
             this.hasSearched = false;
+            await this.loadDropdowns();
         },
 
         /**
@@ -141,7 +159,7 @@ function productSelectModal() {
             }
 
             try {
-                const result = await API.post('/Product/Search', payload);
+                const result = await API.post(this.searchEndpoint, payload);
                 this.items = result.items || [];
                 this.totalCount = result.totalCount || 0;
                 this.hasSearched = true;

@@ -80,62 +80,62 @@
         <h2 class="text-3xl font-bold text-orange-600">@Localizer["ProductCategory"]</h2>
     </div>
 
-    <div class="bg-white border border-gray-200 shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6 max-w-5xl mx-auto space-y-4">
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b border-blue-200 pb-2">@Localizer["ProductCategory"]</h3>
+    <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
+        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+            <h3 class="text-lg font-semibold text-gray-800">@Localizer["ProductCategory"]</h3>
+        </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Language"]</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Name"]</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            @if (Model.Names.Count > 0)
-                            {
-                                foreach (var name in Model.Names)
-                                {
-                                    <tr>
-                                        <td class="px-4 py-2 text-sm text-gray-900">@name.LanguageName</td>
-                                        <td class="px-4 py-2 text-sm text-gray-900">@name.Name</td>
-                                    </tr>
-                                }
-                            }
-                            else
+        <div class="px-4 py-4 space-y-4">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Language"]</th>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Name"]</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        @if (Model.Names.Count > 0)
+                        {
+                            foreach (var name in Model.Names)
                             {
                                 <tr>
-                                    <td colspan="2" class="px-4 py-4 text-sm text-gray-500 text-center">@Localizer["NoRecordsFound"]</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900">@name.LanguageName</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900">@name.Name</td>
                                 </tr>
                             }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="px-4 py-4 text-sm text-gray-500 text-center">@Localizer["NoRecordsFound"]</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">Vergi Tipi</span>
-                    <span class="md:col-span-9 text-gray-900">@Model.TaxCode @if (!string.IsNullOrWhiteSpace(Model.TaxName)) { <text>- @Model.TaxName</text> }</span>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
+                <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["TaxType"]</span>
+                <span class="md:col-span-8 text-gray-900">@Model.TaxCode @if (!string.IsNullOrWhiteSpace(Model.TaxName)) { <text>- @Model.TaxName</text> }</span>
 
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["SequenceNo"]</span>
-                    <span class="md:col-span-3 text-gray-900">@Model.Sequence</span>
+                <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["SequenceNo"]</span>
+                <span class="md:col-span-8 text-gray-900">@Model.Sequence</span>
 
-                    <span class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</span>
-                    <span class="md:col-span-3">
-                        <input type="checkbox" disabled @(Model.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
-                    </span>
-                </div>
+                <span class="md:col-span-4 text-blue-900 font-semibold md:text-right">@Localizer["Invalid"]</span>
+                <span class="md:col-span-8">
+                    <input type="checkbox" disabled @(Model.IsInvalid ? "checked" : string.Empty) class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                </span>
             </div>
         </div>
-    </div>
+    </section>
 
     @if (Model.TotalSelected > 0)
     {
         <partial name="~/Views/Shared/_DetailNavigator.cshtml" model="navigatorModel" />
     }
 
-    <div class="flex items-center justify-center gap-3">
+    <div class="flex items-center justify-center gap-3 responsive-action-group">
         @if (canEdit)
         {
             <a href="@BuildEditUrl()" class="inline-flex items-center px-5 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">

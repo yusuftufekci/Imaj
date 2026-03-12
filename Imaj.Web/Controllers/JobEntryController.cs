@@ -17,16 +17,25 @@ namespace Imaj.Web.Controllers
         private const double ViewJobEntryMethodId = 1711;
 
         private readonly IJobService _jobService;
+        private readonly ICustomerService _customerService;
+        private readonly IProductService _productService;
         private readonly ILookupService _lookupService;
+        private readonly IPermissionViewService _permissionViewService;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
         public JobEntryController(
             IJobService jobService,
+            ICustomerService customerService,
+            IProductService productService,
             ILookupService lookupService,
+            IPermissionViewService permissionViewService,
             IStringLocalizer<SharedResource> localizer)
         {
             _jobService = jobService;
+            _customerService = customerService;
+            _productService = productService;
             _lookupService = lookupService;
+            _permissionViewService = permissionViewService;
             _localizer = localizer;
         }
 
@@ -98,6 +107,136 @@ namespace Imaj.Web.Controllers
             var model = new JobViewModel();
             // Varsayılan tarih filtresini kaldırdık - kullanıcı seçmedikçe filtre uygulanmasın
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CustomerJobStates()
+        {
+            if (!await CanUseCustomerLookupAsync())
+            {
+                return Forbid();
+            }
+
+            var result = await _lookupService.GetStatesAsync(StateCategories.Job);
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+
+            return BadRequest(this.LocalizeUiMessage(result.Message, L("GenericError")));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CustomerSearch([FromBody] CustomerFilterModel? filter)
+        {
+            if (!await CanUseCustomerLookupAsync())
+            {
+                return Forbid();
+            }
+
+            var f = filter ?? new CustomerFilterModel();
+            f.Page = f.Page > 0 ? f.Page : 1;
+            f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : null;
+
+            var result = await _customerService.GetByFilterAsync(BuildCustomerFilter(f));
+
+            var items = result.IsSuccess && result.Data != null
+                ? result.Data.Items.Select(c => new CustomerSearchResult
+                {
+                    Id = c.Id,
+                    Code = c.Code,
+                    Name = c.Name,
+                    City = c.City,
+                    Phone = c.Phone,
+                    Email = c.Email
+                }).ToList()
+                : new List<CustomerSearchResult>();
+
+            var totalCount = result.IsSuccess && result.Data != null ? result.Data.TotalCount : 0;
+            return Json(new { items, totalCount, page = f.Page, pageSize = f.PageSize });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ProductCategories()
+        {
+            if (!await CanUseProductLookupAsync())
+            {
+                return Forbid();
+            }
+
+            var result = await _productService.GetCategoriesAsync();
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+
+            return BadRequest(this.LocalizeUiMessage(result.Message, L("GenericError")));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ProductGroups()
+        {
+            if (!await CanUseProductLookupAsync())
+            {
+                return Forbid();
+            }
+
+            var result = await _productService.GetProductGroupsAsync();
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+
+            return BadRequest(this.LocalizeUiMessage(result.Message, L("GenericError")));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ProductFunctions()
+        {
+            if (!await CanUseProductLookupAsync())
+            {
+                return Forbid();
+            }
+
+            var result = await _productService.GetFunctionsAsync();
+            if (result.IsSuccess)
+            {
+                return Json(result.Data);
+            }
+
+            return BadRequest(this.LocalizeUiMessage(result.Message, L("GenericError")));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ProductSearch([FromBody] ProductFilterModel? filter)
+        {
+            if (!await CanUseProductLookupAsync())
+            {
+                return Forbid();
+            }
+
+            var f = filter ?? new ProductFilterModel();
+            f.Page = f.Page > 0 ? f.Page : 1;
+            f.PageSize = f.PageSize > 0 ? f.PageSize : 10;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
+
+            var result = await _productService.GetByFilterAsync(BuildProductFilter(f));
+
+            var items = result.IsSuccess && result.Data != null
+                ? result.Data.Items.Select(p => new ProductSearchResult
+                {
+                    Id = p.Id,
+                    Code = p.Code,
+                    Name = p.Name,
+                    Category = p.CategoryName,
+                    ProductGroup = p.GroupName,
+                    Price = p.Price
+                }).ToList()
+                : new List<ProductSearchResult>();
+
+            var totalCount = result.IsSuccess && result.Data != null ? result.Data.TotalCount : 0;
+            return Json(new { items, totalCount, page = f.Page, pageSize = f.PageSize });
         }
 
         /// <summary>
@@ -387,12 +526,19 @@ namespace Imaj.Web.Controllers
         /// Dropdown verileri veritabanından yüklenir.
         /// </summary>
         [RequireMethodPermission(AddJobEntryMethodId)]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(decimal? functionId = null)
         {
             // Dropdown verilerini backend'den al
             await LoadDropdownDataAsync();
 
-            var model = new JobCreateViewModel();
+            var functions = ViewBag.Functions as List<FunctionDto> ?? new List<FunctionDto>();
+            var selectedFunction = ResolveFunctionSelection(functionId, functions);
+
+            var model = new JobCreateViewModel
+            {
+                FunctionId = selectedFunction?.Id,
+                FunctionName = selectedFunction?.Name ?? "Mesai"
+            };
             model.StartDate = DateTime.Now;
             model.EndDate = DateTime.Now;
             return View(model);
@@ -419,6 +565,7 @@ namespace Imaj.Web.Controllers
                 }
 
                 await LoadDropdownDataAsync();
+                ApplyFunctionSelection(model);
                 return View(model);
             }
 
@@ -429,7 +576,7 @@ namespace Imaj.Web.Controllers
                 Name = model.Name,
                 Contact = model.RelatedPerson,
                 // Function Handling
-                FunctionId = decimal.TryParse(model.Function, out var fId) ? fId : 1m,
+                FunctionId = model.FunctionId ?? 1m,
                 
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
@@ -485,6 +632,7 @@ namespace Imaj.Web.Controllers
             TempData["ErrorMessage"] = result.Message ?? L("SaveError");
             ModelState.AddModelError(string.Empty, result.Message ?? L("SaveError"));
             await LoadDropdownDataAsync();
+            ApplyFunctionSelection(model);
             return View(model);
         }
 
@@ -509,6 +657,97 @@ namespace Imaj.Web.Controllers
             // Mesai Tipi listesi
             var timeTypesResult = await _lookupService.GetTimeTypesAsync();
             ViewBag.TimeTypes = timeTypesResult.IsSuccess ? timeTypesResult.Data : new List<TimeTypeDto>();
+        }
+
+        private void ApplyFunctionSelection(JobCreateViewModel model)
+        {
+            var functions = ViewBag.Functions as List<FunctionDto> ?? new List<FunctionDto>();
+            var selectedFunction = ResolveFunctionSelection(model.FunctionId, functions);
+
+            model.FunctionId = selectedFunction?.Id;
+            model.FunctionName = selectedFunction?.Name ?? "Mesai";
+        }
+
+        private static FunctionDto? ResolveFunctionSelection(decimal? requestedFunctionId, List<FunctionDto> functions)
+        {
+            if (requestedFunctionId.HasValue
+                && requestedFunctionId.Value > 0
+                && functions.Any(x => x.Id == requestedFunctionId.Value))
+            {
+                return functions.First(x => x.Id == requestedFunctionId.Value);
+            }
+
+            return functions.FirstOrDefault();
+        }
+
+        private async Task<bool> CanUseCustomerLookupAsync()
+        {
+            return await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId, write: true)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)AddJobEntryMethodId)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)AddJobEntryMethodId, write: true);
+        }
+
+        private async Task<bool> CanUseProductLookupAsync()
+        {
+            return await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId, write: true)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)AddJobEntryMethodId)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)AddJobEntryMethodId, write: true);
+        }
+
+        private static CustomerFilterDto BuildCustomerFilter(CustomerFilterModel filter)
+        {
+            var hasStateId = decimal.TryParse(filter.JobStatus, out var stateId);
+
+            return new CustomerFilterDto
+            {
+                Code = filter.Code,
+                Name = filter.Name,
+                City = filter.City,
+                AreaCode = filter.AreaCode,
+                Country = filter.Country,
+                Owner = filter.Owner,
+                RelatedPerson = filter.RelatedPerson,
+                Phone = filter.Phone,
+                Fax = filter.Fax,
+                Email = filter.Email,
+                TaxOffice = filter.TaxOffice,
+                TaxNumber = filter.TaxNumber,
+                JobStatus = filter.JobStatus,
+                JobStateId = hasStateId ? stateId : null,
+                IsInvalid = filter.IsInvalid,
+                Page = filter.Page > 0 ? filter.Page : 1,
+                PageSize = filter.PageSize > 0 ? filter.PageSize : 20,
+                First = filter.First
+            };
+        }
+
+        private static ProductFilterDto BuildProductFilter(ProductFilterModel filter)
+        {
+            return new ProductFilterDto
+            {
+                Code = filter.Code,
+                Category = IsAllOption(filter.Category) ? null : filter.Category,
+                ProductGroup = IsAllOption(filter.ProductGroup) ? null : filter.ProductGroup,
+                Function = IsAllOption(filter.Function) ? null : filter.Function,
+                IsInvalid = filter.IsInvalid,
+                Page = filter.Page > 0 ? filter.Page : 1,
+                PageSize = filter.PageSize > 0 ? filter.PageSize : 10,
+                First = filter.First
+            };
+        }
+
+        private static bool IsAllOption(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return true;
+            }
+
+            return value.Equals("Tümü", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("Tumu", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("All", StringComparison.OrdinalIgnoreCase);
         }
 
         private string L(string key)

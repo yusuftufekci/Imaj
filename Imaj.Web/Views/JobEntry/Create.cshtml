@@ -3,6 +3,7 @@
 
 @{
     ViewData["Title"] = Localizer["CreateNewJob"];
+    var currentFunctionId = Model.FunctionId?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
     var defaultWorkTypeId = (ViewBag.WorkTypes != null && ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).Count > 0)
         ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes)[0].Id
         : 0;
@@ -98,6 +99,7 @@
 
     <form method="post" action="/JobEntry/Create" x-ref="createJobForm" @@submit.prevent="validateAndSubmit()">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="FunctionId" value="@Model.FunctionId" />
         
         <!-- TOP SECTION: Basic Info & Notes -->
         <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">
@@ -108,7 +110,7 @@
                     
                     <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-bold text-blue-900">@Localizer["Function"]</label>
-                        <div class="col-span-9 text-sm text-gray-900 font-medium">@Model.Function</div>
+                        <div class="col-span-9 text-sm text-gray-900 font-medium">@Model.FunctionName</div>
                     </div>
                      <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-bold text-blue-900">@Localizer["Reference"]</label>
@@ -123,7 +125,7 @@
                              <input type="hidden" name="CustomerCode" x-model="form.customerCode">
                              <input type="hidden" name="CustomerName" x-model="form.customerName">
                              <span x-text="form.customerName || '-'" class="font-bold text-gray-900"></span>
-                             <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'createJob' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
+                             <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'createJob', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
                         </div>
                     </div>
 
@@ -261,16 +263,6 @@
                  <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                       <div class="flex space-x-2">
                           <button type="button" class="text-red-600 font-bold hover:underline text-sm">@Localizer["Delete"]</button>
-                          @{
-                              var currentFunctionId = "";
-                              if (ViewBag.Functions != null) {
-                                  var funcs = (List<Imaj.Service.DTOs.FunctionDto>)ViewBag.Functions;
-                                  var match = funcs.FirstOrDefault(f => f.Name == Model.Function);
-                                  if (match != null) {
-                                      currentFunctionId = match.Id.ToString();
-                                  }
-                              }
-                          }
                           <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'overtimeAdd', isMultiSelect: true, functionId: '@currentFunctionId' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Add"]</button>
                       </div>
                       <div class="text-sm font-bold text-gray-900">
@@ -332,7 +324,7 @@
                  <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                       <div class="flex space-x-2">
                           <button type="button" class="text-red-600 font-bold hover:underline text-sm">@Localizer["Delete"]</button>
-                          <button type="button" @@click="$dispatch('product-select-open', { targetId: 'productAdd', isMultiSelect: true })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["AddBySelection"]</button>
+                          <button type="button" @@click="$dispatch('product-select-open', { targetId: 'productAdd', isMultiSelect: true, searchEndpoint: '/JobEntry/ProductSearch', categoriesEndpoint: '/JobEntry/ProductCategories', productGroupsEndpoint: '/JobEntry/ProductGroups', functionsEndpoint: '/JobEntry/ProductFunctions' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["AddBySelection"]</button>
                       </div>
                       <div class="text-sm font-bold text-gray-900">
                           Toplam: <span x-text="calculateProductTotal()"></span>

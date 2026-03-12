@@ -54,7 +54,7 @@
                                 <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
                                 <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
                                 <input type="text" readonly x-model="customerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
+                                <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
                             </div>
                         </div>
 
@@ -220,7 +220,7 @@
                                         <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
                                         <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
                                         <input type="text" readonly x-model="filter.productName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                        <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
+                                        <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct', searchEndpoint: '/JobEntry/ProductSearch', categoriesEndpoint: '/JobEntry/ProductCategories', productGroupsEndpoint: '/JobEntry/ProductGroups', functionsEndpoint: '/JobEntry/ProductFunctions' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
                                     </div>
                                 </div>
                             </div>
@@ -271,7 +271,7 @@
                      </div>
                  </div>
                  <div class="mt-4 flex justify-center responsive-action-group">
-                     <a href="/JobEntry/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                     <a :href="filter.function ? '/JobEntry/Create?functionId=' + encodeURIComponent(filter.function) : '/JobEntry/Create'" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
                         @Localizer["CreateNewJob"]
                     </a>
                  </div>
