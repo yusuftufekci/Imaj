@@ -371,6 +371,20 @@ namespace Imaj.Web.Controllers
                 }
             }
 
+            var languageNameById = languages
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First().Name);
+
+            foreach (var localizedName in model.Names)
+            {
+                if (string.IsNullOrWhiteSpace(localizedName.LanguageName) &&
+                    languageNameById.TryGetValue(localizedName.LanguageId, out var languageName) &&
+                    !string.IsNullOrWhiteSpace(languageName))
+                {
+                    localizedName.LanguageName = languageName;
+                }
+            }
+
             if (model is ReasonEditViewModel editModel)
             {
                 EnsureReasonCatOptionExists(reasonCats, editModel.ReasonCatId, editModel.ReasonCatName);
