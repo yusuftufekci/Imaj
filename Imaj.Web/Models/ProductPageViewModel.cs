@@ -111,7 +111,6 @@ namespace Imaj.Web.Models
         public decimal Price { get; set; }
 
         public bool IsInvalid { get; set; }
-        public bool AutomaticForward { get; set; }
         public string ReturnUrl { get; set; } = "/Product/List";
 
         public string ProductCategoryName { get; set; } = string.Empty;

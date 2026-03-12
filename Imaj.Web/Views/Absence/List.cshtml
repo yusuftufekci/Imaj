@@ -199,9 +199,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir mazeret secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneAbsence"]');
                     } else {
-                        alert('Lutfen en az bir mazeret secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneAbsence"]');
                     }
                     return;
                 }

@@ -167,9 +167,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir kaynak secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneResource"]');
                     } else {
-                        alert('Lutfen en az bir kaynak secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneResource"]');
                     }
                     return;
                 }

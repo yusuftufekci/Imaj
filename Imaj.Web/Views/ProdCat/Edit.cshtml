@@ -18,7 +18,6 @@
             taxTypeId = Model.TaxTypeId,
             sequence = Model.Sequence,
             isInvalid = Model.IsInvalid,
-            automaticForward = Model.AutomaticForward
         }
     };
 
@@ -154,7 +153,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">Vergi Tipi</label>
+                    <label class="md:col-span-3 text-blue-900 font-semibold md:text-right">@Localizer["TaxType"]</label>
                     <div class="md:col-span-4">
                         <select name="TaxTypeId" x-model.number="form.taxTypeId" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm" required>
                             <option value="">@Localizer["SelectPrompt"]</option>
@@ -193,10 +192,6 @@
         })" />
 
         <div class="flex items-center justify-center gap-3">
-            <label class="inline-flex items-center text-sm text-gray-700">
-                <input type="checkbox" name="AutomaticForward" value="true" x-model="form.automaticForward" class="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                @Localizer["AutomaticForward"]
-            </label>
 
             <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
                 @Localizer["Save"]
@@ -215,7 +210,6 @@
                 taxTypeId: Number(initialState.form && initialState.form.taxTypeId ? initialState.form.taxTypeId : 0),
                 sequence: Number(initialState.form && initialState.form.sequence ? initialState.form.sequence : 0),
                 isInvalid: !!(initialState.form && initialState.form.isInvalid),
-                automaticForward: !!(initialState.form && initialState.form.automaticForward)
             }
         };
     }

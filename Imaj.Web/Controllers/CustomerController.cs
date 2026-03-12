@@ -340,8 +340,8 @@ namespace Imaj.Web.Controllers
                  return RedirectToAction("List");
             }
             
-            TempData["ErrorMessage"] = result.Message ?? L("CustomerUpdateFailed");
-            ModelState.AddModelError(string.Empty, result.Message ?? L("GenericError"));
+            TempData["ErrorMessage"] = Ui(result.Message, L("CustomerUpdateFailed"));
+            ModelState.AddModelError(string.Empty, Ui(result.Message, L("GenericError")));
             return View("Edit", model);
         }
 
@@ -397,9 +397,9 @@ namespace Imaj.Web.Controllers
                  return RedirectToAction("List"); 
             }
             
-            TempData["ErrorMessage"] = result.Message ?? L("CustomerCreateFailed");
+            TempData["ErrorMessage"] = Ui(result.Message, L("CustomerCreateFailed"));
             // Also add to ModelState to show in summary if desired
-            ModelState.AddModelError(string.Empty, result.Message ?? L("GenericError"));
+            ModelState.AddModelError(string.Empty, Ui(result.Message, L("GenericError")));
             return View(model);
         }
     }

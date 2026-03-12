@@ -34,7 +34,7 @@
 
 <div x-data="taxTypeListPage()" class="space-y-6">
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Vergi Tipleri</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["TaxTypes"]</h2>
     </div>
 
     <form x-ref="listForm" method="post" action="/TaxType/Detail" class="bg-white border border-gray-200 shadow sm:rounded-lg">
@@ -50,7 +50,7 @@
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Code"]</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Oran</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["TaxRate"]</th>
                         <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Invalid"]</th>
                     </tr>
                 </thead>
@@ -148,9 +148,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir vergi tipi secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneTaxType"]');
                     } else {
-                        alert('Lutfen en az bir vergi tipi secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneTaxType"]');
                     }
                     return;
                 }

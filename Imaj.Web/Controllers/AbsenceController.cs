@@ -147,6 +147,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/Absence/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _absenceService.GetAbsenceDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -158,7 +170,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Absence/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -400,7 +412,7 @@ namespace Imaj.Web.Controllers
             var result = await _absenceService.CreateAbsenceAsync(MapToCreateDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("AbsenceSaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("AbsenceSaveFailed")));
                 return View("Create", model);
             }
 

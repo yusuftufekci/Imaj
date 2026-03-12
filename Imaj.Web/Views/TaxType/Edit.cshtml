@@ -16,7 +16,6 @@
         form = new
         {
             isInvalid = Model.IsInvalid,
-            automaticForward = Model.AutomaticForward
         }
     };
 
@@ -88,7 +87,7 @@
 
 <div x-data='taxTypeEditorPage(@Html.Raw(JsonSerializer.Serialize(initialState)))' class="space-y-6">
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Vergi Tipi</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["TaxType"]</h2>
     </div>
 
     @if (!ViewData.ModelState.IsValid)
@@ -111,7 +110,7 @@
 
         <div class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-800">Vergi Tipi</h3>
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["TaxType"]</h3>
             </div>
 
             <div class="p-4 space-y-4">
@@ -157,7 +156,7 @@
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Language"]</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Name"]</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Fatura Son-Eki</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["InvoiceLinePostfix"]</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
@@ -180,7 +179,7 @@
                                                value="@localizedName.Name"
                                                maxlength="32"
                                                class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm"
-                                               placeholder="Vergi tipi adi" />
+                                               placeholder="@Localizer["TaxTypeNamePlaceholder"]" />
                                     </td>
                                     <td class="px-4 py-2">
                                         <input type="text"
@@ -213,10 +212,6 @@
         })" />
 
         <div class="flex items-center justify-center gap-3">
-            <label class="inline-flex items-center text-sm text-gray-700">
-                <input type="checkbox" name="AutomaticForward" value="true" x-model="form.automaticForward" class="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                @Localizer["AutomaticForward"]
-            </label>
 
             <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
                 @Localizer["Edit"]
@@ -231,7 +226,6 @@
         return {
             form: {
                 isInvalid: !!(initialState.form && initialState.form.isInvalid),
-                automaticForward: !!(initialState.form && initialState.form.automaticForward)
             }
         };
     }

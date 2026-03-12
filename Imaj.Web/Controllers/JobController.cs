@@ -443,7 +443,7 @@ namespace Imaj.Web.Controllers
                 model.Items = new List<JobSearchResult>();
                 model.TotalCount = 0;
                 // Hatayı ekrana bas
-                ModelState.AddModelError(string.Empty, result.Message ?? L("DataLoadError"));
+                ModelState.AddModelError(string.Empty, this.LocalizeUiMessage(result.Message, L("DataLoadError")));
             }
 
             return View(model);
@@ -454,9 +454,6 @@ namespace Imaj.Web.Controllers
         [AcceptVerbs("GET", "POST")]
         public async Task<IActionResult> Detail(string? id, string[]? selectedIds = null, int currentIndex = 0, string? returnUrl = null)
         {
-            // Dropdown verilerini backend'den al
-            await LoadDropdownDataAsync();
-            
             // If posted from List page with multiple selections but no specific ID
             if (string.IsNullOrEmpty(id) && selectedIds != null && selectedIds.Length > 0)
             {
@@ -479,11 +476,28 @@ namespace Imaj.Web.Controllers
                  id = selectedIds[currentIndex];
             }
 
+            var normalizedReturnUrl = string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith('/')
+                ? "/Job/List"
+                : returnUrl;
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id,
+                    selectedIds,
+                    currentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             // Referans numarasından iş bul
             if (!int.TryParse(id, out var reference))
             {
                 return RedirectToAction("Index");
             }
+
+            // Dropdown verilerini backend'den al
+            await LoadDropdownDataAsync();
             
             // Veritabanından getir (Referans ve Detaylı)
             var result = await _jobService.GetByReferenceAsync(reference);
@@ -521,7 +535,7 @@ namespace Imaj.Web.Controllers
                 SelectedIds = selectedIds?.ToList() ?? new List<string> { id },
                 CurrentIndex = currentIndex,
                 TotalSelected = selectedIds?.Length ?? 1,
-                ReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/Job/List" : returnUrl
+                ReturnUrl = normalizedReturnUrl
             };
 
             // Mesai (JobWork) Detaylarını Map Et
@@ -639,7 +653,8 @@ namespace Imaj.Web.Controllers
             }
 
             var result = await _jobService.ExecuteWorkflowActionAsync(request.Reference, request.Action);
-            TempData[result.IsSuccess ? "SuccessMessage" : "ErrorMessage"] = result.Message ?? (result.IsSuccess ? L("SuccessTitle") : L("GenericError"));
+            TempData[result.IsSuccess ? "SuccessMessage" : "ErrorMessage"] =
+                this.LocalizeUiMessage(result.Message, result.IsSuccess ? L("SuccessTitle") : L("GenericError"));
 
             return RedirectToDetailWithContext(request);
         }
@@ -752,8 +767,8 @@ namespace Imaj.Web.Controllers
             }
 
             // TempData ile error mesajı set et
-            TempData["ErrorMessage"] = result.Message ?? L("SaveError");
-            ModelState.AddModelError(string.Empty, result.Message ?? L("SaveError"));
+            TempData["ErrorMessage"] = this.LocalizeUiMessage(result.Message, L("SaveError"));
+            ModelState.AddModelError(string.Empty, this.LocalizeUiMessage(result.Message, L("SaveError")));
             await LoadDropdownDataAsync();
             ApplyFunctionSelection(model);
             return View(model);

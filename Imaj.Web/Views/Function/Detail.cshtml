@@ -188,7 +188,7 @@
     {
         <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-800">Kural</h3>
+                <h3 class="text-lg font-semibold text-gray-800">@Localizer["Rule"]</h3>
             </div>
 
             @if (Model.Rules.Count > 0)
@@ -199,15 +199,15 @@
                         <div class="p-4 grid grid-cols-1 xl:grid-cols-12 gap-4">
                             <div class="xl:col-span-5 space-y-2">
                                 <div class="text-sm">
-                                    <span class="font-semibold text-blue-900">Ad:</span>
+                                    <span class="font-semibold text-blue-900">@Localizer["Name"]:</span>
                                     <span class="text-gray-900">@rule.Name</span>
                                 </div>
                                 <div class="text-sm">
-                                    <span class="font-semibold text-blue-900">Minimum Deger:</span>
+                                    <span class="font-semibold text-blue-900">@Localizer["MinimumValue"]:</span>
                                     <span class="text-gray-900">@rule.MinValue</span>
                                 </div>
                                 <div class="text-sm">
-                                    <span class="font-semibold text-blue-900">Maksimum Deger:</span>
+                                    <span class="font-semibold text-blue-900">@Localizer["MaximumValue"]:</span>
                                     <span class="text-gray-900">@rule.MaxValue</span>
                                 </div>
                             </div>
@@ -236,7 +236,7 @@
             }
             else
             {
-                <div class="p-4 text-sm text-gray-500">Kural kaydi yok.</div>
+                <div class="p-4 text-sm text-gray-500">@Localizer["NoRuleRecords"]</div>
             }
         </section>
     }

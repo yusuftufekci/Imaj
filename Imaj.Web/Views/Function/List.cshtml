@@ -48,7 +48,7 @@
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["ReservationRange"]</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Rezervasyon</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Reservation"]</th>
                         <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Invalid"]</th>
                     </tr>
                 </thead>
@@ -148,9 +148,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir fonksiyon secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneFunction"]');
                     } else {
-                        alert('Lutfen en az bir fonksiyon secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneFunction"]');
                     }
                     return;
                 }

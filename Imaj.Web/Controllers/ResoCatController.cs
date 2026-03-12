@@ -87,6 +87,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/ResoCat/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _resoCatService.GetResoCatDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -98,7 +110,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/ResoCat/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -113,6 +125,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/ResoCat/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Edit), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _resoCatService.GetResoCatDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -125,7 +149,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/ResoCat/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -158,7 +182,7 @@ namespace Imaj.Web.Controllers
             var result = await _resoCatService.UpdateResoCatAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("ResourceCategoryUpdateFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("ResourceCategoryUpdateFailed")));
                 return View("Edit", model);
             }
 
@@ -187,15 +211,11 @@ namespace Imaj.Web.Controllers
             var result = await _resoCatService.CreateResoCatAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("ResourceCategorySaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("ResourceCategorySaveFailed")));
                 return View("Create", model);
             }
 
             ShowSuccess(result.Message ?? L("ResourceCategorySavedSuccess"));
-            if (model.AutomaticForward)
-            {
-                return RedirectToAction("Create");
-            }
 
             return RedirectToAction("Index");
         }

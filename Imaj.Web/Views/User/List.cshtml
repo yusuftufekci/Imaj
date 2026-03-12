@@ -157,9 +157,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir kullanici secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneUser"]');
                     } else {
-                        alert('Lutfen en az bir kullanici secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneUser"]');
                     }
                     return;
                 }

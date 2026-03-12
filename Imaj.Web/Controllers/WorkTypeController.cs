@@ -86,6 +86,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/WorkType/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _workTypeService.GetWorkTypeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -97,7 +109,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/WorkType/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -112,6 +124,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/WorkType/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Edit), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _workTypeService.GetWorkTypeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -124,7 +148,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/WorkType/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -158,7 +182,7 @@ namespace Imaj.Web.Controllers
             var result = await _workTypeService.UpdateWorkTypeAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("WorkTypeUpdateFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("WorkTypeUpdateFailed")));
                 return View("Edit", model);
             }
 
@@ -188,15 +212,11 @@ namespace Imaj.Web.Controllers
             var result = await _workTypeService.CreateWorkTypeAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("WorkTypeSaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("WorkTypeSaveFailed")));
                 return View("Create", model);
             }
 
             ShowSuccess(result.Message ?? L("WorkTypeSavedSuccess"));
-            if (model.AutomaticForward)
-            {
-                return RedirectToAction("Create");
-            }
 
             return RedirectToAction("Index");
         }

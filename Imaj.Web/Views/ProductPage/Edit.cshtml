@@ -36,7 +36,6 @@
             productGroupId = Model.ProductGroupId,
             price = Model.Price,
             isInvalid = Model.IsInvalid,
-            automaticForward = Model.AutomaticForward
         }
     };
 
@@ -271,10 +270,6 @@
         })" />
 
         <div class="flex items-center justify-center gap-3">
-            <label class="inline-flex items-center text-sm text-gray-700">
-                <input type="checkbox" name="AutomaticForward" value="true" x-model="form.automaticForward" class="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded" />
-                @Localizer["AutomaticForward"]
-            </label>
 
             <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
                 @Localizer["Edit"]
@@ -306,7 +301,6 @@
                     productGroupId: (initialState.form && initialState.form.productGroupId) ? Number(initialState.form.productGroupId) : '',
                     price: (initialState.form && typeof initialState.form.price !== 'undefined') ? Number(initialState.form.price) : 0,
                     isInvalid: !!(initialState.form && initialState.form.isInvalid),
-                    automaticForward: !!(initialState.form && initialState.form.automaticForward)
                 },
                 selectedFunctionIds: [],
 

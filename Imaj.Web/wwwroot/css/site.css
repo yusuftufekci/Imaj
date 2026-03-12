@@ -99,6 +99,182 @@ textarea:focus {
 }
 
 /* ============================================
+   Shared Button System
+   Job Detail sayfasindaki aksiyon butonlari
+   referans alinarak projedeki buton/link
+   aksiyonlari ortak formatta normalize edilir.
+   ============================================ */
+:where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"]
+) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 2rem;
+    padding: 0.25rem 1rem;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+:where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"]
+) {
+    border-color: #60a5fa !important;
+    background-color: #dbeafe !important;
+    color: #1e3a8a !important;
+}
+
+:where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"]
+):hover {
+    background-color: #bfdbfe !important;
+    border-color: #60a5fa !important;
+    color: #1e3a8a !important;
+}
+
+:where(a, button):is(
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"]
+) {
+    border-color: #f87171 !important;
+    background-color: #fee2e2 !important;
+    color: #7f1d1d !important;
+}
+
+:where(a, button):is(
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"]
+):hover {
+    background-color: #fecaca !important;
+    border-color: #f87171 !important;
+    color: #7f1d1d !important;
+}
+
+:where(a, button)[class*="bg-emerald-100"] {
+    border-color: #6ee7b7 !important;
+    background-color: #d1fae5 !important;
+    color: #065f46 !important;
+}
+
+:where(a, button)[class*="bg-emerald-100"]:hover {
+    background-color: #a7f3d0 !important;
+    border-color: #6ee7b7 !important;
+    color: #065f46 !important;
+}
+
+:where(a, button)[class*="bg-amber-100"] {
+    border-color: #fcd34d !important;
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+}
+
+:where(a, button)[class*="bg-amber-100"]:hover {
+    background-color: #fde68a !important;
+    border-color: #fcd34d !important;
+    color: #92400e !important;
+}
+
+:where(a, button)[class*="bg-white"][class*="border-gray-300"] {
+    border-color: #d1d5db !important;
+    background-color: #ffffff !important;
+    color: #374151 !important;
+}
+
+:where(a, button)[class*="bg-white"][class*="border-gray-300"]:hover {
+    background-color: #f9fafb !important;
+    border-color: #9ca3af !important;
+    color: #1f2937 !important;
+}
+
+:where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"]
+):focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.92), 0 0 0 4px rgba(96, 165, 250, 0.45);
+}
+
+:where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"]
+):disabled,
+:where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"]
+)[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============================================
    Custom Scrollbar
    ============================================ */
 ::-webkit-scrollbar {

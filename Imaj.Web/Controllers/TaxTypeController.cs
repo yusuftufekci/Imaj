@@ -88,6 +88,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/TaxType/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _taxTypeService.GetTaxTypeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -99,7 +111,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/TaxType/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -114,6 +126,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/TaxType/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Edit), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _taxTypeService.GetTaxTypeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -126,7 +150,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/TaxType/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -162,7 +186,7 @@ namespace Imaj.Web.Controllers
             var result = await _taxTypeService.UpdateTaxTypeAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("TaxTypeUpdateFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("TaxTypeUpdateFailed")));
                 return View("Edit", model);
             }
 
@@ -192,15 +216,11 @@ namespace Imaj.Web.Controllers
             var result = await _taxTypeService.CreateTaxTypeAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("TaxTypeSaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("TaxTypeSaveFailed")));
                 return View("Create", model);
             }
 
             ShowSuccess(result.Message ?? L("TaxTypeSavedSuccess"));
-            if (model.AutomaticForward)
-            {
-                return RedirectToAction("Create", new { code = model.Code });
-            }
 
             return RedirectToAction("Index");
         }

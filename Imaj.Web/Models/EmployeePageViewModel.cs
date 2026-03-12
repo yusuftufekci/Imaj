@@ -90,7 +90,6 @@ namespace Imaj.Web.Models
         public string Name { get; set; } = string.Empty;
 
         public bool IsInvalid { get; set; }
-        public bool AutomaticForward { get; set; }
         public string ReturnUrl { get; set; } = "/Employee/List";
 
         public List<EmployeePageLookupOptionViewModel> AvailableFunctions { get; set; } = new();

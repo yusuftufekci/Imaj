@@ -14,6 +14,7 @@
         await PermissionViewService.CanExecuteMethodAsync(1039m);
     var antiForgeryTokens = Antiforgery.GetAndStoreTokens(Context);
     var topBarUserCode = User.Identity?.IsAuthenticated == true ? User.Identity?.Name : null;
+    var currentUrl = $"{Context.Request.PathBase}{Context.Request.Path}{Context.Request.QueryString}";
 }
 
 <!DOCTYPE html>
@@ -47,9 +48,17 @@
                 <div class="layout-topbar-group flex items-center space-x-6">
                     <span class="text-slate-300">@Localizer["SystemVersion"]</span>
                     <div class="layout-topbar-links flex items-center space-x-3">
-                        <a href="/Culture/SetLanguage?culture=tr-TR&returnUrl=@Context.Request.Path" class="hover:text-white text-slate-300 transition-colors">TR</a>
+                        <a asp-controller="Culture"
+                           asp-action="SetLanguage"
+                           asp-route-culture="tr-TR"
+                           asp-route-returnUrl="@currentUrl"
+                           class="hover:text-white text-slate-300 transition-colors">TR</a>
                         <span class="text-slate-400">|</span>
-                        <a href="/Culture/SetLanguage?culture=en-US&returnUrl=@Context.Request.Path" class="hover:text-white text-slate-300 transition-colors">EN</a>
+                        <a asp-controller="Culture"
+                           asp-action="SetLanguage"
+                           asp-route-culture="en-US"
+                           asp-route-returnUrl="@currentUrl"
+                           class="hover:text-white text-slate-300 transition-colors">EN</a>
 
                         @if (canShowChangePassword)
                         {

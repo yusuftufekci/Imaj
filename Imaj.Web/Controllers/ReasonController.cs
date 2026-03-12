@@ -92,6 +92,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/Reason/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _reasonService.GetReasonDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -103,7 +115,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Reason/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -116,6 +128,18 @@ namespace Imaj.Web.Controllers
             if (!resolved.ResolvedId.HasValue)
             {
                 return RedirectToAction("Index");
+            }
+
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/Reason/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Edit), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
             }
 
             var detailResult = await _reasonService.GetReasonDetailAsync(resolved.ResolvedId.Value);
@@ -132,7 +156,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Reason/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -179,7 +203,7 @@ namespace Imaj.Web.Controllers
             var result = await _reasonService.UpdateReasonAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("ReasonUpdateFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("ReasonUpdateFailed")));
                 return View("Edit", model);
             }
 
@@ -209,19 +233,11 @@ namespace Imaj.Web.Controllers
             var result = await _reasonService.CreateReasonAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("ReasonSaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("ReasonSaveFailed")));
                 return View("Create", model);
             }
 
             ShowSuccess(result.Message ?? L("ReasonSavedSuccess"));
-            if (model.AutomaticForward)
-            {
-                return RedirectToAction("Create", new
-                {
-                    reasonCatId = model.ReasonCatId,
-                    code = model.Code
-                });
-            }
 
             return RedirectToAction("Index");
         }

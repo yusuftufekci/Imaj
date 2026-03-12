@@ -72,7 +72,6 @@ namespace Imaj.Web.Models
         public short Sequence { get; set; }
 
         public bool IsInvalid { get; set; }
-        public bool AutomaticForward { get; set; }
         public string ReturnUrl { get; set; } = "/ProdCat/List";
 
         public List<ProdCatLanguageOptionViewModel> Languages { get; set; } = new();

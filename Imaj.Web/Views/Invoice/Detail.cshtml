@@ -65,7 +65,7 @@
             <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
                 <div class="flex-1 min-w-0">
                     <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
-                        Fatura
+                        @Localizer["Invoice"]
                     </h2>
                 </div>
             </div>
@@ -137,7 +137,7 @@
                                 <th class="px-4 py-2 text-right font-bold text-gray-700">@Localizer["Quantity"]</th>
                                 <th class="px-4 py-2 text-right font-bold text-gray-700">@Localizer["Price"]</th>
                                 <th class="px-4 py-2 text-right font-bold text-gray-700">@Localizer["Amount"]</th>
-                                <th class="px-4 py-2 text-left font-bold text-gray-700">Vergi Tipi</th>
+                                <th class="px-4 py-2 text-left font-bold text-gray-700">@Localizer["TaxType"]</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -254,7 +254,7 @@
 
             <div>
                 <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
-                    <h3 class="font-bold text-gray-800 text-sm">Vergi (@invoice.Taxes.Count)</h3>
+                    <h3 class="font-bold text-gray-800 text-sm">@Localizer["Taxes"] (@invoice.Taxes.Count)</h3>
                 </div>
                 <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg mobile-table-panel">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">

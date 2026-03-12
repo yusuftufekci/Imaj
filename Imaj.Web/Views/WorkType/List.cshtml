@@ -140,9 +140,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir gorev tipi secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneWorkType"]');
                     } else {
-                        alert('Lutfen en az bir gorev tipi secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneWorkType"]');
                     }
                     return;
                 }

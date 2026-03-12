@@ -118,12 +118,10 @@ namespace Imaj.Web.Models
         public int TotalSelected { get; set; }
         public List<string> SelectedIds { get; set; } = new();
         public string ReturnUrl { get; set; } = "/User/List";
-        public bool AutomaticForward { get; set; }
     }
 
     public class UserCreateViewModel : UserEditorViewModelBase
     {
-        public bool AutomaticForward { get; set; }
     }
 
     public class UserChangePasswordViewModel

@@ -2,12 +2,14 @@ using System.Collections;
 using System.Globalization;
 using System.Net;
 using System.Resources;
+using System.Text;
 
 namespace Imaj.Web.Services.Localization
 {
     public class UiMessageLocalizer : IUiMessageLocalizer
     {
         private static readonly Lazy<IReadOnlyDictionary<string, string>> TrToEnMap = new(BuildTrToEnMap);
+        private static readonly Lazy<IReadOnlyDictionary<string, string>> NormalizedTrToEnMap = new(BuildNormalizedTrToEnMap);
 
         public string Localize(string? message)
         {
@@ -24,6 +26,14 @@ namespace Imaj.Web.Services.Localization
             }
 
             if (TrToEnMap.Value.TryGetValue(decodedMessage, out var localizedMessage) &&
+                !string.IsNullOrWhiteSpace(localizedMessage))
+            {
+                return localizedMessage;
+            }
+
+            var normalizedMessage = NormalizeForLookup(decodedMessage);
+            if (!string.IsNullOrWhiteSpace(normalizedMessage) &&
+                NormalizedTrToEnMap.Value.TryGetValue(normalizedMessage, out localizedMessage) &&
                 !string.IsNullOrWhiteSpace(localizedMessage))
             {
                 return localizedMessage;
@@ -72,6 +82,65 @@ namespace Imaj.Web.Services.Localization
             }
 
             return map;
+        }
+
+        private static IReadOnlyDictionary<string, string> BuildNormalizedTrToEnMap()
+        {
+            var exactMap = BuildTrToEnMap();
+            var map = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            foreach (var entry in exactMap)
+            {
+                var normalizedKey = NormalizeForLookup(entry.Key);
+                if (string.IsNullOrWhiteSpace(normalizedKey) || string.IsNullOrWhiteSpace(entry.Value))
+                {
+                    continue;
+                }
+
+                map[normalizedKey] = entry.Value;
+            }
+
+            return map;
+        }
+
+        private static string NormalizeForLookup(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var normalizedInput = value
+                .Replace('ı', 'i')
+                .Replace('İ', 'I')
+                .Replace('ğ', 'g')
+                .Replace('Ğ', 'G')
+                .Replace('ü', 'u')
+                .Replace('Ü', 'U')
+                .Replace('ş', 's')
+                .Replace('Ş', 'S')
+                .Replace('ö', 'o')
+                .Replace('Ö', 'O')
+                .Replace('ç', 'c')
+                .Replace('Ç', 'C');
+
+            var formD = normalizedInput.Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder(formD.Length);
+
+            foreach (var character in formD)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                {
+                    builder.Append(character);
+                }
+            }
+
+            return string.Join(" ", builder
+                    .ToString()
+                    .Normalize(NormalizationForm.FormC)
+                    .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+                .Trim()
+                .ToLowerInvariant();
         }
     }
 }

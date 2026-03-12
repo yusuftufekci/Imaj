@@ -55,7 +55,6 @@ namespace Imaj.Web.Models
     {
         public decimal? Id { get; set; }
         public bool IsInvalid { get; set; }
-        public bool AutomaticForward { get; set; }
         public string ReturnUrl { get; set; } = "/ProdGrp/List";
 
         public List<ProdGrpLanguageOptionViewModel> Languages { get; set; } = new();

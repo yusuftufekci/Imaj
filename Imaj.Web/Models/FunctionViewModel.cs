@@ -108,8 +108,6 @@ namespace Imaj.Web.Models
 
         public string IntervalName { get; set; } = string.Empty;
 
-        public bool AutomaticForward { get; set; }
-
         public string ReturnUrl { get; set; } = "/Function/List";
 
         public List<FunctionLanguageOptionViewModel> Languages { get; set; } = new();

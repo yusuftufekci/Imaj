@@ -56,7 +56,6 @@ namespace Imaj.Web.Models
         public decimal? Id { get; set; }
 
         public bool IsInvalid { get; set; }
-        public bool AutomaticForward { get; set; }
         public string ReturnUrl { get; set; } = "/TimeType/List";
 
         public List<TimeTypeLanguageOptionViewModel> Languages { get; set; } = new();

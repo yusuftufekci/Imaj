@@ -164,9 +164,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir urun secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneProduct"]');
                     } else {
-                        alert('Lutfen en az bir urun secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneProduct"]');
                     }
                     return;
                 }

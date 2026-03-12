@@ -140,9 +140,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir urun grubu secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneProductGroup"]');
                     } else {
-                        alert('Lutfen en az bir urun grubu secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneProductGroup"]');
                     }
                     return;
                 }

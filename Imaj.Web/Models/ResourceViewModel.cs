@@ -95,7 +95,6 @@ namespace Imaj.Web.Models
         public int Sequence { get; set; }
 
         public bool IsInvalid { get; set; }
-        public bool AutomaticForward { get; set; }
         public string ReturnUrl { get; set; } = "/Resource/List";
 
         public List<ResourceLanguageOptionViewModel> Languages { get; set; } = new();

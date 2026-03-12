@@ -46,6 +46,11 @@ namespace Imaj.Web.Controllers.Base
             return key;
         }
 
+        protected string Ui(string? message, string fallback)
+        {
+            return this.LocalizeUiMessage(WebUtility.HtmlDecode(message), fallback);
+        }
+
         /// <summary>
         /// ServiceResult'ı işleyerek uygun IActionResult döndürür.
         /// </summary>
@@ -89,7 +94,7 @@ namespace Imaj.Web.Controllers.Base
         /// <param name="message">Gösterilecek mesaj</param>
         protected void ShowSuccess(string message)
         {
-            TempData["SuccessMessage"] = ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, WebUtility.HtmlDecode(message));
+            TempData["SuccessMessage"] = Ui(message, WebUtility.HtmlDecode(message));
         }
 
         /// <summary>
@@ -98,7 +103,7 @@ namespace Imaj.Web.Controllers.Base
         /// <param name="message">Gösterilecek mesaj</param>
         protected void ShowError(string message)
         {
-            TempData["ErrorMessage"] = ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, WebUtility.HtmlDecode(message));
+            TempData["ErrorMessage"] = Ui(message, WebUtility.HtmlDecode(message));
         }
     }
 }

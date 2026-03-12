@@ -70,7 +70,6 @@ namespace Imaj.Web.Models
         public short TaxPercentage { get; set; }
 
         public bool IsInvalid { get; set; }
-        public bool AutomaticForward { get; set; }
         public string ReturnUrl { get; set; } = "/TaxType/List";
 
         public List<TaxTypeLanguageOptionViewModel> Languages { get; set; } = new();

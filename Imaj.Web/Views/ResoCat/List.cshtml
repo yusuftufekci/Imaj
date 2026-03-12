@@ -134,9 +134,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir kaynak kategorisi secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneResoCat"]');
                     } else {
-                        alert('Lutfen en az bir kaynak kategorisi secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneResoCat"]');
                     }
                     return;
                 }

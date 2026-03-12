@@ -30,7 +30,7 @@
 
 <div x-data="timeTypeListPage()" class="space-y-6">
     <div class="text-center">
-        <h2 class="text-3xl font-bold text-orange-600">Mesai Tipleri</h2>
+        <h2 class="text-3xl font-bold text-orange-600">@Localizer["TimeTypes"]</h2>
     </div>
 
     <form x-ref="listForm" method="post" action="/TimeType/Detail" class="bg-white border border-gray-200 shadow sm:rounded-lg">
@@ -140,9 +140,9 @@
             submitTo(action) {
                 if (this.selectedIds.length === 0) {
                     if (window.Toast && typeof window.Toast.error === 'function') {
-                        window.Toast.error('Lutfen en az bir mesai tipi secin.');
+                        window.Toast.error('@Localizer["PleaseSelectAtLeastOneTimeType"]');
                     } else {
-                        alert('Lutfen en az bir mesai tipi secin.');
+                        alert('@Localizer["PleaseSelectAtLeastOneTimeType"]');
                     }
                     return;
                 }

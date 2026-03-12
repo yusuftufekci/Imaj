@@ -86,6 +86,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/ProdCat/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _prodCatService.GetProdCatDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -97,7 +109,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/ProdCat/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -112,6 +124,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/ProdCat/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Edit), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _prodCatService.GetProdCatDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -123,7 +147,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/ProdCat/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             await EnsureEditorDependenciesAsync(model);
             return View(model);
@@ -164,7 +188,7 @@ namespace Imaj.Web.Controllers
             var result = await _prodCatService.UpdateProdCatAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("ProductCategoryUpdateFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("ProductCategoryUpdateFailed")));
                 return View("Edit", model);
             }
 
@@ -194,15 +218,11 @@ namespace Imaj.Web.Controllers
             var result = await _prodCatService.CreateProdCatAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("ProductCategorySaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("ProductCategorySaveFailed")));
                 return View("Create", model);
             }
 
             ShowSuccess(result.Message ?? L("ProductCategorySavedSuccess"));
-            if (model.AutomaticForward)
-            {
-                return RedirectToAction("Create");
-            }
 
             return RedirectToAction("Index");
         }

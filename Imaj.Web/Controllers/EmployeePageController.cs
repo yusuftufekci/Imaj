@@ -94,6 +94,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/Employee/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _employeeService.GetEmployeeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -105,7 +117,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Employee/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -121,6 +133,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/Employee/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Edit), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _employeeService.GetEmployeeDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -132,7 +156,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Employee/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             await EnsureEditorDependenciesAsync(model);
             return View(model);
@@ -167,15 +191,11 @@ namespace Imaj.Web.Controllers
             var result = await _employeeService.CreateEmployeeAsync(MapToUpsert(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("EmployeeSaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("EmployeeSaveFailed")));
                 return View("Create", model);
             }
 
             ShowSuccess(result.Message ?? L("EmployeeSavedSuccess"));
-            if (model.AutomaticForward)
-            {
-                return RedirectToAction("Create", new { code = model.Code });
-            }
 
             return RedirectToAction("Index");
         }
@@ -196,7 +216,7 @@ namespace Imaj.Web.Controllers
             var result = await _employeeService.UpdateEmployeeAsync(MapToUpsert(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("EmployeeUpdateFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("EmployeeUpdateFailed")));
                 return View("Edit", model);
             }
 

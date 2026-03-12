@@ -106,6 +106,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/User/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _userService.GetUserDetailAsync(resolved.ResolvedId);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -118,7 +130,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/User/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -133,6 +145,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/User/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Edit), new
+                {
+                    id = resolved.ResolvedId,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _userService.GetUserDetailAsync(resolved.ResolvedId);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -145,7 +169,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/User/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -206,7 +230,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("PasswordChangeFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("PasswordChangeFailed")));
                 return View(model);
             }
 
@@ -289,7 +313,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("UserUpdateFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("UserUpdateFailed")));
                 return View("Edit", model);
             }
 
@@ -320,7 +344,7 @@ namespace Imaj.Web.Controllers
 
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("UserSaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("UserSaveFailed")));
                 return View("Create", model);
             }
 

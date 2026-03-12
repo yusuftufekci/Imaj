@@ -1,7 +1,27 @@
 @using Imaj.Web
 @using Microsoft.Extensions.Localization
+@using System.Net
 @model Imaj.Web.Models.DetailNavigatorViewModel
 @inject IStringLocalizer<SharedResource> Localizer
+
+@{
+    var navigatorQueryParts = new List<string>();
+    foreach (var id in Model.SelectedIds)
+    {
+        navigatorQueryParts.Add("selectedIds=" + WebUtility.UrlEncode(id));
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+    {
+        navigatorQueryParts.Add("returnUrl=" + WebUtility.UrlEncode(Model.ReturnUrl));
+    }
+
+    var navigatorBaseUrl = Model.FormAction;
+    if (navigatorQueryParts.Count > 0)
+    {
+        navigatorBaseUrl += "?" + string.Join("&", navigatorQueryParts);
+    }
+}
 
 <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3">
     <div class="grid grid-cols-2 gap-2 sm:hidden">
@@ -47,22 +67,44 @@
             </a>
         </div>
 
-        <form action="@Model.FormAction" method="get" class="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm w-full sm:w-auto">
-            @foreach (var id in Model.SelectedIds)
-            {
-                <input type="hidden" name="selectedIds" value="@id" />
-            }
-            @if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
-            {
-                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-            }
+        <div data-detail-navigator
+             data-base-url="@navigatorBaseUrl"
+             data-total-count="@Model.TotalCount"
+             class="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm w-full sm:w-auto">
             <span>@Localizer["RecordLabel"]:</span>
             <input type="text"
                    name="currentIndex"
                    value="@(Model.CurrentIndex + 1)"
+                   onkeydown="if (event.key === 'Enter') { event.preventDefault(); window.navigateDetailNavigator(this); }"
                    class="w-14 p-0 text-center border-none focus:ring-0 text-indigo-600 font-bold bg-transparent" />
             <span class="text-gray-400">/ @Model.TotalCount</span>
-            <button type="submit" class="hidden">@Localizer["Go"]</button>
-        </form>
+            <button type="button" onclick="window.navigateDetailNavigator(this)" class="hidden">@Localizer["Go"]</button>
+        </div>
     </div>
 </div>
+
+<script>
+    if (typeof window.navigateDetailNavigator !== 'function') {
+        window.navigateDetailNavigator = function (element) {
+            const container = element.closest('[data-detail-navigator]');
+            if (!container) {
+                return;
+            }
+
+            const input = container.querySelector('input[name="currentIndex"]');
+            const totalCount = Number(container.dataset.totalCount || 0);
+            const parsedValue = Number(input && input.value ? input.value : 1);
+
+            let currentIndex = Number.isFinite(parsedValue) ? parsedValue : 1;
+            if (totalCount > 0) {
+                currentIndex = Math.min(Math.max(currentIndex, 1), totalCount);
+            } else {
+                currentIndex = Math.max(currentIndex, 1);
+            }
+
+            const baseUrl = container.dataset.baseUrl || '';
+            const separator = baseUrl.includes('?') ? '&' : '?';
+            window.location.href = `${baseUrl}${separator}currentIndex=${currentIndex - 1}`;
+        };
+    }
+</script>

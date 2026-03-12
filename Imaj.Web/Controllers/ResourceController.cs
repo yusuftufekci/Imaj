@@ -105,6 +105,18 @@ namespace Imaj.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/Resource/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var detailResult = await _resourceService.GetResourceDetailAsync(resolved.ResolvedId.Value);
             if (!detailResult.IsSuccess || detailResult.Data == null)
             {
@@ -116,7 +128,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Resource/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -129,6 +141,18 @@ namespace Imaj.Web.Controllers
             if (!resolved.ResolvedId.HasValue)
             {
                 return RedirectToAction("Index");
+            }
+
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl, "/Resource/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(Edit), new
+                {
+                    id = resolved.ResolvedId.Value,
+                    selectedIds = resolved.SelectedIds,
+                    currentIndex = resolved.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
             }
 
             var detailResult = await _resourceService.GetResourceDetailAsync(resolved.ResolvedId.Value);
@@ -148,7 +172,7 @@ namespace Imaj.Web.Controllers
             model.SelectedIds = resolved.SelectedIds;
             model.CurrentIndex = resolved.CurrentIndex;
             model.TotalSelected = resolved.SelectedIds.Count;
-            model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Resource/List");
+            model.ReturnUrl = normalizedReturnUrl;
 
             return View(model);
         }
@@ -196,7 +220,7 @@ namespace Imaj.Web.Controllers
             var result = await _resourceService.UpdateResourceAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("ResourceUpdateFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("ResourceUpdateFailed")));
                 return View("Edit", model);
             }
 
@@ -226,20 +250,11 @@ namespace Imaj.Web.Controllers
             var result = await _resourceService.CreateResourceAsync(MapToUpsertDto(model));
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError(string.Empty, result.Message ?? L("ResourceSaveFailed"));
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("ResourceSaveFailed")));
                 return View("Create", model);
             }
 
             ShowSuccess(result.Message ?? L("ResourceSavedSuccess"));
-            if (model.AutomaticForward)
-            {
-                return RedirectToAction("Create", new
-                {
-                    functionId = model.FunctionId,
-                    resoCatId = model.ResoCatId,
-                    code = model.Code
-                });
-            }
 
             return RedirectToAction("Index");
         }

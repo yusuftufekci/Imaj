@@ -78,7 +78,6 @@ namespace Imaj.Web.Models
         public string Code { get; set; } = string.Empty;
 
         public bool IsInvalid { get; set; }
-        public bool AutomaticForward { get; set; }
         public string ReturnUrl { get; set; } = "/Reason/List";
 
         public List<ReasonLanguageOptionViewModel> Languages { get; set; } = new();

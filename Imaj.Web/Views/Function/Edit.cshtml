@@ -69,7 +69,6 @@
             prodMandatory = Model.ProdMandatory,
             isInvalid = Model.IsInvalid,
             intervalId = Model.IntervalId,
-            automaticForward = Model.AutomaticForward
         }
     };
 
@@ -184,7 +183,7 @@
                                                    value="@localizedName.Name"
                                                    maxlength="32"
                                                    class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm"
-                                                   placeholder="Fonksiyon adi">
+                                                   placeholder="@Localizer["FunctionNamePlaceholder"]">
                                         </td>
                                     </tr>
                                 }
@@ -269,7 +268,7 @@
         <template x-if="showRuleSection">
             <section class="bg-white border border-gray-200 shadow sm:rounded-lg overflow-hidden mobile-table-panel">
                 <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Kural</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">@Localizer["Rule"]</h3>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -278,8 +277,8 @@
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-12">@Localizer["Selected"]</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["Name"]</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-36">Minimum Deger</th>
-                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-36">Maksimum Deger</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-36">@Localizer["MinimumValue"]</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase w-36">@Localizer["MaximumValue"]</th>
                                 <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">@Localizer["ResoCat"]</th>
                             </tr>
                         </thead>
@@ -318,7 +317,7 @@
                             </template>
 
                             <tr x-show="rules.length === 0">
-                                <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">Kural kaydi yok.</td>
+                                <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">@Localizer["NoRuleRecords"]</td>
                             </tr>
                         </tbody>
                     </table>
@@ -349,10 +348,6 @@
             })" />
 
             <div class="flex items-center justify-center gap-4 py-2 responsive-action-group">
-                <label class="inline-flex items-center text-sm text-gray-700">
-                    <input type="checkbox" name="AutomaticForward" value="true" x-model="form.automaticForward" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                    <span class="ml-2">@Localizer["AutomaticForward"]</span>
-                </label>
 
                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
                     @Localizer["Edit"]
@@ -401,7 +396,6 @@
                     prodMandatory: !!(initialState.form && initialState.form.prodMandatory),
                     isInvalid: !!(initialState.form && initialState.form.isInvalid),
                     intervalId: (initialState.form && initialState.form.intervalId) ? Number(initialState.form.intervalId) : '',
-                    automaticForward: !!(initialState.form && initialState.form.automaticForward)
                 },
 
                 selectedProductIds: [],
@@ -536,14 +530,14 @@
                 submitForm(event) {
                     if (this.form.reservable && (this.form.intervalId === '' || this.form.intervalId === null)) {
                         if (window.Toast && typeof window.Toast.error === 'function') {
-                            window.Toast.error('Rezervasyon Uyumlu seciliyse Rezervasyon Araligi da secilmelidir.');
+                            window.Toast.error('@Localizer["ReservationCompatibleRequiresRange"]');
                         }
                         return;
                     }
 
                     if (!this.form.reservable && this.form.intervalId !== '' && this.form.intervalId !== null) {
                         if (window.Toast && typeof window.Toast.error === 'function') {
-                            window.Toast.error('Rezervasyon Araligi seciliyse Rezervasyon Uyumlu da secilmelidir.');
+                            window.Toast.error('@Localizer["ReservationRangeRequiresCompatible"]');
                         }
                         return;
                     }
