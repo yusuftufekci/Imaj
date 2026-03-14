@@ -9,6 +9,7 @@ using Imaj.Web.Models;
 using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using System.Globalization;
 
 namespace Imaj.Web.Controllers
 {
@@ -385,6 +386,126 @@ namespace Imaj.Web.Controllers
 
             var fileBytes = _jobReportExcelService.BuildSummaryReport(reportResult.Data);
             return File(fileBytes, ExcelContentType, BuildFileName(L("SummaryJobReportFilePrefix")));
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1397)]
+        public async Task<IActionResult> ViewDetailedPendingInvoiceJobsReport([FromQuery] PendingInvoiceJobsReportDownloadRequest request)
+        {
+            var filter = new PendingInvoiceJobsReportFilterDto
+            {
+                CustomerId = request.CustomerId,
+                CustomerCode = request.CustomerCode
+            };
+
+            ServiceResult<List<PendingInvoiceJobsDetailedReportRowDto>> reportResult;
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _jobService.GetDetailedPendingInvoiceJobsReportAsync(filter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildDetailedPendingInvoicePrintableReport(reportResult.Data, request);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1397)]
+        public async Task<IActionResult> ViewSummaryPendingInvoiceJobsReport([FromQuery] PendingInvoiceJobsReportDownloadRequest request)
+        {
+            var filter = new PendingInvoiceJobsReportFilterDto
+            {
+                CustomerId = request.CustomerId,
+                CustomerCode = request.CustomerCode
+            };
+
+            ServiceResult<List<PendingInvoiceJobsSummaryReportRowDto>> reportResult;
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _jobService.GetSummaryPendingInvoiceJobsReportAsync(filter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildSummaryPendingInvoicePrintableReport(reportResult.Data, request);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1397)]
+        public async Task<IActionResult> ViewDetailedJobReport([FromQuery] JobFilterModel filter)
+        {
+            if (!TryValidateJobReportDateRanges(filter, out var badRequestResult))
+            {
+                return badRequestResult!;
+            }
+
+            var reportFilter = BuildJobFilterDto(filter, includeFirst: false);
+            ServiceResult<List<JobDetailedReportRowDto>> reportResult;
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _jobService.GetDetailedJobReportAsync(reportFilter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildDetailedJobPrintableReport(reportResult.Data, filter);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1397)]
+        public async Task<IActionResult> ViewSummaryJobReport([FromQuery] JobFilterModel filter)
+        {
+            if (!TryValidateJobReportDateRanges(filter, out var badRequestResult))
+            {
+                return badRequestResult!;
+            }
+
+            var reportFilter = BuildJobFilterDto(filter, includeFirst: false);
+            ServiceResult<List<JobSummaryReportRowDto>> reportResult;
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _jobService.GetSummaryJobReportAsync(reportFilter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildSummaryJobPrintableReport(reportResult.Data, filter);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
         }
 
         /// <summary>
@@ -837,6 +958,334 @@ namespace Imaj.Web.Controllers
             }
 
             return items;
+        }
+
+        private PrintableReportViewModel BuildDetailedPendingInvoicePrintableReport(
+            List<PendingInvoiceJobsDetailedReportRowDto> rows,
+            PendingInvoiceJobsReportDownloadRequest request)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.CustomerName)
+                .ThenBy(x => x.Reference)
+                .ToList();
+
+            var reportRows = orderedRows
+                .Select(row => new PrintableReportRow
+                {
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = ResolveCustomerDisplay(row.CustomerName, row.CustomerCode) },
+                        new() { Value = row.Reference.ToString(CultureInfo.CurrentCulture), Alignment = "right" },
+                        new() { Value = row.JobName },
+                        new() { Value = FormatDate(row.StartDate), Alignment = "center" },
+                        new() { Value = row.EndDate.HasValue ? FormatDate(row.EndDate.Value) : "-", Alignment = "center" },
+                        new() { Value = FormatAmount(row.Amount), Alignment = "right" }
+                    }
+                })
+                .ToList();
+
+            return new PrintableReportViewModel
+            {
+                Title = L("DetailedPendingInvoiceJobsReportTitle"),
+                Orientation = "landscape",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildPendingInvoiceMetaItems(request),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Customer") },
+                    new() { Title = L("Reference"), Alignment = "right" },
+                    new() { Title = L("Name") },
+                    new() { Title = L("StartDate"), Alignment = "center" },
+                    new() { Title = L("EndDate"), Alignment = "center" },
+                    new() { Title = L("Amount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private PrintableReportViewModel BuildSummaryPendingInvoicePrintableReport(
+            List<PendingInvoiceJobsSummaryReportRowDto> rows,
+            PendingInvoiceJobsReportDownloadRequest request)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.CustomerName)
+                .ToList();
+
+            var reportRows = orderedRows
+                .Select(row => new PrintableReportRow
+                {
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = ResolveCustomerDisplay(row.CustomerName, row.CustomerCode) },
+                        new() { Value = row.Count.ToString("N0", CultureInfo.CurrentCulture), Alignment = "right" },
+                        new() { Value = FormatAmount(row.Amount), Alignment = "right" }
+                    }
+                })
+                .ToList();
+
+            return new PrintableReportViewModel
+            {
+                Title = L("SummaryPendingInvoiceJobsReportTitle"),
+                Orientation = "portrait",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildPendingInvoiceMetaItems(request),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Customer") },
+                    new() { Title = L("Count"), Alignment = "right" },
+                    new() { Title = L("Amount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private PrintableReportViewModel BuildDetailedJobPrintableReport(
+            List<JobDetailedReportRowDto> rows,
+            JobFilterModel filter)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.CustomerName)
+                .ThenBy(x => x.StartDate)
+                .ThenBy(x => x.Reference)
+                .ToList();
+
+            var reportRows = new List<PrintableReportRow>();
+            foreach (var customerGroup in orderedRows.GroupBy(x => new { x.CustomerCode, x.CustomerName }))
+            {
+                var customerDisplay = ResolveCustomerDisplay(customerGroup.Key.CustomerName, customerGroup.Key.CustomerCode);
+                foreach (var row in customerGroup)
+                {
+                    reportRows.Add(new PrintableReportRow
+                    {
+                        Cells = new List<PrintableReportCell>
+                        {
+                            new() { Value = customerDisplay },
+                            new() { Value = row.FunctionName },
+                            new() { Value = row.Reference.ToString(CultureInfo.CurrentCulture), Alignment = "right" },
+                            new() { Value = row.JobName },
+                            new() { Value = FormatDateTime(row.StartDate), Alignment = "center" },
+                            new() { Value = row.EndDate.HasValue ? FormatDateTime(row.EndDate.Value) : "-", Alignment = "center" },
+                            new() { Value = row.StatusName },
+                            new() { IsCheckbox = true, IsChecked = row.IsEvaluated, Alignment = "center" },
+                            new() { Value = FormatAmount(row.WorkAmount), Alignment = "right" },
+                            new() { Value = FormatAmount(row.ProductAmount), Alignment = "right" }
+                        }
+                    });
+                }
+
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GroupTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new()
+                        {
+                            Value = string.Format(L("CustomerTotalFormat"), customerDisplay),
+                            ColSpan = 8,
+                            Alignment = "right"
+                        },
+                        new() { Value = FormatAmount(customerGroup.Sum(x => x.WorkAmount)), Alignment = "right" },
+                        new() { Value = FormatAmount(customerGroup.Sum(x => x.ProductAmount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            if (orderedRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), ColSpan = 8, Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.WorkAmount)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.ProductAmount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            return new PrintableReportViewModel
+            {
+                Title = L("DetailedJobReportTitle"),
+                Orientation = "landscape",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildJobReportMetaItems(filter),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Customer") },
+                    new() { Title = L("Function") },
+                    new() { Title = L("Reference"), Alignment = "right" },
+                    new() { Title = L("Name") },
+                    new() { Title = L("StartDate"), Alignment = "center" },
+                    new() { Title = L("EndDate"), Alignment = "center" },
+                    new() { Title = L("Status") },
+                    new() { Title = L("Evaluated"), Alignment = "center" },
+                    new() { Title = L("WorkAmount"), Alignment = "right" },
+                    new() { Title = L("ProductAmount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private PrintableReportViewModel BuildSummaryJobPrintableReport(
+            List<JobSummaryReportRowDto> rows,
+            JobFilterModel filter)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.CustomerName)
+                .ToList();
+
+            var reportRows = orderedRows
+                .Select(row => new PrintableReportRow
+                {
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = ResolveCustomerDisplay(row.CustomerName, row.CustomerCode) },
+                        new() { Value = row.Count.ToString("N0", CultureInfo.CurrentCulture), Alignment = "right" },
+                        new() { Value = FormatAmount(row.WorkAmount), Alignment = "right" },
+                        new() { Value = FormatAmount(row.ProductAmount), Alignment = "right" }
+                    }
+                })
+                .ToList();
+
+            if (orderedRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), Alignment = "right" },
+                        new() { Value = orderedRows.Sum(x => x.Count).ToString("N0", CultureInfo.CurrentCulture), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.WorkAmount)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.ProductAmount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            return new PrintableReportViewModel
+            {
+                Title = L("SummaryJobReportTitle"),
+                Orientation = "portrait",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildJobReportMetaItems(filter),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Customer") },
+                    new() { Title = L("Count"), Alignment = "right" },
+                    new() { Title = L("WorkAmount"), Alignment = "right" },
+                    new() { Title = L("ProductAmount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private List<PrintableReportMetaItem> BuildPendingInvoiceMetaItems(PendingInvoiceJobsReportDownloadRequest request)
+        {
+            return new List<PrintableReportMetaItem>
+            {
+                new()
+                {
+                    Label = L("CustomerWithColon"),
+                    Value = ResolveDisplay(request.CustomerName, request.CustomerCode)
+                }
+            };
+        }
+
+        private List<PrintableReportMetaItem> BuildJobReportMetaItems(JobFilterModel filter)
+        {
+            var items = new List<PrintableReportMetaItem>();
+
+            if (filter.StartDateStart.HasValue && filter.StartDateEnd.HasValue)
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("StartDateRange"),
+                    Value = $"{FormatDate(filter.StartDateStart.Value)} - {FormatDate(filter.StartDateEnd.Value)}"
+                });
+            }
+
+            if (filter.EndDateStart.HasValue && filter.EndDateEnd.HasValue)
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("EndDateRange"),
+                    Value = $"{FormatDate(filter.EndDateStart.Value)} - {FormatDate(filter.EndDateEnd.Value)}"
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.CustomerCode) || !string.IsNullOrWhiteSpace(filter.CustomerName))
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("CustomerWithColon"),
+                    Value = ResolveDisplay(filter.CustomerName, filter.CustomerCode)
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.EmployeeCode) || !string.IsNullOrWhiteSpace(filter.EmployeeName))
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("EmployeeWithColon"),
+                    Value = ResolveDisplay(filter.EmployeeName, filter.EmployeeCode)
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.ProductCode) || !string.IsNullOrWhiteSpace(filter.ProductName))
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("Product"),
+                    Value = ResolveDisplay(filter.ProductName, filter.ProductCode)
+                });
+            }
+
+            return items;
+        }
+
+        private string BuildGeneratedAtDisplay()
+        {
+            return DateTime.Now.ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture);
+        }
+
+        private static string ResolveCustomerDisplay(string? name, string? code)
+        {
+            return string.IsNullOrWhiteSpace(name) ? (code ?? string.Empty) : name;
+        }
+
+        private string ResolveDisplay(string? primary, string? fallback)
+        {
+            if (!string.IsNullOrWhiteSpace(primary))
+            {
+                return primary!;
+            }
+
+            if (!string.IsNullOrWhiteSpace(fallback))
+            {
+                return fallback!;
+            }
+
+            return L("AllOption");
+        }
+
+        private static string FormatDate(DateTime value)
+        {
+            return value.ToString("dd/MM/yyyy", CultureInfo.CurrentCulture);
+        }
+
+        private static string FormatDateTime(DateTime value)
+        {
+            return value.ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture);
+        }
+
+        private static string FormatAmount(decimal value)
+        {
+            return value.ToString("N2", CultureInfo.CurrentCulture);
         }
 
         private void ApplyFunctionSelection(JobCreateViewModel model)

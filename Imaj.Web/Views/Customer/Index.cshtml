@@ -185,9 +185,12 @@
                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["CustomerReports"]</h3>
             </div>
             <div class="p-6">
-                <div class="pt-4 flex justify-center">
-                    <button type="button" @@click="printReport()" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                        @Localizer["PrintReport"]
+                <div class="pt-4 flex flex-wrap justify-center gap-3">
+                    <button type="button" @@click="downloadReportExcel()" class="inline-flex items-center px-6 py-2 border border-blue-300 text-sm font-bold rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                        @Localizer["CustomerReports"] - Excel
+                    </button>
+                    <button type="button" @@click="openReportPage()" class="inline-flex items-center px-6 py-2 border border-slate-300 text-sm font-bold rounded-md shadow-sm text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                        @Localizer["CustomerReports"] - PDF
                     </button>
                 </div>
             </div>
@@ -219,10 +222,10 @@
                 }
             },
 
-            printReport() {
+            buildReportParams() {
                 const form = document.getElementById('customer-search-form');
                 if (!form) {
-                    return;
+                    return null;
                 }
 
                 const allowedKeys = new Set([
@@ -246,7 +249,25 @@
                     params.append(key, value);
                 }
 
+                return params;
+            },
+
+            downloadReportExcel() {
+                const params = this.buildReportParams();
+                if (!params) {
+                    return;
+                }
+
                 window.location.href = `/Customer/DownloadReportExcel?${params.toString()}`;
+            },
+
+            openReportPage() {
+                const params = this.buildReportParams();
+                if (!params) {
+                    return;
+                }
+
+                window.open(`/Customer/ViewReport?${params.toString()}`, '_blank', 'noopener');
             }
         }
     }

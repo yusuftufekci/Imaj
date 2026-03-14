@@ -9,6 +9,7 @@ using Imaj.Web.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 
 namespace Imaj.Web.Controllers
 {
@@ -167,6 +168,31 @@ namespace Imaj.Web.Controllers
             return File(fileBytes, ExcelContentType, BuildReportFileName());
         }
 
+        [HttpGet]
+        [RequireMethodPermission(1090)]
+        public async Task<IActionResult> ViewReport([FromQuery] CustomerFilterModel? filter)
+        {
+            var normalizedFilter = filter ?? new CustomerFilterModel();
+
+            var allCustomers = await GetAllReportCustomersAsync(normalizedFilter);
+            if (allCustomers == null)
+            {
+                return BadRequest(L("ReportDataUnavailable"));
+            }
+
+            var model = new PrintableReportViewModel
+            {
+                Title = L("CustomerInformationTitle"),
+                Orientation = "landscape",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildCustomerFilterMetaItems(normalizedFilter),
+                Blocks = BuildCustomerBlocks(allCustomers)
+            };
+
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
         public async Task<IActionResult> Details(string id)
         {
              // Try ID first from decimal
@@ -268,6 +294,88 @@ namespace Imaj.Web.Controllers
         private string BuildReportFileName()
         {
             return $"{L("CustomerReportFilePrefix")}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
+        }
+
+        private string BuildGeneratedAtDisplay()
+        {
+            return DateTime.Now.ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture);
+        }
+
+        private List<PrintableReportMetaItem> BuildCustomerFilterMetaItems(CustomerFilterModel filter)
+        {
+            var items = new List<PrintableReportMetaItem>();
+
+            void AddIfHasValue(string label, string? value)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    items.Add(new PrintableReportMetaItem
+                    {
+                        Label = label,
+                        Value = value
+                    });
+                }
+            }
+
+            AddIfHasValue(L("Code"), filter.Code);
+            AddIfHasValue(L("Name"), filter.Name);
+            AddIfHasValue(L("City"), filter.City);
+            AddIfHasValue(L("AreaCode"), filter.AreaCode);
+            AddIfHasValue(L("Country"), filter.Country);
+            AddIfHasValue(L("Owner"), filter.Owner);
+            AddIfHasValue(L("Related"), filter.RelatedPerson);
+            AddIfHasValue(L("Phone"), filter.Phone);
+            AddIfHasValue(L("Fax"), filter.Fax);
+            AddIfHasValue(L("Email"), filter.Email);
+            AddIfHasValue(L("TaxOffice"), filter.TaxOffice);
+            AddIfHasValue(L("TaxNumber"), filter.TaxNumber);
+
+            if (filter.IsInvalid.HasValue)
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("Invalid"),
+                    Value = filter.IsInvalid.Value ? L("Yes") : L("No")
+                });
+            }
+
+            return items;
+        }
+
+        private List<PrintableReportBlock> BuildCustomerBlocks(List<CustomerDto> customers)
+        {
+            return customers
+                .OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(customer => new PrintableReportBlock
+                {
+                    Title = string.IsNullOrWhiteSpace(customer.Code)
+                        ? customer.Name
+                        : $"{customer.Code} - {customer.Name}",
+                    Subtitle = string.Join(" / ", new[] { customer.City, customer.Country }.Where(x => !string.IsNullOrWhiteSpace(x))),
+                    Items = new List<PrintableReportMetaItem>
+                    {
+                        new() { Label = L("Owner"), Value = ValueOrDash(customer.Owner) },
+                        new() { Label = L("Related"), Value = ValueOrDash(customer.Contact) },
+                        new() { Label = L("Address"), Value = ValueOrDash(customer.Address) },
+                        new() { Label = L("City"), Value = ValueOrDash(customer.City) },
+                        new() { Label = L("AreaCode"), Value = ValueOrDash(customer.AreaCode) },
+                        new() { Label = L("Country"), Value = ValueOrDash(customer.Country) },
+                        new() { Label = L("Email"), Value = ValueOrDash(customer.Email) },
+                        new() { Label = L("Fax"), Value = ValueOrDash(customer.Fax) },
+                        new() { Label = L("Phone"), Value = ValueOrDash(customer.Phone) },
+                        new() { Label = L("TaxOffice"), Value = ValueOrDash(customer.TaxOffice) },
+                        new() { Label = L("TaxNumber"), Value = ValueOrDash(customer.TaxNumber) },
+                        new() { Label = L("InvoiceName"), Value = ValueOrDash(customer.InvoiceName) },
+                        new() { Label = L("Invalid"), Value = customer.Invisible ? L("Yes") : L("No") }
+                    }
+                })
+                .ToList();
+        }
+
+        private static string ValueOrDash(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "-" : value;
         }
 
         private CustomerViewModel MapToViewModel(CustomerDto c)

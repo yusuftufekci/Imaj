@@ -90,8 +90,11 @@
                 <div class="flex flex-wrap items-center justify-center gap-3 responsive-action-group">
                 @if (canDownloadDetailed)
                 {
-                    <button type="button" @@click="downloadDetailedReport()" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                        @Localizer["PrintReport"]
+                    <button type="button" @@click="downloadDetailedReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                        @Localizer["DetailedProductReportTitle"] - Excel
+                    </button>
+                    <button type="button" @@click="openDetailedReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                        @Localizer["DetailedProductReportTitle"] - PDF
                     </button>
                 }
                 else
@@ -209,15 +212,15 @@
                 return textarea.value || fallback;
             },
 
-            async downloadDetailedReport() {
+            buildReportParams() {
                 if (!this.startDate || !this.endDate) {
                     this.showError(this.messages.startEndDateRequired);
-                    return;
+                    return null;
                 }
 
                 if (this.endDate < this.startDate) {
                     this.showError(this.messages.endDateBeforeStart);
-                    return;
+                    return null;
                 }
 
                 const params = new URLSearchParams({
@@ -239,6 +242,15 @@
                 }
                 if (this.selectedCustomerName) {
                     params.append('customerName', this.selectedCustomerName);
+                }
+
+                return params;
+            },
+
+            async downloadDetailedReport() {
+                const params = this.buildReportParams();
+                if (!params) {
+                    return;
                 }
 
                 if (this.isReportLoading) {
@@ -301,6 +313,15 @@
 
                     this.isReportLoading = false;
                 }
+            },
+
+            openDetailedReportPage() {
+                const params = this.buildReportParams();
+                if (!params) {
+                    return;
+                }
+
+                window.open(`/ProductReport/ViewDetailedReport?${params.toString()}`, '_blank', 'noopener');
             }
         }
     }

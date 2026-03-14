@@ -1,0 +1,539 @@
+@using System
+@using Imaj.Web
+@using Imaj.Web.Models
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> Localizer
+@model PrintableReportViewModel
+
+@{
+    Layout = null;
+    var pageSize = string.Equals(Model.Orientation, "portrait", StringComparison.OrdinalIgnoreCase)
+        ? "A4 portrait"
+        : "A4 landscape";
+
+    string AlignClass(string? alignment)
+    {
+        return alignment?.ToLowerInvariant() switch
+        {
+            "right" => "report-align-right",
+            "center" => "report-align-center",
+            _ => "report-align-left"
+        };
+    }
+
+    string RowClass(PrintableReportRowKind kind)
+    {
+        return kind switch
+        {
+            PrintableReportRowKind.GroupTotal => "report-row report-row--group-total",
+            PrintableReportRowKind.GrandTotal => "report-row report-row--grand-total",
+            _ => "report-row"
+        };
+    }
+}
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Title</title>
+    <style>
+        :root {
+            --report-bg: #edf2ff;
+            --report-paper: #ffffff;
+            --report-ink: #111827;
+            --report-muted: #6b7280;
+            --report-line: #cbd5e1;
+            --report-line-strong: #94a3b8;
+            --report-accent: #0f172a;
+            --report-accent-soft: #dbeafe;
+            --report-group: #f8fafc;
+            --report-total: #e2e8f0;
+        }
+
+        @@page {
+            size: @pageSize;
+            margin: 14mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: var(--report-ink);
+            background:
+                radial-gradient(circle at top left, rgba(59, 130, 246, 0.10), transparent 28%),
+                radial-gradient(circle at top right, rgba(15, 23, 42, 0.08), transparent 22%),
+                linear-gradient(180deg, #f8fbff 0%, var(--report-bg) 100%);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .report-shell {
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .report-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            max-width: 1480px;
+            margin: 0 auto 18px;
+        }
+
+        .report-toolbar__group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .report-toolbar__stamp {
+            color: var(--report-muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .report-button {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+        }
+
+        .report-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+        }
+
+        .report-button--secondary {
+            background: rgba(255, 255, 255, 0.86);
+            color: var(--report-accent);
+            border-color: rgba(148, 163, 184, 0.5);
+        }
+
+        .report-button--primary {
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            color: #ffffff;
+        }
+
+        .report-paper {
+            width: 100%;
+            max-width: 1480px;
+            margin: 0 auto;
+            background: var(--report-paper);
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 28px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+        }
+
+        .report-page--portrait .report-paper {
+            max-width: 1080px;
+        }
+
+        .report-header {
+            padding: 28px 32px 24px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+            background:
+                linear-gradient(180deg, rgba(219, 234, 254, 0.75) 0%, rgba(255, 255, 255, 0.96) 100%);
+        }
+
+        .report-header__eyebrow {
+            margin: 0 0 10px;
+            color: var(--report-muted);
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .report-header h1 {
+            margin: 0;
+            text-align: center;
+            font-size: 34px;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+
+        .report-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .report-meta-card {
+            background: rgba(255, 255, 255, 0.86);
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            border-radius: 18px;
+            padding: 14px 16px;
+            min-height: 78px;
+        }
+
+        .report-meta-card__label {
+            margin: 0 0 6px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--report-muted);
+        }
+
+        .report-meta-card__value {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.45;
+            word-break: break-word;
+        }
+
+        .report-content {
+            padding: 24px 32px 28px;
+        }
+
+        .report-blocks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .report-block {
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 20px;
+            padding: 18px;
+            break-inside: avoid;
+        }
+
+        .report-block__title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--report-accent);
+        }
+
+        .report-block__subtitle {
+            margin: 6px 0 0;
+            color: var(--report-muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .report-block__grid {
+            display: grid;
+            grid-template-columns: minmax(110px, 140px) minmax(0, 1fr);
+            gap: 10px 14px;
+            margin-top: 16px;
+        }
+
+        .report-block__label {
+            margin: 0;
+            color: var(--report-muted);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .report-block__value {
+            margin: 0;
+            color: var(--report-ink);
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.45;
+            word-break: break-word;
+        }
+
+        .report-table-wrap {
+            overflow-x: auto;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .report-table thead {
+            display: table-header-group;
+        }
+
+        .report-table th {
+            padding: 12px 12px 10px;
+            border-bottom: 2px solid var(--report-line-strong);
+            color: var(--report-accent);
+            font-size: 12px;
+            font-weight: 800;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            vertical-align: bottom;
+        }
+
+        .report-table td {
+            padding: 10px 12px;
+            border-bottom: 1px dashed var(--report-line-strong);
+            vertical-align: top;
+            word-break: break-word;
+        }
+
+        .report-row--group-total td {
+            background: var(--report-group);
+            font-weight: 800;
+            border-top: 1px dashed var(--report-line-strong);
+            border-bottom: 1px solid var(--report-line);
+        }
+
+        .report-row--grand-total td {
+            background: var(--report-total);
+            font-weight: 800;
+            border-top: 2px solid var(--report-accent);
+            border-bottom: none;
+        }
+
+        .report-align-left {
+            text-align: left;
+        }
+
+        .report-align-center {
+            text-align: center;
+        }
+
+        .report-align-right {
+            text-align: right;
+        }
+
+        .report-cell--checkbox {
+            text-align: center;
+        }
+
+        .report-checkbox {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid var(--report-accent);
+            border-radius: 4px;
+            vertical-align: middle;
+            background: #ffffff;
+        }
+
+        .report-checkbox--checked {
+            background:
+                linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(37, 99, 235, 0.88));
+            box-shadow: inset 0 0 0 3px #ffffff;
+        }
+
+        .report-empty {
+            padding: 56px 24px;
+            text-align: center;
+            color: var(--report-muted);
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .report-footer {
+            margin-top: 18px;
+            color: var(--report-muted);
+            font-size: 12px;
+            text-align: right;
+        }
+
+        @@media (max-width: 900px) {
+            .report-shell {
+                padding: 16px;
+            }
+
+            .report-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .report-toolbar__group {
+                justify-content: center;
+            }
+
+            .report-paper {
+                border-radius: 20px;
+            }
+
+            .report-header,
+            .report-content {
+                padding: 20px;
+            }
+
+            .report-header h1 {
+                font-size: 28px;
+            }
+        }
+
+        @@media print {
+            body {
+                background: #ffffff;
+            }
+
+            .report-shell {
+                min-height: 0;
+                padding: 0;
+            }
+
+            .report-toolbar {
+                display: none;
+            }
+
+            .report-paper {
+                max-width: none;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .report-header,
+            .report-content {
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .report-meta-card {
+                break-inside: avoid;
+            }
+
+            .report-row,
+            .report-table tr,
+            .report-table td,
+            .report-table th {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="@(string.Equals(Model.Orientation, "portrait", StringComparison.OrdinalIgnoreCase) ? "report-page report-page--portrait" : "report-page report-page--landscape")">
+    <div class="report-shell">
+        <div class="report-toolbar">
+            <div class="report-toolbar__group">
+                <button type="button" class="report-button report-button--secondary" onclick="window.history.length > 1 ? window.history.back() : window.close()">
+                    @Localizer["Back"]
+                </button>
+            </div>
+            <div class="report-toolbar__stamp">@Model.GeneratedAtDisplay</div>
+            <div class="report-toolbar__group">
+                <button type="button" class="report-button report-button--primary" onclick="window.print()">
+                    @Localizer["DownloadPdf"]
+                </button>
+            </div>
+        </div>
+
+        <main class="report-paper">
+            <header class="report-header">
+                <p class="report-header__eyebrow">@Model.GeneratedAtDisplay</p>
+                <h1>@Model.Title</h1>
+
+                @if (Model.MetaItems.Any())
+                {
+                    <div class="report-meta-grid">
+                        @foreach (var item in Model.MetaItems)
+                        {
+                            <article class="report-meta-card">
+                                <p class="report-meta-card__label">@item.Label</p>
+                                <p class="report-meta-card__value">@item.Value</p>
+                            </article>
+                        }
+                    </div>
+                }
+            </header>
+
+            <section class="report-content">
+                @if (Model.Blocks.Any())
+                {
+                    <div class="report-blocks">
+                        @foreach (var block in Model.Blocks)
+                        {
+                            <article class="report-block">
+                                <h2 class="report-block__title">@block.Title</h2>
+                                @if (!string.IsNullOrWhiteSpace(block.Subtitle))
+                                {
+                                    <p class="report-block__subtitle">@block.Subtitle</p>
+                                }
+
+                                <div class="report-block__grid">
+                                    @foreach (var item in block.Items)
+                                    {
+                                        <p class="report-block__label">@item.Label</p>
+                                        <p class="report-block__value">@item.Value</p>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+                else if (Model.Rows.Any())
+                {
+                    <div class="report-table-wrap">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    @foreach (var column in Model.Columns)
+                                    {
+                                        <th class="@AlignClass(column.Alignment)">@column.Title</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in Model.Rows)
+                                {
+                                    <tr class="@RowClass(row.Kind)">
+                                        @{
+                                            var columnIndex = 0;
+                                        }
+                                        @foreach (var cell in row.Cells)
+                                        {
+                                            var fallbackAlignment = columnIndex < Model.Columns.Count
+                                                ? Model.Columns[columnIndex].Alignment
+                                                : "left";
+                                            var cellAlignment = string.IsNullOrWhiteSpace(cell.Alignment)
+                                                ? fallbackAlignment
+                                                : cell.Alignment!;
+                                            var cssClass = cell.IsCheckbox
+                                                ? $"{AlignClass(cellAlignment)} report-cell--checkbox"
+                                                : AlignClass(cellAlignment);
+
+                                            <td colspan="@Math.Max(cell.ColSpan, 1)" class="@cssClass">
+                                                @if (cell.IsCheckbox)
+                                                {
+                                                    <span class="report-checkbox @(cell.IsChecked ? "report-checkbox--checked" : string.Empty)"></span>
+                                                }
+                                                else
+                                                {
+                                                    @cell.Value
+                                                }
+                                            </td>
+
+                                            columnIndex += Math.Max(cell.ColSpan, 1);
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="report-empty">@Model.EmptyMessage</div>
+                }
+
+                <div class="report-footer">@Model.GeneratedAtDisplay</div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

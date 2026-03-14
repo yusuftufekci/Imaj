@@ -10,6 +10,7 @@ using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 
 namespace Imaj.Web.Controllers
 {
@@ -176,6 +177,70 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        [RequireMethodPermission(1360)]
+        public async Task<IActionResult> ViewDetailedInvoiceReport([FromQuery] InvoiceViewModel? filter)
+        {
+            var f = filter ?? new InvoiceViewModel();
+            if (!TryValidateIssueDateRange(f, out var badRequestResult))
+            {
+                return badRequestResult!;
+            }
+
+            var reportFilter = BuildFilter(f, includeFirst: false);
+            ServiceResult<List<InvoiceDetailedReportRowDto>> reportResult;
+
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _invoiceService.GetDetailedInvoiceReportAsync(reportFilter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildDetailedPrintableReport(reportResult.Data, f);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1360)]
+        public async Task<IActionResult> ViewSummaryInvoiceReport([FromQuery] InvoiceViewModel? filter)
+        {
+            var f = filter ?? new InvoiceViewModel();
+            if (!TryValidateIssueDateRange(f, out var badRequestResult))
+            {
+                return badRequestResult!;
+            }
+
+            var reportFilter = BuildFilter(f, includeFirst: false);
+            ServiceResult<List<InvoiceSummaryReportRowDto>> reportResult;
+
+            try
+            {
+                using var cts = new CancellationTokenSource(ReportExecutionTimeout);
+                reportResult = await _invoiceService.GetSummaryInvoiceReportAsync(reportFilter, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(408, L("ReportRequestTimedOut"));
+            }
+
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(Imaj.Web.Extensions.ControllerMessageLocalizationExtensions.LocalizeUiMessage(this, reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildSummaryPrintableReport(reportResult.Data, f);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Detail(string? reference, [FromQuery] string[]? selectedReferences, int page = 1, string? returnUrl = null)
         {
             var refs = NormalizeReferences(reference, selectedReferences);
@@ -334,6 +399,239 @@ namespace Imaj.Web.Controllers
                 PageSize = f.PageSize > 0 ? f.PageSize : 10,
                 First = includeFirst ? f.First : null
             };
+        }
+
+        private PrintableReportViewModel BuildDetailedPrintableReport(
+            List<InvoiceDetailedReportRowDto> rows,
+            InvoiceViewModel filter)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.CustomerName)
+                .ThenBy(x => x.IssueDate)
+                .ThenBy(x => x.Reference)
+                .ToList();
+
+            var reportRows = new List<PrintableReportRow>();
+            foreach (var customerGroup in orderedRows.GroupBy(x => new { x.CustomerCode, x.CustomerName }))
+            {
+                var customerDisplay = ResolveCustomerDisplay(customerGroup.Key.CustomerName, customerGroup.Key.CustomerCode);
+                foreach (var row in customerGroup)
+                {
+                    reportRows.Add(new PrintableReportRow
+                    {
+                        Cells = new List<PrintableReportCell>
+                        {
+                            new() { Value = customerDisplay },
+                            new() { Value = row.Reference.ToString(CultureInfo.CurrentCulture), Alignment = "right" },
+                            new() { Value = row.Name },
+                            new() { Value = row.IssueDate.HasValue ? FormatDate(row.IssueDate.Value) : "-", Alignment = "center" },
+                            new() { Value = row.StatusName },
+                            new() { IsCheckbox = true, IsChecked = row.Evaluated, Alignment = "center" },
+                            new() { Value = FormatAmount(row.TaxAmount), Alignment = "right" },
+                            new() { Value = FormatAmount(row.SubTotal), Alignment = "right" },
+                            new() { Value = FormatAmount(row.NetTotal), Alignment = "right" }
+                        }
+                    });
+                }
+
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GroupTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new()
+                        {
+                            Value = string.Format(L("CustomerTotalFormat"), customerDisplay),
+                            ColSpan = 6,
+                            Alignment = "right"
+                        },
+                        new() { Value = FormatAmount(customerGroup.Sum(x => x.TaxAmount)), Alignment = "right" },
+                        new() { Value = FormatAmount(customerGroup.Sum(x => x.SubTotal)), Alignment = "right" },
+                        new() { Value = FormatAmount(customerGroup.Sum(x => x.NetTotal)), Alignment = "right" }
+                    }
+                });
+            }
+
+            if (orderedRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), ColSpan = 6, Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.TaxAmount)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.SubTotal)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.NetTotal)), Alignment = "right" }
+                    }
+                });
+            }
+
+            return new PrintableReportViewModel
+            {
+                Title = L("DetailedInvoiceReportTitle"),
+                Orientation = "landscape",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildInvoiceMetaItems(filter),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Customer") },
+                    new() { Title = L("Reference"), Alignment = "right" },
+                    new() { Title = L("Name") },
+                    new() { Title = L("Date"), Alignment = "center" },
+                    new() { Title = L("Status") },
+                    new() { Title = L("Evaluated"), Alignment = "center" },
+                    new() { Title = L("TaxAmount"), Alignment = "right" },
+                    new() { Title = L("SubTotal"), Alignment = "right" },
+                    new() { Title = L("NetAmount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private PrintableReportViewModel BuildSummaryPrintableReport(
+            List<InvoiceSummaryReportRowDto> rows,
+            InvoiceViewModel filter)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.CustomerName)
+                .ToList();
+
+            var reportRows = orderedRows
+                .Select(row => new PrintableReportRow
+                {
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = ResolveCustomerDisplay(row.CustomerName, row.CustomerCode) },
+                        new() { Value = row.Count.ToString("N0", CultureInfo.CurrentCulture), Alignment = "right" },
+                        new() { Value = FormatAmount(row.TaxAmount), Alignment = "right" },
+                        new() { Value = FormatAmount(row.SubTotal), Alignment = "right" },
+                        new() { Value = FormatAmount(row.NetTotal), Alignment = "right" }
+                    }
+                })
+                .ToList();
+
+            if (orderedRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), Alignment = "right" },
+                        new() { Value = orderedRows.Sum(x => x.Count).ToString("N0", CultureInfo.CurrentCulture), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.TaxAmount)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.SubTotal)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.NetTotal)), Alignment = "right" }
+                    }
+                });
+            }
+
+            return new PrintableReportViewModel
+            {
+                Title = L("SummaryInvoiceReportTitle"),
+                Orientation = "portrait",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildInvoiceMetaItems(filter),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Customer") },
+                    new() { Title = L("Count"), Alignment = "right" },
+                    new() { Title = L("TaxAmount"), Alignment = "right" },
+                    new() { Title = L("SubTotal"), Alignment = "right" },
+                    new() { Title = L("NetAmount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private List<PrintableReportMetaItem> BuildInvoiceMetaItems(InvoiceViewModel filter)
+        {
+            var items = new List<PrintableReportMetaItem>();
+
+            if (filter.IssueDateStart.HasValue && filter.IssueDateEnd.HasValue)
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("DateRange"),
+                    Value = $"{FormatDate(filter.IssueDateStart.Value)} - {FormatDate(filter.IssueDateEnd.Value)}"
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.JobCustomerCode) || !string.IsNullOrWhiteSpace(filter.JobCustomerName))
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("JobCustomer"),
+                    Value = ResolveDisplay(filter.JobCustomerName, filter.JobCustomerCode)
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.InvoiceCustomerCode) || !string.IsNullOrWhiteSpace(filter.InvoiceCustomerName))
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("InvoiceCustomer"),
+                    Value = ResolveDisplay(filter.InvoiceCustomerName, filter.InvoiceCustomerCode)
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Name))
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("Name"),
+                    Value = filter.Name
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
+            {
+                items.Add(new PrintableReportMetaItem
+                {
+                    Label = L("Related"),
+                    Value = filter.RelatedPerson
+                });
+            }
+
+            return items;
+        }
+
+        private string BuildGeneratedAtDisplay()
+        {
+            return DateTime.Now.ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture);
+        }
+
+        private string ResolveDisplay(string? primary, string? fallback)
+        {
+            if (!string.IsNullOrWhiteSpace(primary))
+            {
+                return primary!;
+            }
+
+            if (!string.IsNullOrWhiteSpace(fallback))
+            {
+                return fallback!;
+            }
+
+            return L("AllOption");
+        }
+
+        private static string ResolveCustomerDisplay(string? name, string? code)
+        {
+            return string.IsNullOrWhiteSpace(name) ? (code ?? string.Empty) : name;
+        }
+
+        private static string FormatDate(DateTime value)
+        {
+            return value.ToString("dd/MM/yyyy", CultureInfo.CurrentCulture);
+        }
+
+        private static string FormatAmount(decimal value)
+        {
+            return value.ToString("N2", CultureInfo.CurrentCulture);
         }
 
         private bool TryValidateIssueDateRange(InvoiceViewModel filter, out IActionResult? badRequestResult)

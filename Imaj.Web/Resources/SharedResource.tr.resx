@@ -1164,6 +1164,9 @@
   <data name="PrintJobForm" xml:space="preserve">
     <value>İş Formu Bas</value>
   </data>
+  <data name="DownloadPdf" xml:space="preserve">
+    <value>PDF İndir</value>
+  </data>
   <data name="PrintInvoice" xml:space="preserve">
     <value>Fatura Bas</value>
   </data>

@@ -81,19 +81,28 @@
                 @if (canDownloadDetailed)
                 {
                     <button type="button" @@click="downloadDetailedReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                        @Localizer["DetailedOvertimeReportTitle"]
+                        @Localizer["DetailedOvertimeReportTitle"] - Excel
+                    </button>
+                    <button type="button" @@click="openDetailedReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                        @Localizer["DetailedOvertimeReportTitle"] - PDF
                     </button>
                 }
                 @if (canDownloadSummary)
                 {
                     <button type="button" @@click="downloadSummaryReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                        @Localizer["SummaryOvertimeReportTitle"]
+                        @Localizer["SummaryOvertimeReportTitle"] - Excel
+                    </button>
+                    <button type="button" @@click="openSummaryReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                        @Localizer["SummaryOvertimeReportTitle"] - PDF
                     </button>
                 }
                 @if (canDownloadAdministrativeSummary)
                 {
                     <button type="button" @@click="downloadAdministrativeSummaryReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                        @Localizer["AdminSummaryOvertimeReportTitle"]
+                        @Localizer["AdminSummaryOvertimeReportTitle"] - Excel
+                    </button>
+                    <button type="button" @@click="openAdministrativeSummaryReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                        @Localizer["AdminSummaryOvertimeReportTitle"] - PDF
                     </button>
                 }
                 @if (!canDownloadDetailed && !canDownloadSummary && !canDownloadAdministrativeSummary)
@@ -311,16 +320,37 @@
                 }
             },
 
+            openReportPage(actionName) {
+                const params = this.buildDownloadParams();
+                if (!params) {
+                    return;
+                }
+
+                window.open(`/OvertimeReport/${actionName}?${params.toString()}`, '_blank', 'noopener');
+            },
+
             async downloadDetailedReport() {
                 await this.downloadReport('DownloadDetailedExcel');
+            },
+
+            openDetailedReportPage() {
+                this.openReportPage('ViewDetailedReport');
             },
 
             async downloadSummaryReport() {
                 await this.downloadReport('DownloadSummaryExcel');
             },
 
+            openSummaryReportPage() {
+                this.openReportPage('ViewSummaryReport');
+            },
+
             async downloadAdministrativeSummaryReport() {
                 await this.downloadReport('DownloadAdministrativeSummaryExcel');
+            },
+
+            openAdministrativeSummaryReportPage() {
+                this.openReportPage('ViewAdministrativeSummaryReport');
             }
         }
     }

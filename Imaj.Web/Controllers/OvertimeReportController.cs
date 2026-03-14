@@ -8,6 +8,7 @@ using Imaj.Web;
 using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using System.Globalization;
 
 namespace Imaj.Web.Controllers
 {
@@ -150,6 +151,63 @@ namespace Imaj.Web.Controllers
             return File(fileBytes, ExcelContentType, BuildFileName(L("AdminSummaryOvertimeFilePrefix")));
         }
 
+        [HttpGet]
+        [RequireMethodPermission(1698)]
+        public async Task<IActionResult> ViewDetailedReport([FromQuery] OvertimeReportDownloadRequest request)
+        {
+            if (!TryCreateReportContext(request, out var reportFilter, out var excelContext, out var badRequest))
+            {
+                return badRequest!;
+            }
+
+            var reportResult = await _jobService.GetDetailedOvertimeReportAsync(reportFilter);
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildDetailedPrintableReport(reportResult.Data, excelContext);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1745)]
+        public async Task<IActionResult> ViewSummaryReport([FromQuery] OvertimeReportDownloadRequest request)
+        {
+            if (!TryCreateReportContext(request, out var reportFilter, out var excelContext, out var badRequest))
+            {
+                return badRequest!;
+            }
+
+            var reportResult = await _jobService.GetSummaryOvertimeReportAsync(reportFilter);
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildSummaryPrintableReport(reportResult.Data, excelContext);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(2917)]
+        public async Task<IActionResult> ViewAdministrativeSummaryReport([FromQuery] OvertimeReportDownloadRequest request)
+        {
+            if (!TryCreateReportContext(request, out var reportFilter, out var excelContext, out var badRequest))
+            {
+                return badRequest!;
+            }
+
+            var reportResult = await _jobService.GetAdministrativeSummaryOvertimeReportAsync(reportFilter);
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildAdministrativeSummaryPrintableReport(reportResult.Data, excelContext);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
         private bool TryCreateReportContext(
             OvertimeReportDownloadRequest request,
             out OvertimeReportFilterDto reportFilter,
@@ -210,6 +268,254 @@ namespace Imaj.Web.Controllers
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        private PrintableReportViewModel BuildDetailedPrintableReport(
+            List<OvertimeReportRowDto> rows,
+            OvertimeReportExcelContext context)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.EmployeeName)
+                .ThenBy(x => x.JobDate)
+                .ThenBy(x => x.Reference)
+                .ToList();
+
+            var reportRows = new List<PrintableReportRow>();
+            foreach (var employeeGroup in orderedRows.GroupBy(x => new { x.EmployeeCode, x.EmployeeName }))
+            {
+                foreach (var row in employeeGroup)
+                {
+                    var customerDisplay = string.IsNullOrWhiteSpace(row.CustomerName) ? row.CustomerCode : row.CustomerName;
+                    reportRows.Add(new PrintableReportRow
+                    {
+                        Cells = new List<PrintableReportCell>
+                        {
+                            new() { Value = row.EmployeeName },
+                            new() { Value = row.TimeTypeName },
+                            new() { Value = row.WorkTypeName },
+                            new() { Value = row.Reference.ToString(CultureInfo.CurrentCulture), Alignment = "right" },
+                            new() { Value = FormatDate(row.JobDate), Alignment = "center" },
+                            new() { Value = customerDisplay },
+                            new() { Value = row.JobName },
+                            new() { Value = row.Notes },
+                            new() { Value = FormatQuantity(row.Quantity), Alignment = "right" },
+                            new() { Value = FormatAmount(row.Amount), Alignment = "right" }
+                        }
+                    });
+                }
+
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GroupTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new()
+                        {
+                            Value = string.Format(L("EmployeeTotalFormat"), employeeGroup.Key.EmployeeName),
+                            ColSpan = 8,
+                            Alignment = "right"
+                        },
+                        new() { Value = FormatQuantity(employeeGroup.Sum(x => x.Quantity)), Alignment = "right" },
+                        new() { Value = FormatAmount(employeeGroup.Sum(x => x.Amount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            if (orderedRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), ColSpan = 8, Alignment = "right" },
+                        new() { Value = FormatQuantity(orderedRows.Sum(x => x.Quantity)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.Amount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            return new PrintableReportViewModel
+            {
+                Title = L("DetailedOvertimeReportTitle"),
+                Orientation = "landscape",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildOvertimeMetaItems(context),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Employee") },
+                    new() { Title = L("OvertimeType") },
+                    new() { Title = L("TaskType") },
+                    new() { Title = L("Reference"), Alignment = "right" },
+                    new() { Title = L("Date"), Alignment = "center" },
+                    new() { Title = L("Customer") },
+                    new() { Title = L("Name") },
+                    new() { Title = L("Notes") },
+                    new() { Title = L("Quantity"), Alignment = "right" },
+                    new() { Title = L("Amount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private PrintableReportViewModel BuildSummaryPrintableReport(
+            List<OvertimeSummaryReportRowDto> rows,
+            OvertimeReportExcelContext context)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.EmployeeName)
+                .ThenBy(x => x.TimeTypeName)
+                .ThenBy(x => x.WorkTypeName)
+                .ToList();
+
+            var reportRows = new List<PrintableReportRow>();
+            foreach (var employeeGroup in orderedRows.GroupBy(x => new { x.EmployeeCode, x.EmployeeName }))
+            {
+                foreach (var row in employeeGroup)
+                {
+                    reportRows.Add(new PrintableReportRow
+                    {
+                        Cells = new List<PrintableReportCell>
+                        {
+                            new() { Value = row.EmployeeName },
+                            new() { Value = row.TimeTypeName },
+                            new() { Value = row.WorkTypeName },
+                            new() { Value = FormatQuantity(row.Quantity), Alignment = "right" },
+                            new() { Value = FormatAmount(row.Amount), Alignment = "right" }
+                        }
+                    });
+                }
+
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GroupTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new()
+                        {
+                            Value = string.Format(L("EmployeeTotalFormat"), employeeGroup.Key.EmployeeName),
+                            ColSpan = 3,
+                            Alignment = "right"
+                        },
+                        new() { Value = FormatQuantity(employeeGroup.Sum(x => x.Quantity)), Alignment = "right" },
+                        new() { Value = FormatAmount(employeeGroup.Sum(x => x.Amount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            if (orderedRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), ColSpan = 3, Alignment = "right" },
+                        new() { Value = FormatQuantity(orderedRows.Sum(x => x.Quantity)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.Amount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            return new PrintableReportViewModel
+            {
+                Title = L("SummaryOvertimeReportTitle"),
+                Orientation = "portrait",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildOvertimeMetaItems(context),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Employee") },
+                    new() { Title = L("OvertimeType") },
+                    new() { Title = L("TaskType") },
+                    new() { Title = L("Quantity"), Alignment = "right" },
+                    new() { Title = L("Amount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private PrintableReportViewModel BuildAdministrativeSummaryPrintableReport(
+            List<OvertimeAdministrativeSummaryReportRowDto> rows,
+            OvertimeReportExcelContext context)
+        {
+            var orderedRows = rows
+                .OrderBy(x => x.EmployeeName)
+                .ToList();
+
+            var reportRows = orderedRows
+                .Select(row => new PrintableReportRow
+                {
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = row.EmployeeName },
+                        new() { Value = FormatQuantity(row.Quantity), Alignment = "right" },
+                        new() { Value = FormatAmount(row.Amount), Alignment = "right" }
+                    }
+                })
+                .ToList();
+
+            if (orderedRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), Alignment = "right" },
+                        new() { Value = FormatQuantity(orderedRows.Sum(x => x.Quantity)), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.Amount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            return new PrintableReportViewModel
+            {
+                Title = L("AdminSummaryOvertimeReportTitle"),
+                Orientation = "portrait",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = BuildOvertimeMetaItems(context),
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Employee") },
+                    new() { Title = L("Quantity"), Alignment = "right" },
+                    new() { Title = L("Amount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private List<PrintableReportMetaItem> BuildOvertimeMetaItems(OvertimeReportExcelContext context)
+        {
+            return new List<PrintableReportMetaItem>
+            {
+                new() { Label = L("DateRange"), Value = $"{FormatDate(context.StartDate)} - {FormatDate(context.EndDate)}" },
+                new() { Label = L("EmployeeWithColon"), Value = context.EmployeeDisplay },
+                new() { Label = L("CustomerWithColon"), Value = context.CustomerDisplay }
+            };
+        }
+
+        private string BuildGeneratedAtDisplay()
+        {
+            return DateTime.Now.ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture);
+        }
+
+        private static string FormatDate(DateTime value)
+        {
+            return value.ToString("dd/MM/yyyy", CultureInfo.CurrentCulture);
+        }
+
+        private static string FormatAmount(decimal value)
+        {
+            return value.ToString("N2", CultureInfo.CurrentCulture);
+        }
+
+        private static string FormatQuantity(decimal value)
+        {
+            return value.ToString("#,##0.##", CultureInfo.CurrentCulture);
         }
 
         private static string BuildFileName(string prefix)

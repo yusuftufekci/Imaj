@@ -1164,6 +1164,9 @@
   <data name="PrintJobForm" xml:space="preserve">
     <value>Print Job Form</value>
   </data>
+  <data name="DownloadPdf" xml:space="preserve">
+    <value>Download PDF</value>
+  </data>
   <data name="PrintInvoice" xml:space="preserve">
     <value>Print Invoice</value>
   </data>
