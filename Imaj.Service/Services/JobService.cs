@@ -353,6 +353,143 @@ namespace Imaj.Service.Services
             }
         }
 
+        public async Task<ServiceResult<JobEmailDraftDto>> PrepareEmailDraftAsync(IReadOnlyCollection<int> references, CancellationToken cancellationToken = default)
+        {
+            var normalizedReferences = references?
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList() ?? new List<int>();
+
+            if (normalizedReferences.Count == 0)
+            {
+                return ServiceResult<JobEmailDraftDto>.Fail("En az bir iş seçilmelidir.");
+            }
+
+            try
+            {
+                var languageId = CurrentLanguageId;
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<JobEmailDraftDto>.Fail("Seçilen işler bulunamadı veya erişim yetkiniz yok.");
+                }
+
+                var activeSnapshot = snapshot!;
+                var scopedJobs = ApplyJobDataScope(_unitOfWork.Repository<Job>().Query(), activeSnapshot);
+
+                var items = await (from job in scopedJobs
+                                   join customer in _unitOfWork.Repository<Customer>().Query()
+                                       on job.CustomerID equals customer.Id into customerGroup
+                                   from customer in customerGroup.DefaultIfEmpty()
+                                   join function in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == languageId)
+                                       on job.FunctionID equals function.FunctionID into functionGroup
+                                   from function in functionGroup.DefaultIfEmpty()
+                                   join state in _unitOfWork.Repository<XState>().Query().Where(x => x.LanguageID == languageId)
+                                       on job.StateID equals state.StateID into stateGroup
+                                   from state in stateGroup.DefaultIfEmpty()
+                                   where normalizedReferences.Contains(job.Reference)
+                                   select new JobEmailItemDto
+                                   {
+                                       JobId = job.Id,
+                                       Reference = job.Reference,
+                                       FunctionName = function != null ? function.Name : string.Empty,
+                                       StateId = job.StateID,
+                                       StatusName = state != null ? state.Name : string.Empty,
+                                       CustomerCode = customer != null ? customer.Code : string.Empty,
+                                       CustomerName = customer != null ? customer.Name : string.Empty,
+                                       CustomerEmail = customer != null ? customer.EMail : string.Empty,
+                                       Name = job.Name,
+                                       RelatedPerson = job.Contact,
+                                       StartDate = job.StartDT,
+                                       EndDate = job.EndDT,
+                                       WorkAmount = job.WorkSum,
+                                       ProductAmount = job.ProdSum,
+                                       IsEmailSent = job.Mailed,
+                                       IsEvaluated = job.Evaluated
+                                   }).ToListAsync(cancellationToken);
+
+                if (items.Count != normalizedReferences.Count)
+                {
+                    return ServiceResult<JobEmailDraftDto>.Fail("Seçilen işler bulunamadı veya erişim yetkiniz yok.");
+                }
+
+                var orderedItems = normalizedReferences
+                    .Join(items, reference => reference, item => item.Reference, (_, item) => item)
+                    .ToList();
+
+                if (orderedItems.Any(x => !IsEmailEligibleState(x.StateId)))
+                {
+                    return ServiceResult<JobEmailDraftDto>.Fail("E-posta operasyonu sadece fiyatlanmış, faturalanmış ya da tamamlanmış işler için geçerlidir.");
+                }
+
+                return ServiceResult<JobEmailDraftDto>.Success(new JobEmailDraftDto
+                {
+                    RecipientEmail = ResolveDefaultRecipientEmail(orderedItems),
+                    Items = orderedItems
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "İş e-posta taslağı hazırlanırken hata oluştu.");
+                return ServiceResult<JobEmailDraftDto>.Fail("E-posta taslağı hazırlanamadı.");
+            }
+        }
+
+        public async Task<ServiceResult> MarkEmailSentAsync(IReadOnlyCollection<int> references, CancellationToken cancellationToken = default)
+        {
+            var normalizedReferences = references?
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList() ?? new List<int>();
+
+            if (normalizedReferences.Count == 0)
+            {
+                return ServiceResult.Fail("En az bir iş seçilmelidir.");
+            }
+
+            try
+            {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult.Fail("Seçilen işler bulunamadı veya erişim yetkiniz yok.");
+                }
+
+                var activeSnapshot = snapshot!;
+                var jobRepo = _unitOfWork.Repository<Job>();
+                var jobs = await ApplyJobDataScope(jobRepo.Query(), activeSnapshot)
+                    .Where(x => normalizedReferences.Contains(x.Reference))
+                    .ToListAsync(cancellationToken);
+
+                if (jobs.Count != normalizedReferences.Count)
+                {
+                    return ServiceResult.Fail("Seçilen işler bulunamadı veya erişim yetkiniz yok.");
+                }
+
+                if (jobs.Any(x => !IsEmailEligibleState(x.StateID)))
+                {
+                    return ServiceResult.Fail("E-posta operasyonu sadece fiyatlanmış, faturalanmış ya da tamamlanmış işler için geçerlidir.");
+                }
+
+                using var transaction = await _unitOfWork.BeginTransactionAsync();
+                foreach (var job in jobs)
+                {
+                    job.Mailed = true;
+                    job.Stamp = 1;
+                    jobRepo.Update(job);
+                }
+
+                await _unitOfWork.CommitAsync();
+                await transaction.CommitAsync();
+                return ServiceResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "İş e-posta durumu güncellenirken hata oluştu.");
+                return ServiceResult.Fail("İşlerin e-posta durumu güncellenemedi.");
+            }
+        }
+
         /// <summary>
         /// Referans numarasına göre tekil iş detayını getirir.
         /// JobWorks (Mesai) ve diğer detayları içerir.
@@ -1008,6 +1145,26 @@ namespace Imaj.Service.Services
             }
 
             return query.Where(j => snapshot.AllowedFunctionIds.Contains(j.FunctionID));
+        }
+
+        private static bool IsEmailEligibleState(decimal stateId)
+        {
+            return stateId == CompletedStateId
+                || stateId == PricedStateId
+                || stateId == InvoicedStateId;
+        }
+
+        private static string ResolveDefaultRecipientEmail(IEnumerable<JobEmailItemDto> items)
+        {
+            var distinctEmails = items
+                .Select(x => x.CustomerEmail?.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return distinctEmails.Count == 1
+                ? distinctEmails[0]!
+                : string.Empty;
         }
 
         private sealed class OvertimeReportBaseRow

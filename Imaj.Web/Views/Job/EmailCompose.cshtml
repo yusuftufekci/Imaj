@@ -1,0 +1,165 @@
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Imaj.Web
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> Localizer
+@model JobEmailComposeViewModel
+
+@{
+    ViewData["Title"] = Localizer["SendEmail"];
+    var references = string.Join(", ", Model.Jobs.Select(x => x.Reference));
+    var hasMultipleJobs = Model.Jobs.Count > 1;
+}
+
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-slate-900">@Localizer["JobEmailComposeTitle"]</h2>
+        <p class="mt-2 text-sm text-slate-600">
+            @Localizer["SelectedJobs"]: <span class="font-semibold text-slate-900">@references</span>
+        </p>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
+            <h3 class="text-lg font-semibold text-slate-900">@Localizer["SendEmail"]</h3>
+            <p class="mt-1 text-sm text-slate-500">@Localizer["JobEmailComposeDescription"]</p>
+        </div>
+
+        <form method="post" action="/Job/SendEmail" class="space-y-6 px-6 py-6">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+            @foreach (var id in Model.SelectedIds)
+            {
+                <input type="hidden" name="SelectedIds" value="@id" />
+            }
+
+            @if (!hasMultipleJobs)
+            {
+                <div class="space-y-2">
+                    <label for="RecipientEmail" class="block text-sm font-medium text-slate-700">@Localizer["Email"]</label>
+                    <input id="RecipientEmail"
+                           name="RecipientEmail"
+                           type="email"
+                           value="@Model.RecipientEmail"
+                           class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                           placeholder="ornek@firma.com" />
+                </div>
+            }
+            else
+            {
+                <div class="space-y-4">
+                    @for (var i = 0; i < Model.Jobs.Count; i++)
+                    {
+                        var item = Model.Jobs[i];
+                        <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                            <div class="border-b border-slate-200 bg-slate-50 px-6 py-5 sm:px-7">
+                                <input type="hidden" name="Jobs[@i].Reference" value="@item.Reference" />
+                                <div class="space-y-3">
+                                    <div class="pl-1 text-xs font-semibold uppercase tracking-wide text-slate-500">@Localizer["Email"]</div>
+                                    <input name="Jobs[@i].RecipientEmail"
+                                           type="email"
+                                           value="@item.RecipientEmail"
+                                           class="block w-full rounded-xl border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                           placeholder="ornek@firma.com" />
+                                </div>
+                            </div>
+
+                            <div class="px-6 py-5 sm:px-7">
+                                <div class="pl-1 text-xs font-semibold uppercase tracking-wide text-slate-500">@Localizer["SelectedJobs"]</div>
+                                <div class="mt-3 overflow-x-auto">
+                                <table class="mt-3 min-w-full divide-y divide-slate-200">
+                                    <thead>
+                                        <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            <th class="px-3 py-2">@Localizer["Function"]</th>
+                                            <th class="px-3 py-2">@Localizer["Reference"]</th>
+                                            <th class="px-3 py-2">@Localizer["StartDate"]</th>
+                                            <th class="px-3 py-2">@Localizer["EndDate"]</th>
+                                            <th class="px-3 py-2">@Localizer["Customer"]</th>
+                                            <th class="px-3 py-2">@Localizer["Name"]</th>
+                                            <th class="px-3 py-2">@Localizer["Related"]</th>
+                                            <th class="px-3 py-2">@Localizer["Status"]</th>
+                                            <th class="px-3 py-2 text-center">@Localizer["EmailSent"]</th>
+                                            <th class="px-3 py-2 text-center">@Localizer["Evaluated"]</th>
+                                            <th class="px-3 py-2 text-right">@Localizer["WorkAmount"]</th>
+                                            <th class="px-3 py-2 text-right">@Localizer["ProductAmount"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200 text-sm text-slate-700">
+                                        <tr>
+                                            <td class="px-3 py-2 whitespace-nowrap">@item.Function</td>
+                                            <td class="px-3 py-2 whitespace-nowrap font-semibold">@item.Reference</td>
+                                            <td class="px-3 py-2 whitespace-nowrap">@item.StartDate</td>
+                                            <td class="px-3 py-2 whitespace-nowrap">@item.EndDate</td>
+                                            <td class="px-3 py-2 whitespace-nowrap">@item.Customer</td>
+                                            <td class="px-3 py-2 whitespace-nowrap">@item.Name</td>
+                                            <td class="px-3 py-2 whitespace-nowrap">@item.RelatedPerson</td>
+                                            <td class="px-3 py-2 whitespace-nowrap">@item.Status</td>
+                                            <td class="px-3 py-2 text-center">@item.EmailSent</td>
+                                            <td class="px-3 py-2 text-center">@item.Evaluated</td>
+                                            <td class="px-3 py-2 text-right whitespace-nowrap">@item.WorkAmount</td>
+                                            <td class="px-3 py-2 text-right whitespace-nowrap">@item.ProductAmount</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (!hasMultipleJobs)
+            {
+                <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 overflow-x-auto">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">@Localizer["SelectedJobs"]</div>
+                    <table class="mt-3 min-w-full divide-y divide-slate-200">
+                        <thead>
+                            <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                <th class="px-3 py-2">@Localizer["Function"]</th>
+                                <th class="px-3 py-2">@Localizer["Reference"]</th>
+                                <th class="px-3 py-2">@Localizer["StartDate"]</th>
+                                <th class="px-3 py-2">@Localizer["EndDate"]</th>
+                                <th class="px-3 py-2">@Localizer["Customer"]</th>
+                                <th class="px-3 py-2">@Localizer["Name"]</th>
+                                <th class="px-3 py-2">@Localizer["Related"]</th>
+                                <th class="px-3 py-2">@Localizer["Status"]</th>
+                                <th class="px-3 py-2 text-center">@Localizer["EmailSent"]</th>
+                                <th class="px-3 py-2 text-center">@Localizer["Evaluated"]</th>
+                                <th class="px-3 py-2 text-right">@Localizer["WorkAmount"]</th>
+                                <th class="px-3 py-2 text-right">@Localizer["ProductAmount"]</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-sm text-slate-700">
+                            @for (var i = 0; i < Model.Jobs.Count; i++)
+                            {
+                                var item = Model.Jobs[i];
+                                <tr>
+                                    <td class="px-3 py-2 whitespace-nowrap">@item.Function</td>
+                                    <td class="px-3 py-2 whitespace-nowrap font-semibold">@item.Reference</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@item.StartDate</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@item.EndDate</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@item.Customer</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@item.Name</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@item.RelatedPerson</td>
+                                    <td class="px-3 py-2 whitespace-nowrap">@item.Status</td>
+                                    <td class="px-3 py-2 text-center">@item.EmailSent</td>
+                                    <td class="px-3 py-2 text-center">@item.Evaluated</td>
+                                    <td class="px-3 py-2 text-right whitespace-nowrap">@item.WorkAmount</td>
+                                    <td class="px-3 py-2 text-right whitespace-nowrap">@item.ProductAmount</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="flex items-center justify-center gap-3 responsive-action-group">
+                <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    @Localizer["SendEmail"]
+                </button>
+                <a href="@Model.ReturnUrl" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                    @Localizer["Back"]
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

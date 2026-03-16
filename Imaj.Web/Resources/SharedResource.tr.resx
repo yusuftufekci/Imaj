@@ -909,6 +909,75 @@
   <data name="EmailSent" xml:space="preserve">
     <value>E-Posta Yollandı</value>
   </data>
+  <data name="SendEmail" xml:space="preserve">
+    <value>E-Posta Gönder</value>
+  </data>
+  <data name="JobEmailComposeTitle" xml:space="preserve">
+    <value>İş E-Posta Gönderimi</value>
+  </data>
+  <data name="SelectedJobs" xml:space="preserve">
+    <value>Seçilen İşler</value>
+  </data>
+  <data name="JobEmailComposeDescription" xml:space="preserve">
+    <value>Seçili işler için gönderilecek e-posta adresini düzenleyebilirsiniz.</value>
+  </data>
+  <data name="PleaseSelectAtLeastOneJob" xml:space="preserve">
+    <value>Lütfen en az bir iş seçin.</value>
+  </data>
+  <data name="JobEmailEligibleStatesOnly" xml:space="preserve">
+    <value>E-posta operasyonu sadece fiyatlanmış, faturalanmış ya da tamamlanmış işler için geçerlidir.</value>
+  </data>
+  <data name="JobEmailRecipientValidationSingle" xml:space="preserve">
+    <value>Lütfen geçerli bir e-posta adresi giriniz.</value>
+  </data>
+  <data name="JobEmailRecipientValidationMultiple" xml:space="preserve">
+    <value>Lütfen her seçili iş için geçerli bir e-posta adresi giriniz.</value>
+  </data>
+  <data name="EmailAddressRequired" xml:space="preserve">
+    <value>E-posta adresi zorunludur.</value>
+  </data>
+  <data name="InvalidEmailAddress" xml:space="preserve">
+    <value>Geçerli bir e-posta adresi giriniz.</value>
+  </data>
+  <data name="JobEmailSentSuccess" xml:space="preserve">
+    <value>{0} iş için e-posta gönderildi.</value>
+  </data>
+  <data name="JobEmailSubject" xml:space="preserve">
+    <value>İş Bilgilendirmesi - {0}</value>
+  </data>
+  <data name="JobEmailBodyIntro" xml:space="preserve">
+    <value>Seçtiğiniz işler aşağıda bilgilerinize sunulmuştur.</value>
+  </data>
+  <data name="E-posta bilgisi boş olamaz." xml:space="preserve">
+    <value>E-posta bilgisi boş olamaz.</value>
+  </data>
+  <data name="E-posta konusu zorunludur." xml:space="preserve">
+    <value>E-posta konusu zorunludur.</value>
+  </data>
+  <data name="E-posta içeriği zorunludur." xml:space="preserve">
+    <value>E-posta içeriği zorunludur.</value>
+  </data>
+  <data name="Şirket e-posta ayarları bulunamadı." xml:space="preserve">
+    <value>Şirket e-posta ayarları bulunamadı.</value>
+  </data>
+  <data name="Şirket e-posta ayarları eksik." xml:space="preserve">
+    <value>Şirket e-posta ayarları eksik.</value>
+  </data>
+  <data name="E-posta gönderilirken bir hata oluştu." xml:space="preserve">
+    <value>E-posta gönderilirken bir hata oluştu.</value>
+  </data>
+  <data name="En az bir iş seçilmelidir." xml:space="preserve">
+    <value>En az bir iş seçilmelidir.</value>
+  </data>
+  <data name="Seçilen işler bulunamadı veya erişim yetkiniz yok." xml:space="preserve">
+    <value>Seçilen işler bulunamadı veya erişim yetkiniz yok.</value>
+  </data>
+  <data name="E-posta taslağı hazırlanamadı." xml:space="preserve">
+    <value>E-posta taslağı hazırlanamadı.</value>
+  </data>
+  <data name="İşlerin e-posta durumu güncellenemedi." xml:space="preserve">
+    <value>İşlerin e-posta durumu güncellenemedi.</value>
+  </data>
   <data name="EndDate" xml:space="preserve">
     <value>Bitiş Tarihi</value>
   </data>

@@ -71,6 +71,7 @@ namespace Imaj.Web.Models
     public class JobSearchResult
     {
         public string? Code { get; set; } // Reference
+        public decimal StateId { get; set; }
         public string? Function { get; set; }
         public string? Name { get; set; }
         public string? CustomerName { get; set; }

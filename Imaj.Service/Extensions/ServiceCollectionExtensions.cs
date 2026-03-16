@@ -26,6 +26,7 @@ namespace Imaj.Service.Extensions
             // Options Pattern - Configuration binding
             services.Configure<CustomerSettings>(configuration.GetSection(CustomerSettings.SectionName));
             services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.SectionName));
+            services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
             services.Configure<SecurityHeadersSettings>(configuration.GetSection(SecurityHeadersSettings.SectionName));
             services.Configure<DeploymentSettings>(configuration.GetSection(DeploymentSettings.SectionName));
             services.AddMemoryCache();
@@ -33,6 +34,7 @@ namespace Imaj.Service.Extensions
 
             // Business Services
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IPermissionService, PermissionService>();
             services.AddScoped<ICurrentPermissionContext, CurrentPermissionContext>();
             services.AddScoped<ICustomerService, CustomerService>();
@@ -55,8 +57,8 @@ namespace Imaj.Service.Extensions
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ILookupService, LookupService>();
 
-            // AutoMapper - Assembly scan ile profil bulma
-            services.AddAutoMapper(typeof(MappingProfile).Assembly);
+            // AutoMapper - profil marker type üzerinden assembly scan
+            services.AddAutoMapper(_ => { }, typeof(MappingProfile));
 
             // FluentValidation - Assembly scan ile validator bulma
             services.AddValidatorsFromAssemblyContaining<CustomerDtoValidator>();

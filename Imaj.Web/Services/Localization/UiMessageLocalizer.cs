@@ -335,7 +335,7 @@ namespace Imaj.Web.Services.Localization
             var matches = Regex.Matches(sourceTemplate, @"\{(\d+)\}");
             if (matches.Count == 0)
             {
-                template = default;
+                template = default!;
                 return false;
             }
 

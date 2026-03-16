@@ -33,6 +33,8 @@ namespace Imaj.Service.Interfaces
         /// </summary>
         Task<ServiceResult<List<JobLogDto>>> GetJobHistoryAsync(decimal jobId);
         Task<ServiceResult> ExecuteWorkflowActionAsync(int reference, JobWorkflowAction action);
+        Task<ServiceResult<JobEmailDraftDto>> PrepareEmailDraftAsync(IReadOnlyCollection<int> references, CancellationToken cancellationToken = default);
+        Task<ServiceResult> MarkEmailSentAsync(IReadOnlyCollection<int> references, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Detaylı mesai raporu için filtrelenmiş satırları getirir.

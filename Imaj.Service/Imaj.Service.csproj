@@ -10,10 +10,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- AutoMapper için DI entegrasyonu -->
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <!-- AutoMapper DI desteği 13+ sürümlerde ana pakete taşındı -->
+    <PackageReference Include="AutoMapper" Version="16.1.1" />
     <!-- FluentValidation için DI entegrasyonu -->
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <PackageReference Include="MailKit" Version="4.15.1" />
   </ItemGroup>
 
   <PropertyGroup>

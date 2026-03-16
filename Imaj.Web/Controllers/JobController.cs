@@ -10,6 +10,9 @@ using Imaj.Web.Services.Reports;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using System.Globalization;
+using System.Net;
+using System.Net.Mail;
+using System.Text;
 
 namespace Imaj.Web.Controllers
 {
@@ -32,6 +35,7 @@ namespace Imaj.Web.Controllers
 
         private readonly IJobService _jobService;
         private readonly ICustomerService _customerService;
+        private readonly IEmailService _emailService;
         private readonly IProductService _productService;
         private readonly ILookupService _lookupService;
         private readonly IPendingInvoiceJobsReportExcelService _pendingInvoiceJobsReportExcelService;
@@ -42,6 +46,7 @@ namespace Imaj.Web.Controllers
         public JobController(
             IJobService jobService,
             ICustomerService customerService,
+            IEmailService emailService,
             IProductService productService,
             ILookupService lookupService,
             IPendingInvoiceJobsReportExcelService pendingInvoiceJobsReportExcelService,
@@ -49,14 +54,15 @@ namespace Imaj.Web.Controllers
             IPermissionViewService permissionViewService,
             IStringLocalizer<SharedResource> localizer)
         {
-            _jobService = jobService;
-            _customerService = customerService;
-            _productService = productService;
-            _lookupService = lookupService;
-            _pendingInvoiceJobsReportExcelService = pendingInvoiceJobsReportExcelService;
-            _jobReportExcelService = jobReportExcelService;
-            _permissionViewService = permissionViewService;
-            _localizer = localizer;
+            _jobService = jobService ?? throw new ArgumentNullException(nameof(jobService));
+            _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _productService = productService ?? throw new ArgumentNullException(nameof(productService));
+            _lookupService = lookupService ?? throw new ArgumentNullException(nameof(lookupService));
+            _pendingInvoiceJobsReportExcelService = pendingInvoiceJobsReportExcelService ?? throw new ArgumentNullException(nameof(pendingInvoiceJobsReportExcelService));
+            _jobReportExcelService = jobReportExcelService ?? throw new ArgumentNullException(nameof(jobReportExcelService));
+            _permissionViewService = permissionViewService ?? throw new ArgumentNullException(nameof(permissionViewService));
+            _localizer = localizer ?? throw new ArgumentNullException(nameof(localizer));
         }
 
 
@@ -80,8 +86,8 @@ namespace Imaj.Web.Controllers
             
             // Now get history using the actual Job.Id (PK)
             var historyResult = await _jobService.GetJobHistoryAsync(job.Id);
-            var historyItems = historyResult.IsSuccess && historyResult.Data != null
-                ? historyResult.Data
+            var historyItems = historyResult.IsSuccess
+                ? historyResult.Data ?? new List<JobLogDto>()
                 : new List<JobLogDto>();
 
             var model = new JobHistoryViewModel
@@ -547,6 +553,7 @@ namespace Imaj.Web.Controllers
                 model.Items = result.Data.Items.Select(j => new JobSearchResult
                 {
                     Code = j.Reference.ToString(),
+                    StateId = j.StateId,
                     Function = j.FunctionName,
                     Name = j.Name,
                     CustomerName = j.CustomerName,
@@ -568,6 +575,150 @@ namespace Imaj.Web.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1397, write: true)]
+        public async Task<IActionResult> EmailCompose(string[]? selectedIds = null, string? returnUrl = null)
+        {
+            var normalizedReferences = NormalizeSelectedReferences(selectedIds);
+            var normalizedReturnUrl = NormalizeListReturnUrl(returnUrl);
+
+            if (normalizedReferences.Count == 0)
+            {
+                TempData["ErrorMessage"] = L("PleaseSelectAtLeastOneJob");
+                return LocalRedirect(normalizedReturnUrl);
+            }
+
+            var draftResult = await _jobService.PrepareEmailDraftAsync(normalizedReferences);
+            if (!draftResult.IsSuccess || draftResult.Data == null)
+            {
+                TempData["ErrorMessage"] = this.LocalizeUiMessage(draftResult.Message, L("GenericError"));
+                return LocalRedirect(normalizedReturnUrl);
+            }
+
+            var model = BuildJobEmailComposeViewModel(draftResult.Data, normalizedReturnUrl);
+            return View("EmailCompose", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1397, write: true)]
+        public async Task<IActionResult> SendEmail(JobEmailComposeViewModel model)
+        {
+            var normalizedReferences = NormalizeSelectedReferences(model.SelectedIds);
+            model.ReturnUrl = NormalizeListReturnUrl(model.ReturnUrl);
+
+            if (normalizedReferences.Count == 0)
+            {
+                TempData["ErrorMessage"] = L("PleaseSelectAtLeastOneJob");
+                return LocalRedirect(model.ReturnUrl);
+            }
+
+            var draftResult = await _jobService.PrepareEmailDraftAsync(normalizedReferences);
+            if (!draftResult.IsSuccess || draftResult.Data == null)
+            {
+                TempData["ErrorMessage"] = this.LocalizeUiMessage(draftResult.Message, L("GenericError"));
+                return LocalRedirect(model.ReturnUrl);
+            }
+
+            var recipientOverrides = BuildRecipientOverrideMap(model.Jobs);
+            var multipleJobsSelected = draftResult.Data.Items.Count > 1;
+            string? validationErrorMessage = null;
+
+            if (multipleJobsSelected)
+            {
+                foreach (var item in draftResult.Data.Items)
+                {
+                    var referenceKey = item.Reference.ToString(CultureInfo.InvariantCulture);
+                    recipientOverrides.TryGetValue(referenceKey, out var recipientEmail);
+
+                    if (string.IsNullOrWhiteSpace(recipientEmail) || !IsValidEmailAddress(recipientEmail))
+                    {
+                        validationErrorMessage = L("JobEmailRecipientValidationMultiple");
+                        break;
+                    }
+                }
+            }
+            else if (string.IsNullOrWhiteSpace(model.RecipientEmail))
+            {
+                validationErrorMessage = L("JobEmailRecipientValidationSingle");
+            }
+            else if (!IsValidEmailAddress(model.RecipientEmail))
+            {
+                validationErrorMessage = L("JobEmailRecipientValidationSingle");
+            }
+
+            if (!string.IsNullOrWhiteSpace(validationErrorMessage))
+            {
+                TempData["ErrorMessage"] = validationErrorMessage;
+                var invalidModel = BuildJobEmailComposeViewModel(
+                    draftResult.Data,
+                    model.ReturnUrl,
+                    multipleJobsSelected ? null : model.RecipientEmail,
+                    recipientOverrides);
+                return View("EmailCompose", invalidModel);
+            }
+
+            ServiceResult sendResult;
+            if (multipleJobsSelected)
+            {
+                sendResult = ServiceResult.Success();
+
+                foreach (var item in draftResult.Data.Items)
+                {
+                    var referenceKey = item.Reference.ToString(CultureInfo.InvariantCulture);
+                    var singleDraft = CreateSingleJobEmailDraft(item, recipientOverrides[referenceKey].Trim());
+
+                    sendResult = await _emailService.SendAsync(new EmailMessageDto
+                    {
+                        To = singleDraft.RecipientEmail,
+                        Subject = BuildJobEmailSubject(singleDraft),
+                        HtmlBody = BuildJobEmailBody(singleDraft)
+                    });
+
+                    if (!sendResult.IsSuccess)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                sendResult = await _emailService.SendAsync(new EmailMessageDto
+                {
+                    To = model.RecipientEmail!.Trim(),
+                    Subject = BuildJobEmailSubject(draftResult.Data),
+                    HtmlBody = BuildJobEmailBody(draftResult.Data)
+                });
+            }
+
+            if (!sendResult.IsSuccess)
+            {
+                TempData["ErrorMessage"] = this.LocalizeUiMessage(sendResult.Message, L("GenericError"));
+                var failedModel = BuildJobEmailComposeViewModel(
+                    draftResult.Data,
+                    model.ReturnUrl,
+                    multipleJobsSelected ? null : model.RecipientEmail,
+                    recipientOverrides);
+                return View("EmailCompose", failedModel);
+            }
+
+            var markResult = await _jobService.MarkEmailSentAsync(normalizedReferences);
+            if (!markResult.IsSuccess)
+            {
+                TempData["ErrorMessage"] = this.LocalizeUiMessage(markResult.Message, L("GenericError"));
+                var failedModel = BuildJobEmailComposeViewModel(
+                    draftResult.Data,
+                    model.ReturnUrl,
+                    multipleJobsSelected ? null : model.RecipientEmail,
+                    recipientOverrides);
+                return View("EmailCompose", failedModel);
+            }
+
+            TempData["SuccessMessage"] = string.Format(L("JobEmailSentSuccess"), normalizedReferences.Count);
+            return LocalRedirect(model.ReturnUrl);
         }
 
         // Action to view detail. Supports navigation if multiple ids passed
@@ -1271,6 +1422,220 @@ namespace Imaj.Web.Controllers
             }
 
             return L("AllOption");
+        }
+
+        private static List<int> NormalizeSelectedReferences(IEnumerable<string>? selectedIds)
+        {
+            return (selectedIds ?? Array.Empty<string>())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => int.TryParse(x, out var reference) ? reference : (int?)null)
+                .Where(x => x.HasValue && x.Value > 0)
+                .Select(x => x!.Value)
+                .Distinct()
+                .ToList();
+        }
+
+        private static string NormalizeListReturnUrl(string? returnUrl)
+        {
+            return !string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/')
+                ? returnUrl
+                : "/Job/List";
+        }
+
+        private JobEmailComposeViewModel BuildJobEmailComposeViewModel(
+            JobEmailDraftDto draft,
+            string returnUrl,
+            string? recipientEmailOverride = null,
+            IReadOnlyDictionary<string, string>? recipientOverrides = null)
+        {
+            var rows = BuildJobEmailRows(draft);
+
+            return new JobEmailComposeViewModel
+            {
+                RecipientEmail = recipientEmailOverride ?? draft.RecipientEmail,
+                ReturnUrl = NormalizeListReturnUrl(returnUrl),
+                SelectedIds = rows.Select(x => x.Reference).ToList(),
+                Jobs = rows.Select(x => new JobEmailComposeItemViewModel
+                {
+                    RecipientEmail = ResolveRecipientEmail(x.Reference, draft, recipientOverrides),
+                    Function = x.Function,
+                    Reference = x.Reference,
+                    Customer = x.Customer,
+                    Name = x.Name,
+                    RelatedPerson = x.RelatedPerson,
+                    Status = x.Status,
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    EmailSent = x.EmailSent,
+                    Evaluated = x.Evaluated,
+                    WorkAmount = x.WorkAmount,
+                    ProductAmount = x.ProductAmount
+                }).ToList()
+            };
+        }
+
+        private string BuildJobEmailSubject(JobEmailDraftDto draft)
+        {
+            var references = draft.Items.Select(x => x.Reference).ToList();
+            var referenceLabel = references.Count <= 3
+                ? string.Join(", ", references)
+                : string.Concat(string.Join(", ", references.Take(3)), " +", references.Count - 3);
+
+            return string.Format(L("JobEmailSubject"), referenceLabel);
+        }
+
+        private string BuildJobEmailBody(JobEmailDraftDto draft)
+        {
+            var rows = BuildJobEmailRows(draft);
+            var builder = new StringBuilder();
+            builder.Append("<html><body style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#0f172a;\">");
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<p>{0}</p>", WebUtility.HtmlEncode(L("JobEmailBodyIntro")));
+            builder.AppendFormat(
+                CultureInfo.InvariantCulture,
+                "<p style=\"margin:0 0 16px;color:#475569;\"><strong>{0}:</strong> {1}</p>",
+                WebUtility.HtmlEncode(L("SelectedJobs")),
+                WebUtility.HtmlEncode(string.Join(", ", rows.Select(x => x.Reference))));
+            builder.Append("<table style=\"border-collapse:collapse;width:100%;\">");
+            builder.Append("<thead><tr>");
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Function")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Reference")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("StartDate")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("EndDate")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Customer")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Name")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Related")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Status")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:center;\">{0}</th>", WebUtility.HtmlEncode(L("EmailSent")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:center;\">{0}</th>", WebUtility.HtmlEncode(L("Evaluated")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:right;\">{0}</th>", WebUtility.HtmlEncode(L("WorkAmount")));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:right;\">{0}</th>", WebUtility.HtmlEncode(L("ProductAmount")));
+            builder.Append("</tr></thead><tbody>");
+
+            foreach (var row in rows)
+            {
+                builder.Append("<tr>");
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Function));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Reference));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.StartDate));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.EndDate));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Customer));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Name));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.RelatedPerson));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Status));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;text-align:center;\">{0}</td>", WebUtility.HtmlEncode(row.EmailSent));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;text-align:center;\">{0}</td>", WebUtility.HtmlEncode(row.Evaluated));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;text-align:right;\">{0}</td>", WebUtility.HtmlEncode(row.WorkAmount));
+                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;text-align:right;\">{0}</td>", WebUtility.HtmlEncode(row.ProductAmount));
+                builder.Append("</tr>");
+            }
+
+            builder.Append("</tbody></table>");
+            builder.Append("</body></html>");
+            return builder.ToString();
+        }
+
+        private List<JobEmailDisplayRow> BuildJobEmailRows(JobEmailDraftDto draft)
+        {
+            return draft.Items.Select(x => new JobEmailDisplayRow
+            {
+                Function = x.FunctionName,
+                Reference = x.Reference.ToString(CultureInfo.InvariantCulture),
+                Customer = ResolveCustomerDisplay(x.CustomerName, x.CustomerCode),
+                Name = x.Name,
+                RelatedPerson = x.RelatedPerson,
+                Status = NormalizeJobStatusName(x.StateId, x.StatusName),
+                StartDate = FormatDateTime(x.StartDate),
+                EndDate = x.EndDate.HasValue ? FormatDateTime(x.EndDate.Value) : "-",
+                EmailSent = BoolLabel(x.IsEmailSent),
+                Evaluated = BoolLabel(x.IsEvaluated),
+                WorkAmount = FormatAmount(x.WorkAmount),
+                ProductAmount = FormatAmount(x.ProductAmount)
+            }).ToList();
+        }
+
+        private static Dictionary<string, string> BuildRecipientOverrideMap(IEnumerable<JobEmailComposeItemViewModel>? jobs)
+        {
+            return (jobs ?? Enumerable.Empty<JobEmailComposeItemViewModel>())
+                .Where(x => !string.IsNullOrWhiteSpace(x.Reference))
+                .Select(x => new
+                {
+                    Reference = x.Reference!,
+                    RecipientEmail = x.RecipientEmail
+                })
+                .GroupBy(x => x.Reference, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    x => x.Key,
+                    x => x.Last().RecipientEmail ?? string.Empty,
+                    StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static JobEmailDraftDto CreateSingleJobEmailDraft(JobEmailItemDto item, string recipientEmail)
+        {
+            return new JobEmailDraftDto
+            {
+                RecipientEmail = recipientEmail,
+                Items = new List<JobEmailItemDto> { item }
+            };
+        }
+
+        private static string ResolveRecipientEmail(
+            string reference,
+            JobEmailDraftDto draft,
+            IReadOnlyDictionary<string, string>? recipientOverrides)
+        {
+            if (recipientOverrides != null && recipientOverrides.TryGetValue(reference, out var overrideEmail))
+            {
+                return overrideEmail ?? string.Empty;
+            }
+
+            var item = draft.Items.FirstOrDefault(x => x.Reference.ToString(CultureInfo.InvariantCulture) == reference);
+            if (item == null)
+            {
+                return draft.RecipientEmail;
+            }
+
+            return !string.IsNullOrWhiteSpace(item.CustomerEmail)
+                ? item.CustomerEmail
+                : draft.RecipientEmail;
+        }
+
+        private static bool IsValidEmailAddress(string? emailAddress)
+        {
+            if (string.IsNullOrWhiteSpace(emailAddress))
+            {
+                return false;
+            }
+
+            try
+            {
+                _ = new MailAddress(emailAddress.Trim());
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private string BoolLabel(bool value)
+        {
+            return value ? L("Yes") : L("No");
+        }
+
+        private sealed class JobEmailDisplayRow
+        {
+            public string Function { get; init; } = string.Empty;
+            public string Reference { get; init; } = string.Empty;
+            public string Customer { get; init; } = string.Empty;
+            public string Name { get; init; } = string.Empty;
+            public string RelatedPerson { get; init; } = string.Empty;
+            public string Status { get; init; } = string.Empty;
+            public string StartDate { get; init; } = string.Empty;
+            public string EndDate { get; init; } = string.Empty;
+            public string EmailSent { get; init; } = string.Empty;
+            public string Evaluated { get; init; } = string.Empty;
+            public string WorkAmount { get; init; } = string.Empty;
+            public string ProductAmount { get; init; } = string.Empty;
         }
 
         private static string FormatDate(DateTime value)

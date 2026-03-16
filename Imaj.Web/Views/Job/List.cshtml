@@ -1,7 +1,10 @@
+@using System.Text.Json
 @model JobViewModel
 
 @{
     ViewData["Title"] = Localizer["Jobs"];
+    var currentListUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var stateMapJson = JsonSerializer.Serialize(Model.Items.ToDictionary(x => x.Code ?? string.Empty, x => x.StateId));
 
     var queryParts = Context.Request.Query
         .Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase)
@@ -12,7 +15,7 @@
     var paginationQuery = string.Join("&", queryParts);
 }
 
-<div x-data="jobList()" class="space-y-6">
+<div x-data='jobList(@Html.Raw(stateMapJson))' class="space-y-6">
     <!-- Header -->
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
@@ -25,6 +28,7 @@
     <!-- Results Table -->
     <form id="resultsForm" method="post" action="/Job/Detail">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="returnUrl" value="@currentListUrl" />
         <div class="flex flex-col mt-6">
             <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                 <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -107,8 +111,12 @@
                  <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     @Localizer["View"]
                 </button>
-                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    @Localizer["Edit"]
+                 <button type="submit"
+                         formaction="/Job/EmailCompose"
+                         formmethod="post"
+                         @@click.prevent="submitEmailCompose($event)"
+                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    @Localizer["SendEmail"]
                 </button>
                 <a href="/Job" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                     @Localizer["Back"]
@@ -124,10 +132,12 @@
 </div>
 
 <script>
-    function jobList() {
+    function jobList(jobStates) {
         return {
             selectedIds: [],
             allSelected: false,
+            jobStates: jobStates || {},
+            allowedEmailStates: [120, 130, 140],
             // We need the list of all IDs on the current page to implement Select All properly
             // Serialize all codes to a JS array
             allPageIds: [@Html.Raw(string.Join(",", Model.Items.Select(x => $"'{x.Code}'")))],
@@ -144,6 +154,33 @@
                     this.selectedIds = [...this.allPageIds];
                 } else {
                     this.selectedIds = [];
+                }
+            },
+
+            submitEmailCompose(event) {
+                if (this.selectedIds.length === 0) {
+                    Toast.error('@Localizer["PleaseSelectAtLeastOneJob"]');
+                    return;
+                }
+
+                const hasInvalidSelection = this.selectedIds.some(id => {
+                    const stateId = Number(this.jobStates[id]);
+                    return !this.allowedEmailStates.includes(stateId);
+                });
+
+                if (hasInvalidSelection) {
+                    Toast.error('@Localizer["JobEmailEligibleStatesOnly"]');
+                    return;
+                }
+
+                const form = event.currentTarget.form;
+                if (form && typeof form.requestSubmit === 'function') {
+                    form.requestSubmit(event.currentTarget);
+                    return;
+                }
+
+                if (form) {
+                    form.submit();
                 }
             }
         }

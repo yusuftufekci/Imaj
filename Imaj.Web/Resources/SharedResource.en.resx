@@ -909,6 +909,75 @@
   <data name="EmailSent" xml:space="preserve">
     <value>Email Sent</value>
   </data>
+  <data name="SendEmail" xml:space="preserve">
+    <value>Send Email</value>
+  </data>
+  <data name="JobEmailComposeTitle" xml:space="preserve">
+    <value>Job Email Delivery</value>
+  </data>
+  <data name="SelectedJobs" xml:space="preserve">
+    <value>Selected Jobs</value>
+  </data>
+  <data name="JobEmailComposeDescription" xml:space="preserve">
+    <value>You can review and change the destination email address for the selected jobs.</value>
+  </data>
+  <data name="PleaseSelectAtLeastOneJob" xml:space="preserve">
+    <value>Please select at least one job.</value>
+  </data>
+  <data name="JobEmailEligibleStatesOnly" xml:space="preserve">
+    <value>Email can only be sent for priced, invoiced, or completed jobs.</value>
+  </data>
+  <data name="JobEmailRecipientValidationSingle" xml:space="preserve">
+    <value>Please enter a valid email address.</value>
+  </data>
+  <data name="JobEmailRecipientValidationMultiple" xml:space="preserve">
+    <value>Please enter a valid email address for each selected job.</value>
+  </data>
+  <data name="EmailAddressRequired" xml:space="preserve">
+    <value>Email address is required.</value>
+  </data>
+  <data name="InvalidEmailAddress" xml:space="preserve">
+    <value>Please enter a valid email address.</value>
+  </data>
+  <data name="JobEmailSentSuccess" xml:space="preserve">
+    <value>Email was sent for {0} job(s).</value>
+  </data>
+  <data name="JobEmailSubject" xml:space="preserve">
+    <value>Job Information - {0}</value>
+  </data>
+  <data name="JobEmailBodyIntro" xml:space="preserve">
+    <value>The selected jobs are listed below for your information.</value>
+  </data>
+  <data name="E-posta bilgisi boş olamaz." xml:space="preserve">
+    <value>Email information cannot be empty.</value>
+  </data>
+  <data name="E-posta konusu zorunludur." xml:space="preserve">
+    <value>Email subject is required.</value>
+  </data>
+  <data name="E-posta içeriği zorunludur." xml:space="preserve">
+    <value>Email content is required.</value>
+  </data>
+  <data name="Şirket e-posta ayarları bulunamadı." xml:space="preserve">
+    <value>Company email settings could not be found.</value>
+  </data>
+  <data name="Şirket e-posta ayarları eksik." xml:space="preserve">
+    <value>Company email settings are incomplete.</value>
+  </data>
+  <data name="E-posta gönderilirken bir hata oluştu." xml:space="preserve">
+    <value>An error occurred while sending the email.</value>
+  </data>
+  <data name="En az bir iş seçilmelidir." xml:space="preserve">
+    <value>At least one job must be selected.</value>
+  </data>
+  <data name="Seçilen işler bulunamadı veya erişim yetkiniz yok." xml:space="preserve">
+    <value>The selected jobs could not be found or you do not have access to them.</value>
+  </data>
+  <data name="E-posta taslağı hazırlanamadı." xml:space="preserve">
+    <value>The email draft could not be prepared.</value>
+  </data>
+  <data name="İşlerin e-posta durumu güncellenemedi." xml:space="preserve">
+    <value>The email status of the jobs could not be updated.</value>
+  </data>
   <data name="EndDate" xml:space="preserve">
     <value>End Date</value>
   </data>
