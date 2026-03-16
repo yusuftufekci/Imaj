@@ -900,6 +900,31 @@ namespace Imaj.Web.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        [RequireMethodPermission(1501)]
+        public async Task<IActionResult> PrintJobForm(int reference, string? returnUrl = null)
+        {
+            var normalizedReturnUrl = NormalizeListReturnUrl(returnUrl);
+            var result = await _jobService.GetByReferenceAsync(reference);
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                return RedirectToAction("List");
+            }
+
+            if (!IsPrintableJobFormState(result.Data.StateId))
+            {
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = reference.ToString(CultureInfo.InvariantCulture),
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
+            var model = BuildJobPrintFormViewModel(result.Data);
+            return View(model);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> WorkflowAction(JobWorkflowActionRequest request)
@@ -1404,6 +1429,46 @@ namespace Imaj.Web.Controllers
             return DateTime.Now.ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture);
         }
 
+        private JobPrintFormViewModel BuildJobPrintFormViewModel(JobDto job)
+        {
+            var products = job.JobProds ?? new List<JobProdDto>();
+            var summarySource = BuildJobPrintFormSummary(job, products);
+
+            return new JobPrintFormViewModel
+            {
+                Title = L("JobFormTitle"),
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                FunctionReferenceDisplay = string.Concat(
+                    string.IsNullOrWhiteSpace(job.FunctionName) ? L("Job") : job.FunctionName,
+                    " \\ ",
+                    job.Reference.ToString(CultureInfo.InvariantCulture)),
+                CustomerName = SafeText(job.CustomerName),
+                RelatedPerson = SafeText(job.Contact),
+                Name = SafeText(job.Name),
+                EmployeeNames = ResolveJobFormEmployees(job.JobWorks),
+                Notes = ResolveJobFormNotes(job),
+                StartDateDisplay = FormatDateTime(job.StartDate),
+                EndDateDisplay = job.EndDate == default
+                    ? "-"
+                    : FormatDateTime(job.EndDate),
+                VatNote = L("PricesExcludeVat"),
+                TotalAmountDisplay = FormatAmount(summarySource.Sum(x => x.Amount)),
+                Items = products.Select(x => new JobPrintFormLineItemViewModel
+                {
+                    Code = SafeText(x.ProductCode),
+                    ProductName = SafeText(x.ProductName),
+                    QuantityDisplay = FormatQuantity(x.Quantity),
+                    AmountDisplay = FormatAmount(x.NetAmount),
+                    Notes = SafeText(x.Notes)
+                }).ToList(),
+                SummaryItems = summarySource.Select(x => new JobPrintFormSummaryItemViewModel
+                {
+                    Label = x.Label,
+                    AmountDisplay = FormatAmount(x.Amount)
+                }).ToList()
+            };
+        }
+
         private static string ResolveCustomerDisplay(string? name, string? code)
         {
             return string.IsNullOrWhiteSpace(name) ? (code ?? string.Empty) : name;
@@ -1648,9 +1713,74 @@ namespace Imaj.Web.Controllers
             return value.ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture);
         }
 
+        private static string FormatQuantity(decimal value)
+        {
+            return value.ToString("0.##", CultureInfo.CurrentCulture);
+        }
+
         private static string FormatAmount(decimal value)
         {
             return value.ToString("N2", CultureInfo.CurrentCulture);
+        }
+
+        private static bool IsPrintableJobFormState(decimal stateId)
+        {
+            return stateId == 120m || stateId == 130m || stateId == 140m;
+        }
+
+        private static string ResolveJobFormEmployees(IEnumerable<JobWorkDto>? jobWorks)
+        {
+            var employeeNames = (jobWorks ?? Enumerable.Empty<JobWorkDto>())
+                .Select(x => x.EmployeeName)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .Distinct()
+                .ToList();
+
+            return employeeNames.Count > 0
+                ? string.Join(", ", employeeNames)
+                : "-";
+        }
+
+        private static string ResolveJobFormNotes(JobDto job)
+        {
+            var parts = new[] { job.ExtNotes, job.IntNotes }
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!.Trim())
+                .Distinct()
+                .ToList();
+
+            return parts.Count > 0
+                ? string.Join(Environment.NewLine, parts)
+                : "-";
+        }
+
+        private static List<(string Label, decimal Amount)> BuildJobPrintFormSummary(
+            JobDto job,
+            IEnumerable<JobProdDto> products)
+        {
+            var categorySummary = (job.JobProdCats ?? new List<JobProdCatDto>())
+                .Where(x => !string.IsNullOrWhiteSpace(x.CategoryName))
+                .GroupBy(x => x.CategoryName!.Trim())
+                .Select(x => (Label: x.Key, Amount: x.Sum(y => y.NetAmount)))
+                .Where(x => x.Amount != 0)
+                .ToList();
+
+            if (categorySummary.Count > 0)
+            {
+                return categorySummary;
+            }
+
+            return products
+                .GroupBy(x => !string.IsNullOrWhiteSpace(x.CategoryName) ? x.CategoryName!.Trim() : SafeText(x.ProductName))
+                .Select(x => (Label: x.Key, Amount: x.Sum(y => y.NetAmount)))
+                .Where(x => x.Amount != 0)
+                .ToList();
+        }
+
+        private static string SafeText(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
         }
 
         private void ApplyFunctionSelection(JobCreateViewModel model)

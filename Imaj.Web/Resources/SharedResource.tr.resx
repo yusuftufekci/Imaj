@@ -1233,8 +1233,14 @@
   <data name="PrintJobForm" xml:space="preserve">
     <value>İş Formu Bas</value>
   </data>
+  <data name="JobFormTitle" xml:space="preserve">
+    <value>İş Formu</value>
+  </data>
   <data name="DownloadPdf" xml:space="preserve">
     <value>PDF İndir</value>
+  </data>
+  <data name="PricesExcludeVat" xml:space="preserve">
+    <value>Fiyatlara KDV dahil değildir</value>
   </data>
   <data name="PrintInvoice" xml:space="preserve">
     <value>Fatura Bas</value>

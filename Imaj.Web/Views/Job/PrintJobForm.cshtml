@@ -1,0 +1,448 @@
+@using System
+@using Imaj.Web
+@using Imaj.Web.Models
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> Localizer
+@model JobPrintFormViewModel
+
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Title</title>
+    <style>
+        :root {
+            --page-bg: #edf2ff;
+            --paper-bg: #ffffff;
+            --ink: #111827;
+            --muted: #64748b;
+            --line: #cbd5e1;
+            --line-strong: #94a3b8;
+            --accent: #0f172a;
+        }
+
+        @@page {
+            size: A4 portrait;
+            margin: 14mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(59, 130, 246, 0.10), transparent 28%),
+                radial-gradient(circle at top right, rgba(15, 23, 42, 0.08), transparent 22%),
+                linear-gradient(180deg, #f8fbff 0%, var(--page-bg) 100%);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .report-shell {
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .report-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            max-width: 1080px;
+            margin: 0 auto 18px;
+        }
+
+        .report-toolbar__group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .report-toolbar__stamp {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .report-button {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+        }
+
+        .report-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+        }
+
+        .report-button--secondary {
+            background: rgba(255, 255, 255, 0.86);
+            color: var(--accent);
+            border-color: rgba(148, 163, 184, 0.5);
+        }
+
+        .report-button--primary {
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            color: #ffffff;
+        }
+
+        .job-form-paper {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 38px 42px 46px;
+            background: var(--paper-bg);
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 28px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+        }
+
+        .job-form-topline {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .job-form-topline__meta {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .job-form-heading {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 18px;
+            border-bottom: 1px solid var(--line-strong);
+            padding-bottom: 14px;
+        }
+
+        .job-form-heading__title {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .job-form-heading__reference {
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .job-form-brand {
+            min-width: 140px;
+            text-align: right;
+            font-size: 60px;
+            line-height: 0.9;
+            color: #1f2937;
+            font-style: italic;
+            font-family: "Brush Script MT", "Segoe Script", cursive;
+        }
+
+        .job-form-info {
+            display: grid;
+            grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr);
+            gap: 28px;
+            margin-top: 24px;
+            margin-bottom: 26px;
+        }
+
+        .job-form-info__table,
+        .job-form-dates {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .job-form-info__table th,
+        .job-form-dates th {
+            width: 130px;
+            padding: 6px 10px 6px 0;
+            font-size: 14px;
+            font-weight: 800;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        .job-form-info__table td,
+        .job-form-dates td {
+            padding: 6px 0;
+            font-size: 15px;
+            vertical-align: top;
+            white-space: pre-line;
+        }
+
+        .job-form-dates th {
+            width: 140px;
+        }
+
+        .job-form-items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            border-top: 1px solid var(--line-strong);
+            border-bottom: 1px solid var(--line-strong);
+        }
+
+        .job-form-items th,
+        .job-form-items td {
+            padding: 10px 8px;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        .job-form-items th {
+            font-weight: 800;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .job-form-items td:nth-child(3),
+        .job-form-items td:nth-child(4),
+        .job-form-items th:nth-child(3),
+        .job-form-items th:nth-child(4) {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .job-form-items td:nth-child(1) {
+            white-space: nowrap;
+        }
+
+        .job-form-items__empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 20px 8px;
+        }
+
+        .job-form-footer {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+            gap: 24px;
+            align-items: end;
+            margin-top: 22px;
+        }
+
+        .job-form-vat-note {
+            align-self: end;
+            justify-self: center;
+            font-size: 16px;
+            font-weight: 800;
+            color: #374151;
+            text-align: center;
+        }
+
+        .job-form-summary {
+            width: 100%;
+            border-collapse: collapse;
+            margin-left: auto;
+        }
+
+        .job-form-summary td {
+            padding: 6px 0;
+            font-size: 15px;
+        }
+
+        .job-form-summary td:last-child {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .job-form-summary__label {
+            padding-right: 18px;
+        }
+
+        .job-form-summary__total td {
+            padding-top: 12px;
+            border-top: 1px solid var(--line-strong);
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        @@media (max-width: 900px) {
+            .job-form-paper {
+                padding: 28px 22px 34px;
+                border-radius: 20px;
+            }
+
+            .job-form-topline,
+            .job-form-info,
+            .job-form-footer,
+            .report-toolbar {
+                grid-template-columns: 1fr;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .job-form-brand {
+                text-align: left;
+                font-size: 48px;
+            }
+
+            .report-toolbar__stamp {
+                text-align: center;
+            }
+        }
+
+        @@media print {
+            body {
+                background: #ffffff;
+            }
+
+            .report-shell {
+                padding: 0;
+            }
+
+            .report-toolbar {
+                display: none;
+            }
+
+            .job-form-paper {
+                max-width: none;
+                padding: 0;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-shell">
+        <div class="report-toolbar">
+            <div class="report-toolbar__group">
+                <button type="button" class="report-button report-button--secondary" onclick="window.history.length > 1 ? window.history.back() : window.close()">
+                    @Localizer["Back"]
+                </button>
+            </div>
+            <div class="report-toolbar__stamp">@Model.GeneratedAtDisplay</div>
+            <div class="report-toolbar__group">
+                <button type="button" class="report-button report-button--primary" onclick="window.print()">
+                    @Localizer["DownloadPdf"]
+                </button>
+            </div>
+        </div>
+
+        <main class="job-form-paper">
+            <div class="job-form-topline">
+                <div>
+                    <div class="job-form-topline__meta">@Model.GeneratedAtDisplay</div>
+                    <div class="job-form-heading">
+                        <div class="job-form-heading__title">@Model.Title</div>
+                        <div class="job-form-heading__reference">@Model.FunctionReferenceDisplay</div>
+                    </div>
+                </div>
+                <div class="job-form-brand">imaj</div>
+            </div>
+
+            <section class="job-form-info">
+                <table class="job-form-info__table">
+                    <tbody>
+                        <tr>
+                            <th>@Localizer["Customer"]</th>
+                            <td>@Model.CustomerName</td>
+                        </tr>
+                        <tr>
+                            <th>@Localizer["Related"]</th>
+                            <td>@Model.RelatedPerson</td>
+                        </tr>
+                        <tr>
+                            <th>@Localizer["Name"]</th>
+                            <td>@Model.Name</td>
+                        </tr>
+                        <tr>
+                            <th>@Localizer["Employee"]</th>
+                            <td>@Model.EmployeeNames</td>
+                        </tr>
+                        <tr>
+                            <th>@Localizer["Notes"]</th>
+                            <td>@Model.Notes</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table class="job-form-dates">
+                    <tbody>
+                        <tr>
+                            <th>@Localizer["StartDate"]</th>
+                            <td>@Model.StartDateDisplay</td>
+                        </tr>
+                        <tr>
+                            <th>@Localizer["EndDate"]</th>
+                            <td>@Model.EndDateDisplay</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <table class="job-form-items">
+                <thead>
+                    <tr>
+                        <th>@Localizer["Code"]</th>
+                        <th>@Localizer["Product"]</th>
+                        <th>@Localizer["Quantity"]</th>
+                        <th>@Localizer["Amount"]</th>
+                        <th>@Localizer["Notes"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="job-form-items__empty">-</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.Code</td>
+                                <td>@item.ProductName</td>
+                                <td>@item.QuantityDisplay</td>
+                                <td>@item.AmountDisplay</td>
+                                <td>@item.Notes</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+            <section class="job-form-footer">
+                <div class="job-form-vat-note">@Model.VatNote</div>
+
+                <table class="job-form-summary">
+                    <tbody>
+                        @foreach (var summaryItem in Model.SummaryItems)
+                        {
+                            <tr>
+                                <td class="job-form-summary__label">@summaryItem.Label</td>
+                                <td>@summaryItem.AmountDisplay</td>
+                            </tr>
+                        }
+                        <tr class="job-form-summary__total">
+                            <td class="job-form-summary__label">@Localizer["Total"]</td>
+                            <td>@Model.TotalAmountDisplay</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
