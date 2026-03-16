@@ -36,7 +36,7 @@ namespace Imaj.Web.Models
     {
         public string? Description { get; set; }
         public decimal Amount { get; set; }
-        public decimal VatRate { get; set; } = 18; // Default VAT
+        public decimal VatRate { get; set; } = 20; // Default VAT
         public decimal Total => Amount + (Amount * VatRate / 100);
     }
 }
