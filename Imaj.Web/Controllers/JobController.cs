@@ -40,6 +40,7 @@ namespace Imaj.Web.Controllers
         private readonly ILookupService _lookupService;
         private readonly IPendingInvoiceJobsReportExcelService _pendingInvoiceJobsReportExcelService;
         private readonly IJobReportExcelService _jobReportExcelService;
+        private readonly IJobFormPdfService _jobFormPdfService;
         private readonly IPermissionViewService _permissionViewService;
         private readonly IStringLocalizer<SharedResource> _localizer;
 
@@ -51,6 +52,7 @@ namespace Imaj.Web.Controllers
             ILookupService lookupService,
             IPendingInvoiceJobsReportExcelService pendingInvoiceJobsReportExcelService,
             IJobReportExcelService jobReportExcelService,
+            IJobFormPdfService jobFormPdfService,
             IPermissionViewService permissionViewService,
             IStringLocalizer<SharedResource> localizer)
         {
@@ -61,6 +63,7 @@ namespace Imaj.Web.Controllers
             _lookupService = lookupService ?? throw new ArgumentNullException(nameof(lookupService));
             _pendingInvoiceJobsReportExcelService = pendingInvoiceJobsReportExcelService ?? throw new ArgumentNullException(nameof(pendingInvoiceJobsReportExcelService));
             _jobReportExcelService = jobReportExcelService ?? throw new ArgumentNullException(nameof(jobReportExcelService));
+            _jobFormPdfService = jobFormPdfService ?? throw new ArgumentNullException(nameof(jobFormPdfService));
             _permissionViewService = permissionViewService ?? throw new ArgumentNullException(nameof(permissionViewService));
             _localizer = localizer ?? throw new ArgumentNullException(nameof(localizer));
         }
@@ -670,13 +673,14 @@ namespace Imaj.Web.Controllers
                 {
                     var referenceKey = item.Reference.ToString(CultureInfo.InvariantCulture);
                     var singleDraft = CreateSingleJobEmailDraft(item, recipientOverrides[referenceKey].Trim());
-
-                    sendResult = await _emailService.SendAsync(new EmailMessageDto
+                    var emailMessageResult = await BuildJobFormEmailMessageAsync(singleDraft, singleDraft.RecipientEmail);
+                    if (!emailMessageResult.IsSuccess || emailMessageResult.Data == null)
                     {
-                        To = singleDraft.RecipientEmail,
-                        Subject = BuildJobEmailSubject(singleDraft),
-                        HtmlBody = BuildJobEmailBody(singleDraft)
-                    });
+                        sendResult = ServiceResult.Fail(emailMessageResult.Message ?? L("GenericError"));
+                        break;
+                    }
+
+                    sendResult = await _emailService.SendAsync(emailMessageResult.Data);
 
                     if (!sendResult.IsSuccess)
                     {
@@ -686,12 +690,19 @@ namespace Imaj.Web.Controllers
             }
             else
             {
-                sendResult = await _emailService.SendAsync(new EmailMessageDto
+                var emailMessageResult = await BuildJobFormEmailMessageAsync(draftResult.Data, model.RecipientEmail!.Trim());
+                if (!emailMessageResult.IsSuccess || emailMessageResult.Data == null)
                 {
-                    To = model.RecipientEmail!.Trim(),
-                    Subject = BuildJobEmailSubject(draftResult.Data),
-                    HtmlBody = BuildJobEmailBody(draftResult.Data)
-                });
+                    TempData["ErrorMessage"] = this.LocalizeUiMessage(emailMessageResult.Message, L("GenericError"));
+                    var failedBuildModel = BuildJobEmailComposeViewModel(
+                        draftResult.Data,
+                        model.ReturnUrl,
+                        model.RecipientEmail,
+                        recipientOverrides);
+                    return View("EmailCompose", failedBuildModel);
+                }
+
+                sendResult = await _emailService.SendAsync(emailMessageResult.Data);
             }
 
             if (!sendResult.IsSuccess)
@@ -1551,7 +1562,7 @@ namespace Imaj.Web.Controllers
 
         private string BuildJobEmailBody(JobEmailDraftDto draft)
         {
-            var rows = BuildJobEmailRows(draft);
+            var references = draft.Items.Select(x => x.Reference.ToString(CultureInfo.InvariantCulture)).ToList();
             var builder = new StringBuilder();
             builder.Append("<html><body style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#0f172a;\">");
             builder.AppendFormat(CultureInfo.InvariantCulture, "<p>{0}</p>", WebUtility.HtmlEncode(L("JobEmailBodyIntro")));
@@ -1559,44 +1570,65 @@ namespace Imaj.Web.Controllers
                 CultureInfo.InvariantCulture,
                 "<p style=\"margin:0 0 16px;color:#475569;\"><strong>{0}:</strong> {1}</p>",
                 WebUtility.HtmlEncode(L("SelectedJobs")),
-                WebUtility.HtmlEncode(string.Join(", ", rows.Select(x => x.Reference))));
-            builder.Append("<table style=\"border-collapse:collapse;width:100%;\">");
-            builder.Append("<thead><tr>");
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Function")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Reference")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("StartDate")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("EndDate")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Customer")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Name")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Related")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:left;\">{0}</th>", WebUtility.HtmlEncode(L("Status")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:center;\">{0}</th>", WebUtility.HtmlEncode(L("EmailSent")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:center;\">{0}</th>", WebUtility.HtmlEncode(L("Evaluated")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:right;\">{0}</th>", WebUtility.HtmlEncode(L("WorkAmount")));
-            builder.AppendFormat(CultureInfo.InvariantCulture, "<th style=\"border:1px solid #cbd5e1;background:#e2e8f0;padding:8px;text-align:right;\">{0}</th>", WebUtility.HtmlEncode(L("ProductAmount")));
-            builder.Append("</tr></thead><tbody>");
-
-            foreach (var row in rows)
-            {
-                builder.Append("<tr>");
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Function));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Reference));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.StartDate));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.EndDate));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Customer));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Name));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.RelatedPerson));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;\">{0}</td>", WebUtility.HtmlEncode(row.Status));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;text-align:center;\">{0}</td>", WebUtility.HtmlEncode(row.EmailSent));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;text-align:center;\">{0}</td>", WebUtility.HtmlEncode(row.Evaluated));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;text-align:right;\">{0}</td>", WebUtility.HtmlEncode(row.WorkAmount));
-                builder.AppendFormat(CultureInfo.InvariantCulture, "<td style=\"border:1px solid #cbd5e1;padding:8px;text-align:right;\">{0}</td>", WebUtility.HtmlEncode(row.ProductAmount));
-                builder.Append("</tr>");
-            }
-
-            builder.Append("</tbody></table>");
+                WebUtility.HtmlEncode(string.Join(", ", references)));
+            builder.AppendFormat(CultureInfo.InvariantCulture, "<p style=\"margin:0;color:#475569;\">{0}</p>", WebUtility.HtmlEncode(L("JobEmailBodyAttachmentNote")));
             builder.Append("</body></html>");
             return builder.ToString();
+        }
+
+        private async Task<ServiceResult<EmailMessageDto>> BuildJobFormEmailMessageAsync(JobEmailDraftDto draft, string recipientEmail)
+        {
+            var attachments = new List<EmailAttachmentDto>();
+
+            foreach (var item in draft.Items)
+            {
+                var pdfResult = await BuildJobFormPdfAttachmentAsync(item.Reference);
+                if (!pdfResult.IsSuccess || pdfResult.Data == null)
+                {
+                    return ServiceResult<EmailMessageDto>.Fail(pdfResult.Message ?? L("GenericError"));
+                }
+
+                attachments.Add(pdfResult.Data);
+            }
+
+            return ServiceResult<EmailMessageDto>.Success(new EmailMessageDto
+            {
+                To = recipientEmail.Trim(),
+                Subject = BuildJobEmailSubject(draft),
+                HtmlBody = BuildJobEmailBody(draft),
+                Attachments = attachments
+            });
+        }
+
+        private async Task<ServiceResult<EmailAttachmentDto>> BuildJobFormPdfAttachmentAsync(int reference)
+        {
+            var jobResult = await _jobService.GetByReferenceAsync(reference);
+            if (!jobResult.IsSuccess || jobResult.Data == null)
+            {
+                return ServiceResult<EmailAttachmentDto>.Fail(L("JobFormPdfGenerationFailed"));
+            }
+
+            if (!IsPrintableJobFormState(jobResult.Data.StateId))
+            {
+                return ServiceResult<EmailAttachmentDto>.Fail(L("JobEmailEligibleStatesOnly"));
+            }
+
+            try
+            {
+                var pdfModel = BuildJobPrintFormViewModel(jobResult.Data);
+                var pdfBytes = _jobFormPdfService.Build(pdfModel);
+
+                return ServiceResult<EmailAttachmentDto>.Success(new EmailAttachmentDto
+                {
+                    FileName = BuildJobFormAttachmentFileName(reference),
+                    ContentType = "application/pdf",
+                    Content = pdfBytes
+                });
+            }
+            catch
+            {
+                return ServiceResult<EmailAttachmentDto>.Fail(L("JobFormPdfGenerationFailed"));
+            }
         }
 
         private List<JobEmailDisplayRow> BuildJobEmailRows(JobEmailDraftDto draft)
@@ -1716,6 +1748,11 @@ namespace Imaj.Web.Controllers
         private static string FormatQuantity(decimal value)
         {
             return value.ToString("0.##", CultureInfo.CurrentCulture);
+        }
+
+        private static string BuildJobFormAttachmentFileName(int reference)
+        {
+            return $"job-form-{reference.ToString(CultureInfo.InvariantCulture)}.pdf";
         }
 
         private static string FormatAmount(decimal value)

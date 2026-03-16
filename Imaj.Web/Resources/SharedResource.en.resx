@@ -948,6 +948,12 @@
   <data name="JobEmailBodyIntro" xml:space="preserve">
     <value>The selected jobs are listed below for your information.</value>
   </data>
+  <data name="JobEmailBodyAttachmentNote" xml:space="preserve">
+    <value>The related job form is attached as a PDF.</value>
+  </data>
+  <data name="JobFormPdfGenerationFailed" xml:space="preserve">
+    <value>The job form PDF could not be generated.</value>
+  </data>
   <data name="E-posta bilgisi boş olamaz." xml:space="preserve">
     <value>Email information cannot be empty.</value>
   </data>

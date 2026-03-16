@@ -74,10 +74,24 @@ namespace Imaj.Service.Services
                     mailMessage.To.Add(recipient);
                 }
 
-                mailMessage.Body = new BodyBuilder
+                var bodyBuilder = new BodyBuilder
                 {
                     HtmlBody = message.HtmlBody
-                }.ToMessageBody();
+                };
+
+                foreach (var attachment in message.Attachments.Where(x => x.Content.Length > 0))
+                {
+                    var fileName = string.IsNullOrWhiteSpace(attachment.FileName)
+                        ? "attachment"
+                        : attachment.FileName.Trim();
+                    var contentType = string.IsNullOrWhiteSpace(attachment.ContentType)
+                        ? "application/octet-stream"
+                        : attachment.ContentType.Trim();
+
+                    bodyBuilder.Attachments.Add(fileName, attachment.Content, ContentType.Parse(contentType));
+                }
+
+                mailMessage.Body = bodyBuilder.ToMessageBody();
 
                 using var smtpClient = new SmtpClient();
                 await smtpClient.ConnectAsync(

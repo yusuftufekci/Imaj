@@ -948,6 +948,12 @@
   <data name="JobEmailBodyIntro" xml:space="preserve">
     <value>Seçtiğiniz işler aşağıda bilgilerinize sunulmuştur.</value>
   </data>
+  <data name="JobEmailBodyAttachmentNote" xml:space="preserve">
+    <value>İlgili iş formu PDF olarak ekte yer almaktadır.</value>
+  </data>
+  <data name="JobFormPdfGenerationFailed" xml:space="preserve">
+    <value>İş formu PDF olarak hazırlanamadı.</value>
+  </data>
   <data name="E-posta bilgisi boş olamaz." xml:space="preserve">
     <value>E-posta bilgisi boş olamaz.</value>
   </data>
