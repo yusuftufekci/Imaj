@@ -476,7 +476,13 @@
                         }
                     </div>
                 }
-                else if (Model.Rows.Any())
+
+                @if (Model.Blocks.Any() && Model.Rows.Any())
+                {
+                    <div style="height: 24px;"></div>
+                }
+
+                @if (Model.Rows.Any())
                 {
                     <div class="report-table-wrap">
                         <table class="report-table">

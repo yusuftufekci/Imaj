@@ -1,3 +1,4 @@
+using ClosedXML.Excel;
 using Imaj.Core.Constants;
 using Imaj.Service.DTOs;
 using Imaj.Service.Interfaces;
@@ -288,6 +289,32 @@ namespace Imaj.Web.Controllers
             };
 
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Print(int reference)
+        {
+            var invoice = await GetInvoiceDetailViewModelAsync(reference);
+            if (invoice == null)
+            {
+                return RedirectToAction("Detail", new { reference });
+            }
+
+            var model = BuildInvoicePrintableReport(invoice);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadPrintExcel(int reference)
+        {
+            var invoice = await GetInvoiceDetailViewModelAsync(reference);
+            if (invoice == null)
+            {
+                return RedirectToAction("Detail", new { reference });
+            }
+
+            var fileBytes = BuildInvoicePrintExcel(invoice);
+            return File(fileBytes, ExcelContentType, BuildInvoiceFileName("invoice", reference));
         }
 
         [HttpPost]
@@ -833,6 +860,397 @@ namespace Imaj.Web.Controllers
             }).ToList();
         }
 
+        private async Task<InvoiceDetailViewModel?> GetInvoiceDetailViewModelAsync(int reference)
+        {
+            if (reference <= 0)
+            {
+                return null;
+            }
+
+            var result = await _invoiceService.GetDetailsByReferencesAsync(new List<int> { reference });
+            if (!result.IsSuccess || result.Data == null)
+            {
+                return null;
+            }
+
+            return MapDetails(result.Data).FirstOrDefault();
+        }
+
+        private byte[] BuildInvoicePrintExcel(InvoiceDetailViewModel invoice)
+        {
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Invoice");
+
+            var lineTotal = invoice.Lines.Sum(x => x.Amount);
+            var jobTotal = invoice.WorkItems.Sum(x => x.Amount);
+            var taxSubTotal = invoice.Taxes.Sum(x => x.SubTotal);
+            var taxTotal = invoice.Taxes.Sum(x => x.TaxAmount);
+            var netTotal = invoice.Taxes.Sum(x => x.NetTotal);
+
+            ws.Cell(1, 1).Value = L("Invoice");
+            ws.Range(1, 1, 1, 7).Merge();
+            ws.Cell(1, 1).Style.Font.Bold = true;
+            ws.Cell(1, 1).Style.Font.FontSize = 18;
+            ws.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            var row = 3;
+            WriteLabelValue(ws, row++, 1, L("Reference"), invoice.Reference);
+            WriteLabelValue(ws, row++, 1, L("JobCustomer"), invoice.JobCustomer);
+            WriteLabelValue(ws, row++, 1, L("InvoiceCustomer"), invoice.InvoiceCustomer);
+            WriteLabelValue(ws, row++, 1, L("Name"), invoice.Name);
+            WriteLabelValue(ws, row++, 1, L("Related"), invoice.RelatedPerson);
+            WriteLabelValue(ws, row++, 1, L("Date"), invoice.IssueDate?.ToString("dd.MM.yyyy") ?? "-");
+            WriteLabelValue(ws, row++, 1, L("Status"), invoice.Status);
+            WriteLabelValue(ws, row++, 1, L("Evaluated"), invoice.Evaluated ? L("Yes") : L("No"));
+            WriteLabelValue(ws, row++, 1, L("Notes"), invoice.Notes);
+            WriteLabelValue(ws, row++, 1, L("Footnote"), invoice.FooterNote);
+
+            row++;
+            row = WriteInvoiceLinesTable(ws, row, invoice.Lines, lineTotal);
+
+            if (invoice.WorkItems.Any())
+            {
+                row += 2;
+                row = WriteInvoiceJobsTable(ws, row, invoice.WorkItems, jobTotal);
+            }
+
+            if (invoice.ProductCategories.Any())
+            {
+                row += 2;
+                row = WriteInvoiceCategoriesTable(ws, row, invoice.ProductCategories);
+            }
+
+            if (invoice.Taxes.Any())
+            {
+                row += 2;
+                row = WriteInvoiceTaxesTable(ws, row, invoice.Taxes, taxSubTotal, taxTotal, netTotal);
+            }
+
+            ws.Columns().AdjustToContents();
+            ws.Column(3).Width = Math.Max(ws.Column(3).Width, 28);
+            ws.Column(4).Width = Math.Max(ws.Column(4).Width, 12);
+            ws.Column(5).Width = Math.Max(ws.Column(5).Width, 12);
+            ws.Column(6).Width = Math.Max(ws.Column(6).Width, 12);
+            ws.Column(7).Width = Math.Max(ws.Column(7).Width, 18);
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
+        private PrintableReportViewModel BuildInvoicePrintableReport(InvoiceDetailViewModel invoice)
+        {
+            var lineTotal = invoice.Lines.Sum(x => x.Amount);
+            var taxTotal = invoice.Taxes.Sum(x => x.TaxAmount);
+            var netTotal = invoice.Taxes.Sum(x => x.NetTotal);
+
+            var blocks = new List<PrintableReportBlock>
+            {
+                new()
+                {
+                    Title = L("Notes"),
+                    Items = new List<PrintableReportMetaItem>
+                    {
+                        new() { Label = L("Notes"), Value = string.IsNullOrWhiteSpace(invoice.Notes) ? "-" : invoice.Notes },
+                        new() { Label = L("Footnote"), Value = string.IsNullOrWhiteSpace(invoice.FooterNote) ? "-" : invoice.FooterNote }
+                    }
+                },
+                new()
+                {
+                    Title = L("Total"),
+                    Items = new List<PrintableReportMetaItem>
+                    {
+                        new() { Label = L("SubTotal"), Value = lineTotal.ToString("N2", CultureInfo.CurrentCulture) },
+                        new() { Label = L("TaxAmount"), Value = taxTotal.ToString("N2", CultureInfo.CurrentCulture) },
+                        new() { Label = L("NetAmount"), Value = netTotal.ToString("N2", CultureInfo.CurrentCulture) }
+                    }
+                }
+            };
+
+            if (invoice.WorkItems.Any())
+            {
+                blocks.Add(new PrintableReportBlock
+                {
+                    Title = $"{L("Job")} ({invoice.WorkItems.Count})",
+                    Items = invoice.WorkItems
+                        .Select(x => new PrintableReportMetaItem
+                        {
+                            Label = x.Reference,
+                            Value = $"{x.Name} - {x.Amount.ToString("N2", CultureInfo.CurrentCulture)}"
+                        })
+                        .ToList()
+                });
+            }
+
+            if (invoice.ProductCategories.Any())
+            {
+                blocks.Add(new PrintableReportBlock
+                {
+                    Title = $"{L("ProductCategories")} ({invoice.ProductCategories.Count})",
+                    Items = invoice.ProductCategories
+                        .Select(x => new PrintableReportMetaItem
+                        {
+                            Label = x.Name,
+                            Value = $"{L("SubTotal")}: {x.SubTotal.ToString("N2", CultureInfo.CurrentCulture)} | {L("NetAmount")}: {x.NetTotal.ToString("N2", CultureInfo.CurrentCulture)}"
+                        })
+                        .ToList()
+                });
+            }
+
+            if (invoice.Taxes.Any())
+            {
+                blocks.Add(new PrintableReportBlock
+                {
+                    Title = $"{L("Taxes")} ({invoice.Taxes.Count})",
+                    Items = invoice.Taxes
+                        .Select(x => new PrintableReportMetaItem
+                        {
+                            Label = string.IsNullOrWhiteSpace(x.Name) ? x.Code : x.Name,
+                            Value = $"{L("Percentage")}: {x.Rate.ToString("N0", CultureInfo.CurrentCulture)} | {L("TaxAmount")}: {x.TaxAmount.ToString("N2", CultureInfo.CurrentCulture)} | {L("NetAmount")}: {x.NetTotal.ToString("N2", CultureInfo.CurrentCulture)}"
+                        })
+                        .ToList()
+                });
+            }
+
+            var rows = invoice.Lines.Select(line => new PrintableReportRow
+            {
+                Cells = new List<PrintableReportCell>
+                {
+                    new() { IsCheckbox = true, IsChecked = line.Selected, Alignment = "center" },
+                    new() { Value = line.LineNo.ToString(CultureInfo.CurrentCulture) },
+                    new() { Value = line.Notes },
+                    new() { Value = line.Quantity.ToString("N2", CultureInfo.CurrentCulture), Alignment = "right" },
+                    new() { Value = line.Price.ToString("N2", CultureInfo.CurrentCulture), Alignment = "right" },
+                    new() { Value = line.Amount.ToString("N2", CultureInfo.CurrentCulture), Alignment = "right" },
+                    new() { Value = line.TaxType }
+                }
+            }).ToList();
+
+            rows.Add(new PrintableReportRow
+            {
+                Kind = PrintableReportRowKind.GrandTotal,
+                Cells = new List<PrintableReportCell>
+                {
+                    new() { Value = L("Total"), ColSpan = 5, Alignment = "right" },
+                    new() { Value = lineTotal.ToString("N2", CultureInfo.CurrentCulture), Alignment = "right" },
+                    new() { Value = string.Empty }
+                }
+            });
+
+            return new PrintableReportViewModel
+            {
+                Title = L("Invoice"),
+                Orientation = "portrait",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = new List<PrintableReportMetaItem>
+                {
+                    new() { Label = L("Reference"), Value = invoice.Reference },
+                    new() { Label = L("Date"), Value = invoice.IssueDate?.ToString("dd.MM.yyyy", CultureInfo.CurrentCulture) ?? "-" },
+                    new() { Label = L("JobCustomer"), Value = invoice.JobCustomer },
+                    new() { Label = L("InvoiceCustomer"), Value = invoice.InvoiceCustomer },
+                    new() { Label = L("Name"), Value = invoice.Name },
+                    new() { Label = L("Related"), Value = invoice.RelatedPerson },
+                    new() { Label = L("Status"), Value = invoice.Status },
+                    new() { Label = L("Evaluated"), Value = invoice.Evaluated ? L("Yes") : L("No") }
+                },
+                Blocks = blocks,
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("Selected"), Alignment = "center" },
+                    new() { Title = L("Sequence") },
+                    new() { Title = L("Notes") },
+                    new() { Title = L("Quantity"), Alignment = "right" },
+                    new() { Title = L("Price"), Alignment = "right" },
+                    new() { Title = L("Amount"), Alignment = "right" },
+                    new() { Title = L("TaxType") }
+                },
+                Rows = rows
+            };
+        }
+
+        private int WriteInvoiceLinesTable(IXLWorksheet ws, int startRow, List<InvoiceDetailLineViewModel> lines, decimal lineTotal)
+        {
+            WriteSectionTitle(ws, startRow, $"{L("Line")} ({lines.Count})", 7);
+            WriteTableHeader(ws, startRow + 1, new[]
+            {
+                L("Selected"),
+                L("Sequence"),
+                L("Notes"),
+                L("Quantity"),
+                L("Price"),
+                L("Amount"),
+                L("TaxType")
+            });
+
+            var row = startRow + 2;
+            foreach (var line in lines)
+            {
+                ws.Cell(row, 1).Value = line.Selected ? "X" : string.Empty;
+                ws.Cell(row, 2).Value = line.LineNo;
+                ws.Cell(row, 3).Value = line.Notes;
+                ws.Cell(row, 4).Value = line.Quantity;
+                ws.Cell(row, 5).Value = line.Price;
+                ws.Cell(row, 6).Value = line.Amount;
+                ws.Cell(row, 7).Value = line.TaxType;
+                SetAmountStyle(ws.Cell(row, 5));
+                SetAmountStyle(ws.Cell(row, 6));
+                row++;
+            }
+
+            ws.Cell(row, 1).Value = L("Total");
+            ws.Range(row, 1, row, 5).Merge();
+            ws.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(row, 6).Value = lineTotal;
+            SetAmountStyle(ws.Cell(row, 6));
+            StyleTotalRow(ws, row, 7);
+            return row;
+        }
+
+        private int WriteInvoiceJobsTable(IXLWorksheet ws, int startRow, List<InvoiceWorkItemViewModel> workItems, decimal jobTotal)
+        {
+            WriteSectionTitle(ws, startRow, $"{L("Job")} ({workItems.Count})", 4);
+            WriteTableHeader(ws, startRow + 1, new[]
+            {
+                L("Selected"),
+                L("Reference"),
+                L("Name"),
+                L("Amount")
+            });
+
+            var row = startRow + 2;
+            foreach (var work in workItems)
+            {
+                ws.Cell(row, 1).Value = work.Selected ? "X" : string.Empty;
+                ws.Cell(row, 2).Value = work.Reference;
+                ws.Cell(row, 3).Value = work.Name;
+                ws.Cell(row, 4).Value = work.Amount;
+                SetAmountStyle(ws.Cell(row, 4));
+                row++;
+            }
+
+            ws.Cell(row, 1).Value = L("Total");
+            ws.Range(row, 1, row, 3).Merge();
+            ws.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(row, 4).Value = jobTotal;
+            SetAmountStyle(ws.Cell(row, 4));
+            StyleTotalRow(ws, row, 4);
+            return row;
+        }
+
+        private int WriteInvoiceCategoriesTable(IXLWorksheet ws, int startRow, List<InvoiceCategorySummaryViewModel> categories)
+        {
+            WriteSectionTitle(ws, startRow, $"{L("ProductCategories")} ({categories.Count})", 3);
+            WriteTableHeader(ws, startRow + 1, new[]
+            {
+                L("ProductCategory"),
+                L("SubTotal"),
+                L("NetAmount")
+            });
+
+            var row = startRow + 2;
+            foreach (var category in categories)
+            {
+                ws.Cell(row, 1).Value = category.Name;
+                ws.Cell(row, 2).Value = category.SubTotal;
+                ws.Cell(row, 3).Value = category.NetTotal;
+                SetAmountStyle(ws.Cell(row, 2));
+                SetAmountStyle(ws.Cell(row, 3));
+                row++;
+            }
+
+            ws.Cell(row, 1).Value = L("Total");
+            ws.Cell(row, 2).Value = categories.Sum(x => x.SubTotal);
+            ws.Cell(row, 3).Value = categories.Sum(x => x.NetTotal);
+            SetAmountStyle(ws.Cell(row, 2));
+            SetAmountStyle(ws.Cell(row, 3));
+            StyleTotalRow(ws, row, 3);
+            return row;
+        }
+
+        private int WriteInvoiceTaxesTable(IXLWorksheet ws, int startRow, List<InvoiceTaxSummaryViewModel> taxes, decimal subTotal, decimal taxTotal, decimal netTotal)
+        {
+            WriteSectionTitle(ws, startRow, $"{L("Taxes")} ({taxes.Count})", 6);
+            WriteTableHeader(ws, startRow + 1, new[]
+            {
+                L("Code"),
+                L("Name"),
+                L("SubTotal"),
+                L("Percentage"),
+                L("TaxAmount"),
+                L("NetAmount")
+            });
+
+            var row = startRow + 2;
+            foreach (var tax in taxes)
+            {
+                ws.Cell(row, 1).Value = tax.Code;
+                ws.Cell(row, 2).Value = tax.Name;
+                ws.Cell(row, 3).Value = tax.SubTotal;
+                ws.Cell(row, 4).Value = tax.Rate;
+                ws.Cell(row, 5).Value = tax.TaxAmount;
+                ws.Cell(row, 6).Value = tax.NetTotal;
+                SetAmountStyle(ws.Cell(row, 3));
+                ws.Cell(row, 4).Style.NumberFormat.Format = "0";
+                SetAmountStyle(ws.Cell(row, 5));
+                SetAmountStyle(ws.Cell(row, 6));
+                row++;
+            }
+
+            ws.Cell(row, 1).Value = L("Total");
+            ws.Range(row, 1, row, 2).Merge();
+            ws.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(row, 3).Value = subTotal;
+            ws.Cell(row, 5).Value = taxTotal;
+            ws.Cell(row, 6).Value = netTotal;
+            SetAmountStyle(ws.Cell(row, 3));
+            SetAmountStyle(ws.Cell(row, 5));
+            SetAmountStyle(ws.Cell(row, 6));
+            StyleTotalRow(ws, row, 6);
+            return row;
+        }
+
+        private static void WriteLabelValue(IXLWorksheet ws, int row, int labelColumn, string label, string value)
+        {
+            ws.Cell(row, labelColumn).Value = label;
+            ws.Cell(row, labelColumn).Style.Font.Bold = true;
+            ws.Cell(row, labelColumn + 1).Value = value;
+            ws.Range(row, labelColumn + 1, row, labelColumn + 5).Merge();
+        }
+
+        private static void WriteSectionTitle(IXLWorksheet ws, int row, string title, int columnCount)
+        {
+            ws.Cell(row, 1).Value = title;
+            ws.Range(row, 1, row, columnCount).Merge();
+            ws.Range(row, 1, row, columnCount).Style.Font.Bold = true;
+            ws.Range(row, 1, row, columnCount).Style.Fill.BackgroundColor = XLColor.FromHtml("#DBEAFE");
+        }
+
+        private static void WriteTableHeader(IXLWorksheet ws, int row, string[] headers)
+        {
+            for (var i = 0; i < headers.Length; i++)
+            {
+                ws.Cell(row, i + 1).Value = headers[i];
+            }
+
+            ws.Range(row, 1, row, headers.Length).Style.Font.Bold = true;
+            ws.Range(row, 1, row, headers.Length).Style.Fill.BackgroundColor = XLColor.FromHtml("#FEF3C7");
+            ws.Range(row, 1, row, headers.Length).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+        }
+
+        private static void SetAmountStyle(IXLCell cell)
+        {
+            cell.Style.NumberFormat.Format = "#,##0.00";
+            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+        }
+
+        private static void StyleTotalRow(IXLWorksheet ws, int row, int columnCount)
+        {
+            ws.Range(row, 1, row, columnCount).Style.Font.Bold = true;
+            ws.Range(row, 1, row, columnCount).Style.Fill.BackgroundColor = XLColor.FromHtml("#FEF3C7");
+            ws.Range(row, 1, row, columnCount).Style.Border.TopBorder = XLBorderStyleValues.Thin;
+        }
+
         private IActionResult RedirectToInvoiceSource(InvoiceWorkflowActionRequest request)
         {
             var targetAction = string.Equals(request.SourceView, "Summary", StringComparison.OrdinalIgnoreCase)
@@ -891,6 +1309,11 @@ namespace Imaj.Web.Controllers
         private static string BuildFileName(string prefix)
         {
             return $"{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
+        }
+
+        private static string BuildInvoiceFileName(string prefix, int reference)
+        {
+            return $"{prefix}-{reference}-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
         }
     }
 }

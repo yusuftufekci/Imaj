@@ -231,11 +231,16 @@
 
                 @if (canPrintInvoice)
                 {
-                    <button type="button"
-                            onclick="window.print()"
-                            class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
-                        @Localizer["PrintInvoice"]
-                    </button>
+                    <a href="/Invoice/Print?reference=@reference"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200">
+                        @Localizer["PrintInvoice"] PDF
+                    </a>
+                    <a href="/Invoice/DownloadPrintExcel?reference=@reference"
+                       class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
+                        @Localizer["PrintInvoice"] Excel
+                    </a>
                 }
 
                 @if (canDoConfirm)
