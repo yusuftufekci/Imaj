@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Net;
 using System.Resources;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Imaj.Web.Services.Localization
 {
@@ -10,6 +11,7 @@ namespace Imaj.Web.Services.Localization
     {
         private static readonly Lazy<IReadOnlyDictionary<string, string>> TrToEnMap = new(BuildTrToEnMap);
         private static readonly Lazy<IReadOnlyDictionary<string, string>> NormalizedTrToEnMap = new(BuildNormalizedTrToEnMap);
+        private static readonly Lazy<IReadOnlyList<LocalizedTemplate>> TrToEnTemplates = new(BuildTrToEnTemplates);
 
         public string Localize(string? message)
         {
@@ -35,6 +37,11 @@ namespace Imaj.Web.Services.Localization
             if (!string.IsNullOrWhiteSpace(normalizedMessage) &&
                 NormalizedTrToEnMap.Value.TryGetValue(normalizedMessage, out localizedMessage) &&
                 !string.IsNullOrWhiteSpace(localizedMessage))
+            {
+                return localizedMessage;
+            }
+
+            if (TryLocalizeFromTemplate(decodedMessage, out localizedMessage))
             {
                 return localizedMessage;
             }
@@ -102,6 +109,52 @@ namespace Imaj.Web.Services.Localization
 
             AddSupplementalTranslations(map);
             return map;
+        }
+
+        private static IReadOnlyList<LocalizedTemplate> BuildTrToEnTemplates()
+        {
+            var resourceManager = new ResourceManager("Imaj.Web.Resources.SharedResource", typeof(SharedResource).Assembly);
+            var trSet = resourceManager.GetResourceSet(new CultureInfo("tr-TR"), true, true);
+            var enSet = resourceManager.GetResourceSet(new CultureInfo("en-US"), true, true);
+            var templates = new List<LocalizedTemplate>();
+
+            if (trSet == null || enSet == null)
+            {
+                return templates;
+            }
+
+            var enValues = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (DictionaryEntry entry in enSet)
+            {
+                if (entry.Key is string key && entry.Value is string value)
+                {
+                    enValues[key] = value;
+                }
+            }
+
+            foreach (DictionaryEntry entry in trSet)
+            {
+                if (entry.Key is not string key || entry.Value is not string trValue)
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(trValue) ||
+                    string.IsNullOrWhiteSpace(enValues.GetValueOrDefault(key)) ||
+                    !ContainsPlaceholder(trValue))
+                {
+                    continue;
+                }
+
+                if (!TryBuildTemplate(trValue, enValues[key], out var template))
+                {
+                    continue;
+                }
+
+                templates.Add(template);
+            }
+
+            return templates;
         }
 
         private static void AddSupplementalTranslations(IDictionary<string, string> map)
@@ -245,6 +298,69 @@ namespace Imaj.Web.Services.Localization
             Add("Secilen mesai tiplerinden en az biri company kapsaminda degil.", "At least one of the selected overtime types is outside the company scope.");
         }
 
+        private static bool TryLocalizeFromTemplate(string message, out string localizedMessage)
+        {
+            foreach (var template in TrToEnTemplates.Value)
+            {
+                var match = template.Pattern.Match(message);
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                localizedMessage = template.TargetTemplate;
+                for (var index = 0; index < template.PlaceholderIndexes.Length; index++)
+                {
+                    var placeholderIndex = template.PlaceholderIndexes[index];
+                    localizedMessage = localizedMessage.Replace(
+                        "{" + placeholderIndex + "}",
+                        match.Groups[index + 1].Value,
+                        StringComparison.Ordinal);
+                }
+
+                return true;
+            }
+
+            localizedMessage = string.Empty;
+            return false;
+        }
+
+        private static bool ContainsPlaceholder(string value)
+        {
+            return Regex.IsMatch(value, @"\{\d+\}");
+        }
+
+        private static bool TryBuildTemplate(string sourceTemplate, string targetTemplate, out LocalizedTemplate template)
+        {
+            var matches = Regex.Matches(sourceTemplate, @"\{(\d+)\}");
+            if (matches.Count == 0)
+            {
+                template = default;
+                return false;
+            }
+
+            var builder = new StringBuilder("^");
+            var placeholderIndexes = new List<int>();
+            var currentIndex = 0;
+
+            foreach (Match match in matches)
+            {
+                builder.Append(Regex.Escape(sourceTemplate.Substring(currentIndex, match.Index - currentIndex)));
+                builder.Append("(.+?)");
+                placeholderIndexes.Add(int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture));
+                currentIndex = match.Index + match.Length;
+            }
+
+            builder.Append(Regex.Escape(sourceTemplate.Substring(currentIndex)));
+            builder.Append("$");
+
+            template = new LocalizedTemplate(
+                new Regex(builder.ToString(), RegexOptions.CultureInvariant | RegexOptions.Singleline),
+                targetTemplate,
+                placeholderIndexes.ToArray());
+            return true;
+        }
+
         private static string NormalizeForLookup(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -283,6 +399,20 @@ namespace Imaj.Web.Services.Localization
                     .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
                 .Trim()
                 .ToLowerInvariant();
+        }
+
+        private sealed class LocalizedTemplate
+        {
+            public LocalizedTemplate(Regex pattern, string targetTemplate, int[] placeholderIndexes)
+            {
+                Pattern = pattern;
+                TargetTemplate = targetTemplate;
+                PlaceholderIndexes = placeholderIndexes;
+            }
+
+            public Regex Pattern { get; }
+            public string TargetTemplate { get; }
+            public int[] PlaceholderIndexes { get; }
         }
     }
 }

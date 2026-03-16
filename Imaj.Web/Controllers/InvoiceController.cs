@@ -361,11 +361,14 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create(string jobCustomerCode, string jobCustomerName)
+        public async Task<IActionResult> Create(string jobCustomerCode, string jobCustomerName)
         {
+            var nextReferenceResult = await _invoiceService.GetNextReferenceAsync();
             var model = new InvoiceCreateViewModel
             {
-                Reference = new Random().Next(10000, 99999).ToString(),
+                Reference = nextReferenceResult.IsSuccess && nextReferenceResult.Data > 0
+                    ? nextReferenceResult.Data.ToString(CultureInfo.InvariantCulture)
+                    : new Random().Next(10000, 99999).ToString(CultureInfo.InvariantCulture),
                 JobCustomerCode = jobCustomerCode ?? "101PROD",
                 JobCustomerName = jobCustomerName ?? "101 PRODUCTION",
             };
@@ -373,10 +376,47 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [RequireMethodPermission(1360, write: true)]
-        public IActionResult Save(InvoiceCreateViewModel model)
+        public async Task<IActionResult> Save(InvoiceCreateViewModel model)
         {
-            return RedirectToAction("Index");
+            model.IssueDate = model.IssueDate == default ? DateTime.Today : model.IssueDate;
+            model.Footnote ??= string.Empty;
+            model.Lines ??= new List<InvoiceLineViewModel>();
+
+            var result = await _invoiceService.CreateAsync(BuildCreateRequest(model));
+            if (result.IsSuccess && result.Data > 0)
+            {
+                ShowSuccess(string.Format(L("InvoiceCreatedWithReference"), result.Data));
+                return RedirectToAction("Detail", new
+                {
+                    reference = result.Data.ToString(CultureInfo.InvariantCulture),
+                    returnUrl = "/Invoice"
+                });
+            }
+
+            if (result.Errors.Any())
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, Ui(error, error));
+                }
+            }
+            else
+            {
+                ModelState.AddModelError(string.Empty, Ui(result.Message, L("SaveError")));
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Reference))
+            {
+                var nextReferenceResult = await _invoiceService.GetNextReferenceAsync();
+                if (nextReferenceResult.IsSuccess && nextReferenceResult.Data > 0)
+                {
+                    model.Reference = nextReferenceResult.Data.ToString(CultureInfo.InvariantCulture);
+                }
+            }
+
+            return View("Create", model);
         }
 
         private static InvoiceFilterDto BuildFilter(InvoiceViewModel f, bool includeFirst)
@@ -398,6 +438,29 @@ namespace Imaj.Web.Controllers
                 Page = f.Page,
                 PageSize = f.PageSize > 0 ? f.PageSize : 10,
                 First = includeFirst ? f.First : null
+            };
+        }
+
+        private static InvoiceCreateDto BuildCreateRequest(InvoiceCreateViewModel model)
+        {
+            return new InvoiceCreateDto
+            {
+                JobCustomerCode = model.JobCustomerCode,
+                JobCustomerName = model.JobCustomerName,
+                InvoiceCustomerCode = model.InvoiceCustomerCode,
+                InvoiceCustomerName = model.InvoiceCustomerName,
+                Name = model.Ad,
+                RelatedPerson = model.RelatedPerson,
+                IssueDate = model.IssueDate,
+                Evaluated = model.IsEvaluated,
+                Notes = model.Notes,
+                FooterNote = model.Footnote,
+                Lines = model.Lines.Select(line => new InvoiceCreateLineDto
+                {
+                    Description = line.Description,
+                    Amount = line.Amount,
+                    VatRate = line.VatRate
+                }).ToList()
             };
         }
 

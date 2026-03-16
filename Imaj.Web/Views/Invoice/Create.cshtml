@@ -1,3 +1,4 @@
+@using System.Text.Json
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Imaj.Web
 @using Microsoft.Extensions.Localization
@@ -6,55 +7,110 @@
 
 @{
     ViewData["Title"] = Localizer["Invoice"];
+    var initialStateJson = JsonSerializer.Serialize(new
+    {
+        invoiceCustomerCode = Model.InvoiceCustomerCode ?? string.Empty,
+        invoiceCustomerName = Model.InvoiceCustomerName ?? string.Empty,
+        invoiceCustomerDisplay = string.IsNullOrWhiteSpace(Model.InvoiceCustomerCode)
+            ? string.Empty
+            : string.Concat(Model.InvoiceCustomerCode, " - ", Model.InvoiceCustomerName ?? string.Empty),
+        lines = Model.Lines.Select(line => new
+        {
+            description = line.Description ?? string.Empty,
+            amount = line.Amount,
+            vatRate = line.VatRate
+        }).ToList()
+    });
 }
 
-<div x-data="invoiceCreate()" @@customer-selected.window="handleCustomerSelection($event.detail)" class="space-y-6">
-    <!-- Header -->
+<div x-data='invoiceCreate(@Html.Raw(initialStateJson))'
+     @@customer-selected.window="handleCustomerSelection($event.detail)"
+     class="space-y-6">
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="rounded-md bg-red-50 p-4 border border-red-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">@TempData["ErrorMessage"]</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="rounded-md bg-red-50 p-4 border border-red-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">@Localizer["PleaseCheckFormFields"]</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <div asp-validation-summary="All" class="list-disc pl-5"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                Fatura
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                @Localizer["InvoiceCreation"]
             </h2>
         </div>
     </div>
 
     <form method="post" action="/Invoice/Save" class="space-y-6 mobile-stack-form">
         @Html.AntiForgeryToken()
-        <!-- Main Grid -->
+        <input type="hidden" name="Reference" value="@Model.Reference">
+        <input type="hidden" name="JobCustomerCode" value="@Model.JobCustomerCode">
+        <input type="hidden" name="JobCustomerName" value="@Model.JobCustomerName">
+        <input type="hidden" name="IssueDate" value="@Model.IssueDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)">
+
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            
-            <!-- Left Column: Basic Info -->
             <div class="bg-white shadow sm:rounded-lg">
                 <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-50">
-                     <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
                         Temel Bilgiler
                     </h3>
                 </div>
                 <div class="px-4 py-5 sm:p-6 space-y-4">
-                     <!-- Ref -->
                     <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Reference"]</label>
                         <div class="col-span-9 font-bold text-gray-900">@Model.Reference</div>
                     </div>
 
-                    <!-- Job Customer -->
-                     <div class="grid grid-cols-12 gap-4 items-center">
+                    <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["JobCustomer"]</label>
                         <div class="col-span-9 text-gray-900">
                             @Model.JobCustomerCode - @Model.JobCustomerName
-                            <input type="hidden" name="JobCustomerCode" value="@Model.JobCustomerCode">
                         </div>
                     </div>
-                    
-                    <!-- Invoice Customer -->
-                     <div class="grid grid-cols-12 gap-4 items-center">
+
+                    <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["InvoiceCustomer"]</label>
-                         <div class="col-span-9">
+                        <div class="col-span-9">
                             <div class="flex rounded-md shadow-sm picker-combo">
-                                 <input type="text" readonly x-model="invoiceCustomerDisplay" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400 bg-gray-50" placeholder="@Localizer["SelectPrompt"]">
-                                 <input type="hidden" name="InvoiceCustomerCode" x-model="invoiceCustomerCode">
-                                <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'invoice' })" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-400 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                                     <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <input type="text"
+                                       readonly
+                                       x-model="invoiceCustomerDisplay"
+                                       class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400 bg-gray-50"
+                                       placeholder="@Localizer["SelectPrompt"]">
+                                <input type="hidden" name="InvoiceCustomerCode" x-model="invoiceCustomerCode">
+                                <input type="hidden" name="InvoiceCustomerName" x-model="invoiceCustomerName">
+                                <button type="button"
+                                        @@click="$dispatch('customer-select-open', { targetId: 'invoice' })"
+                                        class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-400 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                         <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                                     </svg>
                                     <span class="text-indigo-600 font-bold">@Localizer["Select"]</span>
@@ -62,76 +118,68 @@
                             </div>
                         </div>
                     </div>
-                     
-                     <div class="grid grid-cols-12 gap-4 items-center">
-                         <div class="col-span-3"></div>
-                         <div class="col-span-9 flex items-center space-x-2 responsive-inline-group">
-                             <label class="text-sm text-gray-600">@Localizer["Code"]</label>
-                             <input type="text" name="Code" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-24 sm:text-sm border-gray-400 rounded-md">
-                             <label class="text-sm text-gray-600">@Localizer["PageSize"]</label>
-                             <input type="text" value="16" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-16 sm:text-sm border-gray-400 rounded-md">
-                         </div>
-                     </div>
 
-                    <!-- Ad -->
-                     <div class="grid grid-cols-12 gap-4 items-center">
+                    <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Name"]</label>
                         <div class="col-span-9">
-                            <input type="text" name="Ad" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
+                            <input type="text"
+                                   name="Ad"
+                                   value="@Model.Ad"
+                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                         </div>
                     </div>
 
-                    <!-- Ilgili -->
-                     <div class="grid grid-cols-12 gap-4 items-center">
+                    <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Related"]</label>
                         <div class="col-span-9">
-                            <input type="text" name="RelatedPerson" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
+                            <input type="text"
+                                   name="RelatedPerson"
+                                   value="@Model.RelatedPerson"
+                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
                         </div>
                     </div>
-                    
-                    <!-- Date & Status -->
-                     <div class="grid grid-cols-12 gap-4 items-center">
+
+                    <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Date"]</label>
                         <div class="col-span-9 font-medium text-gray-900">
-                             @Model.IssueDate.ToString("dd.MM.yyyy")
+                            @Model.IssueDate.ToString("dd.MM.yyyy")
                         </div>
                     </div>
 
-                     <div class="grid grid-cols-12 gap-4 items-center">
+                    <div class="grid grid-cols-12 gap-4 items-center">
                         <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Status"]</label>
                         <div class="col-span-9 font-medium text-gray-900">
-                             @Localizer["OpenStatus"]
-                        </div>
-                    </div>
-                     
-                     <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Evaluated"]</label>
-                        <div class="col-span-9">
-                             <input type="checkbox" name="IsEvaluated" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                            @Localizer["OpenStatus"]
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-12 gap-4 items-center">
+                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Evaluated"]</label>
+                        <div class="col-span-9">
+                            <input type="checkbox"
+                                   name="IsEvaluated"
+                                   class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                                   @(Model.IsEvaluated ? "checked" : "")>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Right Column: Notes -->
+
             <div class="space-y-6">
-                <!-- Notlar -->
                 <div class="bg-white shadow sm:rounded-lg">
                     <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-50">
-                         <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
                             @Localizer["Notes"]
                         </h3>
                     </div>
                     <div class="px-4 py-5 sm:p-6">
-                        <textarea name="Notes" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md"></textarea>
+                        <textarea name="Notes" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">@Model.Notes</textarea>
                     </div>
                 </div>
 
-                <!-- @Localizer["Notes"] -->
-                 <div class="bg-white shadow sm:rounded-lg">
+                <div class="bg-white shadow sm:rounded-lg">
                     <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-50">
-                         <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
                             @Localizer["Notes"]
                         </h3>
                     </div>
@@ -142,17 +190,15 @@
             </div>
         </div>
 
-        <!-- Section 2: Lines -->
         <div class="bg-white shadow sm:rounded-lg mt-8">
             <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-100 flex justify-between items-center">
-                 <h3 class="text-lg leading-6 font-medium text-gray-900">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
                     @Localizer["Line"] (<span x-text="lines.length"></span>)
                 </h3>
             </div>
             <div class="px-4 py-5 sm:p-6">
-                <!-- Toolbar -->
                 <div class="mb-4">
-                     <button type="button" @@click="addLine()" class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
+                    <button type="button" @@click="addLine()" class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
                         @Localizer["AddFreeLine"]
                     </button>
                 </div>
@@ -177,16 +223,30 @@
                                         <template x-for="(line, index) in lines" :key="index">
                                             <tr>
                                                 <td class="px-6 py-4">
-                                                    <input type="text" x-model="line.description" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                                    <input type="text"
+                                                           x-model="line.description"
+                                                           :name="'Lines[' + index + '].Description'"
+                                                           class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                                                 </td>
                                                 <td class="px-6 py-4">
-                                                    <input type="number" x-model.number="line.amount" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-right">
+                                                    <input type="number"
+                                                           step="0.01"
+                                                           min="0"
+                                                           x-model.number="line.amount"
+                                                           :name="'Lines[' + index + '].Amount'"
+                                                           class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-right">
                                                 </td>
-                                                 <td class="px-6 py-4">
-                                                    <input type="number" x-model.number="line.vatRate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-right">
+                                                <td class="px-6 py-4">
+                                                    <input type="number"
+                                                           step="1"
+                                                           min="0"
+                                                           max="100"
+                                                           x-model.number="line.vatRate"
+                                                           :name="'Lines[' + index + '].VatRate'"
+                                                           class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-right">
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
-                                                    <span x-text="formatMoney(line.amount * (1 + line.vatRate/100))"></span>
+                                                    <span x-text="formatMoney(line.amount * (1 + line.vatRate / 100))"></span>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button type="button" @@click="removeLine(index)" class="text-red-600 hover:text-red-900">
@@ -204,55 +264,49 @@
                     </div>
                 </div>
             </div>
-             <!-- Verification Totals (Matching Screenshot Style) -->
             <div class="px-4 py-5 border-t border-gray-200 sm:px-6 bg-blue-100 grid grid-cols-2 gap-4">
                 <div class="flex justify-between font-bold text-gray-900">
                     <span>@Localizer["Total"]</span>
                     <span x-text="formatMoney(totalAmount)"></span>
                 </div>
                 <div class="flex justify-between font-bold text-gray-900">
-                     <span>@Localizer["Total"]</span>
+                    <span>@Localizer["Total"]</span>
                     <span x-text="formatMoney(grandTotal)"></span>
                 </div>
             </div>
         </div>
-        
-        <!-- Actions -->
+
         <div class="mt-6 flex justify-center space-x-3 responsive-action-group">
-             <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 @Localizer["Save"]
             </button>
-            <button type="button" class="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            <button type="button" onclick="history.back()" class="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                 @Localizer["Cancel"]
-            </button> 
-             <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-800 shadow-sm text-sm font-medium rounded-md text-white bg-blue-800 hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                @Localizer["ViewSummary"]
             </button>
-             <button type="button" class="inline-flex items-center px-4 py-2 border border-blue-400 shadow-sm text-sm font-medium rounded-md text-white bg-blue-400 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">@Localizer["Calculate"]</button>
         </div>
-
     </form>
-    
-    <!-- Shared Modal -->
+
     <partial name="_CustomerSelectModal" />
 </div>
 
 <script>
-    function invoiceCreate() {
+    function invoiceCreate(initialState) {
         return {
-            invoiceCustomerCode: '',
-            invoiceCustomerDisplay: '',
-            
-            lines: [],
+            invoiceCustomerCode: initialState?.invoiceCustomerCode || '',
+            invoiceCustomerName: initialState?.invoiceCustomerName || '',
+            invoiceCustomerDisplay: initialState?.invoiceCustomerDisplay || '',
+            lines: Array.isArray(initialState?.lines) ? initialState.lines : [],
 
             init() {
-                // Add one empty line by default?
-                // this.addLine(); 
+                if (this.lines.length === 0) {
+                    this.addLine();
+                }
             },
 
             handleCustomerSelection(detail) {
-                if(detail.targetId === 'invoice') {
+                if (detail.targetId === 'invoice') {
                     this.invoiceCustomerCode = detail.customer.code;
+                    this.invoiceCustomerName = detail.customer.name;
                     this.invoiceCustomerDisplay = detail.customer.code + ' - ' + detail.customer.name;
                 }
             },
@@ -271,9 +325,9 @@
 
             get grandTotal() {
                 return this.lines.reduce((sum, line) => {
-                    const amt = parseFloat(line.amount) || 0;
-                    const vat = parseFloat(line.vatRate) || 0;
-                    return sum + (amt + (amt * vat / 100));
+                    const amount = parseFloat(line.amount) || 0;
+                    const vatRate = parseFloat(line.vatRate) || 0;
+                    return sum + amount + (amount * vatRate / 100);
                 }, 0);
             },
 

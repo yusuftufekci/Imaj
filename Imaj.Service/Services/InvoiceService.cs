@@ -39,6 +39,284 @@ namespace Imaj.Service.Services
             _currentPermissionContext = currentPermissionContext;
         }
 
+        public async Task<ServiceResult<int>> GetNextReferenceAsync()
+        {
+            try
+            {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (snapshot == null || snapshot.IsDenied || snapshot.CompanyScopeMode == CompanyScopeMode.Deny)
+                {
+                    return ServiceResult<int>.Fail("Fatura referansı üretilemedi.");
+                }
+
+                var targetCompanyId = ResolveTargetCompanyId(snapshot);
+                var nextReference = await GetNextReferenceCoreAsync(targetCompanyId);
+                return ServiceResult<int>.Success(nextReference);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Invoice reference generation failed.");
+                return ServiceResult<int>.Fail("Fatura referansı üretilemedi.");
+            }
+        }
+
+        public async Task<ServiceResult<int>> CreateAsync(InvoiceCreateDto input)
+        {
+            if (input == null)
+            {
+                return ServiceResult<int>.Fail("Fatura bilgisi boş olamaz.");
+            }
+
+            var validationErrors = new List<string>();
+            var normalizedJobCustomerCode = input.JobCustomerCode?.Trim();
+            var normalizedInvoiceCustomerCode = input.InvoiceCustomerCode?.Trim();
+            var normalizedName = input.Name?.Trim();
+            var normalizedRelatedPerson = input.RelatedPerson?.Trim() ?? string.Empty;
+            var normalizedNotes = input.Notes?.Trim() ?? string.Empty;
+            var normalizedFooter = input.FooterNote?.Trim() ?? string.Empty;
+            var normalizedLines = NormalizeCreateLines(input.Lines);
+
+            if (string.IsNullOrWhiteSpace(normalizedJobCustomerCode))
+            {
+                validationErrors.Add("İş müşterisi zorunludur.");
+            }
+
+            if (string.IsNullOrWhiteSpace(normalizedInvoiceCustomerCode))
+            {
+                validationErrors.Add("Fatura müşterisi seçimi zorunludur.");
+            }
+
+            if (string.IsNullOrWhiteSpace(normalizedName))
+            {
+                validationErrors.Add("Fatura adı zorunludur.");
+            }
+            else if (normalizedName.Length > 32)
+            {
+                validationErrors.Add("Fatura adı en fazla 32 karakter olabilir.");
+            }
+
+            if (normalizedRelatedPerson.Length > 32)
+            {
+                validationErrors.Add("İlgili kişi en fazla 32 karakter olabilir.");
+            }
+
+            if (!normalizedLines.Any())
+            {
+                validationErrors.Add("En az bir fatura satırı eklenmelidir.");
+            }
+            else
+            {
+                foreach (var line in normalizedLines)
+                {
+                    if (string.IsNullOrWhiteSpace(line.Description))
+                    {
+                        validationErrors.Add("Fatura satırı açıklaması zorunludur.");
+                    }
+
+                    if (line.Amount <= 0)
+                    {
+                        validationErrors.Add("Fatura satır tutarı sıfırdan büyük olmalıdır.");
+                    }
+
+                    if (line.VatRate < 0 || line.VatRate > 100)
+                    {
+                        validationErrors.Add("Vergi oranı 0 ile 100 arasında olmalıdır.");
+                    }
+
+                    if (line.VatRate != decimal.Truncate(line.VatRate))
+                    {
+                        validationErrors.Add("Vergi oranı tam sayı olmalıdır.");
+                    }
+                }
+            }
+
+            if (validationErrors.Any())
+            {
+                return ServiceResult<int>.ValidationError(validationErrors.Distinct().ToList());
+            }
+
+            var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+            if (IsDataScopeDenied(snapshot))
+            {
+                return ServiceResult<int>.Fail("Fatura kaydı kapsam dışında.");
+            }
+
+            var activeSnapshot = snapshot!;
+            var targetCompanyId = ResolveTargetCompanyId(activeSnapshot);
+            var customerQuery = _unitOfWork.Repository<Customer>().Query().AsNoTracking();
+            if (targetCompanyId > 0)
+            {
+                customerQuery = customerQuery.Where(x => x.CompanyID == targetCompanyId);
+            }
+
+            var customerCodes = new[] { normalizedJobCustomerCode!, normalizedInvoiceCustomerCode! }
+                .Distinct()
+                .ToList();
+            var customers = await customerQuery
+                .Where(x => customerCodes.Contains(x.Code))
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Code
+                })
+                .ToListAsync();
+
+            var jobCustomer = customers.SingleOrDefault(x => x.Code == normalizedJobCustomerCode);
+            if (jobCustomer == null)
+            {
+                validationErrors.Add("İş müşterisi bulunamadı.");
+            }
+
+            var invoiceCustomer = customers.SingleOrDefault(x => x.Code == normalizedInvoiceCustomerCode);
+            if (invoiceCustomer == null)
+            {
+                validationErrors.Add("Fatura müşterisi bulunamadı.");
+            }
+
+            var requestedVatRates = normalizedLines
+                .Select(x => (short)x.VatRate)
+                .Distinct()
+                .ToList();
+            var taxTypeQuery = _unitOfWork.Repository<TaxType>().Query().AsNoTracking();
+            if (targetCompanyId > 0)
+            {
+                taxTypeQuery = taxTypeQuery.Where(x => x.CompanyID == targetCompanyId);
+            }
+
+            var taxTypes = requestedVatRates.Count == 0
+                ? new List<TaxType>()
+                : await taxTypeQuery
+                    .Where(x => requestedVatRates.Contains(x.TaxPercentage) && !x.Invisible)
+                    .ToListAsync();
+            var taxTypeByRate = taxTypes
+                .GroupBy(x => x.TaxPercentage)
+                .ToDictionary(x => x.Key, x => x.OrderBy(t => t.Id).First());
+
+            var missingVatRates = requestedVatRates
+                .Where(rate => !taxTypeByRate.ContainsKey(rate))
+                .OrderBy(rate => rate)
+                .ToList();
+            foreach (var missingVatRate in missingVatRates)
+            {
+                validationErrors.Add($"%{missingVatRate} vergi oranı için tanımlı vergi tipi bulunamadı.");
+            }
+
+            if (validationErrors.Any())
+            {
+                return ServiceResult<int>.ValidationError(validationErrors.Distinct().ToList());
+            }
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var invoiceRepo = _unitOfWork.Repository<Invoice>();
+                var invoiceLineRepo = _unitOfWork.Repository<InvoLine>();
+                var invoiceTaxRepo = _unitOfWork.Repository<InvoTax>();
+
+                var nextInvoiceId = (await invoiceRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                var nextLineId = (await invoiceLineRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                var nextTaxId = (await invoiceTaxRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                var nextReference = await GetNextReferenceCoreAsync(targetCompanyId);
+
+                var lineItems = normalizedLines
+                    .Select((line, index) => new
+                    {
+                        Sequence = (short)(index + 1),
+                        Description = line.Description!,
+                        Amount = RoundCurrency(line.Amount),
+                        VatRate = (short)line.VatRate,
+                        TaxTypeId = taxTypeByRate[(short)line.VatRate].Id
+                    })
+                    .ToList();
+
+                var netAmount = RoundCurrency(lineItems.Sum(x => x.Amount));
+                var taxRows = lineItems
+                    .GroupBy(x => new { x.VatRate, x.TaxTypeId })
+                    .Select(g =>
+                    {
+                        var subTotal = RoundCurrency(g.Sum(x => x.Amount));
+                        var taxAmount = RoundCurrency(subTotal * g.Key.VatRate / 100m);
+                        return new
+                        {
+                            g.Key.VatRate,
+                            g.Key.TaxTypeId,
+                            SubTotal = subTotal,
+                            TaxAmount = taxAmount,
+                            NetAmount = RoundCurrency(subTotal + taxAmount)
+                        };
+                    })
+                    .ToList();
+                var totalTaxAmount = RoundCurrency(taxRows.Sum(x => x.TaxAmount));
+                var grossAmount = RoundCurrency(netAmount + totalTaxAmount);
+
+                await invoiceRepo.AddAsync(new Invoice
+                {
+                    Id = nextInvoiceId,
+                    CompanyID = targetCompanyId,
+                    JobCustomerID = jobCustomer!.Id,
+                    InvoCustomerID = invoiceCustomer!.Id,
+                    StateID = OpenStateId,
+                    Reference = nextReference,
+                    Name = normalizedName!,
+                    Contact = normalizedRelatedPerson,
+                    Notes = normalizedNotes,
+                    Footer = normalizedFooter,
+                    NetAmount = netAmount,
+                    TaxAmount = totalTaxAmount,
+                    GrossAmount = grossAmount,
+                    Evaluated = input.Evaluated,
+                    SelectFlag = false,
+                    Stamp = 1,
+                    IssueDate = input.IssueDate == default ? DateTime.Today : input.IssueDate.Date
+                });
+
+                foreach (var lineItem in lineItems)
+                {
+                    await invoiceLineRepo.AddAsync(new InvoLine
+                    {
+                        Id = nextLineId++,
+                        InvoiceID = nextInvoiceId,
+                        FreeFormat = true,
+                        Quantity = 1,
+                        Price = lineItem.Amount,
+                        Amount = lineItem.Amount,
+                        Notes = lineItem.Description,
+                        Sequence = lineItem.Sequence,
+                        Deleted = 0,
+                        SelectFlag = false,
+                        Stamp = 1,
+                        TaxTypeID = lineItem.TaxTypeId
+                    });
+                }
+
+                foreach (var taxRow in taxRows)
+                {
+                    await invoiceTaxRepo.AddAsync(new InvoTax
+                    {
+                        Id = nextTaxId++,
+                        InvoiceID = nextInvoiceId,
+                        TaxTypeID = taxRow.TaxTypeId,
+                        GrossAmount = taxRow.SubTotal,
+                        TaxPercentage = taxRow.VatRate,
+                        TaxAmount = taxRow.TaxAmount,
+                        NetAmount = taxRow.NetAmount,
+                        Deleted = 0,
+                        Stamp = 1
+                    });
+                }
+
+                await _unitOfWork.CommitAsync();
+                await transaction.CommitAsync();
+                return ServiceResult<int>.Success(nextReference, "Fatura oluşturuldu.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Invoice creation failed.");
+                return ServiceResult<int>.Fail("Fatura oluşturulamadı.");
+            }
+        }
+
         public async Task<ServiceResult<PagedResult<InvoiceDto>>> GetByFilterAsync(InvoiceFilterDto filter)
         {
             try
@@ -872,6 +1150,48 @@ namespace Imaj.Service.Services
             return stateId == IssuedStateId
                 || stateId == KilledStateId
                 || stateId == DiscardedStateId;
+        }
+
+        private async Task<int> GetNextReferenceCoreAsync(decimal targetCompanyId)
+        {
+            var invoiceQuery = _unitOfWork.Repository<Invoice>().Query().AsNoTracking();
+            if (targetCompanyId > 0)
+            {
+                invoiceQuery = invoiceQuery.Where(x => x.CompanyID == targetCompanyId);
+            }
+
+            var currentMaxReference = await invoiceQuery.MaxAsync(x => (int?)x.Reference) ?? 9999;
+            return currentMaxReference + 1;
+        }
+
+        private decimal ResolveTargetCompanyId(PermissionSnapshotDto snapshot)
+        {
+            return snapshot.CompanyId.HasValue && snapshot.CompanyId.Value > 0
+                ? snapshot.CompanyId.Value
+                : CurrentCompanyId;
+        }
+
+        private static List<InvoiceCreateLineDto> NormalizeCreateLines(List<InvoiceCreateLineDto>? lines)
+        {
+            if (lines == null || lines.Count == 0)
+            {
+                return new List<InvoiceCreateLineDto>();
+            }
+
+            return lines
+                .Select(x => new InvoiceCreateLineDto
+                {
+                    Description = x.Description?.Trim(),
+                    Amount = RoundCurrency(x.Amount),
+                    VatRate = x.VatRate
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Description) || x.Amount != 0)
+                .ToList();
+        }
+
+        private static decimal RoundCurrency(decimal amount)
+        {
+            return Math.Round(amount, 2, MidpointRounding.AwayFromZero);
         }
 
         private IQueryable<InvoiceReportBaseRow> BuildInvoiceReportBaseQuery(

@@ -18,7 +18,6 @@ namespace Imaj.Web.Models
         public string? InvoiceCustomerName { get; set; }
 
         // Other Fields
-        public string? Code { get; set; }
         public string? Ad { get; set; } // 'Ad' field from screenshot
         public string? RelatedPerson { get; set; } // 'Ilgili'
         public DateTime IssueDate { get; set; } = DateTime.Now;
