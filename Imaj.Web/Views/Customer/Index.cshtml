@@ -7,194 +7,181 @@
     var firstValue = Model.First.HasValue && Model.First.Value > 0
         ? Model.First.Value
         : (Model.PageSize > 0 ? Model.PageSize : 20);
+    var states = ViewBag.States as List<Imaj.Service.DTOs.StateDto> ?? new List<Imaj.Service.DTOs.StateDto>();
 }
 
-<div x-data="customerIndex()" class="space-y-6">
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
-                @Localizer["CustomerOperations"]
-            </h2>
-        </div>
+<div x-data="customerIndex()" class="customer-page-shell page-shell--wide space-y-3">
+    <div class="text-center">
+        <h2 class="customer-page-title customer-page-title--orange sm:text-3xl">
+            @Localizer["CustomerOperations"]
+        </h2>
     </div>
 
-    <form id="customer-search-form" action="/Customer/List" method="get" class="w-full max-w-5xl mx-auto text-left">
-        <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
-            <div class="px-4 py-5 sm:p-6 space-y-6">
-                <h3 class="text-lg leading-6 font-medium text-orange-600 mb-4 text-center border-b pb-2">
-                    @Localizer["CustomerSearch"]
-                </h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                <div class="space-y-6">
-                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
-                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["MainCriteria"]</h4>
-                        </div>
-                        <div class="p-4 space-y-2">
-                            <div class="form-group">
-                                <label class="form-label">@Localizer["Code"]</label>
-                                <input type="text" name="Code" class="form-input">
+    <form id="customer-search-form" action="/Customer/List" method="get" class="space-y-3 text-left">
+        <div class="dense-panel-grid">
+            <div class="dense-panel-grid__column">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["MainCriteria"]</h3>
+                    </div>
+                    <div class="dense-panel__body">
+                        <div class="dense-form-grid">
+                            <div class="dense-form-row">
+                                <label for="CustomerCode">@Localizer["Code"]</label>
+                                <input id="CustomerCode" type="text" name="Code" value="@Model.Code" class="dense-input" />
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">@Localizer["Name"]</label>
-                                <input type="text" name="Name" class="form-input">
+                            <div class="dense-form-row">
+                                <label for="CustomerName">@Localizer["Name"]</label>
+                                <input id="CustomerName" type="text" name="Name" value="@Model.Name" class="dense-input" />
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">@Localizer["Invalid"]</label>
-                                <select name="IsInvalid" class="form-input">
-                                    <option value="">@Localizer["AllOption"]</option>
-                                    <option value="false">@Localizer["No"]</option>
-                                    <option value="true">@Localizer["Yes"]</option>
+                            <div class="dense-form-row">
+                                <label for="CustomerIsInvalid">@Localizer["Invalid"]</label>
+                                <select id="CustomerIsInvalid" name="IsInvalid" class="dense-input">
+                                    <option value="" selected="@(!Model.IsInvalid.HasValue)">@Localizer["AllOption"]</option>
+                                    <option value="false" selected="@(Model.IsInvalid == false)">@Localizer["No"]</option>
+                                    <option value="true" selected="@(Model.IsInvalid == true)">@Localizer["Yes"]</option>
                                 </select>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
-                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["ContactSearch"]</h4>
-                        </div>
-                        <div class="p-4 space-y-2">
-                            <div class="form-group">
-                                <label class="form-label">@Localizer["Owner"]</label>
-                                <input type="text" name="Owner" class="form-input">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["ContactSearch"]</h3>
+                    </div>
+                    <div class="dense-panel__body">
+                        <div class="dense-form-grid">
+                            <div class="dense-form-row">
+                                <label for="CustomerOwner">@Localizer["Owner"]</label>
+                                <input id="CustomerOwner" type="text" name="Owner" value="@Model.Owner" class="dense-input" />
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">@Localizer["Related"]</label>
-                                <input type="text" name="RelatedPerson" class="form-input">
+                            <div class="dense-form-row">
+                                <label for="CustomerRelated">@Localizer["Related"]</label>
+                                <input id="CustomerRelated" type="text" name="RelatedPerson" value="@Model.RelatedPerson" class="dense-input" />
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">@Localizer["Phone"]</label>
-                                <input type="text" name="Phone" class="form-input">
+                            <div class="dense-form-row">
+                                <label for="CustomerPhone">@Localizer["Phone"]</label>
+                                <input id="CustomerPhone" type="text" name="Phone" value="@Model.Phone" class="dense-input" />
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">@Localizer["Fax"]</label>
-                                <input type="text" name="Fax" class="form-input">
+                            <div class="dense-form-row">
+                                <label for="CustomerFax">@Localizer["Fax"]</label>
+                                <input id="CustomerFax" type="text" name="Fax" value="@Model.Fax" class="dense-input" />
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">@Localizer["Email"]</label>
-                                <input type="text" name="Email" class="form-input">
+                            <div class="dense-form-row">
+                                <label for="CustomerEmail">@Localizer["Email"]</label>
+                                <input id="CustomerEmail" type="text" name="Email" value="@Model.Email" class="dense-input" />
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
+            </div>
 
-                <div class="space-y-6">
-                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
-                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["AddressSearch"]</h4>
-                        </div>
-                        <div class="p-4 space-y-2">
-                             <div class="form-group">
-                                <label class="form-label">@Localizer["City"]</label>
-                                <input type="text" name="City" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+            <div class="dense-panel-grid__column">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["AddressSearch"]</h3>
+                    </div>
+                    <div class="dense-panel__body">
+                        <div class="dense-form-grid">
+                            <div class="dense-form-row">
+                                <label for="CustomerCity">@Localizer["City"]</label>
+                                <input id="CustomerCity" type="text" name="City" value="@Model.City" class="dense-input" />
                             </div>
-                            <div class="grid grid-cols-3 gap-4 items-center">
-                                <label class="form-label">@Localizer["AreaCode"]</label>
-                                <input type="text" name="AreaCode" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <div class="dense-form-row">
+                                <label for="CustomerAreaCode">@Localizer["AreaCode"]</label>
+                                <input id="CustomerAreaCode" type="text" name="AreaCode" value="@Model.AreaCode" class="dense-input" />
                             </div>
-                            <div class="grid grid-cols-3 gap-4 items-center">
-                                <label class="form-label">@Localizer["Country"]</label>
-                                <input type="text" name="Country" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <div class="dense-form-row">
+                                <label for="CustomerCountry">@Localizer["Country"]</label>
+                                <input id="CustomerCountry" type="text" name="Country" value="@Model.Country" class="dense-input" />
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
-                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["InvoiceSearch"]</h4>
-                        </div>
-                        <div class="p-4 space-y-2">
-                             <div class="form-group">
-                                <label class="form-label">@Localizer["TaxOffice"]</label>
-                                <input type="text" name="TaxOffice" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["InvoiceSearch"]</h3>
+                    </div>
+                    <div class="dense-panel__body">
+                        <div class="dense-form-grid">
+                            <div class="dense-form-row">
+                                <label for="CustomerTaxOffice">@Localizer["TaxOffice"]</label>
+                                <input id="CustomerTaxOffice" type="text" name="TaxOffice" value="@Model.TaxOffice" class="dense-input" />
                             </div>
-                            <div class="grid grid-cols-3 gap-4 items-center">
-                                <label class="form-label">@Localizer["TaxNumber"]</label>
-                                <input type="text" name="TaxNumber" class="col-span-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            <div class="dense-form-row">
+                                <label for="CustomerTaxNumber">@Localizer["TaxNumber"]</label>
+                                <input id="CustomerTaxNumber" type="text" name="TaxNumber" value="@Model.TaxNumber" class="dense-input" />
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
-                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                            <h4 class="text-lg font-semibold text-gray-800">@Localizer["JobSearch"]</h4>
-                        </div>
-                        <div class="p-4 space-y-2">
-                             <div class="form-group">
-                                <label class="form-label">@Localizer["Status"]</label>
-                                @{
-                                    // ViewBag'den State listesini al
-                                    var states = ViewBag.States as List<Imaj.Service.DTOs.StateDto> ?? new List<Imaj.Service.DTOs.StateDto>();
-                                }
-                                <select name="JobStatus" class="col-span-2 mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["JobSearch"]</h3>
+                    </div>
+                    <div class="dense-panel__body dense-panel__body--tight">
+                        <div class="dense-form-grid">
+                            <div class="dense-form-row">
+                                <label for="CustomerJobStatus">@Localizer["Status"]</label>
+                                <select id="CustomerJobStatus" name="JobStatus" class="dense-input">
                                     <option value="">@Localizer["AllOption"]</option>
                                     @foreach (var state in states)
                                     {
-                                        <option value="@state.Id">@state.Name</option>
+                                        <option value="@state.Id" selected="@(Model.JobStatus == state.Id.ToString(System.Globalization.CultureInfo.InvariantCulture))">@state.Name</option>
                                     }
                                 </select>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
+        </div>
 
-            <div class="pt-6 border-t border-gray-200">
-                <div class="flex flex-wrap items-center justify-center gap-3">
-                    <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
-                    <input type="number" name="First" value="@firstValue" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
-                    <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
-                    <input type="number" name="PageSize" value="@(Model.PageSize > 0 ? Model.PageSize : 20)" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
-                    <input type="hidden" name="Page" value="1">
+        <input type="hidden" name="Page" value="1" />
 
-                    <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                        @Localizer["Search"]
-                    </button>
-                    <a href="/Customer" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                        @Localizer["Clear"]
-                    </a>
-                </div>
-            </div>
+        <div class="dense-toolbar">
+            <label for="CustomerFirst" class="dense-toolbar__label">@Localizer["First"]</label>
+            <input id="CustomerFirst" type="number" name="First" value="@firstValue" min="1" class="dense-input dense-toolbar__input" />
+            <label for="CustomerPageSize" class="dense-toolbar__label">@Localizer["PageSize"]</label>
+            <input id="CustomerPageSize" type="number" name="PageSize" value="@(Model.PageSize > 0 ? Model.PageSize : 20)" min="1" class="dense-input dense-toolbar__input" />
 
-            </div>
+            <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                @Localizer["Search"]
+            </button>
+            <a href="/Customer" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                @Localizer["Clear"]
+            </a>
         </div>
     </form>
 
-    <div class="text-center mt-10">
-        <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["CustomerCreation"]</h2>
-        <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl overflow-hidden">
-            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
-                <h3 class="text-lg font-semibold text-gray-800">@Localizer["CustomerCreation"]</h3>
+    <div class="dense-action-grid">
+        <section class="dense-action-card">
+            <div class="dense-action-card__header">
+                <h3 class="dense-action-card__title">@Localizer["CustomerCreation"]</h3>
             </div>
-            <div class="p-6">
-                <div class="pt-4 flex justify-center">
-                    <a href="/Customer/Create" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                        @Localizer["CreateNewCustomer"]
-                    </a>
-                </div>
+            <div class="dense-action-card__body">
+                <a href="/Customer/Create" class="inline-flex items-center px-5 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    @Localizer["CreateNewCustomer"]
+                </a>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="text-center mt-6">
-        <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["CustomerReports"]</h2>
-        <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl overflow-hidden">
-            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
-                <h3 class="text-lg font-semibold text-gray-800">@Localizer["CustomerReports"]</h3>
+        <section class="dense-action-card">
+            <div class="dense-action-card__header">
+                <h3 class="dense-action-card__title">@Localizer["CustomerReports"]</h3>
             </div>
-            <div class="p-6">
-                <div class="pt-4 flex flex-wrap justify-center gap-3">
-                    <button type="button" @@click="downloadReportExcel()" class="inline-flex items-center px-6 py-2 border border-blue-300 text-sm font-bold rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                        @Localizer["CustomerReports"] - Excel
-                    </button>
-                    <button type="button" @@click="openReportPage()" class="inline-flex items-center px-6 py-2 border border-slate-300 text-sm font-bold rounded-md shadow-sm text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
-                        @Localizer["CustomerReports"] - PDF
-                    </button>
-                </div>
+            <div class="dense-action-card__body">
+                <button type="button" @@click="downloadReportExcel()" class="inline-flex items-center px-5 py-2 border border-blue-300 text-sm font-bold rounded-md shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                    @Localizer["CustomerReports"] - Excel
+                </button>
+                <button type="button" @@click="openReportPage()" class="inline-flex items-center px-5 py-2 border border-slate-300 text-sm font-bold rounded-md shadow-sm text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                    @Localizer["CustomerReports"] - PDF
+                </button>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 

@@ -5,17 +5,14 @@
     ViewData["Title"] = Localizer["CustomerEdit"];
 }
 
-<div x-data="{ autoAdvance: false }" class="space-y-6">
-    <!-- Header -->
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-indigo-600 sm:text-3xl sm:truncate text-center w-full">
-                @Localizer["CustomerEdit"]
-            </h2>
-        </div>
+<div x-data="{ autoAdvance: false }" class="customer-page-shell customer-form-page page-shell--wide space-y-2">
+    <div class="text-center">
+        <h2 class="customer-page-title">
+            @Localizer["CustomerEdit"]
+        </h2>
     </div>
 
-    <form action="/Customer/Update" method="post" class="bg-white shadow sm:rounded-lg">
+    <form action="/Customer/Update" method="post" class="space-y-2">
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.CustomerId)
         
