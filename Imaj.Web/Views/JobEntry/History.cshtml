@@ -4,96 +4,106 @@
     ViewData["Title"] = Localizer["JobHistory"];
 }
 
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
+<div class="job-page-shell page-shell--wide space-y-3">
+    <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-             <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
-                @Localizer["JobHistory"]
+            <h2 class="job-page-title">
+                @Localizer["JobHistory"]: <span class="text-indigo-600">@Model.Reference</span>
             </h2>
+        </div>
+        <div class="mt-3 md:mt-0 job-page-actions">
+            <a href="/JobEntry/Detail?id=@Model.Reference" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                @Localizer["Back"]
+            </a>
         </div>
     </div>
 
-    <!-- Info Sections -->
-    <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            <!-- Left: Basic Info -->
-            <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm">
-                <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">@Localizer["BasicInfo"]</h3>
-                
-                <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["Function"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.Function</span>
-                </div>
-                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["Reference"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.Reference</span>
-                </div>
-                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["Customer"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.CustomerName</span>
-                </div>
-                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["Name"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.ContactName</span>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["Related"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.RelatedPerson</span>
-                </div>
-                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["StartDate"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</span>
-                </div>
-                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["EndDate"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.EndDate.ToString("dd/MM/yyyy HH:mm") @Model.EndDate.ToString("dddd")</span>
-                </div>
-                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["Status"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.Status</span>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["EmailSent"]</span>
-                    <span class="col-span-2">
-                         <input type="checkbox" disabled @(Model.IsEmailSent ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
-                    </span>
-                </div>
-                 <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["Evaluated"]</span>
-                    <span class="col-span-2">
-                         <input type="checkbox" disabled @(Model.IsEvaluated ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
-                    </span>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <span class="font-bold text-right text-blue-900">@Localizer["Invoice"]</span>
-                    <span class="col-span-2 text-gray-900">@Model.InvoiceStatus</span>
-                </div>
+    <div class="job-detail-grid">
+        <section class="dense-panel">
+            <div class="dense-panel__header">
+                <h3 class="dense-panel__title">@Localizer["BasicInfo"]</h3>
             </div>
+            <div class="dense-panel__body">
+                <dl class="job-detail-list">
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["Function"]</dt>
+                        <dd class="job-detail-item__value">@Model.Function</dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["Reference"]</dt>
+                        <dd class="job-detail-item__value">@Model.Reference</dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["Customer"]</dt>
+                        <dd class="job-detail-item__value">@Model.CustomerName</dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["Name"]</dt>
+                        <dd class="job-detail-item__value">@Model.ContactName</dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["Related"]</dt>
+                        <dd class="job-detail-item__value">@Model.RelatedPerson</dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["StartDate"]</dt>
+                        <dd class="job-detail-item__value">@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["EndDate"]</dt>
+                        <dd class="job-detail-item__value">@Model.EndDate.ToString("dd/MM/yyyy HH:mm") @Model.EndDate.ToString("dddd")</dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["Status"]</dt>
+                        <dd class="job-detail-item__value">@Model.Status</dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["EmailSent"]</dt>
+                        <dd class="job-detail-item__value">
+                            <input type="checkbox" disabled @(Model.IsEmailSent ? "checked" : "") class="dense-checkbox text-blue-600 border-gray-300 rounded">
+                        </dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["Evaluated"]</dt>
+                        <dd class="job-detail-item__value">
+                            <input type="checkbox" disabled @(Model.IsEvaluated ? "checked" : "") class="dense-checkbox text-blue-600 border-gray-300 rounded">
+                        </dd>
+                    </div>
+                    <div class="job-detail-item">
+                        <dt class="job-detail-item__label">@Localizer["Invoice"]</dt>
+                        <dd class="job-detail-item__value">@Model.InvoiceStatus</dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
 
-            <!-- Right: Notes -->
-            <div class="space-y-4">
-                <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                     <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["AdminNotes"]</h3>
-                     <textarea readonly rows="6" class="w-full text-sm border-gray-300 rounded bg-white">@Model.AdminNotes</textarea>
+        <div class="job-note-stack">
+            <section class="dense-panel">
+                <div class="dense-panel__header">
+                    <h3 class="dense-panel__title">@Localizer["AdminNotes"]</h3>
                 </div>
-                 <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                     <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["CustomerNotes"]</h3>
-                     <textarea readonly rows="6" class="w-full text-sm border-gray-300 rounded bg-white">@Model.CustomerNotes</textarea>
+                <div class="dense-panel__body">
+                    <textarea readonly rows="5" class="dense-input bg-white">@Model.AdminNotes</textarea>
                 </div>
-            </div>
+            </section>
+            <section class="dense-panel">
+                <div class="dense-panel__header">
+                    <h3 class="dense-panel__title">@Localizer["CustomerNotes"]</h3>
+                </div>
+                <div class="dense-panel__body">
+                    <textarea readonly rows="5" class="dense-input bg-white">@Model.CustomerNotes</textarea>
+                </div>
+            </section>
         </div>
     </div>
     
-    <!-- History Table Section -->
-    <div class="mt-6">
-        <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
-             <h3 class="font-bold text-gray-800 text-sm">@Localizer["ViewHistory"] (@Model.Items.Count)</h3>
+    <section class="job-table-card">
+        <div class="job-table-card__header">
+            <h3 class="job-table-card__title">@Localizer["ViewHistory"] (@Model.Items.Count)</h3>
         </div>
-        <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
-             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-yellow-50">
+        <div class="job-table-wrap">
+            <table class="job-table job-table--compact">
+                <thead>
                     <tr>
                         <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["User"]</th>
                         <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Name"]</th>
@@ -102,7 +112,7 @@
                         <th scope="col" class="px-6 py-2 text-left text-xs font-bold text-gray-700 uppercase">@Localizer["Email"]</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody>
                     @if (Model.Items != null && Model.Items.Any())
                     {
                         @foreach (var item in Model.Items)
@@ -125,12 +135,11 @@
                         </tr>
                     }
                 </tbody>
-             </table>
+            </table>
         </div>
-    </div>
+    </section>
 
-    <!-- Footer Button -->
-    <div class="flex justify-center py-4">
+    <div class="job-footer-bar job-footer-bar--center">
         <a href="/JobEntry/Detail?id=@Model.Reference" class="inline-flex items-center px-4 py-1 border border-blue-600 text-sm font-bold rounded shadow-sm text-white bg-blue-500 hover:bg-blue-700 focus:outline-none">@Localizer["Back"]</a>
     </div>
 

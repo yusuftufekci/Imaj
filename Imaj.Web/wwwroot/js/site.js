@@ -260,8 +260,294 @@ const WorkflowActionHelper = {
     }
 };
 
+const DateFieldEnhancer = (() => {
+    const selector = 'input[type="date"], input[type="datetime-local"]';
+    const instances = new Map();
+    let domObserver = null;
+    let syncTimer = null;
+
+    const isTurkish = () => (document.documentElement.lang || '').toLowerCase().startsWith('tr');
+    const getPickerLocale = () => {
+        if (isTurkish() && window.flatpickr?.l10ns?.tr) {
+            return window.flatpickr.l10ns.tr;
+        }
+
+        return 'default';
+    };
+
+    const getUiText = () => isTurkish()
+        ? {
+            clear: 'Temizle',
+            today: 'Bugun',
+            now: 'Simdi',
+            datePlaceholder: 'GG.AA.YYYY',
+            dateTimePlaceholder: 'GG.AA.YYYY SS:DD'
+        }
+        : {
+            clear: 'Clear',
+            today: 'Today',
+            now: 'Now',
+            datePlaceholder: 'DD.MM.YYYY',
+            dateTimePlaceholder: 'DD.MM.YYYY HH:MM'
+        };
+
+    const notifyValueChange = input => {
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    const getMinuteIncrement = input => {
+        const rawStep = Number(input.step);
+        if (!Number.isFinite(rawStep) || rawStep <= 0) {
+            return 5;
+        }
+
+        const minutes = Math.round(rawStep / 60);
+        return minutes > 0 ? minutes : 5;
+    };
+
+    const getConfigFor = input => {
+        const isDateTime = input.type === 'datetime-local';
+
+        return {
+            inputType: input.type,
+            altFormat: isDateTime ? 'd.m.Y H:i' : 'd.m.Y',
+            dateFormat: isDateTime ? 'Y-m-d\\TH:i' : 'Y-m-d',
+            enableTime: isDateTime,
+            placeholder: isDateTime ? getUiText().dateTimePlaceholder : getUiText().datePlaceholder,
+            minuteIncrement: isDateTime ? getMinuteIncrement(input) : undefined
+        };
+    };
+
+    const syncAltInputState = (input, altInput, placeholder) => {
+        if (!altInput) {
+            return;
+        }
+
+        altInput.disabled = input.disabled;
+        altInput.required = input.required;
+        altInput.placeholder = input.getAttribute('placeholder') || placeholder;
+        altInput.dataset.imajDateDisplay = 'true';
+        altInput.autocomplete = 'off';
+    };
+
+    const syncPickerValue = meta => {
+        const value = meta.input.value || '';
+        if (value === meta.lastValue) {
+            syncAltInputState(meta.input, meta.instance.altInput, meta.placeholder);
+            return;
+        }
+
+        meta.lastValue = value;
+
+        if (!value) {
+            meta.instance.clear(false);
+            syncAltInputState(meta.input, meta.instance.altInput, meta.placeholder);
+            return;
+        }
+
+        const parsedValue = meta.instance.parseDate(value, meta.dateFormat);
+        if (!parsedValue) {
+            return;
+        }
+
+        const currentDate = meta.instance.selectedDates[0];
+        if (currentDate && currentDate.getTime() === parsedValue.getTime()) {
+            syncAltInputState(meta.input, meta.instance.altInput, meta.placeholder);
+            return;
+        }
+
+        meta.instance.setDate(parsedValue, false, meta.dateFormat);
+        syncAltInputState(meta.input, meta.instance.altInput, meta.placeholder);
+    };
+
+    const createActionButton = (label, className, onClick) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = className;
+        button.textContent = label;
+        button.addEventListener('click', onClick);
+        return button;
+    };
+
+    const appendActionRow = meta => {
+        if (!meta.instance.calendarContainer || meta.instance.calendarContainer.querySelector('.imaj-date-actions')) {
+            return;
+        }
+
+        const texts = getUiText();
+        const actions = document.createElement('div');
+        actions.className = 'imaj-date-actions';
+
+        const nowButtonLabel = meta.enableTime ? texts.now : texts.today;
+        const selectCurrentButton = createActionButton(
+            nowButtonLabel,
+            'imaj-date-actions__button imaj-date-actions__button--primary',
+            () => {
+                const nextDate = new Date();
+                if (!meta.enableTime) {
+                    nextDate.setHours(0, 0, 0, 0);
+                }
+
+                meta.instance.setDate(nextDate, true, meta.dateFormat);
+                meta.lastValue = meta.input.value || '';
+                notifyValueChange(meta.input);
+                meta.instance.close();
+            }
+        );
+
+        const clearButton = createActionButton(
+            texts.clear,
+            'imaj-date-actions__button',
+            () => {
+                meta.instance.clear(true);
+                meta.lastValue = '';
+                notifyValueChange(meta.input);
+                meta.instance.close();
+            }
+        );
+
+        actions.appendChild(selectCurrentButton);
+        actions.appendChild(clearButton);
+        meta.instance.calendarContainer.appendChild(actions);
+    };
+
+    const enhanceInput = input => {
+        if (!window.flatpickr || instances.has(input) || input.dataset.imajDateDisabled === 'true') {
+            return;
+        }
+
+        const config = getConfigFor(input);
+        const instance = window.flatpickr(input, {
+            altInput: true,
+            altInputClass: `${input.className} imaj-date-display`,
+            altFormat: config.altFormat,
+            allowInput: false,
+            clickOpens: true,
+            dateFormat: config.dateFormat,
+            disableMobile: true,
+            enableTime: config.enableTime,
+            locale: getPickerLocale(),
+            minDate: input.min || undefined,
+            maxDate: input.max || undefined,
+            minuteIncrement: config.minuteIncrement,
+            time_24hr: true,
+            onReady: (selectedDates, dateStr, fp) => {
+                const meta = instances.get(input);
+                syncAltInputState(input, fp.altInput, config.placeholder);
+
+                if (fp.altInput) {
+                    fp.altInput.addEventListener('keydown', event => {
+                        if (event.key !== 'Backspace' && event.key !== 'Delete') {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        fp.clear(true);
+                        if (meta) {
+                            meta.lastValue = '';
+                        }
+                        notifyValueChange(input);
+                    });
+                }
+
+                appendActionRow(meta || {
+                    input,
+                    instance: fp,
+                    dateFormat: config.dateFormat,
+                    enableTime: config.enableTime,
+                    lastValue: input.value || ''
+                });
+            },
+            onChange: () => {
+                const meta = instances.get(input);
+                if (meta) {
+                    meta.lastValue = input.value || '';
+                }
+                notifyValueChange(input);
+            }
+        });
+
+        instances.set(input, {
+            input,
+            instance,
+            inputType: config.inputType,
+            dateFormat: config.dateFormat,
+            enableTime: config.enableTime,
+            lastValue: input.value || '',
+            placeholder: config.placeholder
+        });
+
+        syncPickerValue(instances.get(input));
+    };
+
+    const enhanceWithin = root => {
+        if (!root) {
+            return;
+        }
+
+        const nodes = root.matches?.(selector)
+            ? [root]
+            : Array.from(root.querySelectorAll?.(selector) || []);
+
+        nodes.forEach(enhanceInput);
+    };
+
+    const startSyncLoop = () => {
+        if (syncTimer) {
+            return;
+        }
+
+        syncTimer = window.setInterval(() => {
+            instances.forEach((meta, input) => {
+                if (!document.body.contains(input)) {
+                    meta.instance.destroy();
+                    instances.delete(input);
+                    return;
+                }
+
+                syncPickerValue(meta);
+            });
+        }, 250);
+    };
+
+    const startObserver = () => {
+        if (domObserver) {
+            return;
+        }
+
+        domObserver = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        enhanceWithin(node);
+                    }
+                });
+            });
+        });
+
+        domObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    };
+
+    const init = () => {
+        if (!window.flatpickr) {
+            return;
+        }
+
+        enhanceWithin(document);
+        startSyncLoop();
+        startObserver();
+    };
+
+    return { init };
+})();
+
 document.addEventListener('DOMContentLoaded', function () {
     WorkflowActionHelper.init();
+    DateFieldEnhancer.init();
 });
 
 // Global olarak API ve Toast'u dışa aktar

@@ -8,285 +8,233 @@
     ViewData["Title"] = Localizer["JobOperations"];
 }
 
-<div x-data="jobPage()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@product-selected.window="handleProductSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="space-y-6">
-    <!-- Header -->
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
-                @Localizer["JobSearch"]
-            </h2>
-        </div>
+<div x-data="jobEntryPage()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@product-selected.window="handleProductSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="job-page-shell job-index-shell page-shell--wide space-y-2">
+    <div class="text-center">
+        <h2 class="job-page-title job-page-title--orange">
+            @Localizer["JobSearch"]
+        </h2>
     </div>
 
-    <form method="get" action="/JobEntry/List">
-        <!-- Main Filter Card -->
-        <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
-            <div class="px-4 py-5 sm:p-6 mobile-stack-form">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    
-                    <!-- COLUMN 1: İŞ KRİTERİ (Job Criteria) -->
-                    <div class="lg:col-span-6 border border-blue-200 rounded-lg overflow-hidden bg-white">
-                        <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                            <h3 class="text-lg font-semibold text-gray-800">@Localizer["JobCriteria"]</h3>
-                        </div>
-                        <div class="p-4 space-y-4">
-                        
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Function"]</label>
-                            <div class="col-span-8">
-                                <select name="Filter.Function" x-model="filter.function" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                    <option value="">@Localizer["SelectPrompt"]</option>
-                                    @if (ViewBag.Functions != null)
-                                    {
-                                        @foreach (var func in ViewBag.Functions)
+    <form method="get" action="/JobEntry/List" class="space-y-2 text-left">
+        <div class="dense-panel-grid">
+            <div class="dense-panel-grid__column">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["JobCriteria"]</h3>
+                    </div>
+                    <div class="dense-panel__body mobile-stack-form">
+                        <div class="job-index-main-grid">
+                            <div class="dense-form-grid">
+                                <div class="dense-form-row">
+                                    <label for="JobEntryFunction">@Localizer["Function"]</label>
+                                    <select id="JobEntryFunction" name="Filter.Function" x-model="filter.function" class="dense-input">
+                                        <option value="">@Localizer["SelectPrompt"]</option>
+                                        @if (ViewBag.Functions != null)
                                         {
-                                            <option value="@func.Id">@func.Name</option>
+                                            @foreach (var func in ViewBag.Functions)
+                                            {
+                                                <option value="@func.Id">@func.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div class="dense-form-row">
+                                    <label>@Localizer["Customer"]</label>
+                                    <div class="picker-inline flex items-center gap-2">
+                                        <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
+                                        <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
+                                        <input type="text" readonly x-model="customerName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
+                                        <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                                            @Localizer["Select"]
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="dense-form-row">
+                                    <label>@Localizer["ReferenceRange"]</label>
+                                    <div class="picker-inline flex items-center gap-2">
+                                        <input type="text" name="Filter.ReferenceStart" x-model="filter.referenceStart" class="dense-input">
+                                        <input type="text" name="Filter.ReferenceEnd" x-model="filter.referenceEnd" class="dense-input">
+                                    </div>
+                                </div>
+                                <div class="dense-form-row">
+                                    <label for="JobEntryReference">@Localizer["Reference"]</label>
+                                    <input id="JobEntryReference" type="text" name="Filter.ReferenceList" x-model="filter.referenceList" class="dense-input">
+                                </div>
+                                <div class="dense-form-row">
+                                    <label for="JobEntryName">@Localizer["Name"]</label>
+                                    <input id="JobEntryName" type="text" name="Filter.JobName" x-model="filter.jobName" class="dense-input">
+                                </div>
+                            </div>
+                            <div class="dense-form-grid">
+                                <div class="dense-form-row">
+                                    <label for="JobEntryRelated">@Localizer["Related"]</label>
+                                    <input id="JobEntryRelated" type="text" name="Filter.RelatedPerson" x-model="filter.relatedPerson" class="dense-input">
+                                </div>
+                                <div class="dense-form-row">
+                                    <label>@Localizer["StartDateRange"]</label>
+                                    <div class="picker-inline flex items-center gap-2">
+                                        <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="dense-input" value="@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")">
+                                        <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="dense-input" value="@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")">
+                                    </div>
+                                </div>
+                                <div class="dense-form-row">
+                                    <label>@Localizer["EndDateRange"]</label>
+                                    <div class="picker-inline flex items-center gap-2">
+                                        <input type="date" name="Filter.EndDateStart" x-model="filter.endDateStart" class="dense-input">
+                                        <input type="date" name="Filter.EndDateEnd" x-model="filter.endDateEnd" class="dense-input">
+                                    </div>
+                                </div>
+                                <div class="dense-form-row">
+                                    <label for="JobEntryStatus">@Localizer["Status"]</label>
+                                    <select id="JobEntryStatus" name="Filter.Status" x-model="filter.status" class="dense-input">
+                                        <option value="">@Localizer["AllOption"]</option>
+                                        @if (ViewBag.States != null)
+                                        {
+                                            @foreach (var state in ViewBag.States)
+                                            {
+                                                <option value="@state.Id">@state.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div class="dense-form-row">
+                                    <label for="JobEntryEmailSent">@Localizer["EmailSent"]</label>
+                                    <select id="JobEntryEmailSent" name="Filter.EmailSent" x-model="filter.emailSent" class="dense-input">
+                                        <option value="">@Localizer["AllOption"]</option>
+                                        <option value="true">@Localizer["Yes"]</option>
+                                        <option value="false">@Localizer["No"]</option>
+                                    </select>
+                                </div>
+                                <div class="dense-form-row">
+                                    <label for="JobEntryEvaluated">@Localizer["Evaluated"]</label>
+                                    <select id="JobEntryEvaluated" name="Filter.Evaluated" x-model="filter.evaluated" class="dense-input">
+                                        <option value="">@Localizer["AllOption"]</option>
+                                        <option value="true">@Localizer["Yes"]</option>
+                                        <option value="false">@Localizer["No"]</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="dense-panel-grid__column">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["OvertimeCriteria"]</h3>
+                    </div>
+                    <div class="dense-panel__body mobile-stack-form">
+                        <div class="dense-form-grid">
+                            <div class="dense-form-row">
+                                <label>@Localizer["Employee"]</label>
+                                <div class="picker-inline flex items-center gap-2">
+                                    <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
+                                    <input type="text" readonly x-model="filter.employeeName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
+                                    <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                                        @Localizer["Select"]
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="dense-form-row">
+                                <label for="JobEntryTaskType">@Localizer["WorkType"]</label>
+                                <select id="JobEntryTaskType" name="Filter.TaskType" x-model="filter.taskType" class="dense-input">
+                                    <option value="">@Localizer["AllOption"]</option>
+                                    @if (ViewBag.WorkTypes != null)
+                                    {
+                                        @foreach (var wt in ViewBag.WorkTypes)
+                                        {
+                                            <option value="@wt.Id">@wt.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="dense-form-row">
+                                <label for="JobEntryOvertimeType">@Localizer["TimeType"]</label>
+                                <select id="JobEntryOvertimeType" name="Filter.OvertimeType" x-model="filter.overtimeType" class="dense-input">
+                                    <option value="">@Localizer["AllOption"]</option>
+                                    @if (ViewBag.TimeTypes != null)
+                                    {
+                                        @foreach (var tt in ViewBag.TimeTypes)
+                                        {
+                                            <option value="@tt.Id">@tt.Name</option>
                                         }
                                     }
                                 </select>
                             </div>
                         </div>
+                    </div>
+                </section>
 
-                        <!-- Müşteri -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Customer"]</label>
-                            <div class="col-span-8 flex space-x-2 picker-inline">
-                                <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
-                                <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
-                                <input type="text" readonly x-model="customerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["ProductCriteria"]</h3>
+                    </div>
+                    <div class="dense-panel__body dense-panel__body--tight mobile-stack-form">
+                        <div class="dense-form-grid">
+                            <div class="dense-form-row">
+                                <label>@Localizer["Product"]</label>
+                                <div class="picker-inline flex items-center gap-2">
+                                    <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
+                                    <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
+                                    <input type="text" readonly x-model="filter.productName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
+                                    <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct', searchEndpoint: '/JobEntry/ProductSearch', categoriesEndpoint: '/JobEntry/ProductCategories', productGroupsEndpoint: '/JobEntry/ProductGroups', functionsEndpoint: '/JobEntry/ProductFunctions' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                                        @Localizer["Select"]
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- @Localizer["ReferenceRange"] -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["ReferenceRange"]</label>
-                            <div class="col-span-8 flex space-x-2 picker-inline">
-                                <input type="text" name="Filter.ReferenceStart" x-model="filter.referenceStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md">
-                                <input type="text" name="Filter.ReferenceEnd" x-model="filter.referenceEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-
-                        <!-- @Localizer["Reference"] Listesi -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Reference"]</label>
-                            <div class="col-span-8">
-                                <input type="text" name="Filter.ReferenceList" x-model="filter.referenceList" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-
-                        <!-- Ad -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Name"]</label>
-                            <div class="col-span-8">
-                                <input type="text" name="Filter.JobName" x-model="filter.jobName" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-                        
-                        <!-- İlgili -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Related"]</label>
-                            <div class="col-span-8">
-                                <input type="text" name="Filter.RelatedPerson" x-model="filter.relatedPerson" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-
-                        <!-- @Localizer["StartDate"] -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["StartDateRange"]</label>
-                            <div class="col-span-8 flex space-x-2 picker-inline">
-                                <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")">
-                                <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")">
-                            </div>
-                        </div>
-                        
-                        <!-- @Localizer["EndDate"] -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["EndDateRange"]</label>
-                            <div class="col-span-8 flex space-x-2 picker-inline">
-                                <input type="date" name="Filter.EndDateStart" x-model="filter.endDateStart" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                <input type="date" name="Filter.EndDateEnd" x-model="filter.endDateEnd" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                        </div>
-
-                        <!-- Durum -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Status"]</label>
-                            <div class="col-span-8">
-                                <select name="Filter.Status" x-model="filter.status" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                    <option value="">@Localizer["AllOption"]</option>
-                                    @if (ViewBag.States != null)
-                                    {
-                                        @foreach (var state in ViewBag.States)
-                                        {
-                                            <option value="@state.Id">@state.Name</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- @Localizer["EmailSent"] -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["EmailSent"]</label>
-                            <div class="col-span-8">
-                                <select name="Filter.EmailSent" x-model="filter.emailSent" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                    <option value="">@Localizer["AllOption"]</option>
-                                    <option value="true">@Localizer["Yes"]</option>
-                                    <option value="false">@Localizer["No"]</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Değerlendirildi -->
-                        <div class="grid grid-cols-12 gap-4 items-center">
-                            <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Evaluated"]</label>
-                            <div class="col-span-8">
-                                <select name="Filter.Evaluated" x-model="filter.evaluated" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                    <option value="">@Localizer["AllOption"]</option>
-                                    <option value="true">@Localizer["Yes"]</option>
-                                    <option value="false">@Localizer["No"]</option>
-                                </select>
-                            </div>
-                        </div>
                         </div>
                     </div>
-
-                    <!-- RIGHT COLUMN WRAPPER -->
-                    <div class="lg:col-span-6 space-y-6">
-                        
-                        <!-- COLUMN 2: MESAI KRİTERİ (Overtime Criteria) -->
-                        <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
-                            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                                <h3 class="text-lg font-semibold text-gray-800">@Localizer["OvertimeCriteria"]</h3>
-                            </div>
-                            <div class="p-4 space-y-4">
-                                <!-- Çalışan -->
-                                <div class="grid grid-cols-12 gap-4 items-center">
-                                    <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Employee"]</label>
-                                    <div class="col-span-8 flex space-x-2 picker-inline">
-                                        <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
-                                        <input type="text" readonly x-model="filter.employeeName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                        <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
-                                    </div>
-                                </div>
-
-                                <!-- Görev Tipi -->
-                                <div class="grid grid-cols-12 gap-4 items-center">
-                                    <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["WorkType"]</label>
-                                    <div class="col-span-8">
-                                        <select name="Filter.TaskType" x-model="filter.taskType" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                            <option value="">@Localizer["AllOption"]</option>
-                                            @if (ViewBag.WorkTypes != null)
-                                            {
-                                                @foreach (var wt in ViewBag.WorkTypes)
-                                                {
-                                                    <option value="@wt.Id">@wt.Name</option>
-                                                }
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Mesai Tipi -->
-                                <div class="grid grid-cols-12 gap-4 items-center">
-                                    <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["TimeType"]</label>
-                                    <div class="col-span-8">
-                                        <select name="Filter.OvertimeType" x-model="filter.overtimeType" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                            <option value="">@Localizer["AllOption"]</option>
-                                            @if (ViewBag.TimeTypes != null)
-                                            {
-                                                @foreach (var tt in ViewBag.TimeTypes)
-                                                {
-                                                    <option value="@tt.Id">@tt.Name</option>
-                                                }
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- COLUMN 3: ÜRÜN KRİTERİ (Product Criteria) -->
-                        <div class="border border-blue-200 rounded-lg overflow-hidden bg-white">
-                            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                                <h3 class="text-lg font-semibold text-gray-800">@Localizer["ProductCriteria"]</h3>
-                            </div>
-                            <div class="p-4">
-                                <!-- Ürün -->
-                                <div class="grid grid-cols-12 gap-4 items-center">
-                                    <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Product"]</label>
-                                    <div class="col-span-8 flex space-x-2 picker-inline">
-                                        <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
-                                        <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
-                                        <input type="text" readonly x-model="filter.productName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                        <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct', searchEndpoint: '/JobEntry/ProductSearch', categoriesEndpoint: '/JobEntry/ProductCategories', productGroupsEndpoint: '/JobEntry/ProductGroups', functionsEndpoint: '/JobEntry/ProductFunctions' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Select"]</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-                
-                <!-- BUTTONS -->
-                <div class="mt-8 flex flex-col items-center space-y-4 border-t border-gray-200 pt-6">
-                    <div class="flex items-center space-x-3 responsive-inline-group">
-                        <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
-                        <input type="number" name="Filter.First" x-model="filter.first" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
-                        <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
-                        <input type="number" name="Filter.PageSize" x-model="filter.pageSize" min="1" class="w-20 shadow-sm border-gray-300 rounded-md sm:text-sm text-center">
-                        <input type="hidden" name="Filter.Page" value="1">
-                        <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                            @Localizer["Search"]
-                        </button>
-                    </div>
-                </div>
+                </section>
             </div>
         </div>
+
+        <input type="hidden" name="Filter.Page" value="1">
+
+        <div class="dense-toolbar">
+            <label for="JobEntryFirst" class="dense-toolbar__label">@Localizer["First"]</label>
+            <input id="JobEntryFirst" type="number" name="Filter.First" x-model="filter.first" min="1" class="dense-input dense-toolbar__input">
+            <label for="JobEntryPageSize" class="dense-toolbar__label">@Localizer["PageSize"]</label>
+            <input id="JobEntryPageSize" type="number" name="Filter.PageSize" x-model="filter.pageSize" min="1" class="dense-input dense-toolbar__input">
+            <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                @Localizer["Search"]
+            </button>
+        </div>
     </form>
-    
-    <!-- Job Creation Section -->
-    <div class="text-center mt-10">
-         <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["JobCreation"]</h2>
-         <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl overflow-hidden">
-             <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
-                 <h3 class="text-lg font-semibold text-gray-800">@Localizer["PreInformation"]</h3>
-             </div>
-             <div class="p-6 mobile-stack-form">
-                 <div class="grid grid-cols-12 gap-4 items-center justify-center">
-                     <label class="col-span-4 text-right text-sm font-medium text-gray-700">@Localizer["Function"]</label>
-                     <div class="col-span-6">
-                         <select x-model="filter.function" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                             <option value="">@Localizer["SelectPrompt"]</option>
-                             @if (ViewBag.Functions != null)
-                             {
-                                 @foreach (var func in ViewBag.Functions)
-                                 {
-                                     <option value="@func.Id">@func.Name</option>
-                                 }
-                             }
-                         </select>
-                     </div>
-                 </div>
-                 <div class="mt-4 flex justify-center responsive-action-group">
-                     <a :href="filter.function ? '/JobEntry/Create?functionId=' + encodeURIComponent(filter.function) : '/JobEntry/Create'" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                        @Localizer["CreateNewJob"]
-                    </a>
-                 </div>
-             </div>
-         </div>
+
+    <div class="dense-action-grid">
+        <section class="dense-action-card">
+            <div class="dense-action-card__header">
+                <h3 class="dense-action-card__title">@Localizer["JobCreation"]</h3>
+            </div>
+            <div class="dense-action-card__body flex-col items-stretch">
+                <div class="dense-form-row">
+                    <label for="JobEntryCreateFunction">@Localizer["Function"]</label>
+                    <select id="JobEntryCreateFunction" x-model="filter.function" class="dense-input">
+                        <option value="">@Localizer["SelectPrompt"]</option>
+                        @if (ViewBag.Functions != null)
+                        {
+                            @foreach (var func in ViewBag.Functions)
+                            {
+                                <option value="@func.Id">@func.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <a :href="filter.function ? '/JobEntry/Create?functionId=' + encodeURIComponent(filter.function) : '/JobEntry/Create'" class="inline-flex items-center justify-center px-5 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    @Localizer["CreateNewJob"]
+                </a>
+            </div>
+        </section>
     </div>
-    
-    <!-- Shared Customer & Product & Employee Modal -->
+
     <partial name="_CustomerSelectModal" />
     <partial name="_ProductSelectModal" />
     <partial name="_EmployeeSelectModal" />
 </div>
 
 <script>
-    function jobPage() {
+    function jobEntryPage() {
         return {
             filter: {
                 function: '',
@@ -297,19 +245,16 @@
                 startDateEnd: '@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")',
                 endDateStart: '', endDateEnd: '',
                 status: '', emailSent: '', evaluated: '',
-                
                 employeeCode: '', employeeName: '',
                 taskType: '', overtimeType: '',
-                
                 productId: '', productCode: '', productName: '',
-                
                 page: 1,
                 first: @((Model.Filter.First.HasValue && Model.Filter.First.Value > 0 ? Model.Filter.First.Value : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 10))),
-                pageSize: @(Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 10),
+                pageSize: @(Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 10)
             },
-            
+
             customerName: '',
-            
+
             init() {},
 
             handleCustomerSelection(detail) {
@@ -319,10 +264,9 @@
                     this.customerName = detail.customer.name;
                 }
             },
-            
+
             handleProductSelection(detail) {
-                if(detail.targetId === 'jobProduct') {
-                    // Tek ürün veya çoklu ürün seçimi için
+                if (detail.targetId === 'jobProduct') {
                     const product = detail.product || (detail.products && detail.products[0]);
                     if (product) {
                         this.filter.productId = product.id;
@@ -331,16 +275,16 @@
                     }
                 }
             },
-            
+
             handleEmployeeSelection(detail) {
-                if(detail.targetId === 'jobEmployee') {
+                if (detail.targetId === 'jobEmployee') {
                     const emp = detail.employee;
                     if (emp) {
-                       this.filter.employeeName = emp.name;
-                       this.filter.employeeCode = emp.code; 
+                        this.filter.employeeName = emp.name;
+                        this.filter.employeeCode = emp.code;
                     } else {
-                       this.filter.employeeName = '';
-                       this.filter.employeeCode = '';
+                        this.filter.employeeName = '';
+                        this.filter.employeeCode = '';
                     }
                 }
             }

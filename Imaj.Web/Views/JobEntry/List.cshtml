@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = Localizer["Jobs"];
+    var currentListUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 
     var queryParts = Context.Request.Query
         .Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase)
@@ -12,134 +13,121 @@
     var paginationQuery = string.Join("&", queryParts);
 }
 
-<div x-data="jobList()" class="space-y-6">
-    <!-- Header -->
+<div x-data="jobEntryList()" class="job-page-shell page-shell--wide space-y-3">
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-orange-600">
+            <h2 class="job-page-title">
                 @Localizer["Jobs"]
             </h2>
         </div>
+        <div class="mt-3 md:mt-0 job-page-actions">
+            <a href="/JobEntry" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                @Localizer["Back"]
+            </a>
+        </div>
     </div>
 
-    <!-- Results Table -->
     <form id="resultsForm" method="post" action="/JobEntry/Detail">
         @Html.AntiForgeryToken()
-        <div class="flex flex-col mt-6">
-            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-blue-100">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left">
-                                        <!-- Select All Checkbox -->
-                                        <div class="flex items-center">
-                                            <input type="checkbox" @@click="toggleAll" x-model="allSelected" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2">
-                                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer" @@click="toggleAll(); allSelected = !allSelected">@Localizer["Select"]</span>
-                                        </div>
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Function"]</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Reference"]</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["StartDate"]</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Customer"]</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Name"]</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Status"]</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Email"]</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">@Localizer["Evaluated"]</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach (var item in Model.Items)
-                                {
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <!-- Bind to selectedIds array -->
-                                            <input type="checkbox" name="selectedIds" value="@item.Code" x-model="selectedIds" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.Function</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">
-                                            <a href="/JobEntry/Detail?id=@item.Code" class="text-blue-600 hover:text-blue-900 underline">@item.Code</a>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            @item.StartDate.ToString("dd/MM/yyyy HH:mm") <br/>
-                                            @item.EndDate?.ToString("dd/MM/yyyy HH:mm")
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.CustomerName</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.Name</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.Status</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <input type="checkbox" disabled @(item.IsEmailSent ? "checked" : "") class="h-4 w-4 text-gray-400 border-gray-300 rounded">
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <input type="checkbox" disabled @(item.IsEvaluated ? "checked" : "") class="h-4 w-4 text-gray-400 border-gray-300 rounded">
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <input type="hidden" name="returnUrl" value="@currentListUrl" />
+        <div class="job-table-card">
+            <div class="job-table-card__header">
+                <h3 class="job-table-card__title">@Localizer["Job"]</h3>
+                <span class="job-table__count">@Model.TotalCount</span>
+            </div>
+            <div class="job-table-wrap">
+                <table class="job-table job-table--compact">
+                    <thead>
+                        <tr>
+                            <th scope="col">
+                                <div class="flex items-center">
+                                    <input type="checkbox" @@click="toggleAll" x-model="allSelected" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2">
+                                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer" @@click="toggleAll(); allSelected = !allSelected">@Localizer["Select"]</span>
+                                </div>
+                            </th>
+                            <th scope="col">@Localizer["Function"]</th>
+                            <th scope="col">@Localizer["Reference"]</th>
+                            <th scope="col">@Localizer["StartDate"]</th>
+                            <th scope="col">@Localizer["Customer"]</th>
+                            <th scope="col">@Localizer["Name"]</th>
+                            <th scope="col">@Localizer["Status"]</th>
+                            <th scope="col" class="text-center">@Localizer["Email"]</th>
+                            <th scope="col" class="text-center">@Localizer["Evaluated"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="whitespace-nowrap">
+                                    <input type="checkbox" name="selectedIds" value="@item.Code" x-model="selectedIds" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                </td>
+                                <td class="whitespace-nowrap text-sm text-gray-900">@item.Function</td>
+                                <td class="whitespace-nowrap text-sm font-bold">
+                                    <a href="/JobEntry/Detail?id=@item.Code&returnUrl=@Uri.EscapeDataString(currentListUrl)" class="text-blue-600 hover:text-blue-900 underline">@item.Code</a>
+                                </td>
+                                <td class="whitespace-nowrap text-sm text-gray-500">
+                                    @item.StartDate.ToString("dd/MM/yyyy HH:mm") <br />
+                                    @item.EndDate?.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td class="whitespace-nowrap text-sm text-gray-900">@item.CustomerName</td>
+                                <td class="whitespace-nowrap text-sm text-gray-900">@item.Name</td>
+                                <td class="whitespace-nowrap text-sm text-gray-900">@item.Status</td>
+                                <td class="whitespace-nowrap text-center">
+                                    <input type="checkbox" disabled @(item.IsEmailSent ? "checked" : "") class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                </td>
+                                <td class="whitespace-nowrap text-center">
+                                    <input type="checkbox" disabled @(item.IsEvaluated ? "checked" : "") class="h-4 w-4 text-gray-400 border-gray-300 rounded">
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Footer Actions -->
-        <div class="mt-4 space-y-4">
-             <!-- Pagination - Ortak pagination componenti kullanılıyor -->
-             @if (Model.TotalCount > 0)
-             {
-                 <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel 
-                 { 
-                     CurrentPage = Model.Page, 
-                     TotalCount = Model.TotalCount, 
-                     PageSize = Model.PageSize,
-                     BaseUrl = @"/JobEntry/List",
-                     QueryString = paginationQuery
-                 })" />
-             }
-             else
-             {
-                 <p class="text-center text-gray-500 text-sm">@Localizer["NoRecordsFound"]</p>
-             }
+        <div class="space-y-3">
+            @if (Model.TotalCount > 0)
+            {
+                <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel
+                {
+                    CurrentPage = Model.Page,
+                    TotalCount = Model.TotalCount,
+                    PageSize = Model.PageSize,
+                    BaseUrl = @"/JobEntry/List",
+                    QueryString = paginationQuery
+                })" />
+            }
+            else
+            {
+                <div class="job-empty-state">@Localizer["NoRecordsFound"]</div>
+            }
 
-             <div class="flex justify-center gap-2 responsive-action-group">
-                 <!-- Must submit to use selectedIds -->
-                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <div class="job-footer-bar job-footer-bar--center responsive-action-group">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     @Localizer["View"]
                 </button>
-                 <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     @Localizer["Edit"]
                 </button>
                 <a href="/JobEntry" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                     @Localizer["Back"]
                 </a>
-             </div>
+            </div>
         </div>
-        
-        <!-- Pass the first selected ID as 'id' logic will be handled by controller or JS override if needed, 
-             but Detail controller expects 'id' (single) AND 'selectedIds'. 
-             We can trick it by setting the first item as 'id' or handle in controller. 
-             Ideally the controller should check 'selectedIds' if 'id' is missing. -->
     </form>
 </div>
 
 <script>
-    function jobList() {
+    function jobEntryList() {
         return {
             selectedIds: [],
             allSelected: false,
-            // We need the list of all IDs on the current page to implement Select All properly
-            // Serialize all codes to a JS array
             allPageIds: [@Html.Raw(string.Join(",", Model.Items.Select(x => $"'{x.Code}'")))],
 
             toggleAll() {
-                // If allSelected is currently true (before click), we are unchecking.
-                // However, x-model updates after click. 
-                // Let's rely on the bound state or just simple logic.
-                
-                // Wait for tick or handle manually. simpler:
                 this.allSelected = !this.allSelected;
-                
+
                 if (this.allSelected) {
                     this.selectedIds = [...this.allPageIds];
                 } else {
