@@ -146,13 +146,16 @@
         }
 
         .job-form-brand {
-            min-width: 140px;
-            text-align: right;
-            font-size: 60px;
-            line-height: 0.9;
-            color: #1f2937;
-            font-style: italic;
-            font-family: "Brush Script MT", "Segoe Script", cursive;
+            min-width: 180px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+        }
+
+        .job-form-brand__image {
+            display: block;
+            width: min(220px, 100%);
+            height: auto;
         }
 
         .job-form-info {
@@ -290,8 +293,12 @@
             }
 
             .job-form-brand {
-                text-align: left;
-                font-size: 48px;
+                justify-content: flex-start;
+                min-width: 0;
+            }
+
+            .job-form-brand__image {
+                width: min(180px, 100%);
             }
 
             .report-toolbar__stamp {
@@ -347,7 +354,9 @@
                         <div class="job-form-heading__reference">@Model.FunctionReferenceDisplay</div>
                     </div>
                 </div>
-                <div class="job-form-brand">imaj</div>
+                <div class="job-form-brand">
+                    <img src="@Url.Content("~/images/imaj-logo.jpeg")" alt="Imaj" class="job-form-brand__image" />
+                </div>
             </div>
 
             <section class="job-form-info">
