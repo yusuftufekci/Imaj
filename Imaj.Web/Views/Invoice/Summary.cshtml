@@ -52,84 +52,99 @@
     var canPrintInvoice = parsedReference && !isEvaluated && (isOpen || isConfirmed || isIssued);
 }
 
-<div class="space-y-8">
+<div class="invoice-page-shell page-shell--wide space-y-3">
     @if (invoice == null)
     {
-        <div class="bg-white border border-gray-200 shadow sm:rounded-lg p-6 text-center text-sm text-gray-500">
+        <div class="invoice-empty-state invoice-table-card">
             @Localizer["NoRecordsFound"]
         </div>
     }
     else
     {
-        <div class="space-y-6">
-            <div class="md:flex md:items-center md:justify-between bg-blue-900 p-2 rounded-t-lg">
+        <div class="space-y-3">
+            <div class="md:flex md:items-center md:justify-between">
                 <div class="flex-1 min-w-0">
-                    <h2 class="text-xl font-bold leading-7 text-white sm:truncate text-center">
-                        @Localizer["Invoice"]
+                    <h2 class="invoice-page-title">
+                        @Localizer["Invoice"]: <span class="text-indigo-600">@invoice.Reference</span>
                     </h2>
                 </div>
-            </div>
-
-            <div class="bg-white border border-gray-200 shadow sm:rounded-b-lg p-4">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-blue-50 p-4 rounded border border-blue-200 space-y-2 text-sm">
-                        <h3 class="font-bold text-gray-800 border-b border-blue-200 pb-1 mb-2">@Localizer["BasicInfo"]</h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">@Localizer["Reference"]</span>
-                            <span class="col-span-2 text-gray-900">@invoice.Reference</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">@Localizer["JobCustomer"]</span>
-                            <span class="col-span-2 text-gray-900">@invoice.JobCustomer</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">@Localizer["InvoiceCustomer"]</span>
-                            <span class="col-span-2 text-gray-900">@invoice.InvoiceCustomer</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">@Localizer["Name"]</span>
-                            <span class="col-span-2 text-gray-900">@invoice.Name</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">@Localizer["Related"]</span>
-                            <span class="col-span-2 text-gray-900">@invoice.RelatedPerson</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">@Localizer["Date"]</span>
-                            <span class="col-span-2 text-gray-900">@invoice.IssueDate?.ToString("dd/MM/yyyy dddd") ?? "-"</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">@Localizer["Status"]</span>
-                            <span class="col-span-2 text-gray-900">@invoice.Status</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <span class="font-bold text-right text-blue-900">@Localizer["Evaluated"]</span>
-                            <span class="col-span-2">
-                                <input type="checkbox" disabled @(invoice.Evaluated ? "checked" : "") class="h-4 w-4 text-blue-600 border-gray-300 rounded">
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                            <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["Notes"]</h3>
-                            <div class="w-full text-sm border border-gray-300 rounded bg-white px-3 py-2">@invoice.Notes</div>
-                        </div>
-                        <div class="bg-gray-50 border border-gray-200 rounded p-2">
-                            <h3 class="font-bold text-gray-700 bg-blue-100 px-2 py-1 mb-2 text-sm rounded">@Localizer["Notes"]</h3>
-                            <div class="w-full text-sm border border-gray-300 rounded bg-white px-3 py-2">@invoice.FooterNote</div>
-                        </div>
-                    </div>
+                <div class="mt-3 md:mt-0 invoice-page-actions">
+                    <a href="@returnUrl" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">@Localizer["Back"]</a>
                 </div>
             </div>
 
-            <div>
-                <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
-                    <h3 class="font-bold text-gray-800 text-sm">@Localizer["Line"] (@invoice.Lines.Count)</h3>
+            <div class="invoice-detail-grid">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["BasicInfo"]</h3>
+                    </div>
+                    <div class="dense-panel__body">
+                        <dl class="invoice-detail-list">
+                            <div class="invoice-detail-item">
+                                <dt class="invoice-detail-item__label">@Localizer["Reference"]</dt>
+                                <dd class="invoice-detail-item__value">@invoice.Reference</dd>
+                            </div>
+                            <div class="invoice-detail-item">
+                                <dt class="invoice-detail-item__label">@Localizer["JobCustomer"]</dt>
+                                <dd class="invoice-detail-item__value">@invoice.JobCustomer</dd>
+                            </div>
+                            <div class="invoice-detail-item">
+                                <dt class="invoice-detail-item__label">@Localizer["InvoiceCustomer"]</dt>
+                                <dd class="invoice-detail-item__value">@invoice.InvoiceCustomer</dd>
+                            </div>
+                            <div class="invoice-detail-item">
+                                <dt class="invoice-detail-item__label">@Localizer["Name"]</dt>
+                                <dd class="invoice-detail-item__value">@invoice.Name</dd>
+                            </div>
+                            <div class="invoice-detail-item">
+                                <dt class="invoice-detail-item__label">@Localizer["Related"]</dt>
+                                <dd class="invoice-detail-item__value">@invoice.RelatedPerson</dd>
+                            </div>
+                            <div class="invoice-detail-item">
+                                <dt class="invoice-detail-item__label">@Localizer["Date"]</dt>
+                                <dd class="invoice-detail-item__value">@invoice.IssueDate?.ToString("dd/MM/yyyy dddd") ?? "-"</dd>
+                            </div>
+                            <div class="invoice-detail-item">
+                                <dt class="invoice-detail-item__label">@Localizer["Status"]</dt>
+                                <dd class="invoice-detail-item__value">@invoice.Status</dd>
+                            </div>
+                            <div class="invoice-detail-item">
+                                <dt class="invoice-detail-item__label">@Localizer["Evaluated"]</dt>
+                                <dd class="invoice-detail-item__value">
+                                    <input type="checkbox" disabled @(invoice.Evaluated ? "checked" : "") class="dense-checkbox text-blue-600 border-gray-300 rounded">
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </section>
+
+                <div class="invoice-note-stack">
+                    <section class="dense-panel">
+                        <div class="dense-panel__header">
+                            <h3 class="dense-panel__title">@Localizer["Notes"]</h3>
+                        </div>
+                        <div class="dense-panel__body">
+                            <div class="invoice-detail-item__value whitespace-pre-wrap">@invoice.Notes</div>
+                        </div>
+                    </section>
+                    <section class="dense-panel">
+                        <div class="dense-panel__header">
+                            <h3 class="dense-panel__title">@Localizer["Notes"]</h3>
+                        </div>
+                        <div class="dense-panel__body">
+                            <div class="invoice-detail-item__value whitespace-pre-wrap">@invoice.FooterNote</div>
+                        </div>
+                    </section>
                 </div>
-                <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-yellow-50">
+            </div>
+
+            <section class="invoice-table-card">
+                <div class="invoice-table-card__header">
+                    <h3 class="invoice-table-card__title">@Localizer["Line"] (@invoice.Lines.Count)</h3>
+                </div>
+                <div class="invoice-table-wrap">
+                    <table class="invoice-table invoice-table--compact">
+                        <thead>
                             <tr>
                                 <th class="px-4 py-2 text-left font-bold text-gray-700">@Localizer["Selected"]</th>
                                 <th class="px-4 py-2 text-left font-bold text-gray-700">@Localizer["Sequence"]</th>
@@ -140,10 +155,10 @@
                                 <th class="px-4 py-2 text-left font-bold text-gray-700">@Localizer["TaxType"]</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach (var line in invoice.Lines)
                             {
-                                <tr class="hover:bg-gray-50">
+                                <tr>
                                     <td class="px-4 py-2">
                                         <input type="checkbox" disabled @(line.Selected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                     </td>
@@ -156,7 +171,7 @@
                                 </tr>
                             }
                         </tbody>
-                        <tfoot class="bg-yellow-50">
+                        <tfoot>
                             <tr>
                                 <td colspan="5" class="px-4 py-2 text-right font-bold text-gray-900">@Localizer["Total"]</td>
                                 <td class="px-4 py-2 text-right font-bold text-gray-900">@lineTotal.ToString("N2")</td>
@@ -165,15 +180,15 @@
                         </tfoot>
                     </table>
                 </div>
-            </div>
+            </section>
 
-            <div>
-                <div class="bg-blue-200 px-4 py-2 rounded-t-lg border border-blue-300 flex justify-between items-center">
-                    <h3 class="font-bold text-gray-800 text-sm">@Localizer["Taxes"] (@invoice.Taxes.Count)</h3>
+            <section class="invoice-table-card">
+                <div class="invoice-table-card__header">
+                    <h3 class="invoice-table-card__title">@Localizer["Taxes"] (@invoice.Taxes.Count)</h3>
                 </div>
-                <div class="bg-white border border-gray-200 shadow overflow-hidden sm:rounded-b-lg">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-yellow-50">
+                <div class="invoice-table-wrap">
+                    <table class="invoice-table invoice-table--compact">
+                        <thead>
                             <tr>
                                 <th class="px-4 py-2 text-left font-bold text-gray-700">@Localizer["Code"]</th>
                                 <th class="px-4 py-2 text-left font-bold text-gray-700">@Localizer["Name"]</th>
@@ -183,7 +198,7 @@
                                 <th class="px-4 py-2 text-right font-bold text-gray-700">@Localizer["NetAmount"]</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach (var tax in invoice.Taxes)
                             {
                                 <tr>
@@ -196,7 +211,7 @@
                                 </tr>
                             }
                         </tbody>
-                        <tfoot class="bg-yellow-50">
+                        <tfoot>
                             <tr>
                                 <td colspan="2" class="px-4 py-2 text-right font-bold text-gray-900">@Localizer["Total"]</td>
                                 <td class="px-4 py-2 text-right font-bold text-gray-900">@invoice.Taxes.Sum(x => x.SubTotal).ToString("N2")</td>
@@ -207,7 +222,7 @@
                         </tfoot>
                     </table>
                 </div>
-            </div>
+            </section>
 
             @if (selectedReferences.Count > 1)
             {
@@ -223,7 +238,7 @@
                 </div>
             }
 
-            <div class="flex flex-wrap justify-center gap-2">
+            <div class="invoice-footer-bar invoice-footer-bar--center responsive-action-group">
                 <a href="@returnUrl" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">@Localizer["Back"]</a>
                 <a href="/Invoice/Detail?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     @Localizer["ViewDetail"]
