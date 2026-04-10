@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -48,10 +50,14 @@ namespace Imaj.Service.Services
                 }
 
                 var activeSnapshot = snapshot!;
-                var products = _unitOfWork.Repository<Product>().Query();
-                if (activeSnapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound && activeSnapshot.CompanyId.HasValue)
+                var products = ApplyProductScope(_unitOfWork.Repository<Product>().Query(), activeSnapshot);
+
+                if (!string.IsNullOrWhiteSpace(filter.Function))
                 {
-                    products = products.Where(p => p.CompanyID == activeSnapshot.CompanyId.Value);
+                    var functionIds = await ResolveFunctionFilterIdsAsync(filter.Function, activeSnapshot);
+                    products = functionIds.Count == 0
+                        ? products.Where(_ => false)
+                        : ApplyProductFunctionScope(products, functionIds);
                 }
 
                 var query = from p in products
@@ -161,7 +167,7 @@ namespace Imaj.Service.Services
             return ServiceResult<List<ProductCategoryDto>>.Success(await query.ToListAsync());
         }
 
-        public async Task<ServiceResult<List<ProductGroupDto>>> GetProductGroupsAsync()
+        public async Task<ServiceResult<List<ProductGroupDto>>> GetProductGroupsAsync(decimal? functionId = null)
         {
             var snapshot = await _currentPermissionContext.GetSnapshotAsync();
             if (IsDataScopeDenied(snapshot))
@@ -178,16 +184,29 @@ namespace Imaj.Service.Services
                 groups = groups.Where(pg => pg.CompanyID == activeSnapshot.CompanyId.Value);
             }
 
-            var query = from pg in groups
-                        join xpg in _unitOfWork.Repository<XProdGrp>().Query()
-                            on pg.Id equals xpg.ProdGrpID
-                        where xpg.LanguageID == CurrentLanguageId
-                        orderby xpg.Name
-                        select new ProductGroupDto
-                        {
-                            Id = pg.Id,
-                            Name = xpg.Name
-                        };
+            var products = ApplyProductScope(_unitOfWork.Repository<Product>().Query(), activeSnapshot);
+            if (functionId.HasValue && functionId.Value > 0)
+            {
+                if (!activeSnapshot.AllowedFunctionIds.Contains(functionId.Value))
+                {
+                    return ServiceResult<List<ProductGroupDto>>.Success(new List<ProductGroupDto>());
+                }
+
+                products = ApplyProductFunctionScope(products, new[] { functionId.Value });
+            }
+
+            var query =
+                from pg in groups
+                join product in products on pg.Id equals product.ProdGrpID
+                join xpg in _unitOfWork.Repository<XProdGrp>().Query().Where(x => x.LanguageID == CurrentLanguageId)
+                    on pg.Id equals xpg.ProdGrpID
+                group xpg by new { pg.Id, xpg.Name } into grouped
+                orderby grouped.Key.Name, grouped.Key.Id
+                select new ProductGroupDto
+                {
+                    Id = grouped.Key.Id,
+                    Name = grouped.Key.Name
+                };
 
             return ServiceResult<List<ProductGroupDto>>.Success(await query.ToListAsync());
         }
@@ -229,6 +248,87 @@ namespace Imaj.Service.Services
                    || snapshot.IsDenied
                    || snapshot.CompanyScopeMode == CompanyScopeMode.Deny
                    || snapshot.AllowedFunctionIds.Count == 0;
+        }
+
+        private IQueryable<Product> ApplyProductScope(IQueryable<Product> query, PermissionSnapshotDto snapshot)
+        {
+            query = ApplyProductCompanyScope(query, snapshot);
+            return ApplyProductFunctionScope(query, snapshot.AllowedFunctionIds);
+        }
+
+        private IQueryable<Product> ApplyProductFunctionScope(IQueryable<Product> query, IReadOnlyCollection<decimal> functionIds)
+        {
+            if (functionIds.Count == 0)
+            {
+                return query.Where(_ => false);
+            }
+
+            return query.Where(product =>
+                _unitOfWork.Repository<ProdFunc>().Query().Any(mapping =>
+                    mapping.ProductID == product.Id
+                    && mapping.Deleted == 0
+                    && functionIds.Contains(mapping.FunctionID)));
+        }
+
+        private static IQueryable<Product> ApplyProductCompanyScope(IQueryable<Product> query, PermissionSnapshotDto snapshot)
+        {
+            if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound)
+            {
+                if (!snapshot.CompanyId.HasValue)
+                {
+                    return query.Where(_ => false);
+                }
+
+                query = query.Where(product => product.CompanyID == snapshot.CompanyId.Value);
+            }
+
+            return query;
+        }
+
+        private async Task<List<decimal>> ResolveFunctionFilterIdsAsync(string? functionFilter, PermissionSnapshotDto snapshot)
+        {
+            var normalizedFilter = functionFilter?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedFilter))
+            {
+                return new List<decimal>();
+            }
+
+            if (decimal.TryParse(normalizedFilter, NumberStyles.Number, CultureInfo.InvariantCulture, out var functionId))
+            {
+                return snapshot.AllowedFunctionIds.Contains(functionId)
+                    ? new List<decimal> { functionId }
+                    : new List<decimal>();
+            }
+
+            var languageId = CurrentLanguageId;
+            var fallbackLanguageId = 1m;
+
+            var functions = _unitOfWork.Repository<Function>().Query()
+                .Where(function => snapshot.AllowedFunctionIds.Contains(function.Id));
+
+            if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound)
+            {
+                if (!snapshot.CompanyId.HasValue)
+                {
+                    return new List<decimal>();
+                }
+
+                functions = functions.Where(function => function.CompanyID == snapshot.CompanyId.Value);
+            }
+
+            return await (
+                from function in functions
+                join preferredName in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == languageId)
+                    on function.Id equals preferredName.FunctionID into preferredGroup
+                from preferredName in preferredGroup.DefaultIfEmpty()
+                join fallbackName in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == fallbackLanguageId)
+                    on function.Id equals fallbackName.FunctionID into fallbackGroup
+                from fallbackName in fallbackGroup.DefaultIfEmpty()
+                where (preferredName != null && preferredName.Name.Contains(normalizedFilter))
+                    || (fallbackName != null && fallbackName.Name.Contains(normalizedFilter))
+                select function.Id)
+                .Distinct()
+                .ToListAsync();
         }
     }
 }

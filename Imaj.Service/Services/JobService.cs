@@ -1360,7 +1360,7 @@ namespace Imaj.Service.Services
                             Quantity = (short)prod.Quantity, // Cast to short
                             Price = prod.Price,
                             GrossAmount = prod.Quantity * prod.Price, 
-                            NetAmount = prod.Quantity * prod.Price,
+                            NetAmount = prod.NetAmount,
                             Notes = prod.Notes ?? string.Empty,
                             
                             SelectFlag = true,
@@ -1368,9 +1368,39 @@ namespace Imaj.Service.Services
                             Stamp = 1
                         };
 
-                        prodSum += jp.GrossAmount; 
+                        prodSum += jp.NetAmount;
                         await jpRepo.AddAsync(jp);
                     }
+                }
+
+                // 5. JobProdCats Ekle
+                if (jobDto.JobProdCats != null && jobDto.JobProdCats.Any())
+                {
+                    var jpcRepo = _unitOfWork.Repository<JobProdCat>();
+                    var nextJpcId = (await jpcRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0);
+                    decimal discountedProdSum = 0;
+
+                    foreach (var category in jobDto.JobProdCats)
+                    {
+                        nextJpcId++;
+                        var jpc = new JobProdCat
+                        {
+                            Id = nextJpcId,
+                            JobID = job.Id,
+                            ProdCatID = category.CategoryId,
+                            GrossAmount = category.GrossAmount,
+                            DiscPercentage = category.DiscPercentage,
+                            DiscAmount = category.DiscAmount,
+                            NetAmount = category.NetAmount,
+                            Deleted = 0,
+                            Stamp = 1
+                        };
+
+                        discountedProdSum += jpc.NetAmount;
+                        await jpcRepo.AddAsync(jpc);
+                    }
+
+                    prodSum = discountedProdSum;
                 }
 
                 // Update sums

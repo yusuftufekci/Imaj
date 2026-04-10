@@ -25,7 +25,7 @@
 
 <div x-data='invoiceCreate(@Html.Raw(initialStateJson))'
      @@customer-selected.window="handleCustomerSelection($event.detail)"
-     class="space-y-6">
+     class="invoice-page-shell invoice-form-page page-shell--wide space-y-3">
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="rounded-md bg-red-50 p-4 border border-red-200">
@@ -61,222 +61,187 @@
         </div>
     }
 
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                @Localizer["InvoiceCreation"]
-            </h2>
-        </div>
+    <div class="text-center">
+        <h2 class="invoice-page-title invoice-page-title--orange">
+            @Localizer["InvoiceCreation"]
+        </h2>
     </div>
 
-    <form method="post" action="/Invoice/Save" class="space-y-6 mobile-stack-form">
+    <form method="post" action="/Invoice/Save" class="space-y-3 mobile-stack-form">
         @Html.AntiForgeryToken()
         <input type="hidden" name="Reference" value="@Model.Reference">
         <input type="hidden" name="JobCustomerCode" value="@Model.JobCustomerCode">
         <input type="hidden" name="JobCustomerName" value="@Model.JobCustomerName">
         <input type="hidden" name="IssueDate" value="@Model.IssueDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)">
 
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div class="bg-white shadow sm:rounded-lg">
-                <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-50">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Temel Bilgiler
-                    </h3>
+        <div class="invoice-form-layout">
+            <section class="dense-panel">
+                <div class="dense-panel__header">
+                    <h3 class="dense-panel__title">@Localizer["BasicInfo"]</h3>
                 </div>
-                <div class="px-4 py-5 sm:p-6 space-y-4">
-                    <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Reference"]</label>
-                        <div class="col-span-9 font-bold text-gray-900">@Model.Reference</div>
-                    </div>
-
-                    <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["JobCustomer"]</label>
-                        <div class="col-span-9 text-gray-900">
-                            @Model.JobCustomerCode - @Model.JobCustomerName
+                <div class="dense-panel__body">
+                    <div class="dense-form-grid">
+                        <div class="dense-form-row">
+                            <label>@Localizer["Reference"]</label>
+                            <div class="invoice-detail-item__value font-semibold">@Model.Reference</div>
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["InvoiceCustomer"]</label>
-                        <div class="col-span-9">
-                            <div class="flex rounded-md shadow-sm picker-combo">
+                        <div class="dense-form-row">
+                            <label>@Localizer["JobCustomer"]</label>
+                            <div class="invoice-detail-item__value">@Model.JobCustomerCode - @Model.JobCustomerName</div>
+                        </div>
+                        <div class="dense-form-row">
+                            <label>@Localizer["InvoiceCustomer"]</label>
+                            <div class="picker-inline flex items-center gap-2">
                                 <input type="text"
                                        readonly
                                        x-model="invoiceCustomerDisplay"
-                                       class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-400 bg-gray-50"
+                                       class="dense-input bg-gray-50"
                                        placeholder="@Localizer["SelectPrompt"]">
                                 <input type="hidden" name="InvoiceCustomerCode" x-model="invoiceCustomerCode">
                                 <input type="hidden" name="InvoiceCustomerName" x-model="invoiceCustomerName">
                                 <button type="button"
                                         @@click="$dispatch('customer-select-open', { targetId: 'invoice' })"
-                                        class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-400 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span class="text-indigo-600 font-bold">@Localizer["Select"]</span>
+                                        class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                                    @Localizer["Select"]
                                 </button>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Name"]</label>
-                        <div class="col-span-9">
-                            <input type="text"
+                        <div class="dense-form-row">
+                            <label for="InvoiceCreateName">@Localizer["Name"]</label>
+                            <input id="InvoiceCreateName"
+                                   type="text"
                                    name="Ad"
                                    value="@Model.Ad"
-                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
+                                   class="dense-input">
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Related"]</label>
-                        <div class="col-span-9">
-                            <input type="text"
+                        <div class="dense-form-row">
+                            <label for="InvoiceCreateRelated">@Localizer["Related"]</label>
+                            <input id="InvoiceCreateRelated"
+                                   type="text"
                                    name="RelatedPerson"
                                    value="@Model.RelatedPerson"
-                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">
+                                   class="dense-input">
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Date"]</label>
-                        <div class="col-span-9 font-medium text-gray-900">
-                            @Model.IssueDate.ToString("dd.MM.yyyy")
+                        <div class="dense-form-row">
+                            <label>@Localizer["Date"]</label>
+                            <div class="invoice-detail-item__value font-medium">@Model.IssueDate.ToString("dd.MM.yyyy")</div>
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Status"]</label>
-                        <div class="col-span-9 font-medium text-gray-900">
-                            @Localizer["OpenStatus"]
+                        <div class="dense-form-row">
+                            <label>@Localizer["Status"]</label>
+                            <div class="invoice-detail-item__value font-medium">@Localizer["OpenStatus"]</div>
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-12 gap-4 items-center">
-                        <label class="col-span-3 text-right text-sm font-medium text-gray-700">@Localizer["Evaluated"]</label>
-                        <div class="col-span-9">
-                            <input type="checkbox"
-                                   name="IsEvaluated"
-                                   class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                   @(Model.IsEvaluated ? "checked" : "")>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="space-y-6">
-                <div class="bg-white shadow sm:rounded-lg">
-                    <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-50">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            @Localizer["Notes"]
-                        </h3>
-                    </div>
-                    <div class="px-4 py-5 sm:p-6">
-                        <textarea name="Notes" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">@Model.Notes</textarea>
-                    </div>
-                </div>
-
-                <div class="bg-white shadow sm:rounded-lg">
-                    <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-50">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            @Localizer["Notes"]
-                        </h3>
-                    </div>
-                    <div class="px-4 py-5 sm:p-6">
-                        <textarea name="Footnote" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-400 rounded-md">@Model.Footnote</textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white shadow sm:rounded-lg mt-8">
-            <div class="px-4 py-5 border-b border-gray-200 sm:px-6 bg-blue-100 flex justify-between items-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">
-                    @Localizer["Line"] (<span x-text="lines.length"></span>)
-                </h3>
-            </div>
-            <div class="px-4 py-5 sm:p-6">
-                <div class="mb-4">
-                    <button type="button" @@click="addLine()" class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
-                        @Localizer["AddFreeLine"]
-                    </button>
-                </div>
-
-                <div class="flex flex-col">
-                    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Description"]</th>
-                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">@Localizer["Amount"]</th>
-                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">@Localizer["TaxRate"]</th>
-                                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">@Localizer["Total"]</th>
-                                            <th scope="col" class="relative px-6 py-3 w-10">
-                                                <span class="sr-only">@Localizer["Delete"]</span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        <template x-for="(line, index) in lines" :key="index">
-                                            <tr>
-                                                <td class="px-6 py-4">
-                                                    <input type="text"
-                                                           x-model="line.description"
-                                                           :name="'Lines[' + index + '].Description'"
-                                                           class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                                </td>
-                                                <td class="px-6 py-4">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           min="0"
-                                                           x-model.number="line.amount"
-                                                           :name="'Lines[' + index + '].Amount'"
-                                                           class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-right">
-                                                </td>
-                                                <td class="px-6 py-4">
-                                                    <input type="number"
-                                                           step="1"
-                                                           min="0"
-                                                           max="100"
-                                                           x-model.number="line.vatRate"
-                                                           :name="'Lines[' + index + '].VatRate'"
-                                                           class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-right">
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
-                                                    <span x-text="formatMoney(line.amount * (1 + line.vatRate / 100))"></span>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button type="button" @@click="removeLine(index)" class="text-red-600 hover:text-red-900">
-                                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 000-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                                        </svg>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
+                        <div class="dense-form-row">
+                            <label>@Localizer["Evaluated"]</label>
+                            <div class="invoice-detail-item__value">
+                                <input type="checkbox"
+                                       name="IsEvaluated"
+                                       class="dense-checkbox text-indigo-600 border-gray-300 rounded"
+                                       @(Model.IsEvaluated ? "checked" : "")>
                             </div>
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <div class="invoice-note-stack">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["Notes"]</h3>
+                    </div>
+                    <div class="dense-panel__body">
+                        <textarea name="Notes" rows="4" class="dense-input">@Model.Notes</textarea>
+                    </div>
+                </section>
+
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">@Localizer["Notes"]</h3>
+                    </div>
+                    <div class="dense-panel__body">
+                        <textarea name="Footnote" rows="4" class="dense-input">@Model.Footnote</textarea>
+                    </div>
+                </section>
             </div>
-            <div class="px-4 py-5 border-t border-gray-200 sm:px-6 bg-blue-100 grid grid-cols-2 gap-4">
-                <div class="flex justify-between font-bold text-gray-900">
+        </div>
+
+        <section class="invoice-table-card">
+            <div class="invoice-table-card__header">
+                <h3 class="invoice-table-card__title">
+                    @Localizer["Line"] (<span x-text="lines.length"></span>)
+                </h3>
+            </div>
+            <div class="invoice-footer-bar">
+                <button type="button" @@click="addLine()" class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
+                    @Localizer["AddFreeLine"]
+                </button>
+            </div>
+            <div class="invoice-table-wrap">
+                <table class="invoice-table invoice-table--compact">
+                    <thead>
+                        <tr>
+                            <th scope="col">@Localizer["Description"]</th>
+                            <th scope="col" class="text-right w-32">@Localizer["Amount"]</th>
+                            <th scope="col" class="text-right w-24">@Localizer["TaxRate"]</th>
+                            <th scope="col" class="text-right w-32">@Localizer["Total"]</th>
+                            <th scope="col" class="w-10">
+                                <span class="sr-only">@Localizer["Delete"]</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(line, index) in lines" :key="index">
+                            <tr>
+                                <td>
+                                    <input type="text"
+                                           x-model="line.description"
+                                           :name="'Lines[' + index + '].Description'"
+                                           class="dense-input">
+                                </td>
+                                <td>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           x-model.number="line.amount"
+                                           :name="'Lines[' + index + '].Amount'"
+                                           class="dense-input text-right">
+                                </td>
+                                <td>
+                                    <input type="number"
+                                           step="1"
+                                           min="0"
+                                           max="100"
+                                           x-model.number="line.vatRate"
+                                           :name="'Lines[' + index + '].VatRate'"
+                                           class="dense-input text-right">
+                                </td>
+                                <td class="text-right text-sm font-medium text-gray-900">
+                                    <span x-text="formatMoney(line.amount * (1 + line.vatRate / 100))"></span>
+                                </td>
+                                <td class="text-right text-sm font-medium">
+                                    <button type="button" @@click="removeLine(index)" class="text-red-600 hover:text-red-900">
+                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 000-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="invoice-footer-bar">
+                <div class="flex items-center gap-2 font-bold text-gray-900">
                     <span>@Localizer["Total"]</span>
                     <span x-text="formatMoney(totalAmount)"></span>
                 </div>
-                <div class="flex justify-between font-bold text-gray-900">
+                <div class="flex items-center gap-2 font-bold text-gray-900">
                     <span>@Localizer["Total"]</span>
                     <span x-text="formatMoney(grandTotal)"></span>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="mt-6 flex justify-center space-x-3 responsive-action-group">
+        <div class="invoice-footer-bar invoice-footer-bar--center responsive-action-group">
             <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 @Localizer["Save"]
             </button>

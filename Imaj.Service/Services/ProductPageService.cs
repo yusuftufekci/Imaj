@@ -78,11 +78,7 @@ namespace Imaj.Service.Services
             if (normalizedFilter.FunctionId.HasValue && normalizedFilter.FunctionId.Value > 0)
             {
                 var functionId = normalizedFilter.FunctionId.Value;
-                productQuery = productQuery.Where(product => _unitOfWork.Repository<ProdFunc>()
-                    .Query()
-                    .Any(mapping => mapping.ProductID == product.Id
-                                    && mapping.Deleted == 0
-                                    && mapping.FunctionID == functionId));
+                productQuery = ApplyProductFunctionScope(productQuery, new[] { functionId });
             }
 
             var query =
@@ -249,14 +245,7 @@ namespace Imaj.Service.Services
                 productGroupName = row.ProdGrpID.ToString(CultureInfo.InvariantCulture);
             }
 
-            var functionIds = await _unitOfWork.Repository<ProdFunc>()
-                .Query()
-                .Where(x => x.ProductID == row.Id
-                            && x.Deleted == 0
-                            && scopedSnapshot.AllowedFunctionIds.Contains(x.FunctionID))
-                .Select(x => x.FunctionID)
-                .Distinct()
-                .ToListAsync();
+            var functionIds = await GetActiveFunctionIdsForProductAsync(row.Id, scopedSnapshot.AllowedFunctionIds);
 
             var functions = await BuildFunctionOptionQuery(scopedSnapshot, languageId, fallbackLanguageId)
                 .Where(x => functionIds.Contains(x.Id))
@@ -921,18 +910,21 @@ namespace Imaj.Service.Services
         private IQueryable<Product> ApplyProductScope(IQueryable<Product> query, PermissionSnapshotDto snapshot)
         {
             query = ApplyProductCompanyScope(query, snapshot, snapshot.CompanyId);
+            return ApplyProductFunctionScope(query, snapshot.AllowedFunctionIds);
+        }
 
-            if (snapshot.AllowedFunctionIds.Count == 0)
+        private IQueryable<Product> ApplyProductFunctionScope(IQueryable<Product> query, IReadOnlyCollection<decimal> functionIds)
+        {
+            if (functionIds.Count == 0)
             {
                 return query.Where(_ => false);
             }
 
-            var allowedFunctionIds = snapshot.AllowedFunctionIds;
             return query.Where(product => _unitOfWork.Repository<ProdFunc>()
                 .Query()
                 .Any(mapping => mapping.ProductID == product.Id
                                 && mapping.Deleted == 0
-                                && allowedFunctionIds.Contains(mapping.FunctionID)));
+                                && functionIds.Contains(mapping.FunctionID)));
         }
 
         private static IQueryable<Product> ApplyProductCompanyScope(IQueryable<Product> query, PermissionSnapshotDto snapshot, decimal? explicitCompanyId)
@@ -1000,6 +992,25 @@ namespace Imaj.Service.Services
 
             query = query.Where(x => snapshot.AllowedFunctionIds.Contains(x.Id));
             return query;
+        }
+
+        private async Task<List<decimal>> GetActiveFunctionIdsForProductAsync(decimal productId, IReadOnlyCollection<decimal> allowedFunctionIds)
+        {
+            if (allowedFunctionIds.Count == 0)
+            {
+                return new List<decimal>();
+            }
+
+            var prodFuncIds = await _unitOfWork.Repository<ProdFunc>().Query()
+                .Where(x => x.ProductID == productId
+                            && x.Deleted == 0
+                            && allowedFunctionIds.Contains(x.FunctionID))
+                .Select(x => x.FunctionID)
+                .ToListAsync();
+
+            return prodFuncIds
+                .Distinct()
+                .ToList();
         }
 
         private static decimal? ResolveTargetCompanyId(PermissionSnapshotDto snapshot)
