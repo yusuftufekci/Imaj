@@ -178,7 +178,7 @@
                                     <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
                                     <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
                                     <input type="text" readonly x-model="filter.productName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                    <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct', searchEndpoint: '/JobEntry/ProductSearch', categoriesEndpoint: '/JobEntry/ProductCategories', productGroupsEndpoint: '/JobEntry/ProductGroups', functionsEndpoint: '/JobEntry/ProductFunctions' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                                    <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct', searchEndpoint: '/JobEntry/ProductSearch', categoriesEndpoint: '/JobEntry/ProductCategories', productGroupsEndpoint: '/JobEntry/ProductGroups', functionsEndpoint: '/JobEntry/ProductFunctions', functionId: filter.function || '' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
                                         @Localizer["Select"]
                                     </button>
                                 </div>

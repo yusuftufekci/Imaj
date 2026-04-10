@@ -154,6 +154,7 @@ namespace Imaj.Web.Models
 
     public class JobCategorySummaryItem
     {
+        public decimal CategoryId { get; set; }
         public string? Name { get; set; }
         public decimal SubTotal { get; set; }
         public decimal Discount { get; set; } // Oran?
@@ -200,7 +201,9 @@ namespace Imaj.Web.Models
         public string? CustomerNotes { get; set; }
 
         public List<JobOvertimeInput> Overtimes { get; set; } = new List<JobOvertimeInput>();
+        public List<JobOvertimeInput> AutoOvertimeTemplates { get; set; } = new List<JobOvertimeInput>();
         public List<JobProductInput> Products { get; set; } = new List<JobProductInput>();
+        public List<JobCategorySummaryItem> ProductCategories { get; set; } = new List<JobCategorySummaryItem>();
     }
 
     public class JobOvertimeInput
@@ -220,9 +223,11 @@ namespace Imaj.Web.Models
         public decimal ProductId { get; set; } // New
         public string? Code { get; set; } // To find ProductId
         public string? Name { get; set; }
+        public decimal CategoryId { get; set; }
+        public string? CategoryName { get; set; }
         public decimal Quantity { get; set; }
         public decimal Price { get; set; }
-        // Amount calculated?
+        public decimal NetAmount { get; set; }
         public string? Notes { get; set; }
     }
 }

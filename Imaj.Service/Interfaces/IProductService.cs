@@ -10,7 +10,7 @@ namespace Imaj.Service.Interfaces
     {
         Task<ServiceResult<PagedResult<ProductDto>>> GetByFilterAsync(ProductFilterDto filter);
         Task<ServiceResult<List<ProductCategoryDto>>> GetCategoriesAsync();
-        Task<ServiceResult<List<ProductGroupDto>>> GetProductGroupsAsync();
+        Task<ServiceResult<List<ProductGroupDto>>> GetProductGroupsAsync(decimal? functionId = null);
         Task<ServiceResult<List<FunctionDto>>> GetFunctionsAsync();
     }
 }

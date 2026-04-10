@@ -24,6 +24,16 @@
         defaultWorkTypeName,
         workTypeNames,
         defaultTimeTypeId,
+        productPicker = new
+        {
+            functionId = currentFunctionId,
+            functionName = Model.FunctionName ?? string.Empty,
+            searchEndpoint = "/JobEntry/ProductSearch",
+            categoriesEndpoint = "/JobEntry/ProductCategories",
+            productGroupsEndpoint = "/JobEntry/ProductGroups",
+            functionsEndpoint = "/JobEntry/ProductFunctions",
+            defaultPageSize = 16
+        },
         form = new
         {
             customerId = Model.CustomerId,
@@ -34,6 +44,28 @@
             startDate = Model.StartDate.ToString("yyyy-MM-ddTHH:mm"),
             endDate = Model.EndDate.ToString("yyyy-MM-ddTHH:mm")
         },
+        overtimes = Model.Overtimes.Select(x => new
+        {
+            employeeId = x.EmployeeId,
+            employeeCode = x.EmployeeCode ?? string.Empty,
+            employeeName = x.EmployeeName ?? string.Empty,
+            workTypeId = x.WorkTypeId,
+            timeTypeId = x.TimeTypeId,
+            quantity = x.Quantity,
+            amount = x.Amount,
+            notes = x.Notes ?? string.Empty
+        }).ToList(),
+        autoOvertimeTemplates = Model.AutoOvertimeTemplates.Select(x => new
+        {
+            employeeId = x.EmployeeId,
+            employeeCode = x.EmployeeCode ?? string.Empty,
+            employeeName = x.EmployeeName ?? string.Empty,
+            workTypeId = x.WorkTypeId,
+            timeTypeId = x.TimeTypeId,
+            quantity = x.Quantity,
+            amount = x.Amount,
+            notes = x.Notes ?? string.Empty
+        }).ToList(),
         products = Model.Products.Select(x => new
         {
             id = x.ProductId,
@@ -47,10 +79,11 @@
 }
 
 <div x-data='jobCreate(@Html.Raw(initialStateJson))'
+     x-init="init()"
      @@customer-selected.window="handleCustomer($event.detail)"
      @@employee-selected.window="addEmployee($event.detail)"
      @@product-selected.window="addProduct($event.detail)"
-     class="job-page-shell job-form-page page-shell--wide space-y-3 pb-10">
+     class="job-page-shell job-form-page job-form-page--compact page-shell--wide space-y-2 pb-6">
 
     <div x-show="validationError || (validationErrorDetails && validationErrorDetails.length > 0)" x-cloak class="rounded-md bg-yellow-50 p-4 border border-yellow-200 mb-4">
         <div class="flex">
@@ -111,7 +144,7 @@
         </h2>
     </div>
 
-    <form method="post" action="/JobEntry/Create" x-ref="createJobForm" @@submit.prevent="validateAndSubmit()" class="space-y-3">
+    <form method="post" action="/JobEntry/Create" x-ref="createJobForm" @@submit.prevent="validateAndSubmit()" class="space-y-2">
         @Html.AntiForgeryToken()
         <input type="hidden" name="FunctionId" value="@Model.FunctionId" />
         
@@ -185,7 +218,7 @@
                         <h3 class="dense-panel__title">@Localizer["AdminNotes"]</h3>
                     </div>
                     <div class="dense-panel__body">
-                        <textarea name="AdminNotes" rows="4" class="dense-input"></textarea>
+                        <textarea name="AdminNotes" rows="3" class="dense-input"></textarea>
                     </div>
                 </section>
                 <section class="dense-panel">
@@ -193,7 +226,7 @@
                         <h3 class="dense-panel__title">@Localizer["CustomerNotes"]</h3>
                     </div>
                     <div class="dense-panel__body">
-                        <textarea name="CustomerNotes" rows="4" class="dense-input"></textarea>
+                        <textarea name="CustomerNotes" rows="3" class="dense-input"></textarea>
                     </div>
                 </section>
             </div>
@@ -321,13 +354,43 @@
                     </tbody>
                 </table>
             </div>
-            <div class="job-footer-bar">
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" class="text-red-600 font-bold hover:underline text-sm">@Localizer["Delete"]</button>
-                    <button type="button" @@click="$dispatch('product-select-open', { targetId: 'productAdd', isMultiSelect: true, searchEndpoint: '/JobEntry/ProductSearch', categoriesEndpoint: '/JobEntry/ProductCategories', productGroupsEndpoint: '/JobEntry/ProductGroups', functionsEndpoint: '/JobEntry/ProductFunctions' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["AddBySelection"]</button>
+            <div class="job-picker-panel">
+                <div class="job-picker-panel__row">
+                    <div class="job-picker-links">
+                        <button type="button" @@click="openProductPicker()" class="job-picker-link">
+                            @Localizer["Add"]
+                        </button>
+                    </div>
+                    <div class="text-sm font-bold text-gray-900">
+                        Toplam: <span x-text="calculateProductTotal()"></span>
+                    </div>
                 </div>
-                <div class="text-sm font-bold text-gray-900">
-                    Toplam: <span x-text="calculateProductTotal()"></span>
+                <div class="job-picker-panel__row">
+                    <div class="job-picker-controls">
+                        <label for="CreateJobEntryProductGroup">@Localizer["ProductGroup"]</label>
+                        <select id="CreateJobEntryProductGroup"
+                                x-model="selectedProductGroup"
+                                :disabled="productGroups.length === 0"
+                                class="job-picker-select">
+                            <option value="" x-show="productGroups.length === 0">@Localizer["SelectPrompt"]</option>
+                            <template x-for="grp in productGroups" :key="grp.id">
+                                <option :value="grp.name" x-text="grp.name"></option>
+                            </template>
+                        </select>
+                        <label for="CreateJobEntryProductPageSize">@Localizer["PageSize"]</label>
+                        <input id="CreateJobEntryProductPageSize"
+                               type="number"
+                               min="1"
+                               x-model="productPickerPageSize"
+                               class="job-picker-page-size">
+                        <button type="button"
+                                @@click="openGroupedProductPicker()"
+                                :disabled="productGroups.length === 0"
+                                :class="{ 'job-picker-link--disabled': productGroups.length === 0 }"
+                                class="job-picker-link">
+                            @Localizer["AddBySelection"]
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>

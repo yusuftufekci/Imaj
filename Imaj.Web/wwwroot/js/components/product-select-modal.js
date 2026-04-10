@@ -14,6 +14,9 @@ function productSelectModal() {
         categoriesEndpoint: '/Product/GetCategories',
         productGroupsEndpoint: '/Product/GetProductGroups',
         functionsEndpoint: '/Product/GetFunctions',
+        lockedFunctionId: '',
+        lockedFunctionName: '',
+        isFunctionLocked: false,
 
         // Filtre alanları
         filter: {
@@ -53,9 +56,10 @@ function productSelectModal() {
         async loadDropdowns() {
             await Promise.all([
                 this.loadCategories(),
-                this.loadProductGroups(),
                 this.loadFunctions()
             ]);
+
+            await this.loadProductGroups();
         },
 
         async loadCategories() {
@@ -74,7 +78,12 @@ function productSelectModal() {
 
         async loadProductGroups() {
             try {
-                const response = await fetch(this.productGroupsEndpoint);
+                const url = new URL(this.productGroupsEndpoint, window.location.origin);
+                if (this.filter.function) {
+                    url.searchParams.set('functionId', this.filter.function);
+                }
+
+                const response = await fetch(url.toString());
                 if (response.ok) {
                     this.productGroups = await response.json();
                 } else {
@@ -98,6 +107,8 @@ function productSelectModal() {
                 console.error('Fonksiyonlar yüklenirken hata:', e);
                 this.functions = [];
             }
+
+            this.ensureLockedFunction();
         },
 
         /**
@@ -111,11 +122,28 @@ function productSelectModal() {
             this.categoriesEndpoint = detail?.categoriesEndpoint || '/Product/GetCategories';
             this.productGroupsEndpoint = detail?.productGroupsEndpoint || '/Product/GetProductGroups';
             this.functionsEndpoint = detail?.functionsEndpoint || '/Product/GetFunctions';
+            this.lockedFunctionId = detail?.lockFunction && detail?.functionId ? String(detail.functionId) : '';
+            this.lockedFunctionName = detail?.functionName || '';
+            this.isFunctionLocked = !!this.lockedFunctionId;
             this.selectedItems = [];
             this.resetFilter();
+            if (detail?.functionId) {
+                this.filter.function = String(detail.functionId);
+            }
+            if (detail?.productGroup) {
+                this.filter.productGroup = String(detail.productGroup);
+            }
+            const requestedPageSize = Number.parseInt(detail?.pageSize, 10);
+            if (Number.isFinite(requestedPageSize) && requestedPageSize > 0) {
+                this.filter.pageSize = requestedPageSize;
+            }
             this.items = [];
             this.hasSearched = false;
             await this.loadDropdowns();
+            this.ensureLockedFunction();
+            if (detail?.autoSearch) {
+                await this.search(1);
+            }
         },
 
         /**
@@ -133,11 +161,44 @@ function productSelectModal() {
                 code: '',
                 category: '',
                 productGroup: '',
-                function: '',
+                function: this.isFunctionLocked ? this.lockedFunctionId : '',
                 isInvalid: false,
                 page: 1,
                 pageSize: 10
             };
+        },
+
+        ensureLockedFunction() {
+            if (!this.isFunctionLocked || !this.lockedFunctionId) {
+                return;
+            }
+
+            const normalizedLockedId = String(this.lockedFunctionId);
+            const hasOption = this.functions.some(func => String(func.id) === normalizedLockedId);
+
+            if (!hasOption) {
+                this.functions = [{
+                    id: normalizedLockedId,
+                    name: this.lockedFunctionName || normalizedLockedId
+                }, ...this.functions];
+            }
+
+            this.filter.function = normalizedLockedId;
+        },
+
+        hasFunctionOption(functionId) {
+            const normalizedId = String(functionId || '');
+            return this.functions.some(func => String(func.id) === normalizedId);
+        },
+
+        async onFunctionChanged() {
+            if (this.isFunctionLocked) {
+                this.filter.function = this.lockedFunctionId;
+                return;
+            }
+
+            this.filter.productGroup = '';
+            await this.loadProductGroups();
         },
 
         /**
@@ -160,7 +221,13 @@ function productSelectModal() {
 
             try {
                 const result = await API.post(this.searchEndpoint, payload);
-                this.items = result.items || [];
+                this.items = (result.items || []).map(item => {
+                    const selectedItem = this.selectedItems.find(x => x.code === item.code);
+                    return {
+                        ...item,
+                        quantity: selectedItem ? selectedItem.quantity : 1
+                    };
+                });
                 this.totalCount = result.totalCount || 0;
                 this.hasSearched = true;
             } catch (error) {
@@ -190,8 +257,35 @@ function productSelectModal() {
             if (index > -1) {
                 this.selectedItems.splice(index, 1);
             } else {
-                this.selectedItems.push(prod);
+                this.selectedItems.push({
+                    ...prod,
+                    quantity: prod.quantity ?? 1
+                });
             }
+        },
+
+        updateQuantity(prod, rawValue) {
+            const parsed = Number.parseFloat(rawValue);
+            const quantity = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+
+            prod.quantity = quantity;
+
+            const selectedItem = this.selectedItems.find(x => x.code === prod.code);
+            if (selectedItem) {
+                selectedItem.quantity = quantity;
+            }
+        },
+
+        formatPrice(value) {
+            const amount = Number.parseFloat(value);
+            if (!Number.isFinite(amount)) {
+                return '0,00';
+            }
+
+            return amount.toLocaleString('tr-TR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         },
 
         /**

@@ -52,6 +52,7 @@ namespace Imaj.Web.Models
     public class ProductSearchResult
     {
         public decimal Id { get; set; }
+        public decimal CategoryId { get; set; }
         public string? Code { get; set; }
         public string? Name { get; set; } // Ad / Tanım
         public string? Category { get; set; }

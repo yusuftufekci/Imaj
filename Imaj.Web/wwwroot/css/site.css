@@ -1075,6 +1075,236 @@ span.flatpickr-weekday {
     color: #ea580c;
 }
 
+.job-form-page--compact {
+    margin-top: -0.35rem;
+}
+
+.job-form-page--top-tight {
+    margin-top: -1.45rem;
+}
+
+.job-form-page--compact.page-shell--wide {
+    width: min(1500px, calc(100vw - 1.5rem));
+}
+
+.job-form-page--compact .job-page-title {
+    font-size: 1.25rem;
+    line-height: 1.05;
+}
+
+.job-form-page--compact .job-form-layout,
+.job-form-page--compact .job-note-stack {
+    gap: 0.45rem;
+}
+
+.job-form-page--compact .dense-panel,
+.job-form-page--compact .job-table-card {
+    border-radius: 0.625rem;
+}
+
+.job-form-page--compact .dense-panel__header,
+.job-form-page--compact .job-table-card__header {
+    padding: 0.35rem 0.55rem;
+}
+
+.job-form-page--compact .dense-panel__body {
+    padding: 0.4rem 0.55rem 0.5rem;
+}
+
+.job-form-page--compact .dense-form-grid {
+    gap: 0.2rem;
+}
+
+.job-form-page--compact .dense-form-row {
+    column-gap: 0.4rem;
+    row-gap: 0.1rem;
+}
+
+.job-form-page--compact .dense-form-row > label {
+    font-size: 0.71875rem;
+}
+
+.job-form-page--compact .dense-input {
+    min-height: 1.65rem;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.71875rem;
+}
+
+.job-form-page--compact textarea.dense-input {
+    min-height: 2.6rem;
+}
+
+.job-form-page--compact .job-table th,
+.job-form-page--compact .job-table td {
+    padding: 0.32rem 0.5rem;
+}
+
+.job-form-page--compact .job-table-card__title,
+.job-form-page--compact .dense-panel__title {
+    font-size: 0.8125rem;
+}
+
+.job-form-page--compact .job-footer-bar,
+.job-form-page--compact .job-picker-panel {
+    padding: 0.4rem 0.55rem;
+}
+
+.job-form-page--compact .job-picker-panel {
+    gap: 0.4rem;
+}
+
+.job-form-page--compact .job-picker-panel__row,
+.job-form-page--compact .job-picker-controls,
+.job-form-page--compact .job-picker-links {
+    gap: 0.45rem;
+}
+
+.job-form-page--compact .job-action-stack {
+    gap: 0.15rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact {
+    border-radius: 0.55rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-table-card__header {
+    padding: 0.28rem 0.5rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-table-card__title {
+    font-size: 0.78125rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-table th,
+.job-form-page--compact .job-table-card--products-compact .job-table td {
+    padding: 0.22rem 0.42rem;
+    font-size: 0.75rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-table--compact th,
+.job-form-page--compact .job-table-card--products-compact .job-table--compact td {
+    padding-top: 0.18rem;
+    padding-bottom: 0.18rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-table-input {
+    min-height: 1.45rem;
+    padding: 0.08rem 0.3rem;
+    font-size: 0.71875rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-table-input--discount {
+    max-width: 3.4rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-table-textarea {
+    min-height: 2rem;
+    padding: 0.18rem 0.3rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-picker-panel,
+.job-form-page--compact .job-table-card--products-compact .job-footer-bar {
+    padding: 0.28rem 0.5rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-picker-panel {
+    gap: 0.28rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-picker-panel__row,
+.job-form-page--compact .job-table-card--products-compact .job-picker-controls,
+.job-form-page--compact .job-table-card--products-compact .job-picker-links {
+    gap: 0.35rem;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-picker-controls label,
+.job-form-page--compact .job-table-card--products-compact .job-picker-link {
+    font-size: 0.78125rem !important;
+}
+
+.job-form-page--compact .job-table-card--products-compact .job-picker-select,
+.job-form-page--compact .job-table-card--products-compact .job-picker-page-size {
+    min-height: 1.7rem;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-table-input--money {
+    width: 5.1rem;
+    min-width: 5.1rem;
+    max-width: 5.1rem;
+    margin-left: auto;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-table-textarea {
+    width: 11rem;
+    max-width: 100%;
+    min-height: 1.4rem;
+    line-height: 1.1;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact {
+    border-radius: 0.5rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-table-card__header {
+    padding: 0.22rem 0.42rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-table-card__title {
+    font-size: 0.75rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-table th,
+.job-form-page--compact .job-table-card--product-lines-compact .job-table td {
+    padding: 0.16rem 0.34rem;
+    font-size: 0.71875rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-table--compact th,
+.job-form-page--compact .job-table-card--product-lines-compact .job-table--compact td {
+    padding-top: 0.12rem;
+    padding-bottom: 0.12rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-table-input {
+    min-height: 1.3rem;
+    padding: 0.04rem 0.22rem;
+    font-size: 0.6875rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-table-textarea {
+    padding: 0.12rem 0.22rem;
+    font-size: 0.6875rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-panel,
+.job-form-page--compact .job-table-card--product-lines-compact .job-footer-bar {
+    padding: 0.22rem 0.42rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-panel {
+    gap: 0.2rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-panel__row,
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-controls,
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-links {
+    gap: 0.28rem;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-controls label,
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-link {
+    font-size: 0.75rem !important;
+}
+
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-select,
+.job-form-page--compact .job-table-card--product-lines-compact .job-picker-page-size {
+    min-height: 1.55rem;
+    padding: 0.08rem 0.32rem;
+    font-size: 0.71875rem;
+}
+
 .customer-page-actions,
 .job-page-actions,
 .invoice-page-actions {
@@ -1284,6 +1514,142 @@ span.flatpickr-weekday {
     font-size: 0.75rem;
 }
 
+.job-picker-panel {
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.625rem 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.job-picker-panel__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.625rem;
+}
+
+.job-picker-links,
+.job-picker-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.job-picker-controls label {
+    color: #334155;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.job-picker-select,
+.job-picker-page-size {
+    min-height: 2rem;
+    padding: 0.25rem 0.55rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+}
+
+.job-picker-select {
+    min-width: 12rem;
+}
+
+.job-picker-page-size {
+    width: 4.5rem;
+    text-align: center;
+}
+
+.job-picker-link {
+    min-height: auto !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    color: #1d4ed8 !important;
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    text-decoration: underline;
+    text-underline-offset: 0.16em;
+    box-shadow: none !important;
+}
+
+.job-picker-link:hover {
+    background: transparent !important;
+    color: #1e40af !important;
+    transform: none !important;
+}
+
+.job-picker-link--disabled,
+.job-picker-link:disabled {
+    color: #94a3b8 !important;
+    cursor: not-allowed;
+    text-decoration: none;
+}
+
+.job-checkbox-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.job-checkbox-cell input {
+    width: 1rem;
+    height: 1rem;
+}
+
+.job-table__row--selected {
+    background-color: #eff6ff;
+}
+
+.job-table-input,
+.job-table-textarea {
+    width: 100%;
+    border: 1px solid #94a3b8;
+    border-radius: 0.25rem;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+}
+
+.job-table-input {
+    min-height: 2rem;
+    padding: 0.2rem 0.45rem;
+}
+
+.job-table-input--money,
+.job-table-input--discount {
+    text-align: right;
+}
+
+.job-table-input--discount {
+    max-width: 4rem;
+}
+
+.job-table-textarea {
+    min-height: 2.6rem;
+    padding: 0.3rem 0.45rem;
+    resize: vertical;
+}
+
+.job-action-stack {
+    display: grid;
+    gap: 0;
+}
+
+.job-footer-bar--no-border {
+    border-top: none;
+    padding-top: 0;
+    background-color: transparent;
+}
+
 .customer-tag,
 .job-tag,
 .invoice-tag {
@@ -1402,6 +1768,18 @@ span.flatpickr-weekday {
 
 @media (max-width: 1023px) {
     .page-shell--wide {
+        width: 100%;
+    }
+
+    .job-form-page--compact {
+        margin-top: 0;
+    }
+
+    .job-form-page--top-tight {
+        margin-top: 0;
+    }
+
+    .job-form-page--compact.page-shell--wide {
         width: 100%;
     }
 }
@@ -1569,6 +1947,19 @@ span.flatpickr-weekday {
 
     .customer-footer-bar {
         justify-content: center;
+    }
+
+    .job-picker-panel__row {
+        align-items: flex-start;
+    }
+
+    .job-picker-controls {
+        width: 100%;
+    }
+
+    .job-picker-select {
+        flex: 1 1 11rem;
+        min-width: min(100%, 11rem);
     }
 
     .mobile-table-panel th,

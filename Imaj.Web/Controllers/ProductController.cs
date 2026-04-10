@@ -72,9 +72,9 @@ namespace Imaj.Web.Controllers
 
         [HttpGet]
         [Route("Product/GetProductGroups")]
-        public async Task<IActionResult> GetProductGroups()
+        public async Task<IActionResult> GetProductGroups([FromQuery] decimal? functionId = null)
         {
-            var result = await _productService.GetProductGroupsAsync();
+            var result = await _productService.GetProductGroupsAsync(functionId);
             if (result.IsSuccess)
             {
                 return Json(result.Data);

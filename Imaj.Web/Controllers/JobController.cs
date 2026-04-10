@@ -35,6 +35,7 @@ namespace Imaj.Web.Controllers
 
         private readonly IJobService _jobService;
         private readonly ICustomerService _customerService;
+        private readonly IEmployeeService _employeeService;
         private readonly IEmailService _emailService;
         private readonly IProductService _productService;
         private readonly ILookupService _lookupService;
@@ -47,6 +48,7 @@ namespace Imaj.Web.Controllers
         public JobController(
             IJobService jobService,
             ICustomerService customerService,
+            IEmployeeService employeeService,
             IEmailService emailService,
             IProductService productService,
             ILookupService lookupService,
@@ -58,6 +60,7 @@ namespace Imaj.Web.Controllers
         {
             _jobService = jobService ?? throw new ArgumentNullException(nameof(jobService));
             _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
+            _employeeService = employeeService ?? throw new ArgumentNullException(nameof(employeeService));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _lookupService = lookupService ?? throw new ArgumentNullException(nameof(lookupService));
@@ -203,14 +206,14 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ProductGroups()
+        public async Task<IActionResult> ProductGroups([FromQuery] decimal? functionId = null)
         {
             if (!await CanUseProductLookupAsync())
             {
                 return Forbid();
             }
 
-            var result = await _productService.GetProductGroupsAsync();
+            var result = await _productService.GetProductGroupsAsync(functionId);
             if (result.IsSuccess)
             {
                 return Json(result.Data);
@@ -255,6 +258,7 @@ namespace Imaj.Web.Controllers
                 ? result.Data.Items.Select(p => new ProductSearchResult
                 {
                     Id = p.Id,
+                    CategoryId = p.CategoryId,
                     Code = p.Code,
                     Name = p.Name,
                     Category = p.CategoryName,
@@ -986,6 +990,8 @@ namespace Imaj.Web.Controllers
             };
             model.StartDate = DateTime.Now;
             model.EndDate = DateTime.Now;
+            model.AutoOvertimeTemplates = await GetDefaultCreateOvertimeTemplatesAsync(selectedFunction?.Id);
+            model.Overtimes = BuildInitialAfterHoursOvertimes(model.AutoOvertimeTemplates, model.StartDate, model.EndDate);
             model.Products = await GetDefaultCreateProductsAsync();
             return View(model);
         }
@@ -1012,6 +1018,7 @@ namespace Imaj.Web.Controllers
 
                 await LoadDropdownDataAsync();
                 ApplyFunctionSelection(model);
+                model.AutoOvertimeTemplates = await GetDefaultCreateOvertimeTemplatesAsync(model.FunctionId);
                 return View(model);
             }
 
@@ -1046,10 +1053,23 @@ namespace Imaj.Web.Controllers
                 JobProds = model.Products?.Select(x => new JobProdDto
                 {
                     ProductId = x.ProductId,
+                    CategoryId = x.CategoryId,
+                    CategoryName = x.CategoryName,
                     Quantity = x.Quantity,
                     Price = x.Price,
+                    NetAmount = x.NetAmount,
                     Notes = x.Notes
-                }).ToList() ?? new List<JobProdDto>()
+                }).ToList() ?? new List<JobProdDto>(),
+
+                JobProdCats = model.ProductCategories?.Select(x => new JobProdCatDto
+                {
+                    CategoryId = x.CategoryId,
+                    CategoryName = x.Name,
+                    GrossAmount = x.SubTotal,
+                    DiscAmount = x.DiscountAmount,
+                    DiscPercentage = (byte)Math.Clamp((int)Math.Round(x.Discount), 0, 100),
+                    NetAmount = x.NetTotal
+                }).ToList() ?? new List<JobProdCatDto>()
             };
 
             var result = await _jobService.AddAsync(jobDto);
@@ -1079,6 +1099,7 @@ namespace Imaj.Web.Controllers
             ModelState.AddModelError(string.Empty, this.LocalizeUiMessage(result.Message, L("SaveError")));
             await LoadDropdownDataAsync();
             ApplyFunctionSelection(model);
+            model.AutoOvertimeTemplates = await GetDefaultCreateOvertimeTemplatesAsync(model.FunctionId);
             return View(model);
         }
 
@@ -1139,12 +1160,92 @@ namespace Imaj.Web.Controllers
                     ProductId = product.Id,
                     Code = product.Code,
                     Name = product.Name,
+                    CategoryId = product.CategoryId,
+                    CategoryName = product.CategoryName,
                     Quantity = 1,
-                    Price = product.Price
+                    Price = product.Price,
+                    NetAmount = product.Price
                 });
             }
 
             return items;
+        }
+
+        private async Task<List<JobOvertimeInput>> GetDefaultCreateOvertimeTemplatesAsync(decimal? functionId)
+        {
+            var items = new List<JobOvertimeInput>();
+            var fallbackWorkTypeId = (ViewBag.WorkTypes as List<WorkTypeDto>)?.FirstOrDefault()?.Id ?? 0m;
+            var defaultTimeTypeId = (ViewBag.TimeTypes as List<TimeTypeDto>)?.FirstOrDefault()?.Id ?? 0m;
+
+            foreach (var employeeCode in DefaultCreateProductCodes)
+            {
+                var result = await _employeeService.GetEmployeesAsync(new EmployeeFilterDto
+                {
+                    Code = employeeCode,
+                    FunctionID = functionId,
+                    Status = 1,
+                    Page = 1,
+                    PageSize = 20,
+                    First = 20
+                });
+
+                var employee = result.IsSuccess && result.Data != null
+                    ? result.Data.Items.FirstOrDefault(x => string.Equals(x.Code, employeeCode, StringComparison.OrdinalIgnoreCase))
+                    : null;
+
+                if (employee == null)
+                {
+                    continue;
+                }
+
+                items.Add(new JobOvertimeInput
+                {
+                    EmployeeId = employee.Id,
+                    EmployeeCode = employee.Code,
+                    EmployeeName = employee.Name,
+                    WorkTypeId = employee.DefaultWorkTypeId ?? fallbackWorkTypeId,
+                    TimeTypeId = defaultTimeTypeId,
+                    Quantity = 1,
+                    Amount = 0
+                });
+            }
+
+            return items;
+        }
+
+        private static List<JobOvertimeInput> BuildInitialAfterHoursOvertimes(
+            IEnumerable<JobOvertimeInput> templates,
+            DateTime startDate,
+            DateTime endDate)
+        {
+            if (!ShouldAddAfterHoursOvertime(startDate, endDate))
+            {
+                return new List<JobOvertimeInput>();
+            }
+
+            return templates
+                .Select(x => new JobOvertimeInput
+                {
+                    EmployeeId = x.EmployeeId,
+                    EmployeeCode = x.EmployeeCode,
+                    EmployeeName = x.EmployeeName,
+                    WorkTypeId = x.WorkTypeId,
+                    TimeTypeId = x.TimeTypeId,
+                    Quantity = x.Quantity,
+                    Amount = x.Amount,
+                    Notes = x.Notes
+                })
+                .ToList();
+        }
+
+        private static bool ShouldAddAfterHoursOvertime(DateTime startDate, DateTime endDate)
+        {
+            return IsAfterOrAtSixPm(startDate) || IsAfterOrAtSixPm(endDate);
+        }
+
+        private static bool IsAfterOrAtSixPm(DateTime value)
+        {
+            return value.TimeOfDay >= new TimeSpan(18, 0, 0);
         }
 
         private PrintableReportViewModel BuildDetailedPendingInvoicePrintableReport(
