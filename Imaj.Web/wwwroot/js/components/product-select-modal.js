@@ -17,6 +17,7 @@ function productSelectModal() {
         lockedFunctionId: '',
         lockedFunctionName: '',
         isFunctionLocked: false,
+        showFilter: true,
 
         // Filtre alanları
         filter: {
@@ -125,6 +126,7 @@ function productSelectModal() {
             this.lockedFunctionId = detail?.lockFunction && detail?.functionId ? String(detail.functionId) : '';
             this.lockedFunctionName = detail?.functionName || '';
             this.isFunctionLocked = !!this.lockedFunctionId;
+            this.showFilter = detail?.showFilter ?? true;
             this.selectedItems = [];
             this.resetFilter();
             if (detail?.functionId) {

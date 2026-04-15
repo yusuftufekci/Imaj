@@ -8,119 +8,115 @@
     ViewData["Title"] = Localizer["JobOperations"];
 }
 
-<div x-data="jobEntryPage()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@product-selected.window="handleProductSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="job-page-shell job-index-shell page-shell--wide space-y-2">
-    <div class="text-center">
+<div x-data="jobEntryPage()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@product-selected.window="handleProductSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="job-page-shell job-index-shell job-index-reference page-shell--wide space-y-2">
+    <div class="text-center job-index-heading">
         <h2 class="job-page-title job-page-title--orange">
             @Localizer["JobSearch"]
         </h2>
     </div>
 
-    <form method="get" action="/JobEntry/List" class="space-y-2 text-left">
-        <div class="dense-panel-grid">
+    <form method="get" action="/JobEntry/List" class="job-index-form space-y-2 text-left">
+        <div class="dense-panel-grid job-index-reference-grid">
             <div class="dense-panel-grid__column">
-                <section class="dense-panel">
+                <section class="dense-panel job-index-reference-panel">
                     <div class="dense-panel__header">
                         <h3 class="dense-panel__title">@Localizer["JobCriteria"]</h3>
                     </div>
                     <div class="dense-panel__body mobile-stack-form">
-                        <div class="job-index-main-grid">
-                            <div class="dense-form-grid">
-                                <div class="dense-form-row">
-                                    <label for="JobEntryFunction">@Localizer["Function"]</label>
-                                    <select id="JobEntryFunction" name="Filter.Function" x-model="filter.function" class="dense-input">
-                                        <option value="">@Localizer["SelectPrompt"]</option>
-                                        @if (ViewBag.Functions != null)
+                        <div class="dense-form-grid job-index-criteria-list">
+                            <div class="dense-form-row">
+                                <label for="JobEntryFunction">@Localizer["Function"]</label>
+                                <select id="JobEntryFunction" name="Filter.Function" x-model="filter.function" class="dense-input">
+                                    <option value="">@Localizer["SelectPrompt"]</option>
+                                    @if (ViewBag.Functions != null)
+                                    {
+                                        @foreach (var func in ViewBag.Functions)
                                         {
-                                            @foreach (var func in ViewBag.Functions)
-                                            {
-                                                <option value="@func.Id">@func.Name</option>
-                                            }
+                                            <option value="@func.Id">@func.Name</option>
                                         }
-                                    </select>
-                                </div>
-                                <div class="dense-form-row">
-                                    <label>@Localizer["Customer"]</label>
-                                    <div class="picker-inline flex items-center gap-2">
-                                        <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
-                                        <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
-                                        <input type="text" readonly x-model="customerName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
-                                        <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
-                                            @Localizer["Select"]
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="dense-form-row">
-                                    <label>@Localizer["ReferenceRange"]</label>
-                                    <div class="picker-inline flex items-center gap-2">
-                                        <input type="text" name="Filter.ReferenceStart" x-model="filter.referenceStart" class="dense-input">
-                                        <input type="text" name="Filter.ReferenceEnd" x-model="filter.referenceEnd" class="dense-input">
-                                    </div>
-                                </div>
-                                <div class="dense-form-row">
-                                    <label for="JobEntryReference">@Localizer["Reference"]</label>
-                                    <input id="JobEntryReference" type="text" name="Filter.ReferenceList" x-model="filter.referenceList" class="dense-input">
-                                </div>
-                                <div class="dense-form-row">
-                                    <label for="JobEntryName">@Localizer["Name"]</label>
-                                    <input id="JobEntryName" type="text" name="Filter.JobName" x-model="filter.jobName" class="dense-input">
+                                    }
+                                </select>
+                            </div>
+                            <div class="dense-form-row">
+                                <label>@Localizer["Customer"]</label>
+                                <div class="picker-inline picker-inline--lookup flex items-center gap-2">
+                                    <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
+                                    <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
+                                    <input type="text" readonly x-model="customerName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
+                                    <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                                        @Localizer["Select"]
+                                    </button>
                                 </div>
                             </div>
-                            <div class="dense-form-grid">
-                                <div class="dense-form-row">
-                                    <label for="JobEntryRelated">@Localizer["Related"]</label>
-                                    <input id="JobEntryRelated" type="text" name="Filter.RelatedPerson" x-model="filter.relatedPerson" class="dense-input">
+                            <div class="dense-form-row">
+                                <label>@Localizer["ReferenceRange"]</label>
+                                <div class="picker-inline picker-inline--range flex items-center gap-2">
+                                    <input type="text" name="Filter.ReferenceStart" x-model="filter.referenceStart" class="dense-input">
+                                    <input type="text" name="Filter.ReferenceEnd" x-model="filter.referenceEnd" class="dense-input">
                                 </div>
-                                <div class="dense-form-row">
-                                    <label>@Localizer["StartDateRange"]</label>
-                                    <div class="picker-inline flex items-center gap-2">
-                                        <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="dense-input" value="@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")">
-                                        <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="dense-input" value="@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")">
-                                    </div>
+                            </div>
+                            <div class="dense-form-row">
+                                <label for="JobEntryReference">@Localizer["Reference"]</label>
+                                <input id="JobEntryReference" type="text" name="Filter.ReferenceList" x-model="filter.referenceList" class="dense-input">
+                            </div>
+                            <div class="dense-form-row">
+                                <label for="JobEntryName">@Localizer["Name"]</label>
+                                <input id="JobEntryName" type="text" name="Filter.JobName" x-model="filter.jobName" class="dense-input">
+                            </div>
+                            <div class="dense-form-row">
+                                <label for="JobEntryRelated">@Localizer["Related"]</label>
+                                <input id="JobEntryRelated" type="text" name="Filter.RelatedPerson" x-model="filter.relatedPerson" class="dense-input">
+                            </div>
+                            <div class="dense-form-row">
+                                <label>@Localizer["StartDateRange"]</label>
+                                <div class="picker-inline picker-inline--range flex items-center gap-2">
+                                    <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="dense-input" value="@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")">
+                                    <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="dense-input" value="@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")">
                                 </div>
-                                <div class="dense-form-row">
-                                    <label>@Localizer["EndDateRange"]</label>
-                                    <div class="picker-inline flex items-center gap-2">
-                                        <input type="date" name="Filter.EndDateStart" x-model="filter.endDateStart" class="dense-input">
-                                        <input type="date" name="Filter.EndDateEnd" x-model="filter.endDateEnd" class="dense-input">
-                                    </div>
+                            </div>
+                            <div class="dense-form-row">
+                                <label>@Localizer["EndDateRange"]</label>
+                                <div class="picker-inline picker-inline--range flex items-center gap-2">
+                                    <input type="date" name="Filter.EndDateStart" x-model="filter.endDateStart" class="dense-input">
+                                    <input type="date" name="Filter.EndDateEnd" x-model="filter.endDateEnd" class="dense-input">
                                 </div>
-                                <div class="dense-form-row">
-                                    <label for="JobEntryStatus">@Localizer["Status"]</label>
-                                    <select id="JobEntryStatus" name="Filter.Status" x-model="filter.status" class="dense-input">
-                                        <option value="">@Localizer["AllOption"]</option>
-                                        @if (ViewBag.States != null)
+                            </div>
+                            <div class="dense-form-row">
+                                <label for="JobEntryStatus">@Localizer["Status"]</label>
+                                <select id="JobEntryStatus" name="Filter.Status" x-model="filter.status" class="dense-input">
+                                    <option value="">@Localizer["AllOption"]</option>
+                                    @if (ViewBag.States != null)
+                                    {
+                                        @foreach (var state in ViewBag.States)
                                         {
-                                            @foreach (var state in ViewBag.States)
-                                            {
-                                                <option value="@state.Id">@state.Name</option>
-                                            }
+                                            <option value="@state.Id">@state.Name</option>
                                         }
-                                    </select>
-                                </div>
-                                <div class="dense-form-row">
-                                    <label for="JobEntryEmailSent">@Localizer["EmailSent"]</label>
-                                    <select id="JobEntryEmailSent" name="Filter.EmailSent" x-model="filter.emailSent" class="dense-input">
-                                        <option value="">@Localizer["AllOption"]</option>
-                                        <option value="true">@Localizer["Yes"]</option>
-                                        <option value="false">@Localizer["No"]</option>
-                                    </select>
-                                </div>
-                                <div class="dense-form-row">
-                                    <label for="JobEntryEvaluated">@Localizer["Evaluated"]</label>
-                                    <select id="JobEntryEvaluated" name="Filter.Evaluated" x-model="filter.evaluated" class="dense-input">
-                                        <option value="">@Localizer["AllOption"]</option>
-                                        <option value="true">@Localizer["Yes"]</option>
-                                        <option value="false">@Localizer["No"]</option>
-                                    </select>
-                                </div>
+                                    }
+                                </select>
+                            </div>
+                            <div class="dense-form-row">
+                                <label for="JobEntryEmailSent">@Localizer["EmailSent"]</label>
+                                <select id="JobEntryEmailSent" name="Filter.EmailSent" x-model="filter.emailSent" class="dense-input">
+                                    <option value="">@Localizer["AllOption"]</option>
+                                    <option value="true">@Localizer["Yes"]</option>
+                                    <option value="false">@Localizer["No"]</option>
+                                </select>
+                            </div>
+                            <div class="dense-form-row">
+                                <label for="JobEntryEvaluated">@Localizer["Evaluated"]</label>
+                                <select id="JobEntryEvaluated" name="Filter.Evaluated" x-model="filter.evaluated" class="dense-input">
+                                    <option value="">@Localizer["AllOption"]</option>
+                                    <option value="true">@Localizer["Yes"]</option>
+                                    <option value="false">@Localizer["No"]</option>
+                                </select>
                             </div>
                         </div>
                     </div>
                 </section>
             </div>
 
-            <div class="dense-panel-grid__column">
-                <section class="dense-panel">
+            <div class="dense-panel-grid__column job-index-side-column">
+                <section class="dense-panel job-index-reference-panel">
                     <div class="dense-panel__header">
                         <h3 class="dense-panel__title">@Localizer["OvertimeCriteria"]</h3>
                     </div>
@@ -128,7 +124,7 @@
                         <div class="dense-form-grid">
                             <div class="dense-form-row">
                                 <label>@Localizer["Employee"]</label>
-                                <div class="picker-inline flex items-center gap-2">
+                                <div class="picker-inline picker-inline--lookup flex items-center gap-2">
                                     <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
                                     <input type="text" readonly x-model="filter.employeeName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
                                     <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
@@ -166,7 +162,7 @@
                     </div>
                 </section>
 
-                <section class="dense-panel">
+                <section class="dense-panel job-index-reference-panel">
                     <div class="dense-panel__header">
                         <h3 class="dense-panel__title">@Localizer["ProductCriteria"]</h3>
                     </div>
@@ -174,7 +170,7 @@
                         <div class="dense-form-grid">
                             <div class="dense-form-row">
                                 <label>@Localizer["Product"]</label>
-                                <div class="picker-inline flex items-center gap-2">
+                                <div class="picker-inline picker-inline--lookup flex items-center gap-2">
                                     <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
                                     <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
                                     <input type="text" readonly x-model="filter.productName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
@@ -191,7 +187,7 @@
 
         <input type="hidden" name="Filter.Page" value="1">
 
-        <div class="dense-toolbar">
+        <div class="dense-toolbar job-index-toolbar">
             <label for="JobEntryFirst" class="dense-toolbar__label">@Localizer["First"]</label>
             <input id="JobEntryFirst" type="number" name="Filter.First" x-model="filter.first" min="1" class="dense-input dense-toolbar__input">
             <label for="JobEntryPageSize" class="dense-toolbar__label">@Localizer["PageSize"]</label>
@@ -202,12 +198,13 @@
         </div>
     </form>
 
-    <div class="dense-action-grid">
-        <section class="dense-action-card">
-            <div class="dense-action-card__header">
-                <h3 class="dense-action-card__title">@Localizer["JobCreation"]</h3>
+    <section class="job-index-section job-index-section--narrow">
+        <h3 class="job-index-section__title">@Localizer["JobCreation"]</h3>
+        <section class="dense-panel job-index-create-panel">
+            <div class="dense-panel__header">
+                <h4 class="dense-panel__title">@Localizer["PreInformation"]</h4>
             </div>
-            <div class="dense-action-card__body flex-col items-stretch">
+            <div class="dense-panel__body job-index-create-panel__body">
                 <div class="dense-form-row">
                     <label for="JobEntryCreateFunction">@Localizer["Function"]</label>
                     <select id="JobEntryCreateFunction" x-model="filter.function" class="dense-input">
@@ -221,12 +218,14 @@
                         }
                     </select>
                 </div>
-                <a :href="filter.function ? '/JobEntry/Create?functionId=' + encodeURIComponent(filter.function) : '/JobEntry/Create'" class="inline-flex items-center justify-center px-5 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                    @Localizer["CreateNewJob"]
-                </a>
             </div>
         </section>
-    </div>
+        <div class="job-index-create-cta">
+            <a :href="filter.function ? '/JobEntry/Create?functionId=' + encodeURIComponent(filter.function) : '/JobEntry/Create'" class="inline-flex items-center justify-center px-5 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                @Localizer["CreateNewJob"]
+            </a>
+        </div>
+    </section>
 
     <partial name="_CustomerSelectModal" />
     <partial name="_ProductSelectModal" />

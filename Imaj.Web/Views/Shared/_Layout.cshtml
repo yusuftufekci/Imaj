@@ -36,8 +36,8 @@
     <div class="min-h-screen flex flex-col">
         <!-- Top Bar: Company Info & User Profile -->
         <div class="bg-slate-900 text-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between text-sm flex-wrap gap-2">
-                <div class="layout-topbar-group flex items-center space-x-4">
+            <div class="layout-frame layout-frame--top px-4 sm:px-6 lg:px-8 flex items-center justify-between text-sm flex-wrap gap-2">
+                <div class="layout-topbar-group flex items-center space-x-3">
                     <span class="font-medium tracking-wide">IMAJ POST-PRODÜKSİYON HİZMETLERİ</span>
                     @if (!string.IsNullOrWhiteSpace(topBarUserCode))
                     {
@@ -46,7 +46,7 @@
                     }
                 </div>
                 <!-- ... existing top bar right side ... -->
-                <div class="layout-topbar-group flex items-center space-x-6">
+                <div class="layout-topbar-group flex items-center space-x-4">
                     <span class="text-slate-300">@Localizer["SystemVersion"]</span>
                     <div class="layout-topbar-links flex items-center space-x-3">
                         <a asp-controller="Culture"
@@ -87,12 +87,12 @@
                 x-data="{ mobileMenuOpen: false }"
                 x-on:keydown.escape.window="mobileMenuOpen = false"
                 x-on:resize.window="if (window.innerWidth >= 768) mobileMenuOpen = false">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-start md:items-center min-h-[4rem] py-2">
+            <div class="layout-frame layout-frame--nav px-4 sm:px-6 lg:px-8">
+                <div class="layout-main-nav flex justify-between items-start md:items-center">
                    <div class="flex flex-1 min-w-0">
                         <div class="flex-shrink-0 flex items-center pr-4 mt-1 md:mt-0">
                             <a href="/" class="block hover:opacity-80 transition-opacity" aria-label="Imaj">
-                                <img src="~/images/imaj-logo.jpeg" alt="Imaj" class="h-8 w-auto sm:h-10" />
+                                <img src="~/images/imaj-logo.jpeg" alt="Imaj" class="layout-logo h-8 w-auto sm:h-10" />
                             </a>
                         </div>
                         <div class="nav-menu-container">
@@ -179,13 +179,13 @@
         </header>
 
         <main class="flex-grow bg-gray-50">
-            <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div class="layout-frame layout-main-frame py-5 px-4 sm:px-6 lg:px-8">
                  @RenderBody()
             </div>
         </main>
 
         <footer class="bg-slate-900 border-t border-slate-800 text-slate-400">
-            <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div class="layout-frame py-8 px-4 sm:px-6 lg:px-8">
                 <div class="md:flex md:items-center md:justify-between">
                     <div class="flex justify-center md:order-2">
                         <p class="text-sm">

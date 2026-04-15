@@ -10,33 +10,32 @@
         : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 16);
 }
 
-<div class="space-y-6">
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
-                @Localizer["ProductSearchTitle"]
-            </h2>
-        </div>
+<div class="job-page-shell job-index-shell job-index-reference product-index-reference page-shell--wide space-y-2">
+    <div class="text-center job-index-heading">
+        <h2 class="job-page-title job-page-title--orange">
+            @Localizer["ProductSearchTitle"]
+        </h2>
     </div>
 
-    <form method="get" action="/Product/List" class="w-full max-w-4xl mx-auto text-left">
-        <div class="bg-white shadow sm:rounded-lg border border-gray-200 overflow-hidden">
-            <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
-                <h3 class="text-lg font-semibold text-gray-800">@Localizer["MainCriteria"]</h3>
+    <form method="get" action="/Product/List" class="job-index-form space-y-2 text-left">
+        <section class="dense-panel job-index-reference-panel product-index-search-panel">
+            <div class="dense-panel__header">
+                <h3 class="dense-panel__title">@Localizer["MainCriteria"]</h3>
             </div>
-            <div class="px-4 py-5 sm:p-6 space-y-6 mobile-stack-form">
-                <div class="space-y-4">
-
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                        <label class="md:col-span-3 text-sm font-medium text-gray-700 md:text-right">@Localizer["Code"]</label>
-                        <input type="text"
+            <div class="dense-panel__body mobile-stack-form">
+                <div class="dense-form-grid product-index-criteria-list">
+                    <div class="dense-form-row">
+                        <label for="ProductFilterCode">@Localizer["Code"]</label>
+                        <input id="ProductFilterCode"
+                               type="text"
                                name="Code"
                                value="@Model.Filter.Code"
                                maxlength="8"
-                               class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm uppercase" />
-
-                        <label class="md:col-span-3 text-sm font-medium text-gray-700 md:text-right">@Localizer["ProductCategory"]</label>
-                        <select name="ProductCategoryId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                               class="dense-input uppercase" />
+                    </div>
+                    <div class="dense-form-row">
+                        <label for="ProductFilterCategory">@Localizer["ProductCategory"]</label>
+                        <select id="ProductFilterCategory" name="ProductCategoryId" class="dense-input">
                             <option value="">@Localizer["AllOption"]</option>
                             @foreach (var option in Model.ProductCategoryOptions)
                             {
@@ -51,10 +50,9 @@
                             }
                         </select>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                        <label class="md:col-span-3 text-sm font-medium text-gray-700 md:text-right">@Localizer["ProductGroup"]</label>
-                        <select name="ProductGroupId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                    <div class="dense-form-row">
+                        <label for="ProductFilterGroup">@Localizer["ProductGroup"]</label>
+                        <select id="ProductFilterGroup" name="ProductGroupId" class="dense-input">
                             <option value="">@Localizer["AllOption"]</option>
                             @foreach (var option in Model.ProductGroupOptions)
                             {
@@ -68,9 +66,10 @@
                                 }
                             }
                         </select>
-
-                        <label class="md:col-span-3 text-sm font-medium text-gray-700 md:text-right">@Localizer["Function"]</label>
-                        <select name="FunctionId" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                    </div>
+                    <div class="dense-form-row">
+                        <label for="ProductFilterFunction">@Localizer["Function"]</label>
+                        <select id="ProductFilterFunction" name="FunctionId" class="dense-input">
                             <option value="">@Localizer["AllOption"]</option>
                             @foreach (var option in Model.FunctionOptions)
                             {
@@ -85,10 +84,9 @@
                             }
                         </select>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                        <label class="md:col-span-3 text-sm font-medium text-gray-700 md:text-right">@Localizer["Invalid"]</label>
-                        <select name="IsInvalid" class="md:col-span-3 shadow-sm border-gray-300 rounded-md sm:text-sm">
+                    <div class="dense-form-row">
+                        <label for="ProductFilterInvalid">@Localizer["Invalid"]</label>
+                        <select id="ProductFilterInvalid" name="IsInvalid" class="dense-input">
                             <option value="">@Localizer["AllOption"]</option>
                             @if (Model.Filter.IsInvalid == false)
                             {
@@ -110,51 +108,45 @@
                         </select>
                     </div>
                 </div>
-
-                <div class="pt-6 border-t border-gray-200">
-                    <div class="flex flex-wrap items-center justify-center gap-3 responsive-inline-group">
-                        <label class="text-sm text-blue-900 font-semibold">@Localizer["First"]</label>
-                        <input type="number" name="First" value="@firstValue" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm" />
-                        <label class="text-sm text-blue-900 font-semibold">@Localizer["PageSize"]</label>
-                        <input type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="w-20 text-center shadow-sm border-gray-300 rounded-md sm:text-sm" />
-                        <input type="hidden" name="Page" value="1">
-
-                        <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                            @Localizer["Search"]
-                        </button>
-                        <a href="/Product" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                            @Localizer["Clear"]
-                        </a>
-                    </div>
-                </div>
             </div>
+        </section>
+
+        <input type="hidden" name="Page" value="1">
+
+        <div class="dense-toolbar job-index-toolbar">
+            <label for="ProductFilterFirst" class="dense-toolbar__label">@Localizer["First"]</label>
+            <input id="ProductFilterFirst" type="number" name="First" value="@firstValue" min="1" class="dense-input dense-toolbar__input" />
+            <label for="ProductFilterPageSize" class="dense-toolbar__label">@Localizer["PageSize"]</label>
+            <input id="ProductFilterPageSize" type="number" name="PageSize" value="@(Model.Filter.PageSize <= 0 ? 16 : Model.Filter.PageSize)" min="1" class="dense-input dense-toolbar__input" />
+            <button type="submit" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                @Localizer["Search"]
+            </button>
+            <a href="/Product" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                @Localizer["Clear"]
+            </a>
         </div>
     </form>
 
     @if (canAdd)
     {
-        <div class="text-center mt-10">
-            <h2 class="text-xl font-bold text-orange-600 mb-4">@Localizer["ProductCreation"]</h2>
-            <div class="bg-gradient-to-b from-white to-blue-50 shadow sm:rounded-lg border border-gray-200 inline-block w-full max-w-4xl overflow-hidden">
-                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200 text-left">
-                    <h3 class="text-lg font-semibold text-gray-800">@Localizer["PreInformation"]</h3>
+        <form method="get" action="/Product/Create" class="job-index-section job-index-section--narrow product-index-create-form">
+            <h3 class="job-index-section__title">@Localizer["ProductCreation"]</h3>
+            <section class="dense-panel job-index-create-panel product-index-create-panel">
+                <div class="dense-panel__header">
+                    <h4 class="dense-panel__title">@Localizer["PreInformation"]</h4>
                 </div>
-                <form method="get" action="/Product/Create" class="p-6 space-y-4 mobile-stack-form">
-
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-sm">
-                        <label class="md:col-span-3 text-gray-700 font-medium md:text-right">@Localizer["Code"]</label>
-                        <div class="md:col-span-9">
-                            <input type="text" name="code" value="@Model.CreateCode" maxlength="8" class="w-full shadow-sm border-gray-300 rounded-md sm:text-sm uppercase" />
-                        </div>
+                <div class="dense-panel__body job-index-create-panel__body">
+                    <div class="dense-form-row">
+                        <label for="ProductCreateCode">@Localizer["Code"]</label>
+                        <input id="ProductCreateCode" type="text" name="code" value="@Model.CreateCode" maxlength="8" class="dense-input uppercase" />
                     </div>
-
-                    <div class="pt-2 flex justify-center">
-                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                            @Localizer["ProductCreation"]
-                        </button>
-                    </div>
-                </form>
+                </div>
+            </section>
+            <div class="job-index-create-cta">
+                <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    @Localizer["ProductCreation"]
+                </button>
             </div>
-        </div>
+        </form>
     }
 </div>

@@ -12,7 +12,7 @@ const employeeModalConfig = {
     itemIdentifier: 'code',
     itemName: 'employee',
     itemsArrayName: 'employees',
-    pageSize: 10,
+    pageSize: 20,
     searchMethod: 'get',
     searchOnOpen: true,
     defaultFilter: {
@@ -58,7 +58,12 @@ const employeeCustomMethods = {
         this.isOpen = true;
         this.targetId = detail.targetId || '';
         this.isMultiSelect = detail.isMultiSelect || false;
+        this.allowQuantity = detail.allowQuantity === true;
         this.showFilter = detail.showFilter || false;
+        const parsedDefaultQuantity = Number.parseInt(detail.defaultQuantity, 10);
+        this.defaultSelectionQuantity = Number.isFinite(parsedDefaultQuantity) && parsedDefaultQuantity > 0
+            ? parsedDefaultQuantity
+            : 1;
         this.selectedItems = [];
         this.items = [];
         this.hasSearched = false;
@@ -88,7 +93,7 @@ const employeeCustomMethods = {
             functionId: '',
             status: '1',
             page: 1,
-            pageSize: 10
+            pageSize: 20
         };
     },
 
@@ -116,7 +121,16 @@ const employeeCustomMethods = {
             const result = await API.get('/api/Employee/search', params);
 
             if (result) {
-                this.items = result.items || result.Items || result.data || result.Data || [];
+                const rawItems = result.items || result.Items || result.data || result.Data || [];
+                this.items = (Array.isArray(rawItems) ? rawItems : []).map(item => {
+                    const selectedItem = this.selectedItems.find(x => x.code === item.code);
+                    return {
+                        ...item,
+                        quantity: selectedItem
+                            ? selectedItem.quantity
+                            : this.normalizeQuantity(item.quantity)
+                    };
+                });
                 this.totalCount = result.totalCount || result.TotalCount || 0;
             } else {
                 this.items = [];
@@ -144,13 +158,15 @@ document.addEventListener('alpine:init', () => {
         targetId: '',
         isMultiSelect: false,
         showFilter: false,
-        filter: { ...employeeModalConfig.defaultFilter, page: 1, pageSize: 10 },
+        allowQuantity: false,
+        defaultSelectionQuantity: 1,
+        filter: { ...employeeModalConfig.defaultFilter, page: 1, pageSize: 20 },
         currentPage: 1,
         totalCount: 0,
         items: [],
         hasSearched: false,
         selectedItems: [],
-        pageSize: 10,
+        pageSize: 20,
 
         // Base metodlar
         close() {
@@ -172,11 +188,38 @@ document.addEventListener('alpine:init', () => {
             if (!this.isMultiSelect) return;
             const index = this.selectedItems.findIndex(x => x.code === emp.code);
             if (index > -1) this.selectedItems.splice(index, 1);
-            else this.selectedItems.push(emp);
+            else this.selectedItems.push({
+                ...emp,
+                quantity: this.normalizeQuantity(emp.quantity)
+            });
         },
 
         isSelected(emp) {
             return this.selectedItems.some(x => x.code === emp.code);
+        },
+
+        normalizeQuantity(value) {
+            const parsed = Number.parseInt(value, 10);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : this.defaultSelectionQuantity;
+        },
+
+        getQuantity(emp) {
+            const selectedItem = this.selectedItems.find(x => x.code === emp.code);
+            if (selectedItem) {
+                return selectedItem.quantity;
+            }
+
+            return this.normalizeQuantity(emp.quantity);
+        },
+
+        updateQuantity(emp, value) {
+            const quantity = this.normalizeQuantity(value);
+            emp.quantity = quantity;
+
+            const selectedItem = this.selectedItems.find(x => x.code === emp.code);
+            if (selectedItem) {
+                selectedItem.quantity = quantity;
+            }
         },
 
         submitMultiSelection() {
@@ -189,8 +232,37 @@ document.addEventListener('alpine:init', () => {
             this.close();
         },
 
-        get totalPages() {
+        totalPages() {
             return Math.ceil(this.totalCount / this.pageSize);
+        },
+
+        displayColumnCount() {
+            if (!Array.isArray(this.items) || this.items.length === 0) {
+                return 1;
+            }
+
+            if (this.items.length >= 13) {
+                return 3;
+            }
+
+            if (this.items.length >= 7) {
+                return 2;
+            }
+
+            return 1;
+        },
+
+        columnGroups() {
+            if (!Array.isArray(this.items) || this.items.length === 0) {
+                return [];
+            }
+
+            const columnCount = this.displayColumnCount();
+            const chunkSize = Math.ceil(this.items.length / columnCount);
+
+            return Array.from({ length: columnCount }, (_, index) =>
+                this.items.slice(index * chunkSize, (index + 1) * chunkSize)
+            ).filter(group => group.length > 0);
         }
     };
 

@@ -5,151 +5,139 @@
 @model InvoiceViewModel
 
 @{
-    ViewData["Title"] = Localizer["InvoiceOperations"];
+    ViewData["Title"] = Localizer["InvoiceSearch"];
     var firstValue = Model.First.HasValue && Model.First.Value > 0
         ? Model.First.Value
-        : (Model.PageSize > 0 ? Model.PageSize : 10);
+        : 100;
+    var pageSizeValue = Model.PageSize > 0 ? Model.PageSize : 16;
 }
 
-<div x-data="invoicePage()" @@customer-selected.window="handleSelection($event.detail)" class="invoice-page-shell invoice-index-shell page-shell--wide space-y-3">
-    <div class="text-center">
+<div x-data="invoicePage()" @@customer-selected.window="handleSelection($event.detail)" class="invoice-page-shell invoice-index-shell invoice-index-reference page-shell--wide space-y-2">
+    <div class="text-center job-index-heading">
         <h2 class="invoice-page-title invoice-page-title--orange">
-            @Localizer["InvoiceOperations"]
+            @Localizer["InvoiceSearch"]
         </h2>
     </div>
 
-    <section class="dense-panel">
+    <section class="dense-panel invoice-index-search-panel">
         <div class="dense-panel__header">
             <h3 class="dense-panel__title">@Localizer["MainCriteria"]</h3>
         </div>
         <div class="dense-panel__body mobile-stack-form">
-            <div class="text-[0.7rem] text-slate-500 text-right mb-2">
-                @Localizer["Last30DaysDefault"]
-            </div>
-            <div class="grid gap-2 lg:grid-cols-2">
-                <div class="dense-form-grid">
-                    <div class="dense-form-row">
-                        <label>@Localizer["JobCustomer"]</label>
-                        <div class="picker-inline flex items-center gap-2">
-                            <input type="text" readonly x-model="jobCustomerName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
-                            <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'job' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
-                                @Localizer["Select"]
-                            </button>
-                        </div>
-                    </div>
-                    <div class="dense-form-row">
-                        <label>@Localizer["InvoiceCustomer"]</label>
-                        <div class="picker-inline flex items-center gap-2">
-                            <input type="text" readonly x-model="invoiceCustomerName" class="dense-input bg-gray-50" placeholder="@Localizer["AllOption"]">
-                            <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'invoice' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
-                                @Localizer["Select"]
-                            </button>
-                        </div>
-                    </div>
-                    <div class="dense-form-row">
-                        <label>@Localizer["ReferenceRange"]</label>
-                        <div class="picker-inline flex items-center gap-2">
-                            <input type="text" x-model="filter.referenceStart" class="dense-input" placeholder="@Localizer["StartDate"]">
-                            <input type="text" x-model="filter.referenceEnd" class="dense-input" placeholder="@Localizer["EndDate"]">
-                        </div>
-                    </div>
-                    <div class="dense-form-row">
-                        <label for="InvoiceName">@Localizer["Name"]</label>
-                        <input id="InvoiceName" type="text" x-model="filter.name" class="dense-input">
+            <div class="dense-form-grid invoice-index-criteria-list">
+                <div class="dense-form-row">
+                    <label>@Localizer["JobCustomer"]</label>
+                    <div class="invoice-index-selector">
+                        <span class="invoice-index-selector__value" x-text="jobCustomerName || '-'"></span>
+                        <span class="invoice-index-selector__separator">-</span>
+                        <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'job' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                            @Localizer["Select"]
+                        </button>
                     </div>
                 </div>
-                <div class="dense-form-grid">
-                    <div class="dense-form-row">
-                        <label for="InvoiceRelated">@Localizer["Related"]</label>
-                        <input id="InvoiceRelated" type="text" x-model="filter.relatedPerson" class="dense-input">
-                    </div>
-                    <div class="dense-form-row">
-                        <label>@Localizer["Date"]</label>
-                        <div class="picker-inline flex items-center gap-2">
-                            <input type="date" x-model="filter.issueDateStart" class="dense-input">
-                            <input type="date" x-model="filter.issueDateEnd" class="dense-input">
-                        </div>
-                    </div>
-                    <div class="dense-form-row">
-                        <label for="InvoiceStatus">@Localizer["Status"]</label>
-                        <select id="InvoiceStatus" x-model="filter.status" class="dense-input">
-                            <option value="">@Localizer["AllOption"]</option>
-                            @{
-                                var invoiceStates = ViewBag.InvoiceStates as List<Imaj.Service.DTOs.StateDto> ?? new List<Imaj.Service.DTOs.StateDto>();
-                            }
-                            @foreach (var state in invoiceStates)
-                            {
-                                <option value="@state.Id">@state.Name</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="dense-form-row">
-                        <label for="InvoiceEvaluated">@Localizer["Evaluated"]</label>
-                        <select id="InvoiceEvaluated" x-model="filter.evaluated" class="dense-input">
-                            <option value="">@Localizer["AllOption"]</option>
-                            <option value="true">@Localizer["Yes"]</option>
-                            <option value="false">@Localizer["No"]</option>
-                        </select>
+                <div class="dense-form-row">
+                    <label>@Localizer["InvoiceCustomer"]</label>
+                    <div class="invoice-index-selector">
+                        <span class="invoice-index-selector__value" x-text="invoiceCustomerName || '-'"></span>
+                        <span class="invoice-index-selector__separator">-</span>
+                        <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'invoice' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                            @Localizer["Select"]
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <div class="dense-toolbar mt-3">
-                <label class="dense-toolbar__label">@Localizer["First"]</label>
-                <input type="number" x-model="filter.first" min="1" class="dense-input dense-toolbar__input">
-                <label class="dense-toolbar__label">@Localizer["PageSize"]</label>
-                <input type="number" x-model="filter.pageSize" min="1" class="dense-input dense-toolbar__input">
-
-                <button type="button" @@click="searchInvoices()" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                    @Localizer["Search"]
-                </button>
-                <button type="button" @@click="resetFilters()" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-                    @Localizer["Clear"]
-                </button>
+                <div class="dense-form-row">
+                    <label>@Localizer["ReferenceRange"]</label>
+                    <div class="picker-inline picker-inline--range invoice-index-range">
+                        <input type="text" x-model="filter.referenceStart" class="dense-input">
+                        <input type="text" x-model="filter.referenceEnd" class="dense-input">
+                    </div>
+                </div>
+                <div class="dense-form-row">
+                    <label for="InvoiceName">@Localizer["Name"]</label>
+                    <input id="InvoiceName" type="text" x-model="filter.name" class="dense-input">
+                </div>
+                <div class="dense-form-row">
+                    <label for="InvoiceRelated">@Localizer["Related"]</label>
+                    <input id="InvoiceRelated" type="text" x-model="filter.relatedPerson" class="dense-input">
+                </div>
+                <div class="dense-form-row">
+                    <label>@Localizer["InvoiceIssueDate"]</label>
+                    <div class="picker-inline picker-inline--range invoice-index-range">
+                        <input type="date" x-model="filter.issueDateStart" class="dense-input">
+                        <input type="date" x-model="filter.issueDateEnd" class="dense-input">
+                    </div>
+                </div>
+                <div class="dense-form-row">
+                    <label for="InvoiceStatus">@Localizer["Status"]</label>
+                    <select id="InvoiceStatus" x-model="filter.status" class="dense-input">
+                        <option value="">@Localizer["AllOption"]</option>
+                        @{
+                            var invoiceStates = ViewBag.InvoiceStates as List<Imaj.Service.DTOs.StateDto> ?? new List<Imaj.Service.DTOs.StateDto>();
+                        }
+                        @foreach (var state in invoiceStates)
+                        {
+                            <option value="@state.Id">@state.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="dense-form-row">
+                    <label for="InvoiceEvaluated">@Localizer["Evaluated"]</label>
+                    <select id="InvoiceEvaluated" x-model="filter.evaluated" class="dense-input">
+                        <option value="">@Localizer["AllOption"]</option>
+                        <option value="true">@Localizer["Yes"]</option>
+                        <option value="false">@Localizer["No"]</option>
+                    </select>
+                </div>
             </div>
         </div>
     </section>
 
-    <div class="dense-action-grid">
-        <section class="dense-action-card">
-            <div class="dense-action-card__header">
-                <h3 class="dense-action-card__title">@Localizer["InvoiceCreation"]</h3>
+    <div class="dense-toolbar invoice-index-toolbar">
+        <label class="dense-toolbar__label">@Localizer["First"]</label>
+        <input type="number" x-model="filter.first" min="1" class="dense-input dense-toolbar__input">
+        <label class="dense-toolbar__label">@Localizer["PageSize"]</label>
+        <input type="number" x-model="filter.pageSize" min="1" class="dense-input dense-toolbar__input">
+        <button type="button" @@click="searchInvoices()" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+            @Localizer["Search"]
+        </button>
+        <button type="button" @@click="resetFilters()" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+            @Localizer["Clear"]
+        </button>
+    </div>
+
+    <div class="job-index-action-group invoice-index-report-group">
+        <button type="button" @@click="openDetailedInvoiceReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+            @Localizer["DetailedInvoiceReport"]
+        </button>
+        <button type="button" @@click="openSummaryInvoiceReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+            @Localizer["SummaryInvoiceReport"]
+        </button>
+    </div>
+
+    <div class="job-index-section job-index-section--narrow invoice-index-create-section">
+        <h3 class="job-index-section__title">@Localizer["InvoiceCreation"]</h3>
+        <section class="dense-panel job-index-create-panel invoice-index-create-panel">
+            <div class="dense-panel__header">
+                <h4 class="dense-panel__title">@Localizer["PreInformation"]</h4>
             </div>
-            <div class="dense-action-card__body flex-col items-stretch">
+            <div class="dense-panel__body job-index-create-panel__body">
                 <div class="dense-form-row">
                     <label>@Localizer["JobCustomer"]</label>
-                    <div class="picker-inline flex items-center gap-2">
-                        <input type="text" readonly x-model="newJobCustomerName" class="dense-input bg-gray-50" placeholder="@Localizer["PleaseSelectCustomer"]">
+                    <div class="invoice-index-selector">
+                        <span class="invoice-index-selector__value" x-text="newJobCustomerName || '-'"></span>
+                        <span class="invoice-index-selector__separator">-</span>
                         <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'newJob' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
                             @Localizer["Select"]
                         </button>
                     </div>
                 </div>
-                <button type="button" @@click="createInvoice()" class="inline-flex items-center justify-center px-5 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-                    @Localizer["CreateNewInvoice"]
-                </button>
             </div>
         </section>
-
-        <section class="dense-action-card">
-            <div class="dense-action-card__header">
-                <h3 class="dense-action-card__title">@Localizer["Invoice"] @Localizer["Reports"]</h3>
-            </div>
-            <div class="dense-action-card__body responsive-action-group">
-                <button type="button" @@click="downloadDetailedInvoiceReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                    @Localizer["DetailedInvoiceReport"] - Excel
-                </button>
-                <button type="button" @@click="openDetailedInvoiceReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
-                    @Localizer["DetailedInvoiceReport"] - PDF
-                </button>
-                <button type="button" @@click="downloadSummaryInvoiceReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                    @Localizer["SummaryInvoiceReport"] - Excel
-                </button>
-                <button type="button" @@click="openSummaryInvoiceReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
-                    @Localizer["SummaryInvoiceReport"] - PDF
-                </button>
-            </div>
-        </section>
+        <div class="job-index-create-cta">
+            <button type="button" @@click="createInvoice()" class="inline-flex items-center justify-center px-5 py-2 border border-transparent text-sm font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                @Localizer["CreateNewInvoice"]
+            </button>
+        </div>
     </div>
 
     <partial name="_CustomerSelectModal" />
@@ -176,7 +164,7 @@
                  issueDateStart: '@Model.IssueDateStart?.ToString("yyyy-MM-dd")', issueDateEnd: '@Model.IssueDateEnd?.ToString("yyyy-MM-dd")',
                  status: '', evaluated: '',
                  first: @firstValue,
-                 pageSize: @(Model.PageSize > 0 ? Model.PageSize : 10)
+                 pageSize: @pageSizeValue
             },
 
             messages: {
@@ -425,7 +413,7 @@
                 this.filter.status = '';
                 this.filter.evaluated = '';
                 this.filter.first = @firstValue;
-                this.filter.pageSize = @(Model.PageSize > 0 ? Model.PageSize : 10);
+                this.filter.pageSize = @pageSizeValue;
             },
 
             createInvoice() {

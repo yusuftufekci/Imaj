@@ -59,7 +59,9 @@ namespace Imaj.Web.Controllers
             var model = new InvoiceViewModel
             {
                 IssueDateStart = DateTime.Now.AddDays(-30),
-                IssueDateEnd = DateTime.Now
+                IssueDateEnd = DateTime.Now,
+                First = 100,
+                PageSize = 16
             };
             return View(model);
         }

@@ -18,16 +18,16 @@
 
     <!-- Modal Panel: Her zaman ekranın ortasında görünür -->
     <div x-show="$store.employeeModal.isOpen" 
-         class="modal-content modal-content--xl"
+         class="modal-content modal-content--xl employee-select-modal"
          tabindex="-1">
          
         <!-- Header -->
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-gray-100">
-            <div class="flex justify-between items-center mb-2">
-                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+        <div class="employee-select-modal__header bg-white border-b border-gray-100">
+            <div class="employee-select-modal__header-row flex justify-between items-center mb-2">
+                <h3 class="employee-select-modal__title text-lg leading-6 font-medium text-gray-900" id="modal-title">
                     @Localizer["EmployeeSearchTitle"]
                 </h3>
-                <button x-on:click="$store.employeeModal.close()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                <button x-on:click="$store.employeeModal.close()" class="employee-select-modal__close text-gray-400 hover:text-gray-500 focus:outline-none">
                     <span class="sr-only">@Localizer["Close"]</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -36,24 +36,24 @@
             </div>
             
             <!-- Filter Panel (Conditional) -->
-            <div x-show="$store.employeeModal.showFilter" class="bg-gray-50 p-4 rounded-md mb-4 border border-gray-200">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div x-show="$store.employeeModal.showFilter" class="employee-select-modal__filters bg-gray-50 rounded-md border border-gray-200">
+                <div class="employee-select-modal__filter-grid grid grid-cols-1 md:grid-cols-4 gap-4">
                     <!-- Kod -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">@Localizer["Code"]</label>
-                        <input type="text" x-model="$store.employeeModal.filter.code" x-on:keyup.enter="$store.employeeModal.search(1)" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        <label class="employee-select-modal__label block text-sm font-medium text-gray-700 mb-1">@Localizer["Code"]</label>
+                        <input type="text" x-model="$store.employeeModal.filter.code" x-on:keyup.enter="$store.employeeModal.search(1)" class="employee-select-modal__input shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                     </div>
                     
                     <!-- Ad -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">@Localizer["Name"]</label>
-                        <input type="text" x-model="$store.employeeModal.filter.name" x-on:keyup.enter="$store.employeeModal.search(1)" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        <label class="employee-select-modal__label block text-sm font-medium text-gray-700 mb-1">@Localizer["Name"]</label>
+                        <input type="text" x-model="$store.employeeModal.filter.name" x-on:keyup.enter="$store.employeeModal.search(1)" class="employee-select-modal__input shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                     </div>
                     
                     <!-- Fonksiyon -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">@Localizer["Function"]</label>
-                        <select x-model="$store.employeeModal.filter.functionId" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        <label class="employee-select-modal__label block text-sm font-medium text-gray-700 mb-1">@Localizer["Function"]</label>
+                        <select x-model="$store.employeeModal.filter.functionId" class="employee-select-modal__input shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             <option value="">@Localizer["All"]</option>
                             <template x-for="func in $store.employeeModal.functions" :key="func.id">
                                 <option :value="func.id" x-text="func.name"></option>
@@ -63,15 +63,15 @@
                     
                     <!-- Durum -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">@Localizer["Status"]</label>
-                        <select x-model="$store.employeeModal.filter.status" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                        <label class="employee-select-modal__label block text-sm font-medium text-gray-700 mb-1">@Localizer["Status"]</label>
+                        <select x-model="$store.employeeModal.filter.status" class="employee-select-modal__input shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
                             <option value="0">@Localizer["All"]</option>
                             <option value="1">@Localizer["OnlyValid"]</option>
                             <option value="2">@Localizer["OnlyInvalid"]</option>
                         </select>
                     </div>
                 </div>
-                <div class="mt-4 flex justify-end space-x-2">
+                <div class="employee-select-modal__filter-actions mt-4 flex justify-end space-x-2">
                     <button x-on:click="$store.employeeModal.clearFilter()" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                         @Localizer["Clear"]
                     </button>
@@ -81,59 +81,82 @@
                 </div>
             </div>
             
-            <!-- Table -->
+            <!-- Results -->
             <div class="flex flex-col">
-                <div class="modal-table-wrap">
-                    <div class="inline-block min-w-full align-middle">
-                        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left" x-show="$store.employeeModal.isMultiSelect">
-                                            <span class="sr-only">@Localizer["Select"]</span>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Code"]</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["FullName"]</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">@Localizer["Status"]</th>
-                                        <th scope="col" class="relative px-6 py-3" x-show="!$store.employeeModal.isMultiSelect">
-                                            <span class="sr-only">@Localizer["Select"]</span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="employee in $store.employeeModal.items" :key="employee.id">
-                                        <tr class="hover:bg-gray-50 cursor-pointer" :class="{'bg-red-50': employee.invisible}" x-on:click="$store.employeeModal.isMultiSelect ? $store.employeeModal.toggleSelection(employee) : $store.employeeModal.select(employee)">
-                                            <td class="px-6 py-4 whitespace-nowrap" x-show="$store.employeeModal.isMultiSelect">
-                                                <input type="checkbox" :checked="$store.employeeModal.isSelected(employee)" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="employee.code"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="employee.name"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                                 <span x-show="employee.invisible" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">@Localizer["Invalid"]</span>
-                                                 <span x-show="!employee.invisible" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">@Localizer["Valid"]</span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" x-show="!$store.employeeModal.isMultiSelect">
-                                                <button class="text-indigo-600 hover:text-indigo-900">@Localizer["Select"]</button>
-                                            </td>
-                                        </tr>
+                <div class="modal-table-wrap employee-select-modal__table-wrap">
+                    <div class="employee-select-modal__results" :class="'employee-select-modal__results--cols-' + $store.employeeModal.displayColumnCount()">
+                        <template x-for="(group, groupIndex) in $store.employeeModal.columnGroups()" :key="'group-' + groupIndex">
+                            <section class="employee-select-modal__column">
+                                <div class="employee-select-modal__column-header"
+                                     :class="$store.employeeModal.allowQuantity ? 'employee-select-modal__column-header--multi-qty' : 'employee-select-modal__column-header--multi'"
+                                     x-show="$store.employeeModal.isMultiSelect">
+                                    <span>@Localizer["Select"]</span>
+                                    <span x-show="$store.employeeModal.allowQuantity">@Localizer["Quantity"]</span>
+                                    <span>@Localizer["Code"]</span>
+                                    <span>@Localizer["FullName"]</span>
+                                    <span>@Localizer["Status"]</span>
+                                </div>
+                                <div class="employee-select-modal__column-header employee-select-modal__column-header--single" x-show="!$store.employeeModal.isMultiSelect">
+                                    <span>@Localizer["Select"]</span>
+                                    <span>@Localizer["Code"]</span>
+                                    <span>@Localizer["FullName"]</span>
+                                    <span>@Localizer["Status"]</span>
+                                </div>
+
+                                <div class="employee-select-modal__column-body">
+                                    <template x-for="employee in group" :key="employee.id">
+                                        <div class="employee-select-modal__record hover:bg-gray-50 cursor-pointer"
+                                             :class="{
+                                                'employee-select-modal__record--multi-qty': $store.employeeModal.isMultiSelect && $store.employeeModal.allowQuantity,
+                                                'employee-select-modal__record--multi': $store.employeeModal.isMultiSelect && !$store.employeeModal.allowQuantity,
+                                                'employee-select-modal__record--single': !$store.employeeModal.isMultiSelect,
+                                                'bg-red-50': employee.invisible
+                                             }"
+                                             x-on:click="$store.employeeModal.isMultiSelect ? $store.employeeModal.toggleSelection(employee) : $store.employeeModal.select(employee)">
+                                            <div class="employee-select-modal__cell employee-select-modal__cell--selector" x-show="$store.employeeModal.isMultiSelect">
+                                                <input type="checkbox"
+                                                       :checked="$store.employeeModal.isSelected(employee)"
+                                                       x-on:click.stop="$store.employeeModal.toggleSelection(employee)"
+                                                       class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                            </div>
+                                            <div class="employee-select-modal__cell employee-select-modal__cell--quantity" x-show="$store.employeeModal.isMultiSelect && $store.employeeModal.allowQuantity">
+                                                <input type="number"
+                                                       min="1"
+                                                       step="1"
+                                                       :value="$store.employeeModal.getQuantity(employee)"
+                                                       x-on:click.stop
+                                                       x-on:input="$store.employeeModal.updateQuantity(employee, $event.target.value)"
+                                                       class="employee-select-modal__quantity-input border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            </div>
+                                            <div class="employee-select-modal__cell employee-select-modal__cell--selector employee-select-modal__cell--action" x-show="!$store.employeeModal.isMultiSelect">
+                                                <button type="button" class="employee-select-modal__inline-select text-indigo-600 hover:text-indigo-900" x-on:click.stop="$store.employeeModal.select(employee)">
+                                                    @Localizer["Select"]
+                                                </button>
+                                            </div>
+                                            <div class="employee-select-modal__cell employee-select-modal__cell--code" x-text="employee.code"></div>
+                                            <div class="employee-select-modal__cell employee-select-modal__cell--name" x-text="employee.name"></div>
+                                            <div class="employee-select-modal__cell employee-select-modal__cell--status">
+                                                <span x-show="employee.invisible" class="employee-select-modal__tag employee-select-modal__tag--invalid">@Localizer["Invalid"]</span>
+                                                <span x-show="!employee.invisible" class="employee-select-modal__tag employee-select-modal__tag--valid">@Localizer["Valid"]</span>
+                                            </div>
+                                        </div>
                                     </template>
-                                    <tr x-show="$store.employeeModal.items.length === 0">
-                                        <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">
-                                            @Localizer["NoRecordsFound"]
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                </div>
+                            </section>
+                        </template>
+
+                        <div x-show="$store.employeeModal.items.length === 0" class="employee-select-modal__empty text-center text-sm text-gray-500">
+                            @Localizer["NoRecordsFound"]
                         </div>
                     </div>
                 </div>
             </div>
             
             <!-- Pagination -->
-            <div class="modal-pagination bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-2">
+            <div class="modal-pagination employee-select-modal__pagination bg-white flex items-center justify-between border-t border-gray-200 mt-2">
                 <div class="flex items-center space-x-2">
-                     <span class="text-sm text-gray-700">@Localizer["PageSize"]:</span>
-                    <select x-model="$store.employeeModal.filter.pageSize" x-on:change="$store.employeeModal.search(1)" class="block w-20 py-1 px-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                     <span class="employee-select-modal__meta text-sm text-gray-700">@Localizer["PageSize"]:</span>
+                    <select x-model="$store.employeeModal.filter.pageSize" x-on:change="$store.employeeModal.search(1)" class="employee-select-modal__page-size block w-20 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option>10</option>
                         <option>20</option>
                         <option>50</option>
@@ -142,17 +165,17 @@
                 </div>
                 
                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-center">
-                    <p class="text-sm text-gray-700">
+                    <p class="employee-select-modal__meta text-sm text-gray-700">
                         @Localizer["Total"] <span class="font-medium" x-text="$store.employeeModal.totalCount"></span> @Localizer["Records"], @Localizer["Page"] <span class="font-medium" x-text="$store.employeeModal.currentPage"></span>
                     </p>
                 </div>
                 
                 <div>
-                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <button x-on:click="if($store.employeeModal.currentPage > 1) $store.employeeModal.search($store.employeeModal.currentPage - 1)" :disabled="$store.employeeModal.currentPage <= 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                    <nav class="employee-select-modal__pager relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button x-on:click="if($store.employeeModal.currentPage > 1) $store.employeeModal.search($store.employeeModal.currentPage - 1)" :disabled="$store.employeeModal.currentPage <= 1" class="employee-select-modal__pager-button relative inline-flex items-center rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
                             @Localizer["Previous"]
                         </button>
-                        <button x-on:click="if($store.employeeModal.items.length >= $store.employeeModal.filter.pageSize) $store.employeeModal.search($store.employeeModal.currentPage + 1)" :disabled="$store.employeeModal.items.length < $store.employeeModal.filter.pageSize" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                        <button x-on:click="if($store.employeeModal.items.length >= $store.employeeModal.filter.pageSize) $store.employeeModal.search($store.employeeModal.currentPage + 1)" :disabled="$store.employeeModal.items.length < $store.employeeModal.filter.pageSize" class="employee-select-modal__pager-button relative inline-flex items-center rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
                             @Localizer["Next"]
                         </button>
                     </nav>
@@ -161,7 +184,7 @@
 
         </div>
         <!-- Footer Actions -->
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200">
+        <div class="employee-select-modal__footer bg-gray-50 sm:flex sm:flex-row-reverse border-t border-gray-200">
             <button x-show="!$store.employeeModal.isMultiSelect" type="button" x-on:click="$store.employeeModal.close()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                 @Localizer["Close"]
             </button>

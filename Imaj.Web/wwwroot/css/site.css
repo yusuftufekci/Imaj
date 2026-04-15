@@ -118,11 +118,26 @@ textarea:focus {
 }
 
 .flatpickr-calendar {
+    width: 14.4rem;
     border: 1px solid #d4e3f4;
-    border-radius: 0.85rem;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+    border-radius: 0.75rem;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
     font-family: inherit;
+    font-size: 0.74rem;
     overflow: hidden;
+}
+
+.flatpickr-calendar.hasTime {
+    width: 15.5rem;
+}
+
+.flatpickr-months .flatpickr-month {
+    height: 2.05rem;
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+    padding: 0.25rem 0.35rem;
 }
 
 .flatpickr-calendar.arrowTop::before,
@@ -137,13 +152,15 @@ textarea:focus {
 }
 
 .flatpickr-current-month {
-    padding-top: 0.5rem;
+    padding-top: 0.22rem;
+    font-size: 0.76rem;
 }
 
 .flatpickr-current-month .flatpickr-monthDropdown-months,
 .flatpickr-current-month input.cur-year {
     font-weight: 700;
     color: #0f172a;
+    font-size: 0.76rem;
 }
 
 .flatpickr-weekdays {
@@ -153,6 +170,30 @@ textarea:focus {
 span.flatpickr-weekday {
     color: #475569;
     font-weight: 700;
+    font-size: 0.62rem;
+    height: 1.45rem;
+    line-height: 1.45rem;
+}
+
+.flatpickr-rContainer,
+.flatpickr-days,
+.dayContainer {
+    width: 14.4rem;
+    min-width: 14.4rem;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-rContainer,
+.flatpickr-calendar.hasTime .flatpickr-days,
+.flatpickr-calendar.hasTime .dayContainer {
+    width: 15.5rem;
+    min-width: 15.5rem;
+}
+
+.flatpickr-day {
+    max-width: 1.88rem;
+    height: 1.88rem;
+    line-height: 1.88rem;
+    font-size: 0.71rem;
 }
 
 .flatpickr-day.selected,
@@ -175,6 +216,19 @@ span.flatpickr-weekday {
     border-color: #93c5fd;
 }
 
+.flatpickr-time {
+    max-height: 2.05rem;
+}
+
+.flatpickr-time .numInputWrapper,
+.flatpickr-time .flatpickr-am-pm {
+    height: 2.05rem;
+}
+
+.flatpickr-time input {
+    font-size: 0.72rem;
+}
+
 .flatpickr-time input:hover,
 .flatpickr-time .flatpickr-am-pm:hover,
 .numInputWrapper:hover {
@@ -184,20 +238,20 @@ span.flatpickr-weekday {
 .imaj-date-actions {
     display: flex;
     justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.625rem 0.75rem 0.75rem;
+    gap: 0.35rem;
+    padding: 0.35rem 0.45rem 0.45rem;
     border-top: 1px solid #e2e8f0;
     background: #f8fafc;
 }
 
 .imaj-date-actions__button {
     flex: 1;
-    min-height: 2rem;
+    min-height: 1.5rem;
     border: 1px solid #cbd5e1;
-    border-radius: 0.45rem;
+    border-radius: 0.4rem;
     background: #ffffff;
     color: #334155;
-    font-size: 0.75rem;
+    font-size: 0.67rem;
     font-weight: 700;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
@@ -427,6 +481,39 @@ span.flatpickr-weekday {
     overflow: hidden;
 }
 
+.layout-frame {
+    width: min(1600px, calc(100vw - 1.5rem));
+    max-width: 100%;
+    margin-inline: auto;
+}
+
+.layout-frame--top {
+    min-height: 2.2rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.layout-frame--nav {
+    min-height: 3.2rem;
+}
+
+.layout-main-nav {
+    min-height: 3.2rem;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+}
+
+.layout-main-frame {
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+}
+
+.layout-logo {
+    height: 1.8rem !important;
+}
+
 .layout-topbar-group,
 .layout-topbar-links {
     min-width: 0;
@@ -447,8 +534,8 @@ span.flatpickr-weekday {
         flex: 1 1 0%;
         flex-wrap: wrap;
         align-items: center;
-        gap: 2px 4px;
-        margin-left: 1.5rem;
+        gap: 1px 3px;
+        margin-left: 1rem;
         min-width: 0;
     }
 }
@@ -457,10 +544,11 @@ span.flatpickr-weekday {
 .nav-menu-item {
     display: inline-flex;
     align-items: center;
-    padding: 6px 12px;
+    padding: 4px 8px;
     border-bottom: 2px solid transparent;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.15;
     color: #4b5563;
     /* gray-600 */
     white-space: nowrap;
@@ -541,6 +629,405 @@ span.flatpickr-weekday {
 
 .modal-pagination {
     gap: 0.75rem;
+}
+
+.employee-select-modal {
+    max-width: 78rem;
+}
+
+.employee-select-modal__header {
+    padding: 0.9rem 1rem 0.8rem;
+}
+
+.employee-select-modal__header-row {
+    margin-bottom: 0.4rem;
+}
+
+.employee-select-modal__title {
+    font-size: 1rem;
+    line-height: 1.25;
+}
+
+.employee-select-modal__close svg {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+.employee-select-modal__filters {
+    padding: 0.7rem 0.8rem;
+    margin-bottom: 0.75rem;
+}
+
+.employee-select-modal__filter-grid {
+    gap: 0.65rem;
+}
+
+.employee-select-modal__label {
+    margin-bottom: 0.2rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.employee-select-modal__input {
+    min-height: 1.9rem;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.employee-select-modal__filter-actions {
+    margin-top: 0.7rem;
+    gap: 0.35rem;
+}
+
+.employee-select-modal__table-wrap {
+    min-width: 0;
+}
+
+.employee-select-modal__results {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.employee-select-modal__column {
+    overflow: hidden;
+    border: 1px solid #d7e5f2;
+    border-radius: 0.55rem;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.employee-select-modal__column-header {
+    display: grid;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.65rem;
+    background: linear-gradient(180deg, #edf5fc 0%, #dcecf9 100%);
+    color: #1e3a8a;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.employee-select-modal__column-header--multi,
+.employee-select-modal__record--multi {
+    grid-template-columns: 2.7rem 5.5rem minmax(0, 1fr) 4.75rem;
+}
+
+.employee-select-modal__column-header--multi-qty,
+.employee-select-modal__record--multi-qty {
+    grid-template-columns: 2.7rem 4.4rem 5.2rem minmax(0, 1fr) 4.75rem;
+}
+
+.employee-select-modal__column-header--single,
+.employee-select-modal__record--single {
+    grid-template-columns: 3.5rem 5.5rem minmax(0, 1fr) 4.75rem;
+}
+
+.employee-select-modal__column-body {
+    display: grid;
+}
+
+.employee-select-modal__record {
+    display: grid;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.42rem 0.65rem;
+    border-top: 1px solid #e5edf6;
+    font-size: 0.76rem;
+    line-height: 1.2;
+}
+
+.employee-select-modal__column-body .employee-select-modal__record:nth-child(odd) {
+    background-color: #fffaf0;
+}
+
+.employee-select-modal__column-body .employee-select-modal__record:nth-child(even) {
+    background-color: #f5faff;
+}
+
+.employee-select-modal__record.bg-red-50 {
+    background-color: #fef2f2;
+}
+
+.employee-select-modal__cell {
+    min-width: 0;
+}
+
+.employee-select-modal__cell--selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.employee-select-modal__cell--quantity {
+    display: flex;
+    align-items: center;
+}
+
+.employee-select-modal__cell--code {
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+}
+
+.employee-select-modal__cell--name {
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.employee-select-modal__cell--status {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.employee-select-modal__inline-select {
+    padding: 0;
+    min-height: auto !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #1d4ed8 !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+}
+
+.employee-select-modal__inline-select:hover {
+    background: transparent !important;
+    color: #1e40af !important;
+}
+
+.employee-select-modal__quantity-input {
+    width: 100%;
+    min-height: 1.65rem;
+    padding: 0.08rem 0.32rem;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    text-align: right;
+}
+
+.employee-select-modal__tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.2rem;
+    padding: 0.1rem 0.38rem;
+    border-radius: 9999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.employee-select-modal__tag--invalid {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.employee-select-modal__tag--valid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.employee-select-modal__empty {
+    padding: 1.8rem 0.8rem;
+    border: 1px dashed #d7e5f2;
+    border-radius: 0.55rem;
+    background: #f8fbff;
+}
+
+.employee-select-modal__pagination {
+    padding: 0.65rem 1rem 0;
+}
+
+.employee-select-modal__meta {
+    font-size: 0.78rem;
+}
+
+.employee-select-modal__page-size {
+    width: 4rem;
+    min-height: 1.75rem;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.78rem;
+}
+
+.employee-select-modal__pager-button {
+    min-height: 1.8rem;
+    padding: 0.18rem 0.55rem;
+    font-size: 0.76rem;
+}
+
+.employee-select-modal__footer {
+    padding: 0.7rem 1rem 0.8rem;
+}
+
+.employee-select-modal :where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"],
+    [class*="bg-slate-100"]
+) {
+    min-height: 1.85rem;
+    padding: 0.15rem 0.65rem;
+    font-size: 0.74rem;
+}
+
+@media (min-width: 768px) {
+    .employee-select-modal__results--cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1200px) {
+    .employee-select-modal__results--cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.product-select-modal {
+    max-width: 62rem;
+}
+
+.product-select-modal__body {
+    padding: 0.9rem 1rem 0.75rem;
+}
+
+.product-select-modal__title {
+    margin-bottom: 0.65rem;
+    font-size: 1rem;
+    line-height: 1.25;
+}
+
+.product-select-modal__filters {
+    padding: 0.7rem 0.8rem;
+    margin-bottom: 0.7rem;
+    border-radius: 0.6rem;
+}
+
+.product-select-modal__filter-grid {
+    gap: 0.65rem;
+}
+
+.product-select-modal__label {
+    margin-bottom: 0.2rem;
+    font-size: 0.72rem;
+    line-height: 1.2;
+}
+
+.product-select-modal__input {
+    min-height: 1.9rem;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.79rem;
+    line-height: 1.2;
+}
+
+.product-select-modal__filter-actions {
+    margin-top: 0.65rem;
+    gap: 0.35rem;
+}
+
+.product-select-modal__table-wrap {
+    min-width: 0;
+}
+
+.product-select-modal__table-shell {
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+}
+
+.product-select-modal__table {
+    min-width: 54rem;
+}
+
+.product-select-modal__thead {
+    background: linear-gradient(180deg, #edf5fc 0%, #dcecf9 100%);
+}
+
+.product-select-modal__th {
+    padding: 0.45rem 0.65rem;
+    color: #1e3a8a;
+    font-size: 0.67rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.product-select-modal__row:nth-child(odd) {
+    background-color: #fffaf0;
+}
+
+.product-select-modal__row:nth-child(even) {
+    background-color: #f5faff;
+}
+
+.product-select-modal__td {
+    padding: 0.42rem 0.65rem;
+    font-size: 0.76rem;
+    line-height: 1.2;
+}
+
+.product-select-modal__cell-code {
+    font-weight: 700;
+    color: #111827;
+}
+
+.product-select-modal__cell-name {
+    max-width: 15rem;
+    overflow: hidden;
+    color: #111827;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.product-select-modal__cell-number {
+    font-variant-numeric: tabular-nums;
+}
+
+.product-select-modal__quantity {
+    width: 4.1rem;
+    min-height: 1.75rem;
+    padding: 0.12rem 0.35rem;
+    font-size: 0.74rem;
+}
+
+.product-select-modal__empty {
+    padding: 1.5rem 0.8rem;
+    font-size: 0.78rem;
+}
+
+.product-select-modal__pagination {
+    padding-top: 0.65rem;
+}
+
+.product-select-modal__pagination :is(p, .text-sm) {
+    font-size: 0.78rem;
+}
+
+.product-select-modal__footer {
+    padding: 0.7rem 1rem 0.8rem;
+}
+
+.product-select-modal :where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-white"][class*="border-gray-300"],
+    [class*="bg-slate-100"]
+) {
+    min-height: 1.85rem;
+    padding: 0.15rem 0.65rem;
+    font-size: 0.74rem;
 }
 
 /* ============================================
@@ -709,7 +1196,7 @@ span.flatpickr-weekday {
    Opt-in layout system for high-density screens.
    ============================================ */
 .page-shell--wide {
-    width: min(1440px, calc(100vw - 2.5rem));
+    width: min(1520px, 100%);
     max-width: 100%;
     margin-inline: auto;
 }
@@ -868,6 +1355,342 @@ span.flatpickr-weekday {
     font-size: 1.35rem;
 }
 
+.job-index-reference {
+    width: 100%;
+    gap: 0.75rem;
+}
+
+.job-index-heading {
+    padding-top: 0.1rem;
+}
+
+.job-index-form {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.job-index-reference-grid {
+    align-items: start;
+    gap: 0.75rem;
+}
+
+.job-index-reference-panel {
+    border-radius: 0.5rem;
+}
+
+.job-index-criteria-list {
+    width: min(100%, 40rem);
+}
+
+.job-index-toolbar {
+    margin-top: 0.25rem;
+}
+
+.job-index-section {
+    display: grid;
+    justify-items: center;
+    gap: 0.45rem;
+    text-align: center;
+}
+
+.job-index-section--narrow {
+    gap: 0.55rem;
+}
+
+.job-index-section__title {
+    margin: 0;
+    color: #ea580c;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.job-index-action-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+    width: min(100%, 48rem);
+}
+
+.job-index-create-panel {
+    width: min(100%, 47rem);
+}
+
+.job-index-create-panel__body {
+    display: flex;
+    justify-content: center;
+}
+
+.job-index-create-panel__body .dense-form-row {
+    width: min(100%, 15rem);
+}
+
+.job-index-create-cta {
+    display: flex;
+    justify-content: center;
+}
+
+.employee-index-reference .employee-index-search-panel {
+    width: min(100%, 48rem);
+    margin-inline: auto;
+}
+
+.employee-index-reference .employee-index-criteria-list {
+    width: min(100%, 31rem);
+}
+
+.employee-index-reference .employee-index-create-panel {
+    width: min(100%, 32rem);
+}
+
+.employee-index-reference .job-index-create-panel__body .dense-form-row {
+    width: min(100%, 13.5rem);
+}
+
+.product-index-reference .product-index-search-panel {
+    width: min(100%, 54rem);
+    margin-inline: auto;
+}
+
+.product-index-reference .product-index-criteria-list {
+    width: min(100%, 34rem);
+}
+
+.product-index-reference .product-index-create-panel {
+    width: min(100%, 31rem);
+}
+
+.product-index-reference .job-index-create-panel__body .dense-form-row {
+    width: min(100%, 13.25rem);
+}
+
+.invoice-index-reference {
+    gap: 0.65rem;
+}
+
+.invoice-index-reference .invoice-index-search-panel {
+    width: min(100%, 62rem);
+    margin-inline: auto;
+}
+
+.invoice-index-reference .invoice-index-criteria-list {
+    width: min(100%, 26rem);
+    margin-inline: auto;
+}
+
+.invoice-index-reference .invoice-index-selector {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.invoice-index-reference .invoice-index-selector__value {
+    min-width: 0;
+    max-width: 14rem;
+    overflow: hidden;
+    color: #1e3a8a;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.invoice-index-reference .invoice-index-selector__separator {
+    color: #1e3a8a;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.invoice-index-reference .invoice-index-range {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.invoice-index-reference .invoice-index-range .dense-input {
+    flex: 0 1 7rem;
+    max-width: 7.25rem;
+}
+
+.invoice-index-reference .invoice-index-toolbar {
+    margin-top: 0.15rem;
+}
+
+.invoice-index-reference .invoice-index-report-group {
+    width: min(100%, 28rem);
+    margin-inline: auto;
+}
+
+.invoice-index-reference .invoice-index-create-section {
+    gap: 0.35rem;
+}
+
+.invoice-index-reference .invoice-index-create-panel {
+    width: min(100%, 62rem);
+}
+
+.invoice-index-reference .invoice-index-create-panel .job-index-create-panel__body {
+    justify-content: center;
+}
+
+.invoice-index-reference .invoice-index-create-panel .dense-form-row {
+    width: min(100%, 22rem);
+    grid-template-columns: minmax(7.25rem, 8.65rem) minmax(0, 1fr);
+}
+
+.report-index-reference {
+    gap: 0.6rem;
+}
+
+.report-index-reference .report-index-panel {
+    width: min(100%, 50rem);
+    margin-inline: auto;
+}
+
+.report-index-reference .report-index-criteria-list {
+    width: min(100%, 27rem);
+    margin-inline: auto;
+}
+
+.report-index-reference .report-index-selector {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.report-index-reference .report-index-selector__value {
+    min-width: 0;
+    max-width: 15rem;
+    overflow: hidden;
+    color: #1e3a8a;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.report-index-reference .report-index-selector__separator {
+    color: #1e3a8a;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.report-index-reference .report-index-report-group {
+    width: min(100%, 34rem);
+}
+
+.report-index-reference .report-index-panel__actions {
+    margin-top: 0.7rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid #d9e5f2;
+}
+
+.product-report-index-reference .report-index-panel {
+    width: min(100%, 48rem);
+}
+
+.product-report-index-reference .report-index-report-group {
+    width: min(100%, 26rem);
+    margin-inline: auto;
+}
+
+.overtime-report-index-reference .report-index-panel {
+    width: min(100%, 48rem);
+}
+
+.overtime-report-index-reference .report-index-report-group {
+    width: min(100%, 56rem);
+}
+
+.employee-list-shell {
+    width: min(100%, 58rem);
+    margin-inline: auto;
+}
+
+.employee-list-shell .employee-list-card__footer {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.45rem 0.6rem 0.55rem;
+    border-top: 1px solid #e5e7eb;
+    background-color: #f8fafc;
+}
+
+.employee-list-shell .employee-list-card__footer > .bg-white {
+    padding: 0 !important;
+    border-top: 0 !important;
+    background: transparent !important;
+}
+
+.employee-list-shell .employee-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.employee-list-shell .job-table th,
+.employee-list-shell .job-table td {
+    padding: 0.42rem 0.6rem;
+}
+
+.employee-list-shell .job-table td {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.employee-list-shell .job-table__count {
+    font-size: 0.7rem;
+}
+
+.product-list-shell {
+    width: min(100%, 74rem);
+    margin-inline: auto;
+}
+
+.product-list-shell .product-list-card__footer {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.45rem 0.6rem 0.55rem;
+    border-top: 1px solid #e5e7eb;
+    background-color: #f8fafc;
+}
+
+.product-list-shell .product-list-card__footer > .bg-white {
+    padding: 0 !important;
+    border-top: 0 !important;
+    background: transparent !important;
+}
+
+.product-list-shell .product-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.product-list-shell .job-table th,
+.product-list-shell .job-table td {
+    padding: 0.42rem 0.6rem;
+}
+
+.product-list-shell .job-table td {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.product-list-shell .job-table__count {
+    font-size: 0.7rem;
+}
+
 .invoice-index-shell .invoice-page-title {
     font-size: 1.35rem;
 }
@@ -922,9 +1745,24 @@ span.flatpickr-weekday {
     row-gap: 0.1rem;
 }
 
+.job-index-reference .job-index-criteria-list .dense-form-row {
+    grid-template-columns: minmax(7.25rem, 8.65rem) minmax(0, 1fr);
+    column-gap: 0.55rem;
+}
+
+.job-index-reference .job-index-side-column .dense-form-row {
+    grid-template-columns: minmax(4.8rem, 5.6rem) minmax(0, 1fr);
+}
+
 .job-index-shell .dense-form-row > label,
 .invoice-index-shell .dense-form-row > label {
     font-size: 0.6875rem;
+}
+
+.job-index-reference .job-index-criteria-list .dense-form-row > label,
+.job-index-reference .job-index-side-column .dense-form-row > label {
+    font-size: 0.8rem;
+    font-weight: 700;
 }
 
 .job-index-shell .dense-input,
@@ -933,6 +1771,41 @@ span.flatpickr-weekday {
     padding: 0.125rem 0.35rem;
     font-size: 0.6875rem;
     line-height: 1.15;
+}
+
+.job-index-reference .job-index-criteria-list .dense-input,
+.job-index-reference .job-index-side-column .dense-input,
+.job-index-reference .job-index-create-panel .dense-input {
+    min-height: 1.8rem;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
+.job-index-reference .picker-inline--lookup {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.job-index-reference .picker-inline--lookup > .dense-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.job-index-reference .picker-inline--lookup > button {
+    flex: 0 0 auto;
+}
+
+.job-index-reference .picker-inline--range {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.job-index-reference .picker-inline--range .dense-input {
+    flex: 0 1 8.6rem;
+    max-width: 9.5rem;
 }
 
 .job-index-shell .dense-toolbar,
@@ -948,6 +1821,17 @@ span.flatpickr-weekday {
 .job-index-shell .dense-toolbar__input,
 .invoice-index-shell .dense-toolbar__input {
     width: 3.15rem;
+}
+
+.job-index-reference .dense-toolbar__label {
+    font-size: 0.7rem;
+}
+
+.job-index-reference .dense-toolbar__input {
+    width: 2.9rem;
+    min-height: 1.55rem;
+    padding: 0.08rem 0.3rem;
+    font-size: 0.72rem;
 }
 
 .job-index-shell .dense-action-card,
@@ -969,6 +1853,23 @@ span.flatpickr-weekday {
 .job-index-shell .dense-action-card__body,
 .invoice-index-shell .dense-action-card__body {
     gap: 0.25rem;
+}
+
+.job-index-reference .dense-panel__header {
+    padding: 0.48rem 0.65rem;
+}
+
+.job-index-reference .dense-panel__title {
+    font-size: 0.8rem;
+}
+
+.job-index-reference .dense-panel__body {
+    padding: 0.55rem 0.7rem 0.65rem;
+}
+
+.job-index-reference .dense-panel__body--tight {
+    padding-top: 0.45rem;
+    padding-bottom: 0.5rem;
 }
 
 .job-index-shell :where(a, button):is(
@@ -1006,6 +1907,129 @@ span.flatpickr-weekday {
     min-height: 1.5rem;
     padding: 0.1rem 0.55rem;
     font-size: 0.6875rem;
+}
+
+.job-index-reference :where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"],
+    [class*="bg-slate-100"]
+) {
+    min-height: 1.85rem;
+    padding: 0.15rem 0.7rem;
+    font-size: 0.76rem;
+}
+
+.job-index-reference .job-index-toolbar :where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"],
+    [class*="bg-slate-100"]
+) {
+    min-height: 1.55rem;
+    padding: 0.08rem 0.55rem;
+    font-size: 0.7rem;
+}
+
+.job-index-reference .job-index-section {
+    gap: 0.3rem;
+}
+
+.job-index-reference .job-index-section__title {
+    font-size: 0.9rem;
+}
+
+.job-index-reference .job-index-action-group {
+    gap: 0.25rem;
+}
+
+.job-index-reference .job-index-action-group :where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"],
+    [class*="bg-slate-100"]
+) {
+    min-height: 1.55rem;
+    padding: 0.08rem 0.5rem;
+    font-size: 0.68rem;
+}
+
+.job-index-reference .job-index-create-panel .dense-panel__header {
+    padding: 0.28rem 0.45rem;
+}
+
+.job-index-reference .job-index-create-panel .dense-panel__title {
+    font-size: 0.7rem;
+}
+
+.job-index-reference .job-index-create-panel .dense-panel__body {
+    padding: 0.3rem 0.42rem 0.38rem;
+}
+
+.job-index-reference .job-index-create-panel .dense-form-row {
+    grid-template-columns: minmax(4.3rem, 5rem) minmax(0, 1fr);
+    column-gap: 0.32rem;
+}
+
+.job-index-reference .job-index-create-panel .dense-form-row > label {
+    font-size: 0.68rem;
+}
+
+.job-index-reference .job-index-create-panel .dense-input {
+    min-height: 1.42rem;
+    padding: 0.05rem 0.24rem;
+    font-size: 0.68rem;
+}
+
+.job-index-reference .job-index-create-cta :where(a, button):is(
+    [class*="bg-blue-600"],
+    [class*="bg-blue-500"],
+    [class*="bg-blue-400"],
+    [class*="bg-blue-800"],
+    [class*="bg-indigo-600"],
+    [class*="bg-green-600"],
+    [class*="bg-blue-100"],
+    [class*="bg-red-100"],
+    [class*="bg-red-400"],
+    [class*="bg-red-500"],
+    [class*="bg-emerald-100"],
+    [class*="bg-amber-100"],
+    [class*="bg-white"][class*="border-gray-300"],
+    [class*="bg-slate-100"]
+) {
+    min-height: 1.6rem;
+    padding: 0.08rem 0.6rem;
+    font-size: 0.7rem;
 }
 
 .customer-form-page .customer-page-title,
@@ -1729,7 +2753,7 @@ span.flatpickr-weekday {
 
 @media (min-width: 1024px) {
     .page-shell--wide {
-        width: min(1440px, calc(100vw - 3rem));
+        width: min(1520px, 100%);
     }
 
     .dense-panel-grid {
@@ -1764,6 +2788,18 @@ span.flatpickr-weekday {
     .job-index-shell .dense-action-grid {
         grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
     }
+
+    .job-index-reference.job-index-shell.page-shell--wide {
+        width: 100%;
+    }
+
+    .job-index-reference-grid {
+        grid-template-columns: minmax(0, 1.26fr) minmax(0, 0.74fr);
+    }
+
+    .job-index-reference .job-index-side-column {
+        align-content: start;
+    }
 }
 
 @media (max-width: 1023px) {
@@ -1785,6 +2821,10 @@ span.flatpickr-weekday {
 }
 
 @media (min-width: 640px) {
+    .layout-logo {
+        height: 2rem !important;
+    }
+
     .modal-overlay {
         align-items: center;
         padding: 1.5rem;
@@ -1859,6 +2899,18 @@ span.flatpickr-weekday {
     .mobile-detail-grid .grid.grid-cols-3 {
         grid-template-columns: minmax(0, 1fr) !important;
         gap: 0.25rem !important;
+    }
+
+    .invoice-index-reference .invoice-index-range .dense-input {
+        max-width: none;
+    }
+
+    .invoice-index-reference .invoice-index-selector__value {
+        max-width: none;
+    }
+
+    .report-index-reference .report-index-selector__value {
+        max-width: none;
     }
 
     .picker-inline,
@@ -1943,6 +2995,16 @@ span.flatpickr-weekday {
 
     .dense-action-card {
         padding: 0.625rem;
+    }
+
+    .job-index-reference .job-index-criteria-list,
+    .job-index-reference .job-index-create-panel,
+    .job-index-reference .job-index-action-group {
+        width: 100%;
+    }
+
+    .job-index-reference .picker-inline--range .dense-input {
+        max-width: none;
     }
 
     .customer-footer-bar {

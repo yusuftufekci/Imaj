@@ -311,7 +311,7 @@
             <div class="job-footer-bar">
                       <div class="flex flex-wrap gap-2">
                           <button type="button" class="text-red-600 font-bold hover:underline text-sm">@Localizer["Delete"]</button>
-                          <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'overtimeAdd', isMultiSelect: true, functionId: '@currentFunctionId' })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Add"]</button>
+                          <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'overtimeAdd', isMultiSelect: true, functionId: '@currentFunctionId', allowQuantity: true, defaultQuantity: 1 })" class="text-blue-600 font-bold hover:underline text-sm">@Localizer["Add"]</button>
                       </div>
                       <div class="text-sm font-bold text-gray-900">
                           Toplam: <span x-text="calculateOvertimeTotal()"></span>

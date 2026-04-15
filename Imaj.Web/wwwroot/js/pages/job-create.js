@@ -341,18 +341,20 @@ function jobCreate(config) {
         openProductPicker() {
             this.openProductPickerModal({
                 productGroup: '',
-                autoSearch: false
+                autoSearch: false,
+                showFilter: true
             });
         },
 
         openGroupedProductPicker() {
             this.openProductPickerModal({
                 productGroup: this.selectedProductGroup || '',
-                autoSearch: true
+                autoSearch: true,
+                showFilter: false
             });
         },
 
-        openProductPickerModal({ productGroup, autoSearch }) {
+        openProductPickerModal({ productGroup, autoSearch, showFilter }) {
             const selectedFunctionId = this.getSelectedFunctionId();
 
             this.$dispatch('product-select-open', {
@@ -367,6 +369,7 @@ function jobCreate(config) {
                 lockFunction: true,
                 productGroup: productGroup || '',
                 autoSearch: !!autoSearch,
+                showFilter: showFilter !== false,
                 pageSize: this.normalizeProductPickerPageSize()
             });
         },
@@ -456,17 +459,17 @@ function jobCreate(config) {
                         || this.defaultWorkTypeName
                         || '';
 
-                    this.overtimes.push({
-                        id: emp.id || 0,
-                        code: emp.code,
-                        name: emp.name,
-                        taskType: taskTypeId,
-                        taskTypeName,
-                        overtimeType: this.defaultTimeTypeId,
-                        quantity: 1,
+                    this.overtimes.push(this.createOvertimeItem({
+                        employeeId: emp.id || 0,
+                        employeeCode: emp.code,
+                        employeeName: emp.name,
+                        workTypeId: taskTypeId,
+                        workTypeName: taskTypeName,
+                        timeTypeId: this.defaultTimeTypeId,
+                        quantity: emp.quantity,
                         amount: 0,
                         notes: ''
-                    });
+                    }));
                 });
             }
         },

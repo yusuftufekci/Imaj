@@ -13,106 +13,86 @@
     var canDownloadAdministrativeSummary = await PermissionViewService.CanExecuteMethodAsync(2917);
 }
 
-<div x-data="overtimeReport()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="space-y-6">
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate text-center text-orange-600">
-                @Localizer["OvertimeReport"]
-            </h2>
-        </div>
+<div x-data="overtimeReport()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="job-page-shell job-index-shell job-index-reference report-index-reference overtime-report-index-reference page-shell--wide space-y-2">
+    <div class="text-center job-index-heading">
+        <h2 class="job-page-title job-page-title--orange">
+            @Localizer["OvertimeReport"]
+        </h2>
     </div>
 
-    <div class="bg-white shadow sm:rounded-lg border border-gray-200 w-full max-w-5xl mx-auto text-left">
-        <div class="px-4 py-5 sm:p-6 space-y-6 mobile-stack-form">
-            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                
-                <!-- Date Range -->
-                <div class="sm:col-span-3">
-                    <label for="start-date" class="block text-sm font-medium text-gray-700">@Localizer["StartDate"]</label>
-                    <div class="mt-1">
-                        <input type="date" name="start-date" id="start-date" x-model="startDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.StartDate.ToString("yyyy-MM-dd")">
-                    </div>
+    <section class="dense-panel report-index-panel">
+        <div class="dense-panel__header">
+            <h3 class="dense-panel__title">@Localizer["MainCriteria"]</h3>
+        </div>
+        <div class="dense-panel__body mobile-stack-form">
+            <div class="dense-form-grid report-index-criteria-list">
+                <div class="dense-form-row">
+                    <label for="OvertimeReportStartDate">@Localizer["StartDate"]</label>
+                    <input type="date" name="start-date" id="OvertimeReportStartDate" x-model="startDate" class="dense-input" value="@Model.StartDate.ToString("yyyy-MM-dd")">
                 </div>
-
-                <div class="sm:col-span-3">
-                    <label for="end-date" class="block text-sm font-medium text-gray-700">@Localizer["EndDate"]</label>
-                    <div class="mt-1">
-                        <input type="date" name="end-date" id="end-date" x-model="endDate" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" value="@Model.EndDate.ToString("yyyy-MM-dd")">
-                    </div>
+                <div class="dense-form-row">
+                    <label for="OvertimeReportEndDate">@Localizer["EndDate"]</label>
+                    <input type="date" name="end-date" id="OvertimeReportEndDate" x-model="endDate" class="dense-input" value="@Model.EndDate.ToString("yyyy-MM-dd")">
                 </div>
-
-                <!-- Employee Selection -->
-                <div class="sm:col-span-6">
-                    <label class="block text-sm font-medium text-gray-700">@Localizer["Employee"]</label>
-                    <div class="mt-1 flex rounded-md shadow-sm picker-combo">
-                        <div class="relative flex-grow focus-within:z-10">
-                             <input type="text" readonly x-model="selectedEmployeeName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300" placeholder="@Localizer["AllOption"]">
-                        </div>
-                        <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'mainEmployee', isMultiSelect: true })" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                            <!-- Search Icon -->
-                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                            </svg>
-                            <span>@Localizer["Select"]</span>
+                <div class="dense-form-row">
+                    <label>@Localizer["Employee"]</label>
+                    <div class="report-index-selector">
+                        <span class="report-index-selector__value" x-text="selectedEmployeeName || '-'"></span>
+                        <span class="report-index-selector__separator">-</span>
+                        <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'mainEmployee', isMultiSelect: true })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                            @Localizer["Select"]
                         </button>
                     </div>
                 </div>
-
-                <!-- Customer Selection -->
-                <div class="sm:col-span-6">
-                    <label class="block text-sm font-medium text-gray-700">@Localizer["Customer"]</label>
-                     <div class="mt-1 flex rounded-md shadow-sm picker-combo">
-                        <div class="relative flex-grow focus-within:z-10">
-                             <input type="text" readonly x-model="selectedCustomerName" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300" placeholder="@Localizer["AllOption"]">
-                        </div>
-                        <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'main', searchEndpoint: '/OvertimeReport/CustomerSearch', jobStatesEndpoint: '/OvertimeReport/CustomerJobStates' })" class="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
-                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                            </svg>
-                             <span>@Localizer["Select"]</span>
+                <div class="dense-form-row">
+                    <label>@Localizer["Customer"]</label>
+                    <div class="report-index-selector">
+                        <span class="report-index-selector__value" x-text="selectedCustomerName || '-'"></span>
+                        <span class="report-index-selector__separator">-</span>
+                        <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'main', searchEndpoint: '/OvertimeReport/CustomerSearch', jobStatesEndpoint: '/OvertimeReport/CustomerJobStates' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                            @Localizer["Select"]
                         </button>
                     </div>
                 </div>
-
             </div>
 
-            <div class="pt-6 border-t border-gray-200">
-                <div class="flex flex-wrap items-center justify-center gap-3 responsive-action-group">
-                @if (canDownloadDetailed)
-                {
-                    <button type="button" @@click="downloadDetailedReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                        @Localizer["DetailedOvertimeReportTitle"] - Excel
-                    </button>
-                    <button type="button" @@click="openDetailedReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
-                        @Localizer["DetailedOvertimeReportTitle"] - PDF
-                    </button>
-                }
-                @if (canDownloadSummary)
-                {
-                    <button type="button" @@click="downloadSummaryReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                        @Localizer["SummaryOvertimeReportTitle"] - Excel
-                    </button>
-                    <button type="button" @@click="openSummaryReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
-                        @Localizer["SummaryOvertimeReportTitle"] - PDF
-                    </button>
-                }
-                @if (canDownloadAdministrativeSummary)
-                {
-                    <button type="button" @@click="downloadAdministrativeSummaryReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                        @Localizer["AdminSummaryOvertimeReportTitle"] - Excel
-                    </button>
-                    <button type="button" @@click="openAdministrativeSummaryReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
-                        @Localizer["AdminSummaryOvertimeReportTitle"] - PDF
-                    </button>
-                }
-                @if (!canDownloadDetailed && !canDownloadSummary && !canDownloadAdministrativeSummary)
-                {
-                    <span class="text-sm text-gray-500">@Localizer["ReportDataUnavailable"]</span>
-                }
+            <div class="report-index-panel__actions">
+                <div class="job-index-action-group report-index-report-group responsive-action-group">
+                    @if (canDownloadDetailed)
+                    {
+                        <button type="button" @@click="downloadDetailedReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                            @Localizer["DetailedOvertimeReportTitle"] - Excel
+                        </button>
+                        <button type="button" @@click="openDetailedReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                            @Localizer["DetailedOvertimeReportTitle"] - PDF
+                        </button>
+                    }
+                    @if (canDownloadSummary)
+                    {
+                        <button type="button" @@click="downloadSummaryReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                            @Localizer["SummaryOvertimeReportTitle"] - Excel
+                        </button>
+                        <button type="button" @@click="openSummaryReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                            @Localizer["SummaryOvertimeReportTitle"] - PDF
+                        </button>
+                    }
+                    @if (canDownloadAdministrativeSummary)
+                    {
+                        <button type="button" @@click="downloadAdministrativeSummaryReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                            @Localizer["AdminSummaryOvertimeReportTitle"] - Excel
+                        </button>
+                        <button type="button" @@click="openAdministrativeSummaryReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                            @Localizer["AdminSummaryOvertimeReportTitle"] - PDF
+                        </button>
+                    }
+                    @if (!canDownloadDetailed && !canDownloadSummary && !canDownloadAdministrativeSummary)
+                    {
+                        <span class="text-sm text-gray-500">@Localizer["ReportDataUnavailable"]</span>
+                    }
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
     <partial name="_CustomerSelectModal" />
     <partial name="_EmployeeSelectModal" />
