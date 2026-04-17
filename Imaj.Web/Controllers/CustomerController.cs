@@ -19,6 +19,12 @@ namespace Imaj.Web.Controllers
     /// </summary>
     public class CustomerController : BaseController
     {
+        // BaseMeth IDs – CustomerQry container (177)
+        private const int QueryMethodId = 1090;   // Query – ReadOnly
+        private const int AddMethodId = 1076;      // Add
+        private const int EditMethodId = 1078;     // Edit
+        private const int BrowseMethodId = 1077;   // Browse – ReadOnly
+
         private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
         private readonly ICustomerService _customerService;
@@ -72,7 +78,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
-        [RequireMethodPermission(1090)]
+        [RequireMethodPermission(QueryMethodId)]
         public async Task<IActionResult> Search([FromBody] CustomerFilterModel? filter)
         {
             var f = filter ?? new CustomerFilterModel();
@@ -102,7 +108,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
-        [RequireMethodPermission(1090)]
+        [RequireMethodPermission(BrowseMethodId)]
         public async Task<IActionResult> List(CustomerFilterModel filter)
         {
             var f = filter ?? new CustomerFilterModel();
@@ -147,7 +153,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
-        [RequireMethodPermission(1090)]
+        [RequireMethodPermission(QueryMethodId)]
         public async Task<IActionResult> DownloadReportExcel([FromQuery] CustomerFilterModel? filter)
         {
             var normalizedFilter = filter ?? new CustomerFilterModel();
@@ -169,7 +175,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
-        [RequireMethodPermission(1090)]
+        [RequireMethodPermission(QueryMethodId)]
         public async Task<IActionResult> ViewReport([FromQuery] CustomerFilterModel? filter)
         {
             var normalizedFilter = filter ?? new CustomerFilterModel();
@@ -405,8 +411,8 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
-        [RequireMethodPermission(1090, write: true)]
-        public async Task<IActionResult> Update(CustomerViewModel model) 
+        [RequireMethodPermission(EditMethodId, write: true)]
+        public async Task<IActionResult> Update(CustomerViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -460,7 +466,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
-        [RequireMethodPermission(1090, write: true)]
+        [RequireMethodPermission(AddMethodId, write: true)]
         public async Task<IActionResult> Create(CustomerViewModel model)
         {
             if (!ModelState.IsValid)

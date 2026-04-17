@@ -22,7 +22,7 @@
          tabindex="-1">
          
         <!-- Header -->
-        <div class="employee-select-modal__header bg-white border-b border-gray-100">
+        <div class="employee-select-modal__header">
             <div class="employee-select-modal__header-row flex justify-between items-center mb-2">
                 <h3 class="employee-select-modal__title text-lg leading-6 font-medium text-gray-900" id="modal-title">
                     @Localizer["EmployeeSearchTitle"]
@@ -82,7 +82,6 @@
             </div>
             
             <!-- Results -->
-            <div class="flex flex-col">
                 <div class="modal-table-wrap employee-select-modal__table-wrap">
                     <div class="employee-select-modal__results" :class="'employee-select-modal__results--cols-' + $store.employeeModal.displayColumnCount()">
                         <template x-for="(group, groupIndex) in $store.employeeModal.columnGroups()" :key="'group-' + groupIndex">
@@ -150,10 +149,9 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            
+
             <!-- Pagination -->
-            <div class="modal-pagination employee-select-modal__pagination bg-white flex items-center justify-between border-t border-gray-200 mt-2">
+            <div class="modal-pagination employee-select-modal__pagination">
                 <div class="flex items-center space-x-2">
                      <span class="employee-select-modal__meta text-sm text-gray-700">@Localizer["PageSize"]:</span>
                     <select x-model="$store.employeeModal.filter.pageSize" x-on:change="$store.employeeModal.search(1)" class="employee-select-modal__page-size block w-20 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
@@ -184,7 +182,7 @@
 
         </div>
         <!-- Footer Actions -->
-        <div class="employee-select-modal__footer bg-gray-50 sm:flex sm:flex-row-reverse border-t border-gray-200">
+        <div class="employee-select-modal__footer">
             <button x-show="!$store.employeeModal.isMultiSelect" type="button" x-on:click="$store.employeeModal.close()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                 @Localizer["Close"]
             </button>
