@@ -75,6 +75,11 @@ const employeeCustomMethods = {
             this.filter.functionId = detail.functionId;
         }
 
+        const requestedPageSize = Number.parseInt(detail.pageSize, 10);
+        if (Number.isFinite(requestedPageSize) && requestedPageSize > 0) {
+            this.filter.pageSize = requestedPageSize;
+        }
+
         // Dropdown yükle (ilk açılışta)
         if (!this.functions || this.functions.length === 0) {
             this.getFunctions();

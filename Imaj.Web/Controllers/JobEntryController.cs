@@ -162,6 +162,28 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> CustomerProductCategories([FromQuery] decimal customerId)
+        {
+            if (!await CanUseCustomerLookupAsync())
+            {
+                return Forbid();
+            }
+
+            if (customerId <= 0)
+            {
+                return Json(new List<ProductCategoryDto>());
+            }
+
+            var result = await _customerService.GetByIdAsync(customerId);
+            if (result.IsSuccess && result.Data != null)
+            {
+                return Json(result.Data.ProductCategories ?? new List<ProductCategoryDto>());
+            }
+
+            return Json(new List<ProductCategoryDto>());
+        }
+
+        [HttpGet]
         public async Task<IActionResult> ProductCategories()
         {
             if (!await CanUseProductLookupAsync())

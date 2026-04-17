@@ -1443,7 +1443,8 @@ span.flatpickr-weekday {
 }
 
 .job-index-criteria-list {
-    width: min(100%, 40rem);
+    width: min(100%, 27.75rem);
+    margin-inline: auto;
 }
 
 .job-index-toolbar {
@@ -1829,6 +1830,11 @@ span.flatpickr-weekday {
     font-weight: 700;
 }
 
+.job-index-reference .job-index-side-column .dense-form-grid {
+    width: min(100%, 13.25rem);
+    margin-inline: auto;
+}
+
 .job-index-shell .dense-input,
 .invoice-index-shell .dense-input {
     min-height: 1.55rem;
@@ -1840,10 +1846,76 @@ span.flatpickr-weekday {
 .job-index-reference .job-index-criteria-list .dense-input,
 .job-index-reference .job-index-side-column .dense-input,
 .job-index-reference .job-index-create-panel .dense-input {
-    min-height: 1.8rem;
-    padding: 0.2rem 0.45rem;
-    font-size: 0.8rem;
+    min-height: 1.68rem;
+    padding: 0.15rem 0.36rem;
+    font-size: 0.77rem;
     line-height: 1.2;
+}
+
+.job-index-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    color: #1e3a8a;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.job-index-selector__value {
+    min-width: 0;
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.job-index-selector__separator {
+    color: #1e3a8a;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.job-index-input--select {
+    width: min(100%, 6.5rem);
+    max-width: 6.5rem;
+}
+
+.job-index-input--medium {
+    width: min(100%, 9.25rem);
+    max-width: 9.25rem;
+}
+
+.job-index-input--wide {
+    width: min(100%, 14rem);
+    max-width: 14rem;
+}
+
+.job-index-input--range {
+    width: min(100%, 4.15rem);
+    max-width: 4.15rem;
+}
+
+.job-index-input--date {
+    width: min(100%, 4.95rem);
+    max-width: 4.95rem;
+}
+
+.job-index-input--side-select {
+    width: min(100%, 6.15rem);
+    max-width: 6.15rem;
+}
+
+.job-index-range {
+    display: flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-width: 0;
+}
+
+.job-index-range .dense-input {
+    flex: 0 0 auto;
 }
 
 .job-index-reference .picker-inline--lookup {
@@ -2391,6 +2463,498 @@ span.flatpickr-weekday {
     min-height: 1.55rem;
     padding: 0.08rem 0.32rem;
     font-size: 0.71875rem;
+}
+
+.job-create-reference.page-shell--wide {
+    width: min(2000px, calc(100vw - 1rem));
+}
+
+.job-create-reference .job-page-title {
+    font-size: 1rem;
+    line-height: 1.05;
+}
+
+.job-create-reference .job-form-layout {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 0.55rem;
+    align-items: start;
+}
+
+.job-create-reference .job-note-stack {
+    gap: 0.45rem;
+    align-content: start;
+}
+
+.job-create-reference .dense-panel,
+.job-create-reference .job-table-card {
+    border-color: #a8c9e7;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff;
+}
+
+.job-create-reference .dense-panel__header,
+.job-create-reference .job-table-card__header {
+    padding: 0.2rem 0.3rem;
+    border-bottom: 1px solid #b5d3ed;
+    background: linear-gradient(180deg, #c6e4f7 0%, #93c4e8 100%);
+}
+
+.job-create-reference .dense-panel__title,
+.job-create-reference .job-table-card__title {
+    color: #111827;
+    font-size: 0.72rem;
+    font-weight: 400;
+    line-height: 1.15;
+}
+
+.job-create-reference .dense-panel__body {
+    padding: 0.28rem 0.34rem 0.34rem;
+}
+
+.job-create-reference .job-create-basic-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.72fr) minmax(12.5rem, 0.28fr);
+    gap: 0.75rem;
+    align-items: start;
+    min-height: 12rem;
+}
+
+.job-create-reference .job-create-basic-fields {
+    width: min(100%, 26rem);
+    gap: 0.22rem;
+}
+
+.job-create-reference .job-create-basic-fields .dense-form-row {
+    grid-template-columns: minmax(6.8rem, 7.8rem) minmax(0, 1fr);
+    column-gap: 0.4rem;
+}
+
+.job-create-reference .dense-form-row > label {
+    color: #1e32a8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: right;
+}
+
+.job-create-reference .dense-input {
+    min-height: 1.45rem;
+    padding: 0.05rem 0.3rem;
+    border: 1px solid #9ca3af;
+    border-radius: 0.18rem;
+    box-shadow: none;
+    font-size: 0.74rem;
+    line-height: 1.15;
+}
+
+.job-create-reference textarea.dense-input,
+.job-create-reference .job-create-note-area {
+    min-height: 3.55rem;
+    resize: vertical;
+}
+
+.job-create-reference .job-create-static {
+    color: #111827;
+    font-size: 0.76rem;
+    line-height: 1.2;
+}
+
+.job-create-reference .job-create-static--strong {
+    font-weight: 700;
+}
+
+.job-create-reference .job-create-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    color: #1e32a8;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.job-create-reference .job-create-selector__value {
+    min-width: 0;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.job-create-reference .job-create-selector__separator {
+    line-height: 1;
+}
+
+.job-create-reference .job-create-link-button {
+    min-height: auto !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    color: #0f29c9 !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+    box-shadow: none !important;
+}
+
+.job-create-reference .job-create-input--name {
+    width: min(100%, 12rem);
+    max-width: 12rem;
+}
+
+.job-create-reference .job-create-input--code {
+    width: 4.8rem;
+    max-width: 4.8rem;
+}
+
+.job-create-reference .job-create-input--page-size {
+    width: 3rem;
+    min-width: 3rem;
+    max-width: 3rem;
+    text-align: center;
+}
+
+.job-create-reference .job-create-input--datetime {
+    width: min(100%, 8.8rem);
+    max-width: 8.8rem;
+}
+
+.job-create-reference .job-create-datetime {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.job-create-reference .job-create-datetime__day {
+    color: #111827;
+    font-size: 0.74rem;
+    line-height: 1.15;
+    text-transform: capitalize;
+}
+
+.job-create-reference .job-create-flag {
+    display: flex;
+    align-items: center;
+    min-height: 1.2rem;
+}
+
+.job-create-reference .job-create-checkbox {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #2563eb;
+}
+
+.job-create-reference .job-create-quick-tools {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.job-create-reference .job-create-quick-tools__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.32rem;
+    padding-top: 1.55rem;
+}
+
+.job-create-reference .job-create-quick-tools__row label {
+    color: #1e32a8;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.job-create-reference .job-table-wrap {
+    background-color: #ffffff;
+}
+
+.job-create-reference .job-table {
+    min-width: 62rem;
+}
+
+.job-create-reference .job-table th {
+    padding: 0.22rem 0.34rem;
+    background: transparent;
+    color: #1e32a8;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    border-bottom: 1px dashed #c7d9eb;
+}
+
+.job-create-reference .job-table td {
+    padding: 0.18rem 0.34rem;
+    font-size: 0.76rem;
+    border-top: 1px solid #d8e5f1;
+}
+
+.job-create-reference .job-table tbody tr:nth-child(odd) {
+    background-color: #fff8ea;
+}
+
+.job-create-reference .job-table tbody tr:nth-child(even) {
+    background-color: #edf6ff;
+}
+
+.job-create-reference .job-table tbody tr:hover {
+    background-color: inherit;
+}
+
+.job-create-reference .job-table tfoot td {
+    background-color: #ffffff;
+    font-size: 0.77rem;
+}
+
+.job-create-reference .job-empty-state {
+    padding: 0.55rem;
+    color: #64748b;
+    font-size: 0.74rem;
+    text-align: center;
+    background: #ffffff !important;
+}
+
+.job-create-reference .job-table-input,
+.job-create-reference .job-table-select,
+.job-create-reference .job-table-textarea {
+    width: 100%;
+    border: 1px solid #9ca3af;
+    border-radius: 0.18rem;
+    background-color: #ffffff;
+    box-shadow: none;
+    font-size: 0.74rem;
+}
+
+.job-create-reference .job-table-input,
+.job-create-reference .job-table-select {
+    min-height: 1.4rem;
+    padding: 0.04rem 0.26rem;
+}
+
+.job-create-reference .job-table-input--money,
+.job-create-reference .job-table-input--discount {
+    text-align: right;
+}
+
+.job-create-reference .job-table-select {
+    min-width: 5.2rem;
+}
+
+.job-create-reference .job-table-textarea {
+    min-height: 1.55rem;
+    padding: 0.12rem 0.24rem;
+    line-height: 1.1;
+    resize: vertical;
+}
+
+.job-create-reference .job-table-textarea--single {
+    min-height: 1.45rem;
+}
+
+.job-create-reference .job-checkbox-cell input {
+    width: 1rem;
+    height: 1rem;
+}
+
+.job-create-reference .job-create-empty-band {
+    min-height: 1.65rem;
+    border-top: 1px dashed #c7d9eb;
+    background: #ffffff;
+}
+
+.job-create-reference .job-create-empty-band--slim {
+    min-height: 0.1rem;
+}
+
+.job-create-reference .job-create-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.24rem 0.35rem;
+    border-top: 1px solid #c7d9eb;
+    background: #ffffff;
+}
+
+.job-create-reference .job-create-toolbar__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.job-create-reference .job-create-toolbar__group > span {
+    display: inline-flex;
+    align-items: center;
+}
+
+.job-create-reference .job-create-toolbar__label {
+    color: #1e32a8;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.job-create-reference .job-create-toolbar__total {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #1e32a8;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.job-create-reference .job-create-toolbar__total strong {
+    min-width: 3.8rem;
+    color: #111827;
+    font-weight: 400;
+    text-align: right;
+}
+
+.job-create-reference .job-picker-panel,
+.job-create-reference .job-footer-bar {
+    padding: 0.24rem 0.35rem;
+    border-top: 1px dashed #c7d9eb;
+    background: #ffffff;
+}
+
+.job-create-reference .job-picker-panel {
+    gap: 0.3rem;
+}
+
+.job-create-reference .job-picker-panel__row,
+.job-create-reference .job-picker-controls,
+.job-create-reference .job-picker-links {
+    gap: 0.35rem;
+}
+
+.job-create-reference .job-picker-controls label {
+    color: #1e32a8;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.job-create-reference .job-picker-select,
+.job-create-reference .job-picker-page-size {
+    min-height: 1.45rem;
+    padding: 0.05rem 0.3rem;
+    border: 1px solid #9ca3af;
+    border-radius: 0.18rem;
+    box-shadow: none;
+    font-size: 0.74rem;
+}
+
+.job-create-reference .job-picker-select {
+    min-width: 9rem;
+}
+
+.job-create-reference .job-picker-page-size {
+    width: 3rem;
+    min-width: 3rem;
+}
+
+.job-create-reference .job-picker-link {
+    font-size: 0.8rem !important;
+}
+
+.job-create-reference .job-action-stack {
+    gap: 0.06rem;
+}
+
+.job-create-reference .job-footer-bar--center {
+    justify-content: center;
+}
+
+.job-create-reference .job-footer-bar--no-border {
+    border-top: none;
+    background: transparent;
+}
+
+.job-create-reference .job-create-action-button {
+    min-height: 1.6rem;
+    padding: 0.06rem 0.55rem;
+    border: 1px solid #1d4ed8;
+    border-radius: 0;
+    background: #dbeafe;
+    color: #0f29c9;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.1;
+    box-shadow: none;
+}
+
+.job-create-reference .job-create-action-button--danger {
+    border-color: #dc2626;
+    background: #fecaca;
+    color: #991b1b;
+}
+
+.job-create-reference .job-create-action-button--secondary {
+    border-color: #1d4ed8;
+    background: #dbeafe;
+    color: #0f29c9;
+}
+
+@media (max-width: 1023px) {
+    .job-create-reference .job-form-layout,
+    .job-create-reference .job-create-basic-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .job-create-reference .job-create-quick-tools {
+        justify-content: flex-start;
+    }
+
+    .job-create-reference .job-create-quick-tools__row {
+        justify-content: flex-start;
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 767px) {
+    .job-create-reference.page-shell--wide {
+        width: 100%;
+    }
+
+    .job-create-reference .job-create-basic-fields .dense-form-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .job-create-reference .dense-form-row > label {
+        text-align: left;
+    }
+
+    .job-create-reference .job-create-selector__value {
+        max-width: none;
+    }
+
+    .job-create-reference .job-create-input--name,
+    .job-create-reference .job-create-input--code,
+    .job-create-reference .job-create-input--page-size,
+    .job-create-reference .job-create-input--datetime {
+        width: 100%;
+        max-width: none;
+    }
+
+    .job-create-reference .job-create-toolbar,
+    .job-create-reference .job-picker-panel__row,
+    .job-create-reference .job-picker-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .job-create-reference .job-create-toolbar__total strong {
+        min-width: 0;
+        text-align: left;
+    }
+
+    .job-create-reference .job-picker-select,
+    .job-create-reference .job-picker-page-size {
+        width: 100%;
+    }
 }
 
 .customer-page-actions,
@@ -3065,6 +3629,37 @@ span.flatpickr-weekday {
     .job-index-reference .job-index-create-panel,
     .job-index-reference .job-index-action-group {
         width: 100%;
+    }
+
+    .job-index-reference .job-index-side-column .dense-form-grid {
+        width: 100%;
+    }
+
+    .job-index-selector {
+        flex-wrap: wrap;
+    }
+
+    .job-index-selector__value {
+        max-width: none;
+    }
+
+    .job-index-range {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .job-index-range .dense-input {
+        flex: 1 1 auto;
+    }
+
+    .job-index-input--select,
+    .job-index-input--medium,
+    .job-index-input--wide,
+    .job-index-input--range,
+    .job-index-input--date,
+    .job-index-input--side-select {
+        width: 100%;
+        max-width: none;
     }
 
     .job-index-reference .picker-inline--range .dense-input {

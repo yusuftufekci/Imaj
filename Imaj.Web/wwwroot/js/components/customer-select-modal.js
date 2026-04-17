@@ -74,9 +74,19 @@ function customerSelectModal() {
             this.jobStatesEndpoint = detail?.jobStatesEndpoint || '/Customer/GetJobStates';
             this.showModal = true;
             this.resetFilter();
+            const requestedPageSize = Number.parseInt(detail?.pageSize, 10);
+            if (Number.isFinite(requestedPageSize) && requestedPageSize > 0) {
+                this.filter.pageSize = requestedPageSize;
+            }
+            if (detail?.code) {
+                this.filter.code = String(detail.code).trim();
+            }
             this.hasSearched = false;
             this.items = [];
             await this.loadDropdowns();
+            if (detail?.autoSearch || this.filter.code) {
+                await this.search(1);
+            }
         },
 
         /**

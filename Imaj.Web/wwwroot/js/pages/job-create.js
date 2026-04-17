@@ -7,6 +7,8 @@ function jobCreate(config) {
         workTypeNames: config.workTypeNames || {},
         defaultTimeTypeId: config.defaultTimeTypeId || 0,
         productPicker: config.productPicker || {},
+        customerPicker: config.customerPicker || {},
+        customerProductCategoriesEndpoint: config.customerProductCategoriesEndpoint || '',
 
         validationError: '',
         validationErrorDetails: [],
@@ -21,11 +23,15 @@ function jobCreate(config) {
             startDate: config.form.startDate || '',
             endDate: config.form.endDate || ''
         },
+        quickCustomerCode: config.form.customerCode || '',
+        customerPickerPageSize: config.customerPicker?.defaultPageSize || 16,
+        overtimePickerPageSize: 64,
         productGroups: [],
         selectedProductGroup: '',
         productPickerPageSize: config.productPicker?.defaultPageSize || 16,
         selectedProductKeys: [],
         productSequence: 0,
+        customerCategoryDefaults: [],
         autoOvertimeTemplates: (config.autoOvertimeTemplates || []).map(item => ({
             employeeId: item.employeeId || item.id || 0,
             employeeCode: item.employeeCode || item.code || '',
@@ -53,6 +59,7 @@ function jobCreate(config) {
             }
 
             await this.loadProductGroups();
+            await this.loadCustomerProductCategories();
         },
 
         parseDecimal(value, fallback = 0) {
@@ -82,6 +89,15 @@ function jobCreate(config) {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 2
             });
+        },
+
+        formatWeekday(value) {
+            const parsed = this.parseDateTimeLocal(value);
+            if (!parsed) {
+                return '';
+            }
+
+            return new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(parsed);
         },
 
         normalizeCode(value) {
@@ -188,12 +204,13 @@ function jobCreate(config) {
 
         createCategoryItem(category) {
             return {
-                categoryId: category.categoryId || 0,
+                categoryId: category.categoryId || category.id || 0,
                 name: category.name || '',
                 subTotal: this.roundMoney(category.subTotal || 0),
                 discount: this.clampDiscount(category.discount || 0),
                 discountAmount: this.roundMoney(category.discountAmount || 0),
-                netTotal: this.roundMoney(category.netTotal || 0)
+                netTotal: this.roundMoney(category.netTotal || 0),
+                sequence: this.parseDecimal(category.sequence, 0)
             };
         },
 
@@ -213,29 +230,52 @@ function jobCreate(config) {
                 ])
             );
 
+            const defaultCategoriesByKey = new Map(
+                (this.customerCategoryDefaults || []).map(category => [
+                    this.buildCategoryKey(category.categoryId || category.id || 0, category.name || ''),
+                    category
+                ])
+            );
+
             const groupedCategories = new Map();
             this.products.forEach(product => {
+                const productNetAmount = this.roundMoney(this.parseDecimal(product.netAmount));
+                if (productNetAmount <= 0) {
+                    return;
+                }
+
                 const categoryId = product.categoryId || 0;
                 const categoryName = product.categoryName || jobCreateText('uncategorized', '-');
                 const categoryKey = this.buildCategoryKey(categoryId, categoryName);
+                const categoryDefaults = defaultCategoriesByKey.get(categoryKey);
 
                 if (!groupedCategories.has(categoryKey)) {
                     groupedCategories.set(categoryKey, {
                         categoryId,
                         name: categoryName,
                         subTotal: 0,
-                        discount: discountByCategory.get(categoryKey) || 0,
+                        discount: discountByCategory.has(categoryKey)
+                            ? discountByCategory.get(categoryKey)
+                            : this.clampDiscount(categoryDefaults?.discount || 0),
                         discountAmount: 0,
-                        netTotal: 0
+                        netTotal: 0,
+                        sequence: this.parseDecimal(categoryDefaults?.sequence, 0)
                     });
                 }
 
                 const group = groupedCategories.get(categoryKey);
-                group.subTotal = this.roundMoney(group.subTotal + this.parseDecimal(product.netAmount));
+                group.subTotal = this.roundMoney(group.subTotal + productNetAmount);
             });
 
             this.productCategories = Array.from(groupedCategories.values())
-                .sort((left, right) => (left.name || '').localeCompare(right.name || '', 'tr'))
+                .sort((left, right) => {
+                    const sequenceDiff = this.parseDecimal(left.sequence) - this.parseDecimal(right.sequence);
+                    if (sequenceDiff !== 0) {
+                        return sequenceDiff;
+                    }
+
+                    return (left.name || '').localeCompare(right.name || '', 'tr');
+                })
                 .map(category => {
                     const discount = this.clampDiscount(category.discount);
                     const discountAmount = this.roundMoney(category.subTotal * discount / 100);
@@ -251,10 +291,13 @@ function jobCreate(config) {
 
         updateProductNetAmount(item, rawValue) {
             item.netAmount = this.roundMoney(Math.max(0, this.parseDecimal(rawValue, 0)));
+            this.recalculateProductCategories();
         },
 
         updateCategoryDiscount(category, rawValue) {
             category.discount = this.clampDiscount(rawValue);
+            category.discountAmount = this.roundMoney(this.parseDecimal(category.subTotal) * category.discount / 100);
+            category.netTotal = this.roundMoney(this.parseDecimal(category.subTotal) - category.discountAmount);
         },
 
         calculateProductGrossTotal() {
@@ -288,6 +331,19 @@ function jobCreate(config) {
             const fallback = this.productPicker.defaultPageSize || 16;
             this.productPickerPageSize = Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
             return this.productPickerPageSize;
+        },
+
+        normalizeCustomerPickerPageSize() {
+            const parsed = Number.parseInt(this.customerPickerPageSize, 10);
+            const fallback = this.customerPicker.defaultPageSize || 16;
+            this.customerPickerPageSize = Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+            return this.customerPickerPageSize;
+        },
+
+        normalizeOvertimePickerPageSize() {
+            const parsed = Number.parseInt(this.overtimePickerPageSize, 10);
+            this.overtimePickerPageSize = Number.isFinite(parsed) && parsed > 0 ? parsed : 64;
+            return this.overtimePickerPageSize;
         },
 
         getSelectedFunctionId() {
@@ -340,21 +396,34 @@ function jobCreate(config) {
 
         openProductPicker() {
             this.openProductPickerModal({
+                code: '',
                 productGroup: '',
                 autoSearch: false,
                 showFilter: true
             });
         },
 
+        openQuickCustomerPicker() {
+            this.$dispatch('customer-select-open', {
+                targetId: 'createJob',
+                searchEndpoint: this.customerPicker.searchEndpoint || '/Job/CustomerSearch',
+                jobStatesEndpoint: this.customerPicker.jobStatesEndpoint || '/Job/CustomerJobStates',
+                code: this.quickCustomerCode,
+                autoSearch: !!String(this.quickCustomerCode || '').trim(),
+                pageSize: this.normalizeCustomerPickerPageSize()
+            });
+        },
+
         openGroupedProductPicker() {
             this.openProductPickerModal({
+                code: '',
                 productGroup: this.selectedProductGroup || '',
                 autoSearch: true,
                 showFilter: false
             });
         },
 
-        openProductPickerModal({ productGroup, autoSearch, showFilter }) {
+        openProductPickerModal({ code, productGroup, autoSearch, showFilter }) {
             const selectedFunctionId = this.getSelectedFunctionId();
 
             this.$dispatch('product-select-open', {
@@ -367,11 +436,47 @@ function jobCreate(config) {
                 functionId: selectedFunctionId,
                 functionName: this.productPicker.functionName || '',
                 lockFunction: true,
+                code: code || '',
                 productGroup: productGroup || '',
                 autoSearch: !!autoSearch,
                 showFilter: showFilter !== false,
                 pageSize: this.normalizeProductPickerPageSize()
             });
+        },
+
+        async loadCustomerProductCategories() {
+            if (!this.customerProductCategoriesEndpoint || !(this.form.customerId > 0)) {
+                this.customerCategoryDefaults = [];
+                this.recalculateProductCategories();
+                return;
+            }
+
+            try {
+                const url = new URL(this.customerProductCategoriesEndpoint, window.location.origin);
+                url.searchParams.set('customerId', this.form.customerId);
+
+                const response = await fetch(url.toString());
+                if (!response.ok) {
+                    this.customerCategoryDefaults = [];
+                    this.recalculateProductCategories();
+                    return;
+                }
+
+                const categories = await response.json();
+                this.customerCategoryDefaults = Array.isArray(categories)
+                    ? categories.map(category => this.createCategoryItem({
+                        categoryId: category.id || category.categoryId || 0,
+                        name: category.name || '',
+                        discount: category.discount || 0,
+                        sequence: category.sequence || 0
+                    }))
+                    : [];
+            } catch (error) {
+                console.error('Customer product categories could not be loaded:', error);
+                this.customerCategoryDefaults = [];
+            }
+
+            this.recalculateProductCategories();
         },
 
         async validateAndSubmit() {
@@ -444,6 +549,8 @@ function jobCreate(config) {
                 this.form.customerId = detail.customer.id || 0;
                 this.form.customerCode = detail.customer.code;
                 this.form.customerName = detail.customer.name;
+                this.quickCustomerCode = detail.customer.code || '';
+                this.loadCustomerProductCategories();
             }
         },
 

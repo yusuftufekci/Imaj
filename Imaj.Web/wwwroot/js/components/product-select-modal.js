@@ -132,6 +132,9 @@ function productSelectModal() {
             if (detail?.functionId) {
                 this.filter.function = String(detail.functionId);
             }
+            if (detail?.code) {
+                this.filter.code = String(detail.code);
+            }
             if (detail?.productGroup) {
                 this.filter.productGroup = String(detail.productGroup);
             }
@@ -143,7 +146,7 @@ function productSelectModal() {
             this.hasSearched = false;
             await this.loadDropdowns();
             this.ensureLockedFunction();
-            if (detail?.autoSearch) {
+            if (detail?.autoSearch || detail?.code) {
                 await this.search(1);
             }
         },
