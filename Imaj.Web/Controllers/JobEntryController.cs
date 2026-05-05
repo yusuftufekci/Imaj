@@ -625,8 +625,8 @@ namespace Imaj.Web.Controllers
                 
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
-                IsEmailSent = model.IsEmailSent,
-                IsEvaluated = model.IsEvaluated,
+                IsEmailSent = false,
+                IsEvaluated = false,
                 IntNotes = model.AdminNotes,
                 ExtNotes = model.CustomerNotes,
                 

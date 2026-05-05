@@ -1284,8 +1284,8 @@ namespace Imaj.Service.Services
                     
                     StateID = stateIdToUse, 
 
-                    Mailed = jobDto.IsEmailSent, 
-                    Evaluated = jobDto.IsEvaluated, 
+                    Mailed = false, 
+                    Evaluated = false, 
                     
                     IntNotes = jobDto.IntNotes ?? string.Empty,
                     ExtNotes = jobDto.ExtNotes ?? string.Empty,
@@ -1414,6 +1414,8 @@ namespace Imaj.Service.Services
                 // Return updated DTO with new Reference
                 jobDto.Reference = (int)job.Reference;
                 jobDto.Id = job.Id;
+                jobDto.IsEmailSent = false;
+                jobDto.IsEvaluated = false;
                 
                 return ServiceResult<JobDto>.Success(jobDto);
             }
