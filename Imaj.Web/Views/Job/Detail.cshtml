@@ -63,15 +63,62 @@
     var canDoEvaluate = parsedReference && canEvaluate && !Model.IsEvaluated && (isClosed || isDiscarded);
     var canDoUndoEvaluate = parsedReference && canUndoEvaluate && Model.IsEvaluated && (isClosed || isDiscarded);
     var canShowPrintJobForm = parsedReference && canPrintJobForm && (isCompleted || isPriced || isInvoiced);
+    var currentFunctionId = Model.FunctionId.ToString(CultureInfo.InvariantCulture);
+    var defaultWorkTypeId = (ViewBag.WorkTypes != null && ((List<WorkTypeDto>)ViewBag.WorkTypes).Count > 0)
+        ? ((List<WorkTypeDto>)ViewBag.WorkTypes)[0].Id
+        : 0;
+    var defaultWorkTypeName = (ViewBag.WorkTypes != null && ((List<WorkTypeDto>)ViewBag.WorkTypes).Count > 0)
+        ? ((List<WorkTypeDto>)ViewBag.WorkTypes)[0].Name
+        : string.Empty;
+    var defaultTimeTypeId = (ViewBag.TimeTypes != null && ((List<TimeTypeDto>)ViewBag.TimeTypes).Count > 0)
+        ? ((List<TimeTypeDto>)ViewBag.TimeTypes)[0].Id
+        : 0;
+    var workTypeNames = (ViewBag.WorkTypes != null
+        ? ((List<WorkTypeDto>)ViewBag.WorkTypes).ToDictionary(
+            x => x.Id.ToString(CultureInfo.InvariantCulture),
+            x => x.Name)
+        : new Dictionary<string, string>());
+    var timeTypes = ViewBag.TimeTypes != null
+        ? ((List<TimeTypeDto>)ViewBag.TimeTypes).Select(x => (object)new
+        {
+            id = x.Id.ToString(CultureInfo.InvariantCulture),
+            name = x.Name
+        }).ToList()
+        : new List<object>();
     var detailStateJson = JsonSerializer.Serialize(new
     {
         customerId = Model.CustomerId.ToString(CultureInfo.InvariantCulture),
-        customerName = Model.CustomerName ?? string.Empty
+        customerName = Model.CustomerName ?? string.Empty,
+        defaultWorkTypeId,
+        defaultWorkTypeName,
+        workTypeNames,
+        defaultTimeTypeId,
+        timeTypes,
+        counts = new
+        {
+            overtimes = Model.Overtimes.Count,
+            products = Model.Products.Count,
+            categories = Model.ProductCategories.Count
+        },
+        productPicker = new
+        {
+            functionId = currentFunctionId,
+            functionName = Model.Function ?? string.Empty,
+            searchEndpoint = "/Job/ProductSearch",
+            categoriesEndpoint = "/Job/ProductCategories",
+            productGroupsEndpoint = "/Job/ProductGroups",
+            functionsEndpoint = "/Job/ProductFunctions",
+            defaultPageSize = 16
+        },
+        customerProductCategoriesEndpoint = "/Job/CustomerProductCategories"
     });
 }
 
 <div x-data='jobDetail(@Html.Raw(detailStateJson))'
+     x-init="init()"
      @@customer-selected.window="handleCustomerSelection($event.detail)"
+     @@employee-selected.window="handleEmployeeSelection($event.detail)"
+     @@product-selected.window="handleProductSelection($event.detail)"
      class="job-page-shell page-shell--wide space-y-3">
     <form id="jobDetailEditForm" method="post" action="/Job/UpdateDetail" class="hidden">
         @Html.AntiForgeryToken()
@@ -108,7 +155,7 @@
                         <dt class="job-detail-item__label">@Localizer["Function"]</dt>
                         <dd class="job-detail-item__value">
                             <span x-show="!isEditing">@Model.Function</span>
-                            <select x-show="isEditing" x-cloak name="FunctionId" form="jobDetailEditForm" :disabled="!isEditing" class="dense-input">
+                            <select x-show="isEditing" x-cloak name="FunctionId" form="jobDetailEditForm" :disabled="!isEditing" @@change="loadProductGroups()" class="dense-input">
                                 @if (ViewBag.Functions != null)
                                 {
                                     @foreach (var func in ViewBag.Functions)
@@ -212,7 +259,7 @@
     
     <section class="job-table-card">
         <div class="job-table-card__header">
-             <h3 class="job-table-card__title">@Localizer["Overtime"] (@Model.Overtimes.Count)</h3>
+             <h3 class="job-table-card__title">@Localizer["Overtime"] (<span data-overtime-count>@Model.Overtimes.Count</span>)</h3>
         </div>
         <div class="job-table-wrap mobile-table-panel">
              <table class="job-table job-table--compact">
@@ -228,7 +275,7 @@
                          <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Notes"]</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="job-detail-overtimes-body">
                     @for (var i = 0; i < Model.Overtimes.Count; i++)
                     {
                         var ot = Model.Overtimes[i];
@@ -263,7 +310,7 @@
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                                 <span x-show="!isEditing">@ot.Amount.ToString("N2")</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Overtimes[@i].Amount" value="@ot.Amount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" class="job-table-input job-table-input--money">
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Overtimes[@i].Amount" value="@ot.Amount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" data-overtime-amount="@i" class="job-table-input job-table-input--money">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
                                 <span x-show="!isEditing">@ot.Notes</span>
@@ -275,17 +322,32 @@
                 <tfoot>
                     <tr>
                          <td colspan="6" class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Localizer["Total"]</td>
-                        <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalOvertimeAmount.ToString("N2")</td>
+                        <td class="px-6 py-2 text-right text-sm font-bold text-gray-900" data-overtime-total>@Model.TotalOvertimeAmount.ToString("N2")</td>
                         <td></td>
                     </tr>
                 </tfoot>
              </table>
         </div>
+        <div x-show="isEditing" x-cloak class="job-picker-panel">
+            <div class="job-picker-panel__row">
+                <div class="job-picker-controls">
+                    <label for="JobDetailOvertimePageSize">@Localizer["PageSize"]</label>
+                    <input id="JobDetailOvertimePageSize"
+                           type="number"
+                           min="1"
+                           x-model="employeePickerPageSize"
+                           class="job-picker-page-size">
+                    <button type="button" @@click="openEmployeePicker()" class="job-picker-link">
+                        @Localizer["Add"]
+                    </button>
+                </div>
+            </div>
+        </div>
     </section>
     
     <section class="job-table-card">
         <div class="job-table-card__header">
-             <h3 class="job-table-card__title">@Localizer["Product"] (@Model.Products.Count)</h3>
+             <h3 class="job-table-card__title">@Localizer["Product"] (<span data-product-count>@Model.Products.Count</span>)</h3>
         </div>
         <div class="job-table-wrap mobile-table-panel">
              <table class="job-table job-table--compact">
@@ -301,11 +363,21 @@
                          <th class="px-6 py-2 text-left text-xs font-bold text-gray-700">@Localizer["Notes"]</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="job-detail-products-body">
                     @for (var i = 0; i < Model.Products.Count; i++)
                     {
                         var prod = Model.Products[i];
-                         <tr>
+                        var productCategoryKey = prod.CategoryId > 0
+                            ? prod.CategoryId.ToString(CultureInfo.InvariantCulture)
+                            : (prod.CategoryName ?? string.Empty).Trim().ToLowerInvariant();
+                         <tr data-product-row
+                             data-product-id="@prod.ProductId.ToString(CultureInfo.InvariantCulture)"
+                             data-product-code="@prod.Code"
+                             data-product-name="@prod.Name"
+                             data-product-category-key="@productCategoryKey"
+                             data-product-category-id="@prod.CategoryId.ToString(CultureInfo.InvariantCulture)"
+                             data-product-category-name="@prod.CategoryName"
+                             data-product-current-net="@prod.NetTotal.ToString(CultureInfo.InvariantCulture)">
                             <td class="px-6 py-2 whitespace-nowrap">
                                 <input type="hidden" name="Products[@i].Id" value="@prod.Id" form="jobDetailEditForm" :disabled="!isEditing">
                                 <input type="hidden" name="Products[@i].ProductId" value="@prod.ProductId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
@@ -329,7 +401,7 @@
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                                 <span x-show="!isEditing">@prod.NetTotal.ToString("N2")</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Products[@i].NetTotal" value="@prod.NetTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateProductTotals()" data-product-net-total="@i" class="job-table-input job-table-input--money">
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Products[@i].NetTotal" value="@prod.NetTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="updateProductNetAmount(@i)" data-product-net-total="@i" class="job-table-input job-table-input--money">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
                                 <span x-show="!isEditing">@prod.Notes</span>
@@ -348,11 +420,51 @@
                 </tfoot>
              </table>
         </div>
+        <div x-show="isEditing" x-cloak class="job-picker-panel">
+            <div class="job-picker-panel__row">
+                <div class="job-picker-links">
+                    <button type="button" @@click="openProductPicker()" class="job-picker-link">
+                        @Localizer["Add"]
+                    </button>
+                </div>
+                <div class="job-create-toolbar__total">
+                    <span>@Localizer["Total"]</span>
+                    <strong data-product-picker-total>@Model.TotalProductAmount.ToString("N2")</strong>
+                </div>
+            </div>
+            <div class="job-picker-panel__row">
+                <div class="job-picker-controls">
+                    <label for="JobDetailProductGroup">@Localizer["ProductGroup"]</label>
+                    <select id="JobDetailProductGroup"
+                            x-model="selectedProductGroup"
+                            :disabled="productGroups.length === 0"
+                            class="job-picker-select">
+                        <option value="" x-show="productGroups.length === 0">@Localizer["SelectPrompt"]</option>
+                        <template x-for="grp in productGroups" :key="grp.id">
+                            <option :value="grp.name" x-text="grp.name"></option>
+                        </template>
+                    </select>
+                    <label for="JobDetailProductPageSize">@Localizer["PageSize"]</label>
+                    <input id="JobDetailProductPageSize"
+                           type="number"
+                           min="1"
+                           x-model="productPickerPageSize"
+                           class="job-picker-page-size">
+                    <button type="button"
+                            @@click="openGroupedProductPicker()"
+                            :disabled="productGroups.length === 0"
+                            :class="{ 'job-picker-link--disabled': productGroups.length === 0 }"
+                            class="job-picker-link">
+                        @Localizer["AddBySelection"]
+                    </button>
+                </div>
+            </div>
+        </div>
     </section>
 
     <section class="job-table-card">
         <div class="job-table-card__header">
-             <h3 class="job-table-card__title">@Localizer["ProductCategory"] (@Model.ProductCategories.Count)</h3>
+             <h3 class="job-table-card__title">@Localizer["ProductCategory"] (<span data-category-count>@Model.ProductCategories.Count</span>)</h3>
         </div>
         <div class="job-table-wrap mobile-table-panel">
              <table class="job-table job-table--compact">
@@ -365,11 +477,14 @@
                         <th class="px-6 py-2 text-right text-xs font-bold text-gray-700">@Localizer["NetAmount"]</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="job-detail-product-categories-body">
                     @for (var i = 0; i < Model.ProductCategories.Count; i++)
                     {
                         var cat = Model.ProductCategories[i];
-                         <tr>
+                        var categoryKey = cat.CategoryId > 0
+                            ? cat.CategoryId.ToString(CultureInfo.InvariantCulture)
+                            : (cat.Name ?? string.Empty).Trim().ToLowerInvariant();
+                         <tr data-category-row-key="@categoryKey">
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
                                 @cat.Name
                                 <input type="hidden" name="ProductCategories[@i].CategoryId" value="@cat.CategoryId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
@@ -617,15 +732,44 @@
     </div>
 
     <partial name="_CustomerSelectModal" />
+    <partial name="_ProductSelectModal" />
+    <partial name="_EmployeeSelectModal" />
 </div>
 
 @section Scripts {
     <script>
         function jobDetail(initialState) {
             return {
+                initialized: false,
                 isEditing: false,
                 customerId: initialState?.customerId || '',
                 customerName: initialState?.customerName || '',
+                defaultWorkTypeId: initialState?.defaultWorkTypeId || 0,
+                defaultWorkTypeName: initialState?.defaultWorkTypeName || '',
+                defaultTimeTypeId: initialState?.defaultTimeTypeId || 0,
+                workTypeNames: initialState?.workTypeNames || {},
+                timeTypes: initialState?.timeTypes || [],
+                productPicker: initialState?.productPicker || {},
+                customerProductCategoriesEndpoint: initialState?.customerProductCategoriesEndpoint || '',
+                customerCategoryDefaults: [],
+                productGroups: [],
+                selectedProductGroup: '',
+                employeePickerPageSize: 64,
+                productPickerPageSize: initialState?.productPicker?.defaultPageSize || 16,
+                nextOvertimeIndex: initialState?.counts?.overtimes || 0,
+                nextProductIndex: initialState?.counts?.products || 0,
+                nextCategoryIndex: initialState?.counts?.categories || 0,
+                async init() {
+                    if (this.initialized) {
+                        return;
+                    }
+
+                    this.initialized = true;
+                    this.bindDynamicInputHandlers();
+                    this.sortProductRows();
+                    await this.loadProductGroups();
+                    await this.loadCustomerProductCategories();
+                },
                 enableEdit() {
                     this.isEditing = true;
                 },
@@ -636,15 +780,326 @@
 
                     this.customerId = detail.customer.id || '';
                     this.customerName = detail.customer.name || '';
+                    this.loadCustomerProductCategories();
                 },
-                parseDecimal(value) {
+                handleEmployeeSelection(detail) {
+                    if (detail.targetId !== 'jobDetailOvertimeAdd') {
+                        return;
+                    }
+
+                    const employees = Array.isArray(detail.employees) && detail.employees.length > 0
+                        ? detail.employees
+                        : (detail.employee ? [detail.employee] : []);
+
+                    employees.forEach(employee => this.addOvertimeRow(employee));
+                },
+                handleProductSelection(detail) {
+                    if (detail.targetId !== 'jobDetailProductAdd') {
+                        return;
+                    }
+
+                    const products = Array.isArray(detail.products) && detail.products.length > 0
+                        ? detail.products
+                        : (detail.product ? [detail.product] : []);
+
+                    products.forEach(product => this.addProductRow(product));
+                },
+                bindDynamicInputHandlers() {
+                    document.addEventListener('input', event => {
+                        const target = event.target;
+                        if (!(target instanceof HTMLElement)) {
+                            return;
+                        }
+
+                        const productIndex = target.dataset.productQuantity ?? target.dataset.productPrice;
+                        if (productIndex !== undefined) {
+                            this.recalculateProduct(productIndex);
+                            return;
+                        }
+
+                        if (target.dataset.overtimeAmount !== undefined) {
+                            this.recalculateOvertimeTotals();
+                            return;
+                        }
+
+                        if (target.dataset.productNetTotal !== undefined) {
+                            this.updateProductNetAmount(target.dataset.productNetTotal);
+                            return;
+                        }
+
+                        const categoryIndex = target.dataset.categorySubtotal ?? target.dataset.categoryDiscount;
+                        if (categoryIndex !== undefined) {
+                            this.recalculateCategory(categoryIndex);
+                        }
+                    });
+                },
+                normalizePickerPageSize(value, fallback) {
+                    const parsed = Number.parseInt(value, 10);
+                    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+                },
+                getSelectedFunctionId() {
+                    const functionSelect = document.querySelector('[name="FunctionId"][form="jobDetailEditForm"]');
+                    return functionSelect?.value || this.productPicker.functionId || '';
+                },
+                getSelectedFunctionName() {
+                    const functionSelect = document.querySelector('[name="FunctionId"][form="jobDetailEditForm"]');
+                    const selectedOption = functionSelect?.selectedOptions?.[0];
+                    return selectedOption?.textContent || this.productPicker.functionName || '';
+                },
+                async loadProductGroups() {
+                    if (!this.productPicker.productGroupsEndpoint) {
+                        this.productGroups = [];
+                        this.selectedProductGroup = '';
+                        return;
+                    }
+
+                    try {
+                        const url = new URL(this.productPicker.productGroupsEndpoint, window.location.origin);
+                        const selectedFunctionId = this.getSelectedFunctionId();
+                        if (selectedFunctionId) {
+                            url.searchParams.set('functionId', selectedFunctionId);
+                        }
+
+                        const response = await fetch(url.toString());
+                        if (!response.ok) {
+                            this.productGroups = [];
+                            this.selectedProductGroup = '';
+                            return;
+                        }
+
+                        const groups = await response.json();
+                        this.productGroups = Array.isArray(groups) ? groups : [];
+                        this.selectedProductGroup = this.productGroups[0]?.name || '';
+                    } catch (error) {
+                        console.error('Product groups could not be loaded:', error);
+                        this.productGroups = [];
+                        this.selectedProductGroup = '';
+                    }
+                },
+                async loadCustomerProductCategories() {
+                    if (!this.customerProductCategoriesEndpoint || !(this.parseDecimal(this.customerId) > 0)) {
+                        this.customerCategoryDefaults = [];
+                        return;
+                    }
+
+                    try {
+                        const url = new URL(this.customerProductCategoriesEndpoint, window.location.origin);
+                        url.searchParams.set('customerId', this.customerId);
+
+                        const response = await fetch(url.toString());
+                        if (!response.ok) {
+                            this.customerCategoryDefaults = [];
+                            return;
+                        }
+
+                        const categories = await response.json();
+                        this.customerCategoryDefaults = Array.isArray(categories)
+                            ? categories.map(category => ({
+                                categoryId: category.id || category.categoryId || 0,
+                                name: category.name || '',
+                                discount: this.parseDecimal(category.discount || 0),
+                                sequence: category.sequence || 0
+                            }))
+                            : [];
+                    } catch (error) {
+                        console.error('Customer product categories could not be loaded:', error);
+                        this.customerCategoryDefaults = [];
+                    }
+                },
+                openEmployeePicker() {
+                    this.$dispatch('employee-select-open', {
+                        targetId: 'jobDetailOvertimeAdd',
+                        isMultiSelect: true,
+                        allowQuantity: true,
+                        showFilter: true,
+                        functionId: this.getSelectedFunctionId(),
+                        defaultQuantity: 1,
+                        pageSize: this.normalizePickerPageSize(this.employeePickerPageSize, 64)
+                    });
+                },
+                openProductPicker() {
+                    this.openProductPickerModal({
+                        productGroup: '',
+                        autoSearch: false,
+                        showFilter: true
+                    });
+                },
+                openGroupedProductPicker() {
+                    this.openProductPickerModal({
+                        productGroup: this.selectedProductGroup || '',
+                        autoSearch: true,
+                        showFilter: false
+                    });
+                },
+                openProductPickerModal({ productGroup, autoSearch, showFilter }) {
+                    this.$dispatch('product-select-open', {
+                        targetId: 'jobDetailProductAdd',
+                        isMultiSelect: true,
+                        searchEndpoint: this.productPicker.searchEndpoint || '/Job/ProductSearch',
+                        categoriesEndpoint: this.productPicker.categoriesEndpoint || '/Job/ProductCategories',
+                        productGroupsEndpoint: this.productPicker.productGroupsEndpoint || '/Job/ProductGroups',
+                        functionsEndpoint: this.productPicker.functionsEndpoint || '/Job/ProductFunctions',
+                        functionId: this.getSelectedFunctionId(),
+                        functionName: this.getSelectedFunctionName(),
+                        lockFunction: true,
+                        productGroup: productGroup || '',
+                        autoSearch: !!autoSearch,
+                        showFilter: showFilter !== false,
+                        pageSize: this.normalizePickerPageSize(this.productPickerPageSize, 16)
+                    });
+                },
+                addOvertimeRow(employee) {
+                    const tbody = document.getElementById('job-detail-overtimes-body');
+                    if (!tbody) {
+                        return;
+                    }
+
+                    const index = this.nextOvertimeIndex++;
+                    const employeeId = employee.id || employee.employeeId || 0;
+                    const employeeCode = employee.code || employee.employeeCode || '';
+                    const employeeName = employee.name || employee.employeeName || '';
+                    const workTypeId = employee.defaultWorkTypeId || employee.workTypeId || this.defaultWorkTypeId || 0;
+                    const workTypeName = employee.defaultWorkTypeName || employee.workTypeName || this.resolveWorkTypeName(workTypeId);
+                    const timeTypeId = this.defaultTimeTypeId || '';
+                    const quantity = this.parseDecimal(employee.quantity || 1);
+                    const row = document.createElement('tr');
+
+                    row.innerHTML = `
+                        <td class="px-6 py-2 whitespace-nowrap">
+                            <input type="hidden" name="Overtimes[${index}].Id" value="0" form="jobDetailEditForm">
+                            <input type="hidden" name="Overtimes[${index}].EmployeeId" value="${this.escapeAttr(employeeId)}" form="jobDetailEditForm">
+                            <input type="hidden" name="Overtimes[${index}].IsSelected" value="false" form="jobDetailEditForm">
+                            <input type="checkbox" name="Overtimes[${index}].IsSelected" value="true" form="jobDetailEditForm" checked class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">${this.escapeText(employeeCode)}</td>
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">${this.escapeText(employeeName)}</td>
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                            ${this.escapeText(workTypeName)}
+                            <input type="hidden" name="Overtimes[${index}].WorkTypeId" value="${this.escapeAttr(workTypeId)}" form="jobDetailEditForm">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                            <select name="Overtimes[${index}].TimeTypeId" form="jobDetailEditForm" class="job-table-select">
+                                ${this.createTimeTypeOptions(timeTypeId)}
+                            </select>
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="Overtimes[${index}].Quantity" value="${this.escapeAttr(this.formatInputDecimal(quantity))}" form="jobDetailEditForm" class="job-table-input job-table-input--money">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="Overtimes[${index}].Amount" value="${this.escapeAttr(this.formatInputDecimal(0))}" form="jobDetailEditForm" data-overtime-amount="${index}" class="job-table-input job-table-input--money">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                            <textarea name="Overtimes[${index}].Notes" form="jobDetailEditForm" rows="2" class="job-table-textarea job-table-textarea--single"></textarea>
+                        </td>`;
+
+                    tbody.appendChild(row);
+                    this.updateCount('[data-overtime-count]', tbody.children.length);
+                },
+                addProductRow(product) {
+                    const tbody = document.getElementById('job-detail-products-body');
+                    if (!tbody) {
+                        return;
+                    }
+
+                    const index = this.nextProductIndex++;
+                    const productId = product.id || product.productId || 0;
+                    const code = product.code || product.productCode || '';
+                    const name = product.name || product.productName || '';
+                    const categoryId = product.categoryId || 0;
+                    const categoryName = product.categoryName || product.category || '';
+                    const quantity = Math.max(0, this.parseDecimal(product.quantity || 1));
+                    const price = Math.max(0, this.parseDecimal(product.price || 0));
+                    const subtotal = quantity * price;
+                    const netAmount = this.parseDecimal(product.netAmount, subtotal);
+                    const categoryKey = this.makeCategoryKey(categoryId, categoryName);
+                    const existingRow = this.findProductRow(productId, code);
+                    if (existingRow) {
+                        this.incrementProductRow(existingRow, quantity, netAmount);
+                        this.sortProductRows();
+                        return;
+                    }
+
+                    const row = document.createElement('tr');
+                    row.dataset.productRow = 'true';
+                    row.dataset.productId = String(productId || '');
+                    row.dataset.productCode = code || '';
+                    row.dataset.productName = name || '';
+                    row.dataset.productCategoryKey = categoryKey;
+                    row.dataset.productCategoryId = String(categoryId || '');
+                    row.dataset.productCategoryName = categoryName || '';
+                    row.dataset.productCurrentNet = String(netAmount);
+
+                    row.innerHTML = `
+                        <td class="px-6 py-2 whitespace-nowrap">
+                            <input type="hidden" name="Products[${index}].Id" value="0" form="jobDetailEditForm">
+                            <input type="hidden" name="Products[${index}].ProductId" value="${this.escapeAttr(productId)}" form="jobDetailEditForm">
+                            <input type="hidden" name="Products[${index}].CategoryId" value="${this.escapeAttr(categoryId)}" form="jobDetailEditForm">
+                            <input type="hidden" name="Products[${index}].IsSelected" value="false" form="jobDetailEditForm">
+                            <input type="checkbox" name="Products[${index}].IsSelected" value="true" form="jobDetailEditForm" checked class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">${this.escapeText(code)}</td>
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">${this.escapeText(name)}</td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="Products[${index}].Quantity" value="${this.escapeAttr(this.formatInputDecimal(quantity))}" form="jobDetailEditForm" data-product-quantity="${index}" class="job-table-input job-table-input--money">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="Products[${index}].Price" value="${this.escapeAttr(this.formatInputDecimal(price))}" form="jobDetailEditForm" data-product-price="${index}" class="job-table-input job-table-input--money">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <span data-product-subtotal-display="${index}">${this.escapeText(this.formatDisplayDecimal(subtotal))}</span>
+                            <input type="hidden" name="Products[${index}].SubTotal" value="${this.escapeAttr(this.formatInputDecimal(subtotal))}" form="jobDetailEditForm" data-product-subtotal="${index}">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="Products[${index}].NetTotal" value="${this.escapeAttr(this.formatInputDecimal(netAmount))}" form="jobDetailEditForm" data-product-net-total="${index}" class="job-table-input job-table-input--money">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                            <textarea name="Products[${index}].Notes" form="jobDetailEditForm" rows="2" class="job-table-textarea job-table-textarea--single"></textarea>
+                        </td>`;
+
+                    tbody.appendChild(row);
+                    this.addCategoryAmount(categoryId, categoryName, netAmount);
+                    this.recalculateProductTotals();
+                    this.sortProductRows();
+                    this.updateCount('[data-product-count]', tbody.children.length);
+                },
+                findProductRow(productId, code) {
+                    const normalizedId = String(productId || '').trim();
+                    const normalizedCode = this.normalizeProductKey(code);
+
+                    return [...document.querySelectorAll('#job-detail-products-body [data-product-row]')]
+                        .find(row => {
+                            const rowProductId = String(row.dataset.productId || '').trim();
+                            const rowCode = this.normalizeProductKey(row.dataset.productCode);
+
+                            return (normalizedId && normalizedId !== '0' && rowProductId === normalizedId) ||
+                                (normalizedCode && rowCode === normalizedCode);
+                        }) || null;
+                },
+                incrementProductRow(row, addedQuantity, addedNetAmount) {
+                    const quantityInput = row.querySelector('[data-product-quantity]');
+                    const netInput = row.querySelector('[data-product-net-total]');
+
+                    if (!quantityInput || !netInput) {
+                        return;
+                    }
+
+                    const productIndex = quantityInput.dataset.productQuantity;
+                    const nextQuantity = this.parseDecimal(quantityInput.value) + Math.max(0, this.parseDecimal(addedQuantity));
+                    const nextNetAmount = this.parseDecimal(netInput.value) + Math.max(0, this.parseDecimal(addedNetAmount));
+
+                    quantityInput.value = this.formatInputDecimal(nextQuantity);
+                    netInput.value = this.formatInputDecimal(nextNetAmount);
+                    this.recalculateProduct(productIndex);
+                    this.updateProductNetAmount(netInput.dataset.productNetTotal);
+                },
+                parseDecimal(value, fallback = 0) {
                     if (value === null || value === undefined) {
-                        return 0;
+                        return fallback;
                     }
 
                     let normalized = String(value).trim().replace(/\s/g, '');
                     if (!normalized) {
-                        return 0;
+                        return fallback;
                     }
 
                     const lastComma = normalized.lastIndexOf(',');
@@ -660,7 +1115,178 @@
                     }
 
                     const parsed = Number.parseFloat(normalized);
-                    return Number.isFinite(parsed) ? parsed : 0;
+                    return Number.isFinite(parsed) ? parsed : fallback;
+                },
+                resolveWorkTypeName(workTypeId) {
+                    const key = String(workTypeId || '');
+                    return this.workTypeNames[key] || this.defaultWorkTypeName || key || '-';
+                },
+                createTimeTypeOptions(selectedId) {
+                    return (this.timeTypes || []).map(timeType => {
+                        const id = timeType.id ?? timeType.Id ?? '';
+                        const name = timeType.name ?? timeType.Name ?? '';
+                        const selected = String(id) === String(selectedId) ? ' selected' : '';
+                        return `<option value="${this.escapeAttr(id)}"${selected}>${this.escapeText(name)}</option>`;
+                    }).join('');
+                },
+                makeCategoryKey(categoryId, categoryName) {
+                    const normalizedId = String(categoryId || '').trim();
+                    if (normalizedId && normalizedId !== '0') {
+                        return normalizedId;
+                    }
+
+                    return String(categoryName || '').trim().toLowerCase();
+                },
+                normalizeSortText(value) {
+                    return String(value || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toUpperCase();
+                },
+                normalizeProductKey(value) {
+                    return this.normalizeSortText(value).trim();
+                },
+                getProductSortRank(row) {
+                    const combinedText = this.normalizeSortText([
+                        row.dataset.productCode,
+                        row.dataset.productName,
+                        row.dataset.productCategoryName
+                    ].join(' '));
+
+                    if (combinedText.includes('OPERATOR')) {
+                        return 90;
+                    }
+
+                    if (combinedText.includes('CAFE') || combinedText.includes('KAFE')) {
+                        return 91;
+                    }
+
+                    if (combinedText.includes('SUIT')) {
+                        return 0;
+                    }
+
+                    return 10;
+                },
+                sortProductRows() {
+                    const tbody = document.getElementById('job-detail-products-body');
+                    if (!tbody) {
+                        return;
+                    }
+
+                    const rows = [...tbody.querySelectorAll('[data-product-row]')];
+                    rows
+                        .sort((left, right) => {
+                            const rankDiff = this.getProductSortRank(left) - this.getProductSortRank(right);
+                            if (rankDiff !== 0) {
+                                return rankDiff;
+                            }
+
+                            const leftLabel = `${left.dataset.productCode || ''} ${left.dataset.productName || ''}`;
+                            const rightLabel = `${right.dataset.productCode || ''} ${right.dataset.productName || ''}`;
+                            return leftLabel.localeCompare(rightLabel, 'tr');
+                        })
+                        .forEach(row => tbody.appendChild(row));
+                },
+                findCategoryRow(categoryId, categoryName) {
+                    const categoryKey = this.makeCategoryKey(categoryId, categoryName);
+                    return [...document.querySelectorAll('[data-category-row-key]')]
+                        .find(row => row.dataset.categoryRowKey === categoryKey) || null;
+                },
+                findCategoryDefault(categoryId, categoryName) {
+                    const categoryKey = this.makeCategoryKey(categoryId, categoryName);
+                    return this.customerCategoryDefaults.find(category =>
+                        this.makeCategoryKey(category.categoryId, category.name) === categoryKey) || null;
+                },
+                addCategoryAmount(categoryId, categoryName, delta) {
+                    const row = this.findCategoryRow(categoryId, categoryName);
+                    if (row) {
+                        const subtotalInput = row.querySelector('[data-category-subtotal]');
+                        if (!subtotalInput) {
+                            return;
+                        }
+
+                        const index = subtotalInput.dataset.categorySubtotal;
+                        const current = this.parseDecimal(subtotalInput.value);
+                        subtotalInput.value = this.formatInputDecimal(Math.max(0, current + delta));
+                        this.recalculateCategory(index);
+                        return;
+                    }
+
+                    if (delta <= 0) {
+                        return;
+                    }
+
+                    this.appendCategoryRow(categoryId, categoryName, delta);
+                },
+                appendCategoryRow(categoryId, categoryName, subTotal) {
+                    const tbody = document.getElementById('job-detail-product-categories-body');
+                    if (!tbody) {
+                        return;
+                    }
+
+                    const index = this.nextCategoryIndex++;
+                    const categoryDefault = this.findCategoryDefault(categoryId, categoryName);
+                    const discount = Math.min(100, Math.max(0, this.parseDecimal(categoryDefault?.discount || 0)));
+                    const discountAmount = subTotal * discount / 100;
+                    const netTotal = subTotal - discountAmount;
+                    const row = document.createElement('tr');
+                    row.dataset.categoryRowKey = this.makeCategoryKey(categoryId, categoryName);
+
+                    row.innerHTML = `
+                        <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                            ${this.escapeText(categoryName || '-')}
+                            <input type="hidden" name="ProductCategories[${index}].CategoryId" value="${this.escapeAttr(categoryId)}" form="jobDetailEditForm">
+                            <input type="hidden" name="ProductCategories[${index}].Name" value="${this.escapeAttr(categoryName || '')}" form="jobDetailEditForm">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].SubTotal" value="${this.escapeAttr(this.formatInputDecimal(subTotal))}" form="jobDetailEditForm" data-category-subtotal="${index}" class="job-table-input job-table-input--money">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].Discount" value="${this.escapeAttr(this.formatInputDecimal(discount))}" form="jobDetailEditForm" data-category-discount="${index}" class="job-table-input job-table-input--discount">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].DiscountAmount" value="${this.escapeAttr(this.formatInputDecimal(discountAmount))}" form="jobDetailEditForm" readonly data-category-discount-amount="${index}" class="job-table-input job-table-input--money bg-gray-50">
+                        </td>
+                        <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].NetTotal" value="${this.escapeAttr(this.formatInputDecimal(netTotal))}" form="jobDetailEditForm" readonly data-category-net-total="${index}" class="job-table-input job-table-input--money bg-gray-50">
+                        </td>`;
+
+                    tbody.appendChild(row);
+                    this.recalculateCategoryTotals();
+                    this.updateCount('[data-category-count]', tbody.children.length);
+                },
+                updateProductNetAmount(index) {
+                    const netInput = document.querySelector(`[data-product-net-total="${index}"]`);
+                    if (!netInput) {
+                        return;
+                    }
+
+                    const row = netInput.closest('[data-product-row]');
+                    const nextNetAmount = Math.max(0, this.parseDecimal(netInput.value));
+                    const previousNetAmount = this.parseDecimal(row?.dataset.productCurrentNet);
+                    const delta = nextNetAmount - previousNetAmount;
+
+                    if (row) {
+                        row.dataset.productCurrentNet = String(nextNetAmount);
+                        this.addCategoryAmount(row.dataset.productCategoryId, row.dataset.productCategoryName, delta);
+                    }
+
+                    this.recalculateProductTotals();
+                },
+                escapeText(value) {
+                    return String(value ?? '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                },
+                escapeAttr(value) {
+                    return this.escapeText(value).replace(/"/g, '&quot;');
+                },
+                updateCount(selector, count) {
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        element.textContent = count;
+                    }
                 },
                 formatInputDecimal(value) {
                     const normalized = Number.isFinite(value) ? value : 0;
@@ -694,6 +1320,15 @@
                     subtotalDisplay.textContent = this.formatDisplayDecimal(subtotal);
                     this.recalculateProductTotals();
                 },
+                recalculateOvertimeTotals() {
+                    const total = [...document.querySelectorAll('[data-overtime-amount]')]
+                        .reduce((sum, input) => sum + this.parseDecimal(input.value), 0);
+                    const totalCell = document.querySelector('[data-overtime-total]');
+
+                    if (totalCell) {
+                        totalCell.textContent = this.formatDisplayDecimal(total);
+                    }
+                },
                 recalculateProductTotals() {
                     const subtotal = [...document.querySelectorAll('[data-product-subtotal]')]
                         .reduce((total, input) => total + this.parseDecimal(input.value), 0);
@@ -702,9 +1337,11 @@
 
                     const grossTotalCell = document.querySelector('[data-product-gross-total]');
                     const netTotalCell = document.querySelector('[data-product-net-total-footer]');
+                    const pickerTotal = document.querySelector('[data-product-picker-total]');
 
                     if (grossTotalCell) grossTotalCell.textContent = this.formatDisplayDecimal(subtotal);
                     if (netTotalCell) netTotalCell.textContent = this.formatDisplayDecimal(netTotal);
+                    if (pickerTotal) pickerTotal.textContent = this.formatDisplayDecimal(netTotal);
                 },
                 recalculateCategory(index) {
                     const subtotalInput = document.querySelector(`[data-category-subtotal="${index}"]`);

@@ -877,21 +877,26 @@ namespace Imaj.Web.Controllers
             if (job.JobProds != null && job.JobProds.Any())
             {
                 // 1. Ürün Listesi Mapping
-                model.Products = job.JobProds.Select(jp => new JobProductItem
-                {
-                    Id = jp.Id,
-                    ProductId = jp.ProductId,
-                    IsSelected = jp.SelectFlag,
-                    Code = jp.ProductCode,
-                    Name = jp.ProductName,
-                    CategoryId = jp.CategoryId,
-                    CategoryName = jp.CategoryName,
-                    Quantity = jp.Quantity,
-                    Price = jp.Price,
-                    SubTotal = jp.GrossAmount,
-                    NetTotal = jp.NetAmount,
-                    Notes = jp.Notes
-                }).ToList();
+                model.Products = job.JobProds
+                    .Select(jp => new JobProductItem
+                    {
+                        Id = jp.Id,
+                        ProductId = jp.ProductId,
+                        IsSelected = jp.SelectFlag,
+                        Code = jp.ProductCode,
+                        Name = jp.ProductName,
+                        CategoryId = jp.CategoryId,
+                        CategoryName = jp.CategoryName,
+                        Quantity = jp.Quantity,
+                        Price = jp.Price,
+                        SubTotal = jp.GrossAmount,
+                        NetTotal = jp.NetAmount,
+                        Notes = jp.Notes
+                    })
+                    .OrderBy(GetJobProductDisplayRank)
+                    .ThenBy(x => x.Code)
+                    .ThenBy(x => x.Name)
+                    .ToList();
 
                 model.TotalProductAmount = model.Products.Sum(x => x.NetTotal);
             }
@@ -2254,6 +2259,44 @@ namespace Imaj.Web.Controllers
                 JobWorkflowAction.UndoEvaluate => UndoEvaluateMethodId,
                 _ => null
             };
+        }
+
+        private static int GetJobProductDisplayRank(JobProductItem product)
+        {
+            var combinedText = NormalizeProductSortValue(string.Join(' ', product.Code, product.Name, product.CategoryName));
+
+            if (combinedText.Contains("OPERATOR", StringComparison.Ordinal))
+            {
+                return 90;
+            }
+
+            if (combinedText.Contains("CAFE", StringComparison.Ordinal) ||
+                combinedText.Contains("KAFE", StringComparison.Ordinal))
+            {
+                return 91;
+            }
+
+            if (combinedText.Contains("SUIT", StringComparison.Ordinal))
+            {
+                return 0;
+            }
+
+            return 10;
+        }
+
+        private static string NormalizeProductSortValue(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var normalized = value.Normalize(NormalizationForm.FormD);
+            var chars = normalized
+                .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                .ToArray();
+
+            return new string(chars).Normalize(NormalizationForm.FormC).ToUpperInvariant();
         }
 
         private string L(string key)

@@ -1507,15 +1507,103 @@ namespace Imaj.Service.Services
                     .Where(x => x.JobID == job.Id && x.Deleted == 0)
                     .ToListAsync();
 
+                var workDtos = jobDto.JobWorks ?? new List<JobWorkDto>();
+                var productDtos = jobDto.JobProds ?? new List<JobProdDto>();
+                var categoryDtos = jobDto.JobProdCats ?? new List<JobProdCatDto>();
+
                 var workRowsById = editableWorkRows.ToDictionary(x => x.Id);
                 var productRowsById = productRows.ToDictionary(x => x.Id);
-                var categoryRowsByCategoryId = categoryRows.ToDictionary(x => x.ProdCatID);
+                var categoryRowsByCategoryId = categoryRows
+                    .GroupBy(x => x.ProdCatID)
+                    .ToDictionary(x => x.Key, x => x.First());
 
-                foreach (var work in jobDto.JobWorks ?? new List<JobWorkDto>())
+                var employeeIds = workDtos
+                    .Where(x => x.EmployeeId > 0)
+                    .Select(x => x.EmployeeId)
+                    .Distinct()
+                    .ToList();
+                if (employeeIds.Count > 0)
                 {
-                    if (work.Id <= 0 || !workRowsById.ContainsKey(work.Id))
+                    var existingEmployeeIds = await _unitOfWork.Repository<Employee>().Query()
+                        .Where(x => employeeIds.Contains(x.Id))
+                        .Select(x => x.Id)
+                        .ToListAsync();
+
+                    if (existingEmployeeIds.Count != employeeIds.Count)
+                    {
+                        return ServiceResult<JobDto>.Fail("Seçilen çalışan bulunamadı.");
+                    }
+                }
+
+                var productIds = productDtos
+                    .Where(x => x.ProductId > 0)
+                    .Select(x => x.ProductId)
+                    .Distinct()
+                    .ToList();
+                var productCategoryByProductId = new Dictionary<decimal, decimal>();
+                if (productIds.Count > 0)
+                {
+                    productCategoryByProductId = await _unitOfWork.Repository<Product>().Query()
+                        .Where(x => productIds.Contains(x.Id))
+                        .Select(x => new { x.Id, x.ProdCatID })
+                        .ToDictionaryAsync(x => x.Id, x => x.ProdCatID);
+
+                    if (productCategoryByProductId.Count != productIds.Count)
+                    {
+                        return ServiceResult<JobDto>.Fail("Seçilen ürün bulunamadı.");
+                    }
+                }
+
+                foreach (var product in productDtos.Where(x => x.CategoryId <= 0 && x.ProductId > 0))
+                {
+                    if (productCategoryByProductId.TryGetValue(product.ProductId, out var categoryId))
+                    {
+                        product.CategoryId = categoryId;
+                    }
+                }
+
+                var categoryIds = categoryDtos
+                    .Select(x => x.CategoryId)
+                    .Concat(productDtos.Select(x => x.CategoryId))
+                    .Where(x => x > 0)
+                    .Distinct()
+                    .ToList();
+                if (categoryIds.Count > 0)
+                {
+                    var existingCategoryCount = await _unitOfWork.Repository<ProdCat>().Query()
+                        .CountAsync(x => categoryIds.Contains(x.Id));
+
+                    if (existingCategoryCount != categoryIds.Count)
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün kategorisi bulunamadı.");
+                    }
+                }
+
+                foreach (var work in workDtos)
+                {
+                    if (work.Id > 0 && !workRowsById.ContainsKey(work.Id))
                     {
                         return ServiceResult<JobDto>.Fail("Mesai satırı bulunamadı.");
+                    }
+
+                    if (work.EmployeeId <= 0)
+                    {
+                        return ServiceResult<JobDto>.Fail("Çalışan seçimi zorunludur.");
+                    }
+
+                    if (!activeSnapshot.EmployeeScopeBypass && !activeSnapshot.AllowedEmployeeIds.Contains(work.EmployeeId))
+                    {
+                        return ServiceResult<JobDto>.Fail("Seçilen çalışan kapsam dışı.");
+                    }
+
+                    if (work.WorkTypeId <= 0)
+                    {
+                        return ServiceResult<JobDto>.Fail("Görev tipi zorunludur.");
+                    }
+
+                    if (work.TimeTypeId <= 0)
+                    {
+                        return ServiceResult<JobDto>.Fail("Mesai tipi zorunludur.");
                     }
 
                     if (work.Quantity < 0 || work.Quantity > short.MaxValue)
@@ -1524,11 +1612,21 @@ namespace Imaj.Service.Services
                     }
                 }
 
-                foreach (var product in jobDto.JobProds ?? new List<JobProdDto>())
+                foreach (var product in productDtos)
                 {
-                    if (product.Id <= 0 || !productRowsById.ContainsKey(product.Id))
+                    if (product.Id > 0 && !productRowsById.ContainsKey(product.Id))
                     {
                         return ServiceResult<JobDto>.Fail("Ürün satırı bulunamadı.");
+                    }
+
+                    if (product.ProductId <= 0)
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün seçimi zorunludur.");
+                    }
+
+                    if (product.CategoryId <= 0)
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün kategorisi zorunludur.");
                     }
 
                     if (product.Quantity < 0 || product.Quantity > short.MaxValue)
@@ -1537,11 +1635,11 @@ namespace Imaj.Service.Services
                     }
                 }
 
-                foreach (var category in jobDto.JobProdCats ?? new List<JobProdCatDto>())
+                foreach (var category in categoryDtos)
                 {
-                    if (category.CategoryId <= 0 || !categoryRowsByCategoryId.ContainsKey(category.CategoryId))
+                    if (category.CategoryId <= 0)
                     {
-                        return ServiceResult<JobDto>.Fail("Ürün kategori satırı bulunamadı.");
+                        return ServiceResult<JobDto>.Fail("Ürün kategorisi zorunludur.");
                     }
                 }
 
@@ -1558,9 +1656,25 @@ namespace Imaj.Service.Services
                     job.ExtNotes = jobDto.ExtNotes ?? string.Empty;
                     job.Stamp = 1;
 
-                    foreach (var workDto in jobDto.JobWorks ?? new List<JobWorkDto>())
+                    var nextWorkId = await jobWorkRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0;
+                    foreach (var workDto in workDtos)
                     {
-                        var work = workRowsById[workDto.Id];
+                        var isNewWork = false;
+                        if (!workRowsById.TryGetValue(workDto.Id, out var work))
+                        {
+                            isNewWork = true;
+                            work = new JobWork
+                            {
+                                Id = ++nextWorkId,
+                                JobID = job.Id,
+                                EmployeeID = workDto.EmployeeId,
+                                Deleted = 0,
+                                Stamp = 1
+                            };
+                            workRows.Add(work);
+                            await jobWorkRepo.AddAsync(work);
+                        }
+
                         work.WorkTypeID = workDto.WorkTypeId;
                         work.TimeTypeID = workDto.TimeTypeId;
                         work.Quantity = (short)Math.Round(workDto.Quantity);
@@ -1568,12 +1682,31 @@ namespace Imaj.Service.Services
                         work.Notes = workDto.Notes ?? string.Empty;
                         work.SelectFlag = workDto.SelectFlag;
                         work.Stamp = 1;
-                        jobWorkRepo.Update(work);
+                        if (!isNewWork)
+                        {
+                            jobWorkRepo.Update(work);
+                        }
                     }
 
-                    foreach (var productDto in jobDto.JobProds ?? new List<JobProdDto>())
+                    var nextProductRowId = await jobProdRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0;
+                    foreach (var productDto in productDtos)
                     {
-                        var product = productRowsById[productDto.Id];
+                        var isNewProduct = false;
+                        if (!productRowsById.TryGetValue(productDto.Id, out var product))
+                        {
+                            isNewProduct = true;
+                            product = new JobProd
+                            {
+                                Id = ++nextProductRowId,
+                                JobID = job.Id,
+                                ProductID = productDto.ProductId,
+                                Deleted = 0,
+                                Stamp = 1
+                            };
+                            productRows.Add(product);
+                            await jobProdRepo.AddAsync(product);
+                        }
+
                         product.Quantity = (short)Math.Round(productDto.Quantity);
                         product.Price = productDto.Price;
                         product.GrossAmount = productDto.GrossAmount;
@@ -1581,18 +1714,41 @@ namespace Imaj.Service.Services
                         product.Notes = productDto.Notes ?? string.Empty;
                         product.SelectFlag = productDto.SelectFlag;
                         product.Stamp = 1;
-                        jobProdRepo.Update(product);
+                        if (!isNewProduct)
+                        {
+                            jobProdRepo.Update(product);
+                        }
                     }
 
-                    foreach (var categoryDto in jobDto.JobProdCats ?? new List<JobProdCatDto>())
+                    var nextProductCategoryRowId = await jobProdCatRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0;
+                    foreach (var categoryDto in categoryDtos)
                     {
-                        var category = categoryRowsByCategoryId[categoryDto.CategoryId];
+                        var isNewCategory = false;
+                        if (!categoryRowsByCategoryId.TryGetValue(categoryDto.CategoryId, out var category))
+                        {
+                            isNewCategory = true;
+                            category = new JobProdCat
+                            {
+                                Id = ++nextProductCategoryRowId,
+                                JobID = job.Id,
+                                ProdCatID = categoryDto.CategoryId,
+                                Deleted = 0,
+                                Stamp = 1
+                            };
+                            categoryRows.Add(category);
+                            categoryRowsByCategoryId[categoryDto.CategoryId] = category;
+                            await jobProdCatRepo.AddAsync(category);
+                        }
+
                         category.GrossAmount = categoryDto.GrossAmount;
                         category.DiscPercentage = categoryDto.DiscPercentage;
                         category.DiscAmount = categoryDto.DiscAmount;
                         category.NetAmount = categoryDto.NetAmount;
                         category.Stamp = 1;
-                        jobProdCatRepo.Update(category);
+                        if (!isNewCategory)
+                        {
+                            jobProdCatRepo.Update(category);
+                        }
                     }
 
                     job.WorkSum = workRows.Sum(x => x.Amount);
