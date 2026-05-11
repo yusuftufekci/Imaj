@@ -397,13 +397,21 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> Create(string jobCustomerCode, string jobCustomerName)
         {
             var nextReferenceResult = await _invoiceService.GetNextReferenceAsync();
+
+            var resolvedJobCode = jobCustomerCode ?? "101PROD";
+            var resolvedJobName = jobCustomerName ?? "101 PRODUCTION";
+
             var model = new InvoiceCreateViewModel
             {
                 Reference = nextReferenceResult.IsSuccess && nextReferenceResult.Data > 0
                     ? nextReferenceResult.Data.ToString(CultureInfo.InvariantCulture)
                     : new Random().Next(10000, 99999).ToString(CultureInfo.InvariantCulture),
-                JobCustomerCode = jobCustomerCode ?? "101PROD",
-                JobCustomerName = jobCustomerName ?? "101 PRODUCTION",
+                JobCustomerCode = resolvedJobCode,
+                JobCustomerName = resolvedJobName,
+                // Fatura müşterisini iş müşterisiyle aynı olarak başlat;
+                // kullanıcı Create sayfasında "Seç" butonu ile değiştirebilir.
+                InvoiceCustomerCode = resolvedJobCode,
+                InvoiceCustomerName = resolvedJobName,
             };
             return View(model);
         }
