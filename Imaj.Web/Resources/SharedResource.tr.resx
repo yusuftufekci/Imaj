@@ -366,6 +366,9 @@
   <data name="JobCreatedWithReference" xml:space="preserve">
     <value>İş başarıyla oluşturuldu. Referans No: {0}</value>
   </data>
+  <data name="JobUpdatedSuccess" xml:space="preserve">
+    <value>İş başarıyla güncellendi.</value>
+  </data>
   <data name="SaveError" xml:space="preserve">
     <value>Kayıt sırasında bir hata oluştu.</value>
   </data>
@@ -1396,7 +1399,7 @@
     <value>İptal Et</value>
   </data>
   <data name="WorkflowDiscard" xml:space="preserve">
-    <value>Reddet</value>
+    <value>İptal Et</value>
   </data>
   <data name="WorkflowComplete" xml:space="preserve">
     <value>Tamamla</value>

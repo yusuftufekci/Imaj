@@ -99,7 +99,10 @@ namespace Imaj.Web.Models
 
         // Basic Info
         public string? Code { get; set; } // Referans
+        public decimal FunctionId { get; set; }
         public string? Function { get; set; }
+        public decimal CustomerId { get; set; }
+        public string? CustomerCode { get; set; }
         public string? CustomerName { get; set; }
         public string? RelatedPerson { get; set; }
         public string? Name { get; set; }
@@ -129,10 +132,14 @@ namespace Imaj.Web.Models
     
     public class JobOvertimeItem 
     {
+        public decimal Id { get; set; }
+        public decimal EmployeeId { get; set; }
         public bool IsSelected { get; set; }
         public string? EmployeeCode { get; set; }
         public string? EmployeeName { get; set; }
+        public decimal WorkTypeId { get; set; }
         public string? TaskType { get; set; }
+        public decimal TimeTypeId { get; set; }
         public string? OvertimeType { get; set; }
         public decimal Quantity { get; set; }
         public decimal Amount { get; set; }
@@ -141,8 +148,12 @@ namespace Imaj.Web.Models
 
     public class JobProductItem
     {
+         public decimal Id { get; set; }
+         public decimal ProductId { get; set; }
          public string? Code { get; set; }
          public string? Name { get; set; }
+         public decimal CategoryId { get; set; }
+         public string? CategoryName { get; set; }
          
          public decimal Quantity { get; set; }
          public decimal Price { get; set; }

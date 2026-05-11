@@ -3026,6 +3026,18 @@ span.flatpickr-weekday {
     overflow-wrap: anywhere;
 }
 
+.job-detail-edit-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.job-detail-edit-selector__value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .customer-table-card,
 .job-table-card,
 .invoice-table-card {
@@ -3261,6 +3273,7 @@ span.flatpickr-weekday {
 }
 
 .job-table-input,
+.job-table-select,
 .job-table-textarea {
     width: 100%;
     border: 1px solid #94a3b8;
@@ -3272,6 +3285,11 @@ span.flatpickr-weekday {
 }
 
 .job-table-input {
+    min-height: 2rem;
+    padding: 0.2rem 0.45rem;
+}
+
+.job-table-select {
     min-height: 2rem;
     padding: 0.2rem 0.45rem;
 }

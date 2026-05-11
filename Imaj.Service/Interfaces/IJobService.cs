@@ -29,6 +29,11 @@ namespace Imaj.Service.Interfaces
         Task<ServiceResult<JobDto>> AddAsync(JobDto jobDto);
 
         /// <summary>
+        /// Mevcut iş kaydını ve bağlı mevcut satırlarını günceller.
+        /// </summary>
+        Task<ServiceResult<JobDto>> UpdateAsync(JobDto jobDto);
+
+        /// <summary>
         /// İş geçmişini (loglarını) getirir.
         /// </summary>
         Task<ServiceResult<List<JobLogDto>>> GetJobHistoryAsync(decimal jobId);

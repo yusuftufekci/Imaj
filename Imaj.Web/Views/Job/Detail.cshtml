@@ -1,5 +1,7 @@
 @using System.Net
 @using System.Collections.Generic
+@using System.Globalization
+@using System.Text.Json
 @using Imaj.Web.Authorization
 @using Imaj.Service.DTOs
 @model JobDetailViewModel
@@ -48,6 +50,7 @@
     var canEvaluate = await PermissionViewService.CanExecuteMethodAsync(1341m, write: true);
     var canUndoEvaluate = await PermissionViewService.CanExecuteMethodAsync(1488m, write: true);
     var canPrintJobForm = await PermissionViewService.CanExecuteMethodAsync(1501m);
+    var canEditJob = await PermissionViewService.CanExecuteMethodAsync(1397m, write: true);
 
     var canDoComplete = parsedReference && canComplete && !Model.IsEvaluated && isOpen;
     var canDoUndoComplete = parsedReference && canUndoComplete && !Model.IsEvaluated && isCompleted;
@@ -60,9 +63,27 @@
     var canDoEvaluate = parsedReference && canEvaluate && !Model.IsEvaluated && (isClosed || isDiscarded);
     var canDoUndoEvaluate = parsedReference && canUndoEvaluate && Model.IsEvaluated && (isClosed || isDiscarded);
     var canShowPrintJobForm = parsedReference && canPrintJobForm && (isCompleted || isPriced || isInvoiced);
+    var detailStateJson = JsonSerializer.Serialize(new
+    {
+        customerId = Model.CustomerId.ToString(CultureInfo.InvariantCulture),
+        customerName = Model.CustomerName ?? string.Empty
+    });
 }
 
-<div x-data="jobDetail()" class="job-page-shell page-shell--wide space-y-3">
+<div x-data='jobDetail(@Html.Raw(detailStateJson))'
+     @@customer-selected.window="handleCustomerSelection($event.detail)"
+     class="job-page-shell page-shell--wide space-y-3">
+    <form id="jobDetailEditForm" method="post" action="/Job/UpdateDetail" class="hidden">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Code" value="@Model.Code" />
+        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+        @foreach (var selectedId in selectedIds)
+        {
+            <input type="hidden" name="SelectedIds" value="@selectedId" />
+        }
+    </form>
+
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
             <h2 class="job-page-title">
@@ -85,7 +106,18 @@
                 <dl class="job-detail-list">
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["Function"]</dt>
-                        <dd class="job-detail-item__value">@Model.Function</dd>
+                        <dd class="job-detail-item__value">
+                            <span x-show="!isEditing">@Model.Function</span>
+                            <select x-show="isEditing" x-cloak name="FunctionId" form="jobDetailEditForm" :disabled="!isEditing" class="dense-input">
+                                @if (ViewBag.Functions != null)
+                                {
+                                    @foreach (var func in ViewBag.Functions)
+                                    {
+                                        <option value="@func.Id" selected="@(func.Id == Model.FunctionId)">@func.Name</option>
+                                    }
+                                }
+                            </select>
+                        </dd>
                     </div>
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["Reference"]</dt>
@@ -93,23 +125,46 @@
                     </div>
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["Customer"]</dt>
-                        <dd class="job-detail-item__value">@Model.CustomerName</dd>
+                        <dd class="job-detail-item__value">
+                            <span x-show="!isEditing" x-text="customerName || '-'"></span>
+                            <div x-show="isEditing" x-cloak class="job-detail-edit-selector">
+                                <input type="hidden" name="CustomerId" form="jobDetailEditForm" :value="customerId" :disabled="!isEditing">
+                                <span class="job-detail-edit-selector__value" x-text="customerName || '-'"></span>
+                                <button type="button"
+                                        @@click="$dispatch('customer-select-open', { targetId: 'jobDetailEdit', searchEndpoint: '/Job/CustomerSearch', jobStatesEndpoint: '/Job/CustomerJobStates' })"
+                                        class="job-picker-link">
+                                    @Localizer["Select"]
+                                </button>
+                            </div>
+                        </dd>
                     </div>
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["Name"]</dt>
-                        <dd class="job-detail-item__value">@Model.Name</dd>
+                        <dd class="job-detail-item__value">
+                            <span x-show="!isEditing">@Model.Name</span>
+                            <input x-show="isEditing" x-cloak type="text" name="Name" value="@Model.Name" form="jobDetailEditForm" :disabled="!isEditing" class="dense-input">
+                        </dd>
                     </div>
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["Related"]</dt>
-                        <dd class="job-detail-item__value">@Model.RelatedPerson</dd>
+                        <dd class="job-detail-item__value">
+                            <span x-show="!isEditing">@Model.RelatedPerson</span>
+                            <input x-show="isEditing" x-cloak type="text" name="RelatedPerson" value="@Model.RelatedPerson" form="jobDetailEditForm" :disabled="!isEditing" class="dense-input">
+                        </dd>
                     </div>
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["StartDate"]</dt>
-                        <dd class="job-detail-item__value">@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</dd>
+                        <dd class="job-detail-item__value">
+                            <span x-show="!isEditing">@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</span>
+                            <input x-show="isEditing" x-cloak type="datetime-local" name="StartDate" value="@Model.StartDate.ToString("yyyy-MM-ddTHH:mm")" form="jobDetailEditForm" :disabled="!isEditing" class="dense-input">
+                        </dd>
                     </div>
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["EndDate"]</dt>
-                        <dd class="job-detail-item__value">@Model.EndDate?.ToString("dd/MM/yyyy HH:mm") @Model.EndDate?.ToString("dddd")</dd>
+                        <dd class="job-detail-item__value">
+                            <span x-show="!isEditing">@Model.EndDate?.ToString("dd/MM/yyyy HH:mm") @Model.EndDate?.ToString("dddd")</span>
+                            <input x-show="isEditing" x-cloak type="datetime-local" name="EndDate" value="@Model.EndDate?.ToString("yyyy-MM-ddTHH:mm")" form="jobDetailEditForm" :disabled="!isEditing" class="dense-input">
+                        </dd>
                     </div>
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["Status"]</dt>
@@ -141,7 +196,7 @@
                     <h3 class="dense-panel__title">@Localizer["AdminNotes"]</h3>
                 </div>
                 <div class="dense-panel__body">
-                    <textarea readonly rows="3" class="dense-input bg-white">@Model.AdminNotes</textarea>
+                    <textarea name="AdminNotes" form="jobDetailEditForm" :readonly="!isEditing" rows="3" class="dense-input bg-white">@Model.AdminNotes</textarea>
                 </div>
             </section>
             <section class="dense-panel">
@@ -149,7 +204,7 @@
                     <h3 class="dense-panel__title">@Localizer["CustomerNotes"]</h3>
                 </div>
                 <div class="dense-panel__body">
-                    <textarea readonly rows="3" class="dense-input bg-white">@Model.CustomerNotes</textarea>
+                    <textarea name="CustomerNotes" form="jobDetailEditForm" :readonly="!isEditing" rows="3" class="dense-input bg-white">@Model.CustomerNotes</textarea>
                 </div>
             </section>
         </div>
@@ -174,19 +229,46 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var ot in Model.Overtimes)
+                    @for (var i = 0; i < Model.Overtimes.Count; i++)
                     {
+                        var ot = Model.Overtimes[i];
                          <tr>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                <input type="checkbox" disabled @(ot.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                <input type="hidden" name="Overtimes[@i].Id" value="@ot.Id" form="jobDetailEditForm" :disabled="!isEditing">
+                                <input type="hidden" name="Overtimes[@i].EmployeeId" value="@ot.EmployeeId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
+                                <input type="hidden" name="Overtimes[@i].IsSelected" value="false" form="jobDetailEditForm" :disabled="!isEditing">
+                                <input type="checkbox" name="Overtimes[@i].IsSelected" value="true" form="jobDetailEditForm" :disabled="!isEditing" @(ot.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeCode</td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeName</td>
-                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.TaskType</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.OvertimeType</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@ot.Quantity</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@ot.Amount.ToString("N2")</td>
-                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.Notes</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                                @ot.TaskType
+                                <input type="hidden" name="Overtimes[@i].WorkTypeId" value="@ot.WorkTypeId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                                <span x-show="!isEditing">@ot.OvertimeType</span>
+                                <select x-show="isEditing" x-cloak name="Overtimes[@i].TimeTypeId" form="jobDetailEditForm" :disabled="!isEditing" class="job-table-select">
+                                    @if (ViewBag.TimeTypes != null)
+                                    {
+                                        @foreach (var tt in ViewBag.TimeTypes)
+                                        {
+                                            <option value="@tt.Id" selected="@(tt.Id == ot.TimeTypeId)">@tt.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@ot.Quantity</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Overtimes[@i].Quantity" value="@ot.Quantity.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" class="job-table-input job-table-input--money">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@ot.Amount.ToString("N2")</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Overtimes[@i].Amount" value="@ot.Amount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" class="job-table-input job-table-input--money">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                                <span x-show="!isEditing">@ot.Notes</span>
+                                <textarea x-show="isEditing" x-cloak name="Overtimes[@i].Notes" form="jobDetailEditForm" :disabled="!isEditing" rows="2" class="job-table-textarea job-table-textarea--single">@ot.Notes</textarea>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -220,27 +302,47 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var prod in Model.Products)
+                    @for (var i = 0; i < Model.Products.Count; i++)
                     {
+                        var prod = Model.Products[i];
                          <tr>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                <input type="checkbox" disabled @(prod.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                <input type="hidden" name="Products[@i].Id" value="@prod.Id" form="jobDetailEditForm" :disabled="!isEditing">
+                                <input type="hidden" name="Products[@i].ProductId" value="@prod.ProductId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
+                                <input type="hidden" name="Products[@i].CategoryId" value="@prod.CategoryId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
+                                <input type="hidden" name="Products[@i].IsSelected" value="false" form="jobDetailEditForm" :disabled="!isEditing">
+                                <input type="checkbox" name="Products[@i].IsSelected" value="true" form="jobDetailEditForm" :disabled="!isEditing" @(prod.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Code</td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Name</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.Quantity</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.Price.ToString("N2")</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.SubTotal.ToString("N2")</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.NetTotal.ToString("N2")</td>
-                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Notes</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@prod.Quantity</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Products[@i].Quantity" value="@prod.Quantity.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateProduct(@i)" data-product-quantity="@i" class="job-table-input job-table-input--money">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@prod.Price.ToString("N2")</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Products[@i].Price" value="@prod.Price.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateProduct(@i)" data-product-price="@i" class="job-table-input job-table-input--money">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span data-product-subtotal-display="@i">@prod.SubTotal.ToString("N2")</span>
+                                <input type="hidden" name="Products[@i].SubTotal" value="@prod.SubTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" data-product-subtotal="@i">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@prod.NetTotal.ToString("N2")</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Products[@i].NetTotal" value="@prod.NetTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateProductTotals()" data-product-net-total="@i" class="job-table-input job-table-input--money">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                                <span x-show="!isEditing">@prod.Notes</span>
+                                <textarea x-show="isEditing" x-cloak name="Products[@i].Notes" form="jobDetailEditForm" :disabled="!isEditing" rows="2" class="job-table-textarea job-table-textarea--single">@prod.Notes</textarea>
+                            </td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr>
                          <td colspan="5" class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Localizer["Total"]</td>
-                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.Products.Sum(x => x.SubTotal).ToString("N2")</td>
-                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalProductAmount.ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900" data-product-gross-total>@Model.Products.Sum(x => x.SubTotal).ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900" data-product-net-total-footer>@Model.TotalProductAmount.ToString("N2")</td>
                          <td></td>
                     </tr>
                 </tfoot>
@@ -264,24 +366,41 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var cat in Model.ProductCategories)
+                    @for (var i = 0; i < Model.ProductCategories.Count; i++)
                     {
+                        var cat = Model.ProductCategories[i];
                          <tr>
-                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@cat.Name</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.SubTotal.ToString("N2")</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.Discount.ToString("N0")</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.DiscountAmount.ToString("N2")</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@cat.NetTotal.ToString("N2")</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                                @cat.Name
+                                <input type="hidden" name="ProductCategories[@i].CategoryId" value="@cat.CategoryId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
+                                <input type="hidden" name="ProductCategories[@i].Name" value="@cat.Name" form="jobDetailEditForm" :disabled="!isEditing">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@cat.SubTotal.ToString("N2")</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].SubTotal" value="@cat.SubTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateCategory(@i)" data-category-subtotal="@i" class="job-table-input job-table-input--money">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@cat.Discount.ToString("N0")</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].Discount" value="@cat.Discount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateCategory(@i)" data-category-discount="@i" class="job-table-input job-table-input--discount">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@cat.DiscountAmount.ToString("N2")</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].DiscountAmount" value="@cat.DiscountAmount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" readonly data-category-discount-amount="@i" class="job-table-input job-table-input--money bg-gray-50">
+                            </td>
+                            <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
+                                <span x-show="!isEditing">@cat.NetTotal.ToString("N2")</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].NetTotal" value="@cat.NetTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" readonly data-category-net-total="@i" class="job-table-input job-table-input--money bg-gray-50">
+                            </td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr>
                          <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Localizer["Total"]</td>
-                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.ProductCategories.Sum(x => x.SubTotal).ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900" data-category-gross-total>@Model.ProductCategories.Sum(x => x.SubTotal).ToString("N2")</td>
                          <td></td>
-                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.ProductCategories.Sum(x => x.DiscountAmount).ToString("N2")</td>
-                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900">@Model.TotalCategoryAmount.ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900" data-category-discount-total>@Model.ProductCategories.Sum(x => x.DiscountAmount).ToString("N2")</td>
+                         <td class="px-6 py-2 text-right text-sm font-bold text-gray-900" data-category-net-total-footer>@Model.TotalCategoryAmount.ToString("N2")</td>
                     </tr>
                 </tfoot>
              </table>
@@ -304,6 +423,22 @@
          })" />
          
          <div class="job-footer-bar job-footer-bar--center responsive-action-group">
+             @if (canEditJob)
+             {
+                 <button type="button"
+                         x-show="!isEditing"
+                         @@click="enableEdit()"
+                         class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                     @Localizer["Edit"]
+                 </button>
+                 <button type="submit"
+                         form="jobDetailEditForm"
+                         x-show="isEditing"
+                         x-cloak
+                         class="inline-flex items-center px-4 py-1 border border-emerald-400 text-sm font-bold rounded shadow-sm text-emerald-900 bg-emerald-100 hover:bg-emerald-200 focus:outline-none">
+                     @Localizer["Save"]
+                 </button>
+             }
              <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/Job/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
              @if (canShowPrintJobForm)
              {
@@ -480,8 +615,133 @@
             </a>
          </div>
     </div>
+
+    <partial name="_CustomerSelectModal" />
 </div>
 
 @section Scripts {
-    <!-- Scripts buraya gelebilir -->
+    <script>
+        function jobDetail(initialState) {
+            return {
+                isEditing: false,
+                customerId: initialState?.customerId || '',
+                customerName: initialState?.customerName || '',
+                enableEdit() {
+                    this.isEditing = true;
+                },
+                handleCustomerSelection(detail) {
+                    if (detail.targetId !== 'jobDetailEdit' || !detail.customer) {
+                        return;
+                    }
+
+                    this.customerId = detail.customer.id || '';
+                    this.customerName = detail.customer.name || '';
+                },
+                parseDecimal(value) {
+                    if (value === null || value === undefined) {
+                        return 0;
+                    }
+
+                    let normalized = String(value).trim().replace(/\s/g, '');
+                    if (!normalized) {
+                        return 0;
+                    }
+
+                    const lastComma = normalized.lastIndexOf(',');
+                    const lastDot = normalized.lastIndexOf('.');
+                    if (lastComma > -1 && lastDot > -1) {
+                        const decimalSeparator = lastComma > lastDot ? ',' : '.';
+                        const thousandsSeparator = decimalSeparator === ',' ? '.' : ',';
+                        normalized = normalized
+                            .split(thousandsSeparator).join('')
+                            .replace(decimalSeparator, '.');
+                    } else {
+                        normalized = normalized.replace(',', '.');
+                    }
+
+                    const parsed = Number.parseFloat(normalized);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                },
+                formatInputDecimal(value) {
+                    const normalized = Number.isFinite(value) ? value : 0;
+                    const lang = document.documentElement.lang || navigator.language || 'tr-TR';
+                    const separator = lang.toLowerCase().startsWith('tr') ? ',' : '.';
+                    return normalized.toFixed(2).replace('.', separator);
+                },
+                formatDisplayDecimal(value) {
+                    const normalized = Number.isFinite(value) ? value : 0;
+                    const lang = document.documentElement.lang || navigator.language || 'tr-TR';
+                    return normalized.toLocaleString(lang, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                },
+                recalculateProduct(index) {
+                    const quantityInput = document.querySelector(`[data-product-quantity="${index}"]`);
+                    const priceInput = document.querySelector(`[data-product-price="${index}"]`);
+                    const subtotalInput = document.querySelector(`[data-product-subtotal="${index}"]`);
+                    const subtotalDisplay = document.querySelector(`[data-product-subtotal-display="${index}"]`);
+
+                    if (!quantityInput || !priceInput || !subtotalInput || !subtotalDisplay) {
+                        return;
+                    }
+
+                    const quantity = Math.max(0, this.parseDecimal(quantityInput.value));
+                    const price = Math.max(0, this.parseDecimal(priceInput.value));
+                    const subtotal = quantity * price;
+
+                    subtotalInput.value = this.formatInputDecimal(subtotal);
+                    subtotalDisplay.textContent = this.formatDisplayDecimal(subtotal);
+                    this.recalculateProductTotals();
+                },
+                recalculateProductTotals() {
+                    const subtotal = [...document.querySelectorAll('[data-product-subtotal]')]
+                        .reduce((total, input) => total + this.parseDecimal(input.value), 0);
+                    const netTotal = [...document.querySelectorAll('[data-product-net-total]')]
+                        .reduce((total, input) => total + this.parseDecimal(input.value), 0);
+
+                    const grossTotalCell = document.querySelector('[data-product-gross-total]');
+                    const netTotalCell = document.querySelector('[data-product-net-total-footer]');
+
+                    if (grossTotalCell) grossTotalCell.textContent = this.formatDisplayDecimal(subtotal);
+                    if (netTotalCell) netTotalCell.textContent = this.formatDisplayDecimal(netTotal);
+                },
+                recalculateCategory(index) {
+                    const subtotalInput = document.querySelector(`[data-category-subtotal="${index}"]`);
+                    const discountInput = document.querySelector(`[data-category-discount="${index}"]`);
+                    const discountAmountInput = document.querySelector(`[data-category-discount-amount="${index}"]`);
+                    const netTotalInput = document.querySelector(`[data-category-net-total="${index}"]`);
+
+                    if (!subtotalInput || !discountInput || !discountAmountInput || !netTotalInput) {
+                        return;
+                    }
+
+                    const subtotal = Math.max(0, this.parseDecimal(subtotalInput.value));
+                    const discount = Math.min(100, Math.max(0, this.parseDecimal(discountInput.value)));
+                    const discountAmount = subtotal * discount / 100;
+                    const netTotal = subtotal - discountAmount;
+
+                    discountAmountInput.value = this.formatInputDecimal(discountAmount);
+                    netTotalInput.value = this.formatInputDecimal(netTotal);
+                    this.recalculateCategoryTotals();
+                },
+                recalculateCategoryTotals() {
+                    const subtotal = [...document.querySelectorAll('[data-category-subtotal]')]
+                        .reduce((total, input) => total + this.parseDecimal(input.value), 0);
+                    const discountAmount = [...document.querySelectorAll('[data-category-discount-amount]')]
+                        .reduce((total, input) => total + this.parseDecimal(input.value), 0);
+                    const netTotal = [...document.querySelectorAll('[data-category-net-total]')]
+                        .reduce((total, input) => total + this.parseDecimal(input.value), 0);
+
+                    const grossTotalCell = document.querySelector('[data-category-gross-total]');
+                    const discountTotalCell = document.querySelector('[data-category-discount-total]');
+                    const netTotalCell = document.querySelector('[data-category-net-total-footer]');
+
+                    if (grossTotalCell) grossTotalCell.textContent = this.formatDisplayDecimal(subtotal);
+                    if (discountTotalCell) discountTotalCell.textContent = this.formatDisplayDecimal(discountAmount);
+                    if (netTotalCell) netTotalCell.textContent = this.formatDisplayDecimal(netTotal);
+                }
+            }
+        }
+    </script>
 }

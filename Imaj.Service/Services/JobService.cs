@@ -526,6 +526,7 @@ namespace Imaj.Service.Services
                                 FunctionId = j.FunctionID,
                                 FunctionName = xFunc != null ? xFunc.Name : null,
                                 CustomerId = j.CustomerID,
+                                CustomerCode = customer != null ? customer.Code : null,
                                 CustomerName = customer != null ? customer.Name : null,
                                 Name = j.Name,
                                 Contact = j.Contact,
@@ -571,7 +572,9 @@ namespace Imaj.Service.Services
                                     EmployeeId = jw.EmployeeID,
                                     EmployeeCode = e.Code,
                                     EmployeeName = e.Name, // Ad Soyad birleştirme kaldırıldı (Sadece Name var)
+                                    WorkTypeId = jw.WorkTypeID,
                                     WorkTypeName = xWork != null ? xWork.Name : null,
+                                    TimeTypeId = jw.TimeTypeID,
                                     TimeTypeName = xTime != null ? xTime.Name : null,
                                     Quantity = jw.Quantity,
                                     Amount = jw.Amount,
@@ -1426,6 +1429,197 @@ namespace Imaj.Service.Services
                 return ServiceResult<JobDto>.Fail("İş yaratılırken bir hata oluştu.");
             }
         }
+
+        public async Task<ServiceResult<JobDto>> UpdateAsync(JobDto jobDto)
+        {
+            if (jobDto == null) throw new ArgumentNullException(nameof(jobDto));
+
+            if (jobDto.Reference <= 0)
+            {
+                return ServiceResult<JobDto>.Fail("İş referansı zorunludur.");
+            }
+
+            if (jobDto.CustomerId <= 0)
+            {
+                return ServiceResult<JobDto>.Fail("Müşteri seçimi zorunludur.");
+            }
+
+            if (jobDto.FunctionId <= 0)
+            {
+                return ServiceResult<JobDto>.Fail("Fonksiyon seçimi zorunludur.");
+            }
+
+            if (string.IsNullOrWhiteSpace(jobDto.Name))
+            {
+                return ServiceResult<JobDto>.Fail("İş adı zorunludur.");
+            }
+
+            try
+            {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<JobDto>.Fail("İş kaydı kapsam dışında.");
+                }
+
+                var activeSnapshot = snapshot!;
+                if (!activeSnapshot.AllowedFunctionIds.Contains(jobDto.FunctionId))
+                {
+                    return ServiceResult<JobDto>.Fail("Seçilen fonksiyon kapsam dışı.");
+                }
+
+                var jobRepo = _unitOfWork.Repository<Job>();
+                var job = await ApplyJobDataScope(jobRepo.Query(), activeSnapshot)
+                    .SingleOrDefaultAsync(x => x.Reference == jobDto.Reference);
+                if (job == null)
+                {
+                    return ServiceResult<JobDto>.Fail("İş bulunamadı.");
+                }
+
+                var customerExists = await _unitOfWork.Repository<Customer>().Query()
+                    .AnyAsync(x => x.Id == jobDto.CustomerId);
+                if (!customerExists)
+                {
+                    return ServiceResult<JobDto>.Fail("Seçilen müşteri bulunamadı.");
+                }
+
+                var functionExists = await _unitOfWork.Repository<Function>().Query()
+                    .AnyAsync(x => x.Id == jobDto.FunctionId);
+                if (!functionExists)
+                {
+                    return ServiceResult<JobDto>.Fail("Seçilen fonksiyon bulunamadı.");
+                }
+
+                var jobWorkRepo = _unitOfWork.Repository<JobWork>();
+                var jobProdRepo = _unitOfWork.Repository<JobProd>();
+                var jobProdCatRepo = _unitOfWork.Repository<JobProdCat>();
+
+                var workRows = await jobWorkRepo.Query()
+                    .Where(x => x.JobID == job.Id && x.Deleted == 0)
+                    .ToListAsync();
+                var editableWorkRows = activeSnapshot.EmployeeScopeBypass
+                    ? workRows
+                    : workRows.Where(x => activeSnapshot.AllowedEmployeeIds.Contains(x.EmployeeID)).ToList();
+                var productRows = await jobProdRepo.Query()
+                    .Where(x => x.JobID == job.Id && x.Deleted == 0)
+                    .ToListAsync();
+                var categoryRows = await jobProdCatRepo.Query()
+                    .Where(x => x.JobID == job.Id && x.Deleted == 0)
+                    .ToListAsync();
+
+                var workRowsById = editableWorkRows.ToDictionary(x => x.Id);
+                var productRowsById = productRows.ToDictionary(x => x.Id);
+                var categoryRowsByCategoryId = categoryRows.ToDictionary(x => x.ProdCatID);
+
+                foreach (var work in jobDto.JobWorks ?? new List<JobWorkDto>())
+                {
+                    if (work.Id <= 0 || !workRowsById.ContainsKey(work.Id))
+                    {
+                        return ServiceResult<JobDto>.Fail("Mesai satırı bulunamadı.");
+                    }
+
+                    if (work.Quantity < 0 || work.Quantity > short.MaxValue)
+                    {
+                        return ServiceResult<JobDto>.Fail("Mesai miktarı geçersiz.");
+                    }
+                }
+
+                foreach (var product in jobDto.JobProds ?? new List<JobProdDto>())
+                {
+                    if (product.Id <= 0 || !productRowsById.ContainsKey(product.Id))
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün satırı bulunamadı.");
+                    }
+
+                    if (product.Quantity < 0 || product.Quantity > short.MaxValue)
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün miktarı geçersiz.");
+                    }
+                }
+
+                foreach (var category in jobDto.JobProdCats ?? new List<JobProdCatDto>())
+                {
+                    if (category.CategoryId <= 0 || !categoryRowsByCategoryId.ContainsKey(category.CategoryId))
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün kategori satırı bulunamadı.");
+                    }
+                }
+
+                using var transaction = await _unitOfWork.BeginTransactionAsync();
+                try
+                {
+                    job.FunctionID = jobDto.FunctionId;
+                    job.CustomerID = jobDto.CustomerId;
+                    job.Name = jobDto.Name.Trim();
+                    job.Contact = jobDto.Contact?.Trim() ?? string.Empty;
+                    job.StartDT = jobDto.StartDate;
+                    job.EndDT = jobDto.EndDate;
+                    job.IntNotes = jobDto.IntNotes ?? string.Empty;
+                    job.ExtNotes = jobDto.ExtNotes ?? string.Empty;
+                    job.Stamp = 1;
+
+                    foreach (var workDto in jobDto.JobWorks ?? new List<JobWorkDto>())
+                    {
+                        var work = workRowsById[workDto.Id];
+                        work.WorkTypeID = workDto.WorkTypeId;
+                        work.TimeTypeID = workDto.TimeTypeId;
+                        work.Quantity = (short)Math.Round(workDto.Quantity);
+                        work.Amount = workDto.Amount;
+                        work.Notes = workDto.Notes ?? string.Empty;
+                        work.SelectFlag = workDto.SelectFlag;
+                        work.Stamp = 1;
+                        jobWorkRepo.Update(work);
+                    }
+
+                    foreach (var productDto in jobDto.JobProds ?? new List<JobProdDto>())
+                    {
+                        var product = productRowsById[productDto.Id];
+                        product.Quantity = (short)Math.Round(productDto.Quantity);
+                        product.Price = productDto.Price;
+                        product.GrossAmount = productDto.GrossAmount;
+                        product.NetAmount = productDto.NetAmount;
+                        product.Notes = productDto.Notes ?? string.Empty;
+                        product.SelectFlag = productDto.SelectFlag;
+                        product.Stamp = 1;
+                        jobProdRepo.Update(product);
+                    }
+
+                    foreach (var categoryDto in jobDto.JobProdCats ?? new List<JobProdCatDto>())
+                    {
+                        var category = categoryRowsByCategoryId[categoryDto.CategoryId];
+                        category.GrossAmount = categoryDto.GrossAmount;
+                        category.DiscPercentage = categoryDto.DiscPercentage;
+                        category.DiscAmount = categoryDto.DiscAmount;
+                        category.NetAmount = categoryDto.NetAmount;
+                        category.Stamp = 1;
+                        jobProdCatRepo.Update(category);
+                    }
+
+                    job.WorkSum = workRows.Sum(x => x.Amount);
+                    job.ProdSum = categoryRows.Any()
+                        ? categoryRows.Sum(x => x.NetAmount)
+                        : productRows.Sum(x => x.NetAmount);
+                    jobRepo.Update(job);
+
+                    await _unitOfWork.CommitAsync();
+                    await transaction.CommitAsync();
+
+                    jobDto.Id = job.Id;
+                    return ServiceResult<JobDto>.Success(jobDto);
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "İş güncellenirken hata oluştu. Reference={Reference}", jobDto.Reference);
+                return ServiceResult<JobDto>.Fail("İş güncellenirken bir hata oluştu.");
+            }
+        }
+
         public async Task<ServiceResult<List<JobLogDto>>> GetJobHistoryAsync(decimal jobId)
         {
             try

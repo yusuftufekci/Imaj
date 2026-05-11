@@ -823,7 +823,10 @@ namespace Imaj.Web.Controllers
             var model = new JobDetailViewModel
             {
                 Code = job.Reference.ToString(),
+                FunctionId = job.FunctionId,
                 Function = job.FunctionName,
+                CustomerId = job.CustomerId,
+                CustomerCode = job.CustomerCode,
                 CustomerName = job.CustomerName,
                 Name = job.Name,
                 RelatedPerson = job.Contact,
@@ -852,10 +855,14 @@ namespace Imaj.Web.Controllers
             {
                 model.Overtimes = job.JobWorks.Select(jw => new JobOvertimeItem
                 {
+                    Id = jw.Id,
+                    EmployeeId = jw.EmployeeId,
                     IsSelected = jw.SelectFlag,
                     EmployeeCode = jw.EmployeeCode,
                     EmployeeName = jw.EmployeeName,
+                    WorkTypeId = jw.WorkTypeId,
                     TaskType = jw.WorkTypeName,
+                    TimeTypeId = jw.TimeTypeId,
                     OvertimeType = jw.TimeTypeName,
                     Quantity = jw.Quantity,
                     Amount = jw.Amount,
@@ -872,9 +879,13 @@ namespace Imaj.Web.Controllers
                 // 1. Ürün Listesi Mapping
                 model.Products = job.JobProds.Select(jp => new JobProductItem
                 {
+                    Id = jp.Id,
+                    ProductId = jp.ProductId,
                     IsSelected = jp.SelectFlag,
                     Code = jp.ProductCode,
                     Name = jp.ProductName,
+                    CategoryId = jp.CategoryId,
+                    CategoryName = jp.CategoryName,
                     Quantity = jp.Quantity,
                     Price = jp.Price,
                     SubTotal = jp.GrossAmount,
@@ -898,6 +909,7 @@ namespace Imaj.Web.Controllers
                         var discPercentage = subTotal > 0 ? (discAmount / subTotal) * 100 : 0;
                         return new JobCategorySummaryItem
                         {
+                            CategoryId = g.Key.CategoryId,
                             Name = g.Key.CategoryName,
                             SubTotal = subTotal,
                             NetTotal = netTotal,
@@ -922,6 +934,7 @@ namespace Imaj.Web.Controllers
 
                         return new JobCategorySummaryItem
                         {
+                            CategoryId = g.Key.CategoryId,
                             Name = g.Key.CategoryName,
                             SubTotal = subTotal,
                             NetTotal = netTotal,
@@ -935,6 +948,84 @@ namespace Imaj.Web.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1397, write: true)]
+        public async Task<IActionResult> UpdateDetail(JobDetailViewModel model)
+        {
+            var selectedIds = model.SelectedIds ?? new List<string>();
+            var normalizedReturnUrl = NormalizeListReturnUrl(model.ReturnUrl);
+
+            if (!int.TryParse(model.Code, out var reference) || reference <= 0)
+            {
+                TempData["ErrorMessage"] = L("JobNotFound");
+                return LocalRedirect(normalizedReturnUrl);
+            }
+
+            if (selectedIds.Count == 0)
+            {
+                selectedIds.Add(reference.ToString(CultureInfo.InvariantCulture));
+            }
+
+            var updateDto = new JobDto
+            {
+                Reference = reference,
+                FunctionId = model.FunctionId,
+                CustomerId = model.CustomerId,
+                Name = model.Name,
+                Contact = model.RelatedPerson,
+                StartDate = model.StartDate,
+                EndDate = model.EndDate ?? model.StartDate,
+                IntNotes = model.AdminNotes,
+                ExtNotes = model.CustomerNotes,
+                JobWorks = model.Overtimes.Select(x => new JobWorkDto
+                {
+                    Id = x.Id,
+                    EmployeeId = x.EmployeeId,
+                    WorkTypeId = x.WorkTypeId,
+                    TimeTypeId = x.TimeTypeId,
+                    Quantity = x.Quantity,
+                    Amount = x.Amount,
+                    Notes = x.Notes,
+                    SelectFlag = x.IsSelected
+                }).ToList(),
+                JobProds = model.Products.Select(x => new JobProdDto
+                {
+                    Id = x.Id,
+                    ProductId = x.ProductId,
+                    CategoryId = x.CategoryId,
+                    Quantity = x.Quantity,
+                    Price = x.Price,
+                    GrossAmount = x.SubTotal,
+                    NetAmount = x.NetTotal,
+                    Notes = x.Notes,
+                    SelectFlag = x.IsSelected
+                }).ToList(),
+                JobProdCats = model.ProductCategories.Select(x => new JobProdCatDto
+                {
+                    CategoryId = x.CategoryId,
+                    CategoryName = x.Name,
+                    GrossAmount = x.SubTotal,
+                    DiscAmount = x.DiscountAmount,
+                    DiscPercentage = (byte)Math.Clamp((int)Math.Round(x.Discount), 0, 100),
+                    NetAmount = x.NetTotal
+                }).ToList()
+            };
+
+            var result = await _jobService.UpdateAsync(updateDto);
+            TempData[result.IsSuccess ? "SuccessMessage" : "ErrorMessage"] = result.IsSuccess
+                ? L("JobUpdatedSuccess")
+                : this.LocalizeUiMessage(result.Message, L("SaveError"));
+
+            return RedirectToAction(nameof(Detail), new
+            {
+                id = reference.ToString(CultureInfo.InvariantCulture),
+                selectedIds = selectedIds.ToArray(),
+                currentIndex = model.CurrentIndex,
+                returnUrl = normalizedReturnUrl
+            });
         }
 
         [HttpGet]
