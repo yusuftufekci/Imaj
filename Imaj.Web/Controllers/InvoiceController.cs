@@ -58,8 +58,9 @@ namespace Imaj.Web.Controllers
 
             var model = new InvoiceViewModel
             {
-                IssueDateStart = DateTime.Now.AddDays(-30),
-                IssueDateEnd = DateTime.Now,
+                // IssueDateStart/End string tipinde tutulur; HTML date input'u yyyy-MM-dd bekler
+                IssueDateStart = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                IssueDateEnd = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
                 First = 100,
                 PageSize = 16
             };
@@ -72,10 +73,13 @@ namespace Imaj.Web.Controllers
         {
             var f = filter ?? new InvoiceViewModel();
 
-            if (!f.IssueDateStart.HasValue && !f.IssueDateEnd.HasValue)
+            // Tarih alanları string olarak model'de tutulup Parsed* property'leri ile elde ediliyor.
+            // Hem başlangıç hem bitiş tarihi girilmemişse varsayılan aralık uygula.
+            if (!f.ParsedIssueDateStart.HasValue && !f.ParsedIssueDateEnd.HasValue)
             {
-                f.IssueDateStart = DateTime.Now.AddDays(-30);
-                f.IssueDateEnd = DateTime.Now;
+                // Varsayılan 30 günlük aralığı string olarak ata; Parsed* property'leri otomatik dönüştürür.
+                f.IssueDateStart = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                f.IssueDateEnd = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             }
 
             f.Page = f.Page <= 0 ? 1 : f.Page;
@@ -460,9 +464,11 @@ namespace Imaj.Web.Controllers
                 ReferenceEnd = int.TryParse(f.ReferenceEnd, out var refEnd) ? refEnd : null,
                 Name = f.Name,
                 RelatedPerson = f.RelatedPerson,
-                IssueDateStart = f.IssueDateStart,
-                IssueDateEnd = f.IssueDateEnd,
-                StateId = decimal.TryParse(f.Status, out var stateId) ? stateId : null,
+                // IssueDateStart/End string olarak gelir; InvariantCulture parse sonucunu kullan
+                IssueDateStart = f.ParsedIssueDateStart,
+                IssueDateEnd = f.ParsedIssueDateEnd,
+                StateId = decimal.TryParse(f.Status, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out var stateId) ? stateId : null,
                 Evaluated = f.Evaluated == "true" ? true : f.Evaluated == "false" ? false : null,
                 Page = f.Page,
                 PageSize = f.PageSize > 0 ? f.PageSize : 10,
@@ -643,12 +649,14 @@ namespace Imaj.Web.Controllers
         {
             var items = new List<PrintableReportMetaItem>();
 
-            if (filter.IssueDateStart.HasValue && filter.IssueDateEnd.HasValue)
+            // Tarihler string'den Parsed* property'leri ile elde edildiğinden
+            // doğrudan ParsedIssueDateStart/End kullanıyoruz.
+            if (filter.ParsedIssueDateStart.HasValue && filter.ParsedIssueDateEnd.HasValue)
             {
                 items.Add(new PrintableReportMetaItem
                 {
                     Label = L("DateRange"),
-                    Value = $"{FormatDate(filter.IssueDateStart.Value)} - {FormatDate(filter.IssueDateEnd.Value)}"
+                    Value = $"{FormatDate(filter.ParsedIssueDateStart.Value)} - {FormatDate(filter.ParsedIssueDateEnd.Value)}"
                 });
             }
 
@@ -730,8 +738,9 @@ namespace Imaj.Web.Controllers
         {
             badRequestResult = null;
 
-            var hasStartDate = filter.IssueDateStart.HasValue;
-            var hasEndDate = filter.IssueDateEnd.HasValue;
+            // string → DateTime dönüşümü Parsed* property'leri üzerinden yapılır
+            var hasStartDate = filter.ParsedIssueDateStart.HasValue;
+            var hasEndDate = filter.ParsedIssueDateEnd.HasValue;
 
             if (hasStartDate != hasEndDate)
             {
@@ -745,7 +754,7 @@ namespace Imaj.Web.Controllers
                 return false;
             }
 
-            if (filter.IssueDateEnd!.Value.Date < filter.IssueDateStart!.Value.Date)
+            if (filter.ParsedIssueDateEnd!.Value.Date < filter.ParsedIssueDateStart!.Value.Date)
             {
                 badRequestResult = new BadRequestObjectResult(L("EndDateBeforeStart"));
                 return false;

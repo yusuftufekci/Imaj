@@ -76,7 +76,9 @@
                         }
                         @foreach (var state in invoiceStates)
                         {
-                            <option value="@state.Id">@state.Name</option>
+                            @* state.Id decimal tipinde; InvariantCulture ile yazmazsak Türkçe kültürde "210,00" gibi render olur
+                               ve controller'daki decimal.TryParse başarısız olur → durum filtresi çalışmaz *@
+                            <option value="@state.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)">@state.Name</option>
                         }
                     </select>
                 </div>
@@ -161,7 +163,8 @@
             filter: {
                  referenceStart: '', referenceEnd: '',
                  name: '', relatedPerson: '',
-                 issueDateStart: '@Model.IssueDateStart?.ToString("yyyy-MM-dd")', issueDateEnd: '@Model.IssueDateEnd?.ToString("yyyy-MM-dd")',
+                 // IssueDateStart/End artık string tipinde; .ToString("yyyy-MM-dd") çağrısı gerekmiyor
+                 issueDateStart: '@(Model.IssueDateStart ?? string.Empty)', issueDateEnd: '@(Model.IssueDateEnd ?? string.Empty)',
                  status: '', evaluated: '',
                  first: @firstValue,
                  pageSize: @pageSizeValue
@@ -408,8 +411,9 @@
                 this.filter.referenceEnd = '';
                 this.filter.name = '';
                 this.filter.relatedPerson = '';
-                this.filter.issueDateStart = '@Model.IssueDateStart?.ToString("yyyy-MM-dd")';
-                this.filter.issueDateEnd = '@Model.IssueDateEnd?.ToString("yyyy-MM-dd")';
+                // IssueDateStart/End artık string tipinde
+                this.filter.issueDateStart = '@(Model.IssueDateStart ?? string.Empty)';
+                this.filter.issueDateEnd = '@(Model.IssueDateEnd ?? string.Empty)';
                 this.filter.status = '';
                 this.filter.evaluated = '';
                 this.filter.first = @firstValue;
