@@ -16,6 +16,7 @@ namespace Imaj.Service.DTOs
         public string? Notes { get; set; }
         public string? FooterNote { get; set; }
         public List<InvoiceCreateLineDto> Lines { get; set; } = new();
+        public List<InvoiceCreateJobDto> Jobs { get; set; } = new();
     }
 
     public class InvoiceCreateLineDto
@@ -23,5 +24,10 @@ namespace Imaj.Service.DTOs
         public string? Description { get; set; }
         public decimal Amount { get; set; }
         public decimal VatRate { get; set; }
+    }
+
+    public class InvoiceCreateJobDto
+    {
+        public int Reference { get; set; }
     }
 }

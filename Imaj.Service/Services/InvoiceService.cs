@@ -18,6 +18,9 @@ namespace Imaj.Service.Services
         private const decimal IssuedStateId = 230m;
         private const decimal KilledStateId = 240m;
         private const decimal DiscardedStateId = 250m;
+        private const decimal PricedJobStateId = 130m;
+        private const decimal InvoicedJobStateId = 140m;
+        private static readonly decimal[] LiveInvoiceStateIds = { OpenStateId, ConfirmedStateId, IssuedStateId };
 
         private const decimal ConfirmLogActionId = 1110m;
         private const decimal UndoConfirmLogActionId = 1120m;
@@ -26,6 +29,7 @@ namespace Imaj.Service.Services
         private const decimal DiscardLogActionId = 1150m;
         private const decimal EvaluateLogActionId = 1160m;
         private const decimal UndoEvaluateLogActionId = 1170m;
+        private const decimal InvoiceJobLogActionId = 650m;
 
         private readonly ICurrentPermissionContext _currentPermissionContext;
 
@@ -60,6 +64,97 @@ namespace Imaj.Service.Services
             }
         }
 
+        public async Task<ServiceResult<List<InvoicePricedJobDto>>> GetPricedJobsForInvoiceAsync(InvoicePricedJobFilterDto filter, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var snapshot = await _currentPermissionContext.GetSnapshotAsync();
+                if (IsDataScopeDenied(snapshot))
+                {
+                    return ServiceResult<List<InvoicePricedJobDto>>.Success(new List<InvoicePricedJobDto>());
+                }
+
+                var activeSnapshot = snapshot!;
+                var customerCode = filter.JobCustomerCode?.Trim();
+                var search = filter.Search?.Trim();
+                var take = filter.First > 0 ? Math.Min(filter.First, 200) : 100;
+
+                var liveInvoiceJobIds =
+                    from invoJob in _unitOfWork.Repository<InvoJob>().Query()
+                    .AsNoTracking()
+                    .Where(x => x.Deleted == 0)
+                    join line in _unitOfWork.Repository<InvoLine>().Query()
+                            .AsNoTracking()
+                            .Where(x => x.Deleted == 0)
+                        on invoJob.InvoLineID equals line.Id
+                    join invoice in _unitOfWork.Repository<Invoice>().Query()
+                            .AsNoTracking()
+                            .Where(x => LiveInvoiceStateIds.Contains(x.StateID))
+                        on line.InvoiceID equals invoice.Id
+                    select invoJob.JobID;
+
+                var query =
+                    from job in _unitOfWork.Repository<Job>().Query().AsNoTracking()
+                    join customer in _unitOfWork.Repository<Customer>().Query().AsNoTracking()
+                        on job.CustomerID equals customer.Id into customerGroup
+                    from customer in customerGroup.DefaultIfEmpty()
+                    where job.StateID == PricedJobStateId
+                          && job.InvoLineID == null
+                          && activeSnapshot.AllowedFunctionIds.Contains(job.FunctionID)
+                          && (activeSnapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound
+                              || !activeSnapshot.CompanyId.HasValue
+                              || job.CompanyID == activeSnapshot.CompanyId.Value)
+                          && !liveInvoiceJobIds.Contains(job.Id)
+                    select new InvoicePricedJobDto
+                    {
+                        Reference = job.Reference,
+                        Name = job.Name,
+                        CustomerCode = customer != null ? customer.Code : string.Empty,
+                        CustomerName = customer != null ? customer.Name : string.Empty,
+                        StartDate = job.StartDT,
+                        EndDate = job.EndDT,
+                        WorkAmount = job.WorkSum,
+                        ProductAmount = job.ProdSum
+                    };
+
+                if (!string.IsNullOrWhiteSpace(customerCode))
+                {
+                    query = query.Where(x => x.CustomerCode == customerCode);
+                }
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    if (int.TryParse(search, out var reference))
+                    {
+                        query = query.Where(x => x.Reference == reference
+                                                 || EF.Functions.Like(x.Reference.ToString(), $"%{search}%")
+                                                 || (x.Name != null && x.Name.Contains(search)));
+                    }
+                    else
+                    {
+                        query = query.Where(x => x.Name != null && x.Name.Contains(search));
+                    }
+                }
+
+                var jobs = await query
+                    .OrderBy(x => x.StartDate)
+                    .ThenBy(x => x.Reference)
+                    .Take(take)
+                    .ToListAsync(cancellationToken);
+
+                return ServiceResult<List<InvoicePricedJobDto>>.Success(jobs);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Invoice priced jobs fetch failed.");
+                return ServiceResult<List<InvoicePricedJobDto>>.Fail("Fiyatlanan işler yüklenemedi.");
+            }
+        }
+
         public async Task<ServiceResult<int>> CreateAsync(InvoiceCreateDto input)
         {
             if (input == null)
@@ -75,6 +170,7 @@ namespace Imaj.Service.Services
             var normalizedNotes = input.Notes?.Trim() ?? string.Empty;
             var normalizedFooter = input.FooterNote?.Trim() ?? string.Empty;
             var normalizedLines = NormalizeCreateLines(input.Lines);
+            var normalizedJobReferences = NormalizeCreateJobs(input.Jobs);
 
             if (string.IsNullOrWhiteSpace(normalizedJobCustomerCode))
             {
@@ -100,33 +196,31 @@ namespace Imaj.Service.Services
                 validationErrors.Add("İlgili kişi en fazla 32 karakter olabilir.");
             }
 
-            if (!normalizedLines.Any())
+            if (!normalizedLines.Any() && !normalizedJobReferences.Any())
             {
-                validationErrors.Add("En az bir fatura satırı eklenmelidir.");
+                validationErrors.Add("En az bir fatura satırı veya fiyatlanan iş eklenmelidir.");
             }
-            else
+
+            foreach (var line in normalizedLines)
             {
-                foreach (var line in normalizedLines)
+                if (string.IsNullOrWhiteSpace(line.Description))
                 {
-                    if (string.IsNullOrWhiteSpace(line.Description))
-                    {
-                        validationErrors.Add("Fatura satırı açıklaması zorunludur.");
-                    }
+                    validationErrors.Add("Fatura satırı açıklaması zorunludur.");
+                }
 
-                    if (line.Amount <= 0)
-                    {
-                        validationErrors.Add("Fatura satır tutarı sıfırdan büyük olmalıdır.");
-                    }
+                if (line.Amount <= 0)
+                {
+                    validationErrors.Add("Fatura satır tutarı sıfırdan büyük olmalıdır.");
+                }
 
-                    if (line.VatRate < 0 || line.VatRate > 100)
-                    {
-                        validationErrors.Add("Vergi oranı 0 ile 100 arasında olmalıdır.");
-                    }
+                if (line.VatRate < 0 || line.VatRate > 100)
+                {
+                    validationErrors.Add("Vergi oranı 0 ile 100 arasında olmalıdır.");
+                }
 
-                    if (line.VatRate != decimal.Truncate(line.VatRate))
-                    {
-                        validationErrors.Add("Vergi oranı tam sayı olmalıdır.");
-                    }
+                if (line.VatRate != decimal.Truncate(line.VatRate))
+                {
+                    validationErrors.Add("Vergi oranı tam sayı olmalıdır.");
                 }
             }
 
@@ -173,6 +267,105 @@ namespace Imaj.Service.Services
                 validationErrors.Add("Fatura müşterisi bulunamadı.");
             }
 
+            var liveInvoiceJobIds =
+                from invoJob in _unitOfWork.Repository<InvoJob>().Query()
+                    .Where(x => x.Deleted == 0)
+                join line in _unitOfWork.Repository<InvoLine>().Query()
+                        .Where(x => x.Deleted == 0)
+                    on invoJob.InvoLineID equals line.Id
+                join invoice in _unitOfWork.Repository<Invoice>().Query()
+                        .Where(x => LiveInvoiceStateIds.Contains(x.StateID))
+                    on line.InvoiceID equals invoice.Id
+                select invoJob.JobID;
+            var selectedJobs = new List<Job>();
+            var selectedJobCategories = new List<JobProdCat>();
+            var selectedJobCategoryById = new Dictionary<decimal, ProdCat>();
+            TaxType? fallbackJobTaxType = null;
+
+            if (normalizedJobReferences.Any())
+            {
+                var selectedJobQuery = _unitOfWork.Repository<Job>().Query()
+                    .Where(job => normalizedJobReferences.Contains(job.Reference)
+                                  && job.StateID == PricedJobStateId
+                                  && job.InvoLineID == null
+                                  && activeSnapshot.AllowedFunctionIds.Contains(job.FunctionID)
+                                  && (activeSnapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound
+                                      || !activeSnapshot.CompanyId.HasValue
+                                      || job.CompanyID == activeSnapshot.CompanyId.Value)
+                                  && !liveInvoiceJobIds.Contains(job.Id));
+
+                selectedJobs = await selectedJobQuery.ToListAsync();
+
+                if (selectedJobs.Count != normalizedJobReferences.Count)
+                {
+                    validationErrors.Add("Seçilen işlerden bazıları fiyatlandı durumda değil veya canlı fatura bağlantısı var.");
+                }
+
+                if (jobCustomer != null && selectedJobs.Any(x => x.CustomerID != jobCustomer.Id))
+                {
+                    validationErrors.Add("Seçilen işler fatura iş müşterisiyle aynı olmalıdır.");
+                }
+
+                if (selectedJobs.Any(x => RoundCurrency(x.ProdSum) <= 0))
+                {
+                    validationErrors.Add("Fatura tutarı olmayan iş eklenemez.");
+                }
+
+                var selectedJobIds = selectedJobs.Select(x => x.Id).ToList();
+                if (selectedJobIds.Any())
+                {
+                    selectedJobCategories = await _unitOfWork.Repository<JobProdCat>().Query()
+                        .Where(x => selectedJobIds.Contains(x.JobID) && x.Deleted == 0)
+                        .ToListAsync();
+
+                    var prodCatIds = selectedJobCategories
+                        .Select(x => x.ProdCatID)
+                        .Distinct()
+                        .ToList();
+
+                    selectedJobCategoryById = prodCatIds.Any()
+                        ? await _unitOfWork.Repository<ProdCat>().Query()
+                            .Where(x => prodCatIds.Contains(x.Id))
+                            .ToDictionaryAsync(x => x.Id)
+                        : new Dictionary<decimal, ProdCat>();
+
+                    var missingProdCatIds = prodCatIds
+                        .Where(id => !selectedJobCategoryById.ContainsKey(id))
+                        .ToList();
+                    if (missingProdCatIds.Any())
+                    {
+                        validationErrors.Add("Seçilen işlerde tanımsız ürün kategorisi var.");
+                    }
+
+                    var jobsWithCategories = selectedJobCategories
+                        .Select(x => x.JobID)
+                        .Distinct()
+                        .ToHashSet();
+                    var hasAmountWithoutCategory = selectedJobs
+                        .Any(job => RoundCurrency(job.ProdSum) > 0 && !jobsWithCategories.Contains(job.Id));
+
+                    if (hasAmountWithoutCategory)
+                    {
+                        var fallbackTaxTypeQuery = _unitOfWork.Repository<TaxType>().Query()
+                            .Where(x => !x.Invisible);
+                        if (targetCompanyId > 0)
+                        {
+                            fallbackTaxTypeQuery = fallbackTaxTypeQuery.Where(x => x.CompanyID == targetCompanyId);
+                        }
+
+                        fallbackJobTaxType = await fallbackTaxTypeQuery
+                            .OrderByDescending(x => x.TaxPercentage == 18)
+                            .ThenBy(x => x.Id)
+                            .FirstOrDefaultAsync();
+
+                        if (fallbackJobTaxType == null)
+                        {
+                            validationErrors.Add("Ürün kategorisi olmayan iş için tanımlı vergi tipi bulunamadı.");
+                        }
+                    }
+                }
+            }
+
             var requestedVatRates = normalizedLines
                 .Select(x => (short)x.VatRate)
                 .Distinct()
@@ -201,6 +394,47 @@ namespace Imaj.Service.Services
                 validationErrors.Add($"%{missingVatRate} vergi oranı için tanımlı vergi tipi bulunamadı.");
             }
 
+            var jobTaxTypeIds = selectedJobCategoryById.Values
+                .Select(x => x.TaxTypeID)
+                .Distinct()
+                .ToList();
+            if (fallbackJobTaxType != null && !jobTaxTypeIds.Contains(fallbackJobTaxType.Id))
+            {
+                jobTaxTypeIds.Add(fallbackJobTaxType.Id);
+            }
+
+            var jobTaxTypes = jobTaxTypeIds.Any()
+                ? await _unitOfWork.Repository<TaxType>().Query()
+                    .Where(x => jobTaxTypeIds.Contains(x.Id))
+                    .ToListAsync()
+                : new List<TaxType>();
+
+            var taxTypeById = taxTypes
+                .Concat(jobTaxTypes)
+                .GroupBy(x => x.Id)
+                .ToDictionary(x => x.Key, x => x.First());
+
+            var missingJobTaxTypeIds = jobTaxTypeIds
+                .Where(id => !taxTypeById.ContainsKey(id))
+                .ToList();
+            if (missingJobTaxTypeIds.Any())
+            {
+                validationErrors.Add("Seçilen işlerde tanımsız vergi tipi var.");
+            }
+
+            decimal? currentUserId = null;
+            if (selectedJobs.Any())
+            {
+                if (_currentPermissionContext.TryGetCurrentUserId(out var userId))
+                {
+                    currentUserId = userId;
+                }
+                else
+                {
+                    validationErrors.Add("Kullanıcı bilgisi doğrulanamadı.");
+                }
+            }
+
             if (validationErrors.Any())
             {
                 return ServiceResult<int>.ValidationError(validationErrors.Distinct().ToList());
@@ -212,25 +446,85 @@ namespace Imaj.Service.Services
                 var invoiceRepo = _unitOfWork.Repository<Invoice>();
                 var invoiceLineRepo = _unitOfWork.Repository<InvoLine>();
                 var invoiceTaxRepo = _unitOfWork.Repository<InvoTax>();
+                var invoiceJobRepo = _unitOfWork.Repository<InvoJob>();
+                var invoiceProdCatRepo = _unitOfWork.Repository<InvoProdCat>();
+                var jobRepo = _unitOfWork.Repository<Job>();
+                var jobLogRepo = _unitOfWork.Repository<JobLog>();
 
                 var nextInvoiceId = (await invoiceRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
                 var nextLineId = (await invoiceLineRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
                 var nextTaxId = (await invoiceTaxRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                var nextInvoiceJobId = (await invoiceJobRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                var nextInvoiceProdCatId = (await invoiceProdCatRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                var nextJobLogId = (await jobLogRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
                 var nextReference = await GetNextReferenceCoreAsync(targetCompanyId);
 
-                var lineItems = normalizedLines
-                    .Select((line, index) => new
+                var lineItems = new List<(short Sequence, string Description, decimal Amount, decimal? TaxTypeId, bool FreeFormat, bool IsJobLine)>();
+                var taxBases = new List<(decimal TaxTypeId, short VatRate, decimal Amount)>();
+                decimal? jobLineId = null;
+
+                if (selectedJobs.Any())
+                {
+                    jobLineId = nextLineId++;
+                    var invoiceProdCatRows = selectedJobCategories
+                        .GroupBy(x => x.ProdCatID)
+                        .Select(g => new
+                        {
+                            ProdCatId = g.Key,
+                            GrossAmount = RoundCurrency(g.Sum(x => x.GrossAmount)),
+                            NetAmount = RoundCurrency(g.Sum(x => x.NetAmount))
+                        })
+                        .ToList();
+                    var jobsWithCategories = selectedJobCategories
+                        .Select(x => x.JobID)
+                        .Distinct()
+                        .ToHashSet();
+                    var jobAmount = RoundCurrency(
+                        invoiceProdCatRows.Sum(x => x.NetAmount)
+                        + selectedJobs.Where(x => !jobsWithCategories.Contains(x.Id)).Sum(x => x.ProdSum));
+                    lineItems.Add((0, normalizedName!, jobAmount, null, false, true));
+
+                    foreach (var row in invoiceProdCatRows)
+                    {
+                        await invoiceProdCatRepo.AddAsync(new InvoProdCat
+                        {
+                            Id = nextInvoiceProdCatId++,
+                            InvoLineID = jobLineId.Value,
+                            ProdCatID = row.ProdCatId,
+                            GrossAmount = row.GrossAmount,
+                            NetAmount = row.NetAmount,
+                            Deleted = 0,
+                            Stamp = 1
+                        });
+
+                        if (selectedJobCategoryById.TryGetValue(row.ProdCatId, out var prodCat)
+                            && taxTypeById.TryGetValue(prodCat.TaxTypeID, out var taxType))
+                        {
+                            taxBases.Add((taxType.Id, taxType.TaxPercentage, row.NetAmount));
+                        }
+                    }
+
+                    foreach (var jobWithoutCategory in selectedJobs.Where(x => !jobsWithCategories.Contains(x.Id) && RoundCurrency(x.ProdSum) > 0))
+                    {
+                        taxBases.Add((fallbackJobTaxType!.Id, fallbackJobTaxType.TaxPercentage, RoundCurrency(jobWithoutCategory.ProdSum)));
+                    }
+                }
+
+                foreach (var line in normalizedLines.Select((line, index) => new
                     {
                         Sequence = (short)(index + 1),
                         Description = line.Description!,
                         Amount = RoundCurrency(line.Amount),
                         VatRate = (short)line.VatRate,
                         TaxTypeId = taxTypeByRate[(short)line.VatRate].Id
-                    })
-                    .ToList();
+                    }))
+                {
+                    lineItems.Add((line.Sequence, line.Description, line.Amount, line.TaxTypeId, true, false));
+                    taxBases.Add((line.TaxTypeId, line.VatRate, line.Amount));
+                }
 
                 var netAmount = RoundCurrency(lineItems.Sum(x => x.Amount));
-                var taxRows = lineItems
+                var taxRows = taxBases
                     .GroupBy(x => new { x.VatRate, x.TaxTypeId })
                     .Select(g =>
                     {
@@ -272,11 +566,12 @@ namespace Imaj.Service.Services
 
                 foreach (var lineItem in lineItems)
                 {
+                    var lineId = lineItem.IsJobLine ? jobLineId!.Value : nextLineId++;
                     await invoiceLineRepo.AddAsync(new InvoLine
                     {
-                        Id = nextLineId++,
+                        Id = lineId,
                         InvoiceID = nextInvoiceId,
-                        FreeFormat = true,
+                        FreeFormat = lineItem.FreeFormat,
                         Quantity = 1,
                         Price = lineItem.Amount,
                         Amount = lineItem.Amount,
@@ -287,6 +582,39 @@ namespace Imaj.Service.Services
                         Stamp = 1,
                         TaxTypeID = lineItem.TaxTypeId
                     });
+                }
+
+                if (jobLineId.HasValue)
+                {
+                    var actionDate = DateTime.Now;
+                    foreach (var selectedJob in selectedJobs)
+                    {
+                        await invoiceJobRepo.AddAsync(new InvoJob
+                        {
+                            Id = nextInvoiceJobId++,
+                            InvoLineID = jobLineId.Value,
+                            JobID = selectedJob.Id,
+                            Deleted = 0,
+                            SelectFlag = false,
+                            Stamp = 1
+                        });
+
+                        selectedJob.InvoLineID = jobLineId.Value;
+                        selectedJob.StateID = InvoicedJobStateId;
+                        selectedJob.Stamp = 1;
+                        jobRepo.Update(selectedJob);
+
+                        await jobLogRepo.AddAsync(new JobLog
+                        {
+                            Id = nextJobLogId++,
+                            JobID = selectedJob.Id,
+                            UserID = currentUserId!.Value,
+                            LogActionID = InvoiceJobLogActionId,
+                            ActionDT = actionDate,
+                            Destination = string.Empty,
+                            Stamp = 1
+                        });
+                    }
                 }
 
                 foreach (var taxRow in taxRows)
@@ -405,13 +733,15 @@ namespace Imaj.Service.Services
                 if (filter.IssueDateStart.HasValue)
                 {
                     var startDate = filter.IssueDateStart.Value.Date;
-                    invoices = invoices.Where(i => i.IssueDate.HasValue && i.IssueDate.Value >= startDate);
+                    // IssueDate NULL olan kayıtlar tarih filtresinden elenmesin diye
+                    // NULL olanları da dahil ediyoruz.
+                    invoices = invoices.Where(i => !i.IssueDate.HasValue || i.IssueDate.Value >= startDate);
                 }
 
                 if (filter.IssueDateEnd.HasValue)
                 {
                     var endExclusive = filter.IssueDateEnd.Value.Date.AddDays(1);
-                    invoices = invoices.Where(i => i.IssueDate.HasValue && i.IssueDate.Value < endExclusive);
+                    invoices = invoices.Where(i => !i.IssueDate.HasValue || i.IssueDate.Value < endExclusive);
                 }
 
                 if (filter.StateId.HasValue)
@@ -1189,6 +1519,20 @@ namespace Imaj.Service.Services
                 .ToList();
         }
 
+        private static List<int> NormalizeCreateJobs(List<InvoiceCreateJobDto>? jobs)
+        {
+            if (jobs == null || jobs.Count == 0)
+            {
+                return new List<int>();
+            }
+
+            return jobs
+                .Select(x => x.Reference)
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+        }
+
         private static decimal RoundCurrency(decimal amount)
         {
             return Math.Round(amount, 2, MidpointRounding.AwayFromZero);
@@ -1281,13 +1625,14 @@ namespace Imaj.Service.Services
             if (filter.IssueDateStart.HasValue)
             {
                 var startDate = filter.IssueDateStart.Value.Date;
-                query = query.Where(x => x.IssueDate.HasValue && x.IssueDate.Value >= startDate);
+                // IssueDate NULL olan kayıtlar tarih filtresinden elenmesin diye NULL olanlar da dahil edilir.
+                query = query.Where(x => !x.IssueDate.HasValue || x.IssueDate.Value >= startDate);
             }
 
             if (filter.IssueDateEnd.HasValue)
             {
                 var endDateExclusive = filter.IssueDateEnd.Value.Date.AddDays(1);
-                query = query.Where(x => x.IssueDate.HasValue && x.IssueDate.Value < endDateExclusive);
+                query = query.Where(x => !x.IssueDate.HasValue || x.IssueDate.Value < endDateExclusive);
             }
 
             if (filter.StateId.HasValue)

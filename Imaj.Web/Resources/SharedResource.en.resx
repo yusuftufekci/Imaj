@@ -1776,5 +1776,11 @@
   <data name="InvoiceCreateFailedMessage" xml:space="preserve">
     <value>Invoice could not be created.</value>
   </data>
+  <data name="PricedJobs" xml:space="preserve">
+    <value>Priced Jobs</value>
+  </data>
+  <data name="NoPricedJobsFound" xml:space="preserve">
+    <value>No priced jobs found.</value>
+  </data>
 
 </root>

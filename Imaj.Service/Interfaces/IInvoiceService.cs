@@ -9,6 +9,7 @@ namespace Imaj.Service.Interfaces
     public interface IInvoiceService
     {
         Task<ServiceResult<int>> GetNextReferenceAsync();
+        Task<ServiceResult<List<InvoicePricedJobDto>>> GetPricedJobsForInvoiceAsync(InvoicePricedJobFilterDto filter, CancellationToken cancellationToken = default);
         Task<ServiceResult<int>> CreateAsync(InvoiceCreateDto input);
         Task<ServiceResult<PagedResult<InvoiceDto>>> GetByFilterAsync(InvoiceFilterDto filter);
         Task<ServiceResult<List<InvoiceDetailedReportRowDto>>> GetDetailedInvoiceReportAsync(InvoiceFilterDto filter, CancellationToken cancellationToken = default);

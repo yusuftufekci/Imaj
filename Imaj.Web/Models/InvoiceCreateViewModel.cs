@@ -30,6 +30,9 @@ namespace Imaj.Web.Models
 
         // Lines
         public List<InvoiceLineViewModel> Lines { get; set; } = new List<InvoiceLineViewModel>();
+
+        // Linked priced jobs
+        public List<InvoiceJobSelectionViewModel> Jobs { get; set; } = new List<InvoiceJobSelectionViewModel>();
     }
 
     public class InvoiceLineViewModel
@@ -38,5 +41,13 @@ namespace Imaj.Web.Models
         public decimal Amount { get; set; }
         public decimal VatRate { get; set; } = 20; // Default VAT
         public decimal Total => Amount + (Amount * VatRate / 100);
+    }
+
+    public class InvoiceJobSelectionViewModel
+    {
+        public int Reference { get; set; }
+        public string? Name { get; set; }
+        public decimal ProductAmount { get; set; }
+        public decimal WorkAmount { get; set; }
     }
 }

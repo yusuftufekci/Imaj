@@ -1776,5 +1776,11 @@
   <data name="InvoiceCreateFailedMessage" xml:space="preserve">
     <value>Fatura oluşturulamadı.</value>
   </data>
+  <data name="PricedJobs" xml:space="preserve">
+    <value>Fiyatlanan İşler</value>
+  </data>
+  <data name="NoPricedJobsFound" xml:space="preserve">
+    <value>Fiyatlanan iş bulunamadı.</value>
+  </data>
 
 </root>

@@ -74,10 +74,24 @@ namespace Imaj.Web.Controllers
             var f = filter ?? new InvoiceViewModel();
 
             // Tarih alanları string olarak model'de tutulup Parsed* property'leri ile elde ediliyor.
-            // Hem başlangıç hem bitiş tarihi girilmemişse varsayılan aralık uygula.
-            if (!f.ParsedIssueDateStart.HasValue && !f.ParsedIssueDateEnd.HasValue)
+            // Tarih girilmemişse ve başka hiçbir daraltıcı filtre yoksa varsayılan 30 günlük aralık uygula.
+            // Durum, müşteri, referans veya diğer filtreler girilmişse tarih zorla eklenmez;
+            // aksi takdirde NULL IssueDate'li veya eski tarihli kayıtlar gözden kaçar.
+            var hasNonDateFilter =
+                !string.IsNullOrWhiteSpace(f.Status) ||
+                !string.IsNullOrWhiteSpace(f.JobCustomerCode) ||
+                !string.IsNullOrWhiteSpace(f.JobCustomerName) ||
+                !string.IsNullOrWhiteSpace(f.InvoiceCustomerCode) ||
+                !string.IsNullOrWhiteSpace(f.InvoiceCustomerName) ||
+                !string.IsNullOrWhiteSpace(f.ReferenceStart) ||
+                !string.IsNullOrWhiteSpace(f.ReferenceEnd) ||
+                !string.IsNullOrWhiteSpace(f.Name) ||
+                !string.IsNullOrWhiteSpace(f.RelatedPerson) ||
+                !string.IsNullOrWhiteSpace(f.Evaluated);
+
+            if (!f.ParsedIssueDateStart.HasValue && !f.ParsedIssueDateEnd.HasValue && !hasNonDateFilter)
             {
-                // Varsayılan 30 günlük aralığı string olarak ata; Parsed* property'leri otomatik dönüştürür.
+                // Hiçbir filtre yoksa son 30 günü varsayılan olarak uygula.
                 f.IssueDateStart = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
                 f.IssueDateEnd = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             }
@@ -416,6 +430,38 @@ namespace Imaj.Web.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        [RequireMethodPermission(1360)]
+        public async Task<IActionResult> PricedJobs([FromQuery] string? jobCustomerCode, [FromQuery] string? search, [FromQuery] int first = 100)
+        {
+            var result = await _invoiceService.GetPricedJobsForInvoiceAsync(new InvoicePricedJobFilterDto
+            {
+                JobCustomerCode = jobCustomerCode,
+                Search = search,
+                First = first
+            });
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                return BadRequest(new { message = Ui(result.Message, L("GenericError")) });
+            }
+
+            return Json(new
+            {
+                items = result.Data.Select(x => new
+                {
+                    reference = x.Reference,
+                    name = x.Name ?? string.Empty,
+                    customerCode = x.CustomerCode ?? string.Empty,
+                    customerName = x.CustomerName ?? string.Empty,
+                    startDate = x.StartDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    endDate = x.EndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    productAmount = x.ProductAmount,
+                    workAmount = x.WorkAmount
+                })
+            });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireMethodPermission(1360, write: true)]
@@ -424,6 +470,7 @@ namespace Imaj.Web.Controllers
             model.IssueDate = model.IssueDate == default ? DateTime.Today : model.IssueDate;
             model.Footnote ??= string.Empty;
             model.Lines ??= new List<InvoiceLineViewModel>();
+            model.Jobs ??= new List<InvoiceJobSelectionViewModel>();
 
             var result = await _invoiceService.CreateAsync(BuildCreateRequest(model));
             if (result.IsSuccess && result.Data > 0)
@@ -503,6 +550,10 @@ namespace Imaj.Web.Controllers
                     Description = line.Description,
                     Amount = line.Amount,
                     VatRate = line.VatRate
+                }).ToList(),
+                Jobs = model.Jobs.Select(job => new InvoiceCreateJobDto
+                {
+                    Reference = job.Reference
                 }).ToList()
             };
         }
