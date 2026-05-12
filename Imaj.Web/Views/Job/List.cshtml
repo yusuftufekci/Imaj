@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = Localizer["Jobs"];
     var currentListUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var currentSearchUrl = "/Job" + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : string.Empty);
     var stateMapJson = JsonSerializer.Serialize(Model.Items.ToDictionary(x => x.Code ?? string.Empty, x => x.StateId));
 
     var queryParts = Context.Request.Query
@@ -23,7 +24,7 @@
             </h2>
         </div>
         <div class="mt-3 md:mt-0 job-page-actions">
-            <a href="/Job" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+            <a href="@currentSearchUrl" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                 @Localizer["Back"]
             </a>
         </div>
@@ -66,7 +67,7 @@
                                         </td>
                                         <td class="whitespace-nowrap text-sm text-gray-900">@item.Function</td>
                                         <td class="whitespace-nowrap text-sm font-bold">
-                                            <a href="/Job/Detail?id=@item.Code" class="text-blue-600 hover:text-blue-900 underline">@item.Code</a>
+                                            <a href="/Job/Detail?id=@item.Code&returnUrl=@Uri.EscapeDataString(currentListUrl)" class="text-blue-600 hover:text-blue-900 underline">@item.Code</a>
                                         </td>
                                         <td class="whitespace-nowrap text-sm text-gray-500">
                                             @item.StartDate.ToString("dd/MM/yyyy HH:mm") <br/>
@@ -116,7 +117,7 @@
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     @Localizer["SendEmail"]
                 </button>
-                <a href="/Job" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                <a href="@currentSearchUrl" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                     @Localizer["Back"]
                 </a>
             </div>

@@ -5,6 +5,7 @@ namespace Imaj.Web.Models
     public class CustomerViewModel
     {
         public decimal CustomerId { get; set; } // Renamed from Id to avoid binding conflict with route 'id' (which is code)
+        public string? ReturnUrl { get; set; }
         
         // This can serve as the Detail/Edit model too
         [Required(ErrorMessage = "Kod alanı zorunludur.")]

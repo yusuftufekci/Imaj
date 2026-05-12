@@ -103,12 +103,12 @@ namespace Imaj.Web.Controllers
         /// İş sorgulama sayfası.
         /// Dropdown verileri veritabanından yüklenir.
         /// </summary>
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index([FromQuery] JobViewModel? model)
         {
             // Dropdown verilerini backend'den al
             await LoadDropdownDataAsync();
 
-            var model = new JobViewModel();
+            model ??= new JobViewModel();
             // Varsayılan tarih filtresini kaldırdık - kullanıcı seçmedikçe filtre uygulanmasın
             return View(model);
         }

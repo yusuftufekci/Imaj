@@ -1,11 +1,13 @@
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Imaj.Web
 @using Microsoft.Extensions.Localization
+@using System.Text.Json
 @inject IStringLocalizer<SharedResource> Localizer
 @model InvoiceViewModel
 
 @{
     ViewData["Title"] = Localizer["InvoiceSearch"];
+    string JsonValue(string? value) => JsonSerializer.Serialize(value ?? string.Empty);
     var firstValue = Model.First.HasValue && Model.First.Value > 0
         ? Model.First.Value
         : 100;
@@ -149,23 +151,23 @@
     function invoicePage() {
         return {
             // Filter Models
-            jobCustomerCode: '',
-            jobCustomerName: '',
+            jobCustomerCode: @Html.Raw(JsonValue(Model.JobCustomerCode)),
+            jobCustomerName: @Html.Raw(JsonValue(Model.JobCustomerName)),
             
-            invoiceCustomerCode: '',
-            invoiceCustomerName: '',
+            invoiceCustomerCode: @Html.Raw(JsonValue(Model.InvoiceCustomerCode)),
+            invoiceCustomerName: @Html.Raw(JsonValue(Model.InvoiceCustomerName)),
             
-            newJobCustomerCode: '',
-            newJobCustomerName: '',
+            newJobCustomerCode: @Html.Raw(JsonValue(Model.NewJobCustomerCode)),
+            newJobCustomerName: @Html.Raw(JsonValue(Model.NewJobCustomerName)),
 
             isReportLoading: false,
 
             filter: {
-                 referenceStart: '', referenceEnd: '',
-                 name: '', relatedPerson: '',
+                 referenceStart: @Html.Raw(JsonValue(Model.ReferenceStart)), referenceEnd: @Html.Raw(JsonValue(Model.ReferenceEnd)),
+                 name: @Html.Raw(JsonValue(Model.Name)), relatedPerson: @Html.Raw(JsonValue(Model.RelatedPerson)),
                  // IssueDateStart/End artık string tipinde; .ToString("yyyy-MM-dd") çağrısı gerekmiyor
-                 issueDateStart: '@(Model.IssueDateStart ?? string.Empty)', issueDateEnd: '@(Model.IssueDateEnd ?? string.Empty)',
-                 status: '', evaluated: '',
+                 issueDateStart: @Html.Raw(JsonValue(Model.IssueDateStart)), issueDateEnd: @Html.Raw(JsonValue(Model.IssueDateEnd)),
+                 status: @Html.Raw(JsonValue(Model.Status)), evaluated: @Html.Raw(JsonValue(Model.Evaluated)),
                  first: @firstValue,
                  pageSize: @pageSizeValue
             },

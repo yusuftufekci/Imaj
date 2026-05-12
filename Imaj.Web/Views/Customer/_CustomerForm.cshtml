@@ -1,6 +1,10 @@
 @using Imaj.Web.Models
 @model CustomerViewModel
 
+@{
+    var returnUrl = string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/Customer" : Model.ReturnUrl;
+}
+
 <script>
     function customerFormState(initialCategories) {
         return {
@@ -215,7 +219,7 @@
     <button type="submit" class="inline-flex justify-center border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
         @Localizer["Save"]
     </button>
-    <a href="/Customer" class="inline-flex justify-center border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+    <a href="@returnUrl" class="inline-flex justify-center border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
         @Localizer["Cancel"]
     </a>
 </div>

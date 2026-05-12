@@ -44,13 +44,13 @@ namespace Imaj.Web.Controllers
         }
 
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index([FromQuery] CustomerFilterModel? filter)
         {
             // State listesini LookupService'den al (StateCategories constant kullanılıyor)
             var statesResult = await _lookupService.GetStatesAsync(StateCategories.Job);
             ViewBag.States = statesResult.IsSuccess ? statesResult.Data : new List<Imaj.Service.DTOs.StateDto>();
             
-            return View(new CustomerFilterModel());
+            return View(filter ?? new CustomerFilterModel());
         }
 
         [HttpGet]
@@ -199,38 +199,54 @@ namespace Imaj.Web.Controllers
             return View("~/Views/Shared/PrintableReport.cshtml", model);
         }
 
-        public async Task<IActionResult> Details(string id)
+        public async Task<IActionResult> Details(string id, string? returnUrl = null)
         {
              // Try ID first from decimal
             if (decimal.TryParse(id, out decimal customerId))
             {
                 var result = await _customerService.GetByIdAsync(customerId);
                 if (result.IsSuccess && result.Data != null)
-                     return View(MapToViewModel(result.Data));
+                {
+                    var model = MapToViewModel(result.Data);
+                    model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Customer/List");
+                    return View(model);
+                }
             }
 
             // Try Code
             var codeResult = await _customerService.GetByCodeAsync(id);
             if (codeResult.IsSuccess && codeResult.Data != null)
-                 return View(MapToViewModel(codeResult.Data));
+            {
+                var model = MapToViewModel(codeResult.Data);
+                model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Customer/List");
+                return View(model);
+            }
              
              return NotFound();
         }
 
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Edit(string id, string? returnUrl = null)
         {
              // Try ID first from decimal
             if (decimal.TryParse(id, out decimal customerId))
             {
                 var result = await _customerService.GetByIdAsync(customerId);
                 if (result.IsSuccess && result.Data != null)
-                     return View(MapToViewModel(result.Data));
+                {
+                    var model = MapToViewModel(result.Data);
+                    model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Customer/List");
+                    return View(model);
+                }
             }
 
             // Try Code
             var codeResult = await _customerService.GetByCodeAsync(id);
             if (codeResult.IsSuccess && codeResult.Data != null)
-                 return View(MapToViewModel(codeResult.Data));
+            {
+                var model = MapToViewModel(codeResult.Data);
+                model.ReturnUrl = NormalizeReturnUrl(returnUrl, "/Customer/List");
+                return View(model);
+            }
                  
              return NotFound();
         }
@@ -384,6 +400,13 @@ namespace Imaj.Web.Controllers
             return string.IsNullOrWhiteSpace(value) ? "-" : value;
         }
 
+        private static string NormalizeReturnUrl(string? returnUrl, string fallback)
+        {
+            return !string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/')
+                ? returnUrl
+                : fallback;
+        }
+
         private CustomerViewModel MapToViewModel(CustomerDto c)
         {
             return new CustomerViewModel 
@@ -451,7 +474,7 @@ namespace Imaj.Web.Controllers
             if(result.IsSuccess)
             {
                  TempData["SuccessMessage"] = L("CustomerUpdatedSuccess");
-                 return RedirectToAction("List");
+                 return LocalRedirect(NormalizeReturnUrl(model.ReturnUrl, "/Customer/List"));
             }
             
             TempData["ErrorMessage"] = Ui(result.Message, L("CustomerUpdateFailed"));

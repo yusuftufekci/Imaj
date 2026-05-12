@@ -480,6 +480,9 @@
   <data name="Notes" xml:space="preserve">
     <value>Notlar</value>
   </data>
+  <data name="Footnote" xml:space="preserve">
+    <value>Dipnot</value>
+  </data>
   <data name="Quantity" xml:space="preserve">
     <value>Miktar</value>
   </data>

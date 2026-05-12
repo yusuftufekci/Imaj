@@ -1,11 +1,19 @@
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Imaj.Web
 @using Microsoft.Extensions.Localization
+@using System.Globalization
+@using System.Text.Json
 @inject IStringLocalizer<SharedResource> Localizer
 @model JobViewModel
 
 @{
     ViewData["Title"] = Localizer["JobOperations"];
+    var filter = Model.Filter ?? new JobFilterModel();
+    string JsonValue(string? value) => JsonSerializer.Serialize(value ?? string.Empty);
+    string JsonDate(DateTime? value) => JsonSerializer.Serialize(value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty);
+    string JsonDecimal(decimal? value) => JsonSerializer.Serialize(value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
+    var firstValue = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (filter.PageSize > 0 ? filter.PageSize : 10);
+    var pageSizeValue = filter.PageSize > 0 ? filter.PageSize : 10;
 }
 
 <div x-data="jobEntryPage()" @@customer-selected.window="handleCustomerSelection($event.detail)" @@product-selected.window="handleProductSelection($event.detail)" @@employee-selected.window="handleEmployeeSelection($event.detail)" class="job-page-shell job-index-shell job-index-reference page-shell--wide space-y-2">
@@ -42,6 +50,7 @@
                                 <div class="job-index-selector">
                                     <input type="hidden" name="Filter.CustomerCode" x-model="filter.customerCode">
                                     <input type="hidden" name="Filter.CustomerId" x-model="filter.customerId">
+                                    <input type="hidden" name="Filter.CustomerName" x-model="customerName">
                                     <span class="job-index-selector__value" x-text='customerName || @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["AllOption"].Value))'></span>
                                     <span class="job-index-selector__separator">-</span>
                                     <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
@@ -71,8 +80,8 @@
                             <div class="dense-form-row">
                                 <label>@Localizer["StartDateRange"]</label>
                                 <div class="job-index-range">
-                                    <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="dense-input job-index-input--date" value="@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")">
-                                    <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="dense-input job-index-input--date" value="@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")">
+                                    <input type="date" name="Filter.StartDateStart" x-model="filter.startDateStart" class="dense-input job-index-input--date">
+                                    <input type="date" name="Filter.StartDateEnd" x-model="filter.startDateEnd" class="dense-input job-index-input--date">
                                 </div>
                             </div>
                             <div class="dense-form-row">
@@ -127,6 +136,7 @@
                                 <label>@Localizer["Employee"]</label>
                                 <div class="job-index-selector">
                                     <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
+                                    <input type="hidden" name="Filter.EmployeeName" x-model="filter.employeeName">
                                     <span class="job-index-selector__value" x-text='filter.employeeName || @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["AllOption"].Value))'></span>
                                     <span class="job-index-selector__separator">-</span>
                                     <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
@@ -175,6 +185,7 @@
                                 <div class="job-index-selector">
                                     <input type="hidden" name="Filter.ProductId" x-model="filter.productId">
                                     <input type="hidden" name="Filter.ProductCode" x-model="filter.productCode">
+                                    <input type="hidden" name="Filter.ProductName" x-model="filter.productName">
                                     <span class="job-index-selector__value" x-text='filter.productName || @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["AllOption"].Value))'></span>
                                     <span class="job-index-selector__separator">-</span>
                                     <button type="button" @@click="$dispatch('product-select-open', { targetId: 'jobProduct', searchEndpoint: '/JobEntry/ProductSearch', categoriesEndpoint: '/JobEntry/ProductCategories', productGroupsEndpoint: '/JobEntry/ProductGroups', functionsEndpoint: '/JobEntry/ProductFunctions', functionId: filter.function || '' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
@@ -239,23 +250,23 @@
     function jobEntryPage() {
         return {
             filter: {
-                function: '',
-                customerCode: '', customerId: '',
-                referenceStart: '', referenceEnd: '', referenceList: '',
-                jobName: '', relatedPerson: '',
-                startDateStart: '@Model.Filter.StartDateStart?.ToString("yyyy-MM-dd")',
-                startDateEnd: '@Model.Filter.StartDateEnd?.ToString("yyyy-MM-dd")',
-                endDateStart: '', endDateEnd: '',
-                status: '', emailSent: '', evaluated: '',
-                employeeCode: '', employeeName: '',
-                taskType: '', overtimeType: '',
-                productId: '', productCode: '', productName: '',
+                function: @Html.Raw(JsonValue(filter.Function)),
+                customerCode: @Html.Raw(JsonValue(filter.CustomerCode)), customerId: @Html.Raw(JsonDecimal(filter.CustomerId)),
+                referenceStart: @Html.Raw(JsonValue(filter.ReferenceStart)), referenceEnd: @Html.Raw(JsonValue(filter.ReferenceEnd)), referenceList: @Html.Raw(JsonValue(filter.ReferenceList)),
+                jobName: @Html.Raw(JsonValue(filter.JobName)), relatedPerson: @Html.Raw(JsonValue(filter.RelatedPerson)),
+                startDateStart: @Html.Raw(JsonDate(filter.StartDateStart)),
+                startDateEnd: @Html.Raw(JsonDate(filter.StartDateEnd)),
+                endDateStart: @Html.Raw(JsonDate(filter.EndDateStart)), endDateEnd: @Html.Raw(JsonDate(filter.EndDateEnd)),
+                status: @Html.Raw(JsonValue(filter.Status)), emailSent: @Html.Raw(JsonValue(filter.EmailSent)), evaluated: @Html.Raw(JsonValue(filter.Evaluated)),
+                employeeCode: @Html.Raw(JsonValue(filter.EmployeeCode)), employeeName: @Html.Raw(JsonValue(filter.EmployeeName)),
+                taskType: @Html.Raw(JsonValue(filter.TaskType)), overtimeType: @Html.Raw(JsonValue(filter.OvertimeType)),
+                productId: @Html.Raw(JsonDecimal(filter.ProductId)), productCode: @Html.Raw(JsonValue(filter.ProductCode)), productName: @Html.Raw(JsonValue(filter.ProductName)),
                 page: 1,
-                first: @((Model.Filter.First.HasValue && Model.Filter.First.Value > 0 ? Model.Filter.First.Value : (Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 10))),
-                pageSize: @(Model.Filter.PageSize > 0 ? Model.Filter.PageSize : 10)
+                first: @firstValue,
+                pageSize: @pageSizeValue
             },
 
-            customerName: '',
+            customerName: @Html.Raw(JsonValue(filter.CustomerName)),
 
             init() {},
 

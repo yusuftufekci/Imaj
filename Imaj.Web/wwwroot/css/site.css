@@ -3026,6 +3026,30 @@ span.flatpickr-weekday {
     overflow-wrap: anywhere;
 }
 
+.invoice-detail-edit-input {
+    max-width: 18rem;
+}
+
+.invoice-detail-edit-textarea {
+    min-height: 4rem;
+}
+
+.invoice-line-note-input {
+    min-width: 18rem;
+}
+
+.invoice-detail-money-input {
+    min-width: 6rem;
+    max-width: 7rem;
+    margin-left: auto;
+}
+
+.invoice-detail-tax-input {
+    min-width: 4rem;
+    max-width: 4.5rem;
+    margin-left: auto;
+}
+
 .job-detail-edit-selector {
     display: flex;
     align-items: center;

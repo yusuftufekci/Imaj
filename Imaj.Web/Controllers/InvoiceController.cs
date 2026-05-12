@@ -46,7 +46,7 @@ namespace Imaj.Web.Controllers
             _permissionViewService = permissionViewService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index([FromQuery] InvoiceViewModel? filter)
         {
             var statesResult = await _lookupService.GetStatesAsync(StateCategories.Invoice);
             ViewBag.InvoiceStates = statesResult.IsSuccess && statesResult.Data != null
@@ -56,14 +56,18 @@ namespace Imaj.Web.Controllers
                     .ToList()
                 : new List<Imaj.Service.DTOs.StateDto>();
 
-            var model = new InvoiceViewModel
+            var model = filter ?? new InvoiceViewModel();
+            var hasQuery = Request.Query.Count > 0;
+            if (!hasQuery)
             {
                 // IssueDateStart/End string tipinde tutulur; HTML date input'u yyyy-MM-dd bekler
-                IssueDateStart = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
-                IssueDateEnd = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
-                First = 100,
-                PageSize = 16
-            };
+                model.IssueDateStart = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                model.IssueDateEnd = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            model.First = model.First.HasValue && model.First.Value > 0 ? model.First : 100;
+            model.PageSize = model.PageSize > 0 ? model.PageSize : 16;
+
             return View(model);
         }
 
@@ -372,6 +376,105 @@ namespace Imaj.Web.Controllers
             }
 
             return RedirectToInvoiceSource(request);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> UpdateDetail(InvoiceUpdateViewModel model)
+        {
+            var selectedReferences = model.SelectedReferences?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            if (model.Reference <= 0)
+            {
+                ShowError(L("InvoiceReferenceRequired"));
+                return RedirectToAction(nameof(Results));
+            }
+
+            var referenceText = model.Reference.ToString(CultureInfo.InvariantCulture);
+            if (!selectedReferences.Contains(referenceText))
+            {
+                selectedReferences.Add(referenceText);
+            }
+
+            var result = await _invoiceService.UpdateOpenInvoiceAsync(new InvoiceUpdateDto
+            {
+                Reference = model.Reference,
+                InvoiceCustomerCode = model.InvoiceCustomerCode,
+                Name = model.Name,
+                RelatedPerson = model.RelatedPerson,
+                Notes = model.Notes,
+                FooterNote = model.FooterNote,
+                Lines = (model.Lines ?? new List<InvoiceUpdateLineViewModel>())
+                    .Select(x => new InvoiceUpdateLineDto
+                    {
+                        Id = x.Id,
+                        Notes = x.Notes,
+                        Amount = x.Amount,
+                        VatRate = x.VatRate
+                    })
+                    .ToList(),
+                NewFreeLines = (model.NewFreeLines ?? new List<InvoiceUpdateFreeLineViewModel>())
+                    .Select(x => new InvoiceUpdateFreeLineDto
+                    {
+                        Description = x.Description,
+                        Amount = x.Amount,
+                        VatRate = x.VatRate
+                    })
+                    .ToList(),
+                ProductCategories = (model.ProductCategories ?? new List<InvoiceUpdateCategoryViewModel>())
+                    .Select(x => new InvoiceUpdateProductCategoryDto
+                    {
+                        ProdCatId = x.ProdCatId,
+                        NetTotal = x.NetTotal
+                    })
+                    .ToList(),
+                Taxes = (model.Taxes ?? new List<InvoiceUpdateTaxViewModel>())
+                    .Select(x => new InvoiceUpdateTaxDto
+                    {
+                        TaxTypeId = x.TaxTypeId,
+                        Rate = x.Rate
+                    })
+                    .ToList()
+            });
+
+            if (result.IsSuccess)
+            {
+                ShowSuccess(result.Message ?? L("SuccessTitle"));
+            }
+            else if (result.Errors.Any())
+            {
+                ShowError(string.Join(" ", result.Errors.Select(error => Ui(error, error))));
+            }
+            else
+            {
+                ShowError(result.Message ?? L("SaveError"));
+            }
+
+            var currentIndex = model.CurrentIndex;
+            if (currentIndex < 0)
+            {
+                currentIndex = 0;
+            }
+            if (currentIndex >= selectedReferences.Count)
+            {
+                currentIndex = selectedReferences.Count - 1;
+            }
+
+            var returnUrl = string.IsNullOrWhiteSpace(model.ReturnUrl) || !model.ReturnUrl.StartsWith('/')
+                ? "/Invoice/Results"
+                : model.ReturnUrl;
+
+            return RedirectToAction(nameof(Detail), new
+            {
+                reference = referenceText,
+                selectedReferences,
+                page = currentIndex + 1,
+                returnUrl
+            });
         }
 
         [HttpGet]
@@ -885,7 +988,9 @@ namespace Imaj.Web.Controllers
             return invoices.Select(invoice => new InvoiceDetailViewModel
             {
                 Reference = invoice.Reference.ToString(),
+                JobCustomerCode = invoice.JobCustomerCode ?? string.Empty,
                 JobCustomer = invoice.JobCustomerName ?? "-",
+                InvoiceCustomerCode = invoice.InvoiceCustomerCode ?? string.Empty,
                 InvoiceCustomer = invoice.InvoiceCustomerName ?? "-",
                 Name = invoice.Name ?? "-",
                 RelatedPerson = invoice.RelatedPerson ?? "-",
@@ -897,13 +1002,17 @@ namespace Imaj.Web.Controllers
                 FooterNote = invoice.FooterNote ?? string.Empty,
                 Lines = invoice.Lines.Select(l => new InvoiceDetailLineViewModel
                 {
+                    Id = l.Id,
                     Selected = l.Selected,
+                    FreeFormat = l.FreeFormat,
                     LineNo = l.Sequence,
                     Notes = l.Notes ?? string.Empty,
                     Quantity = l.Quantity,
                     Price = l.Price,
                     Amount = l.Amount,
-                    TaxType = l.TaxType ?? string.Empty
+                    TaxType = l.TaxType ?? string.Empty,
+                    TaxTypeId = l.TaxTypeId,
+                    VatRate = l.VatRate
                 }).ToList(),
                 WorkItems = invoice.Jobs.Select(j => new InvoiceWorkItemViewModel
                 {
@@ -914,12 +1023,14 @@ namespace Imaj.Web.Controllers
                 }).ToList(),
                 ProductCategories = invoice.ProductCategories.Select(p => new InvoiceCategorySummaryViewModel
                 {
+                    ProdCatId = p.ProdCatId,
                     Name = p.Name ?? string.Empty,
                     SubTotal = p.SubTotal,
                     NetTotal = p.NetTotal
                 }).ToList(),
                 Taxes = invoice.Taxes.Select(t => new InvoiceTaxSummaryViewModel
                 {
+                    TaxTypeId = t.TaxTypeId,
                     Code = t.Code ?? string.Empty,
                     Name = t.Name ?? string.Empty,
                     SubTotal = t.SubTotal,

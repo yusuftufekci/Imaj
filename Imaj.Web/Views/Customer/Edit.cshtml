@@ -15,6 +15,7 @@
     <form action="/Customer/Update" method="post" class="space-y-2">
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.CustomerId)
+        @Html.HiddenFor(m => m.ReturnUrl)
         
         <partial name="_CustomerForm" model="Model" />
 @section Scripts {

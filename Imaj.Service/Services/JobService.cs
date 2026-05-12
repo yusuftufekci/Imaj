@@ -24,6 +24,10 @@ namespace Imaj.Service.Services
         private const decimal InvoicedStateId = 140m;
         private const decimal ClosedStateId = 150m;
         private const decimal DiscardedStateId = 160m;
+        private const decimal OpenInvoiceStateId = 210m;
+        private const decimal ConfirmedInvoiceStateId = 220m;
+        private const decimal IssuedInvoiceStateId = 230m;
+        private static readonly decimal[] LiveInvoiceStateIds = { OpenInvoiceStateId, ConfirmedInvoiceStateId, IssuedInvoiceStateId };
 
         private const decimal CreateLogActionId = 510m;
         private const decimal CompleteLogActionId = 610m;
@@ -295,8 +299,17 @@ namespace Imaj.Service.Services
                 var pageSize = filter.PageSize > 0 ? filter.PageSize : 20;
                 var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
-                var orderedQuery = query
-                    .OrderByDescending(x => x.Job.StartDT);
+                var orderedQuery = filter.ReferenceStart.HasValue
+                    ? query
+                        .OrderBy(x => x.Job.Reference == filter.ReferenceStart.Value ? 0 : 1)
+                        .ThenBy(x => x.Job.Reference)
+                    : filter.ReferenceEnd.HasValue
+                        ? query
+                            .OrderBy(x => x.Job.Reference == filter.ReferenceEnd.Value ? 0 : 1)
+                            .ThenByDescending(x => x.Job.Reference)
+                        : query
+                            .OrderByDescending(x => x.Job.StartDT)
+                            .ThenByDescending(x => x.Job.Reference);
 
                 var scopedQuery = first.HasValue
                     ? orderedQuery.Take(first.Value)
@@ -956,10 +969,23 @@ namespace Imaj.Service.Services
         {
             var customerCode = filter.CustomerCode?.Trim();
 
+            var liveInvoiceJobIds =
+                from invoJob in _unitOfWork.Repository<InvoJob>().Query()
+                    .Where(x => x.Deleted == 0)
+                join line in _unitOfWork.Repository<InvoLine>().Query()
+                        .Where(x => x.Deleted == 0)
+                    on invoJob.InvoLineID equals line.Id
+                join invoice in _unitOfWork.Repository<Invoice>().Query()
+                        .Where(x => LiveInvoiceStateIds.Contains(x.StateID))
+                    on line.InvoiceID equals invoice.Id
+                select invoJob.JobID;
+
             var query = from j in _unitOfWork.Repository<Job>().Query()
                         join c in _unitOfWork.Repository<Customer>().Query() on j.CustomerID equals c.Id into cGroup
                         from customer in cGroup.DefaultIfEmpty()
                         where j.InvoLineID == null
+                              && j.StateID == PricedStateId
+                              && !liveInvoiceJobIds.Contains(j.Id)
                               && snapshot.AllowedFunctionIds.Contains(j.FunctionID)
                               && (snapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound
                                   || !snapshot.CompanyId.HasValue
@@ -1315,7 +1341,6 @@ namespace Imaj.Service.Services
 
                 decimal workSum = 0;
                 decimal prodSum = 0;
-
                 // 3. JobWorks Ekle
                 if (jobDto.JobWorks != null && jobDto.JobWorks.Any())
                 {

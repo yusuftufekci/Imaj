@@ -6,7 +6,9 @@ namespace Imaj.Service.DTOs
     public class InvoiceDetailDto
     {
         public int Reference { get; set; }
+        public string? JobCustomerCode { get; set; }
         public string? JobCustomerName { get; set; }
+        public string? InvoiceCustomerCode { get; set; }
         public string? InvoiceCustomerName { get; set; }
         public string? Name { get; set; }
         public string? RelatedPerson { get; set; }
@@ -25,7 +27,9 @@ namespace Imaj.Service.DTOs
 
     public class InvoiceLineDto
     {
+        public decimal Id { get; set; }
         public bool Selected { get; set; }
+        public bool FreeFormat { get; set; }
         public short Sequence { get; set; }
         public string? Notes { get; set; }
         public decimal Quantity { get; set; }
@@ -33,6 +37,7 @@ namespace Imaj.Service.DTOs
         public decimal Amount { get; set; }
         public string? TaxType { get; set; }
         public decimal? TaxTypeId { get; set; }
+        public decimal VatRate { get; set; }
     }
 
     public class InvoiceJobDto
