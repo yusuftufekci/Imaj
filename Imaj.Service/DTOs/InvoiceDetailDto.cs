@@ -38,6 +38,8 @@ namespace Imaj.Service.DTOs
         public string? TaxType { get; set; }
         public decimal? TaxTypeId { get; set; }
         public decimal VatRate { get; set; }
+        public List<InvoiceJobDto> Jobs { get; set; } = new List<InvoiceJobDto>();
+        public List<InvoiceProdCatSummaryDto> ProductCategories { get; set; } = new List<InvoiceProdCatSummaryDto>();
     }
 
     public class InvoiceJobDto
@@ -50,6 +52,7 @@ namespace Imaj.Service.DTOs
 
     public class InvoiceProdCatSummaryDto
     {
+        public decimal LineId { get; set; }
         public decimal ProdCatId { get; set; }
         public string? Name { get; set; }
         public decimal SubTotal { get; set; }

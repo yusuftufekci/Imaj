@@ -428,6 +428,7 @@ namespace Imaj.Web.Controllers
                 ProductCategories = (model.ProductCategories ?? new List<InvoiceUpdateCategoryViewModel>())
                     .Select(x => new InvoiceUpdateProductCategoryDto
                     {
+                        LineId = x.LineId,
                         ProdCatId = x.ProdCatId,
                         NetTotal = x.NetTotal
                     })
@@ -475,6 +476,69 @@ namespace Imaj.Web.Controllers
                 page = currentIndex + 1,
                 returnUrl
             });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> AddJobsToInvoiceLine(InvoiceAddJobsToLineViewModel model)
+        {
+            var result = await _invoiceService.AddJobsToInvoiceLineAsync(new InvoiceAddJobsToLineDto
+            {
+                Reference = model.Reference,
+                LineId = model.LineId,
+                JobReferences = model.JobReferences ?? new List<int>()
+            });
+
+            ShowInvoiceMutationResult(result);
+            return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> AddJobsToInvoice(InvoiceAddJobsViewModel model)
+        {
+            var result = await _invoiceService.AddJobsToInvoiceAsync(new InvoiceAddJobsDto
+            {
+                Reference = model.Reference,
+                Mode = model.Mode,
+                JobReferences = model.JobReferences ?? new List<int>()
+            });
+
+            ShowInvoiceMutationResult(result);
+            return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> DeleteJobsFromInvoiceLine(InvoiceDeleteJobsFromLineViewModel model)
+        {
+            var result = await _invoiceService.DeleteJobsFromInvoiceLineAsync(new InvoiceDeleteJobsFromLineDto
+            {
+                Reference = model.Reference,
+                LineId = model.LineId,
+                JobReferences = model.JobReferences ?? new List<int>()
+            });
+
+            ShowInvoiceMutationResult(result);
+            return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> DeleteJobLines(InvoiceDeleteJobLinesViewModel model)
+        {
+            var result = await _invoiceService.DeleteJobLinesAsync(new InvoiceDeleteJobLinesDto
+            {
+                Reference = model.Reference,
+                LineIds = model.LineIds ?? new List<decimal>()
+            });
+
+            ShowInvoiceMutationResult(result);
+            return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
         }
 
         [HttpGet]
@@ -1012,7 +1076,22 @@ namespace Imaj.Web.Controllers
                     Amount = l.Amount,
                     TaxType = l.TaxType ?? string.Empty,
                     TaxTypeId = l.TaxTypeId,
-                    VatRate = l.VatRate
+                    VatRate = l.VatRate,
+                    WorkItems = l.Jobs.Select(j => new InvoiceWorkItemViewModel
+                    {
+                        Selected = j.Selected,
+                        Reference = j.Reference.ToString(),
+                        Name = j.Name ?? string.Empty,
+                        Amount = j.Amount
+                    }).ToList(),
+                    ProductCategories = l.ProductCategories.Select(p => new InvoiceCategorySummaryViewModel
+                    {
+                        LineId = p.LineId,
+                        ProdCatId = p.ProdCatId,
+                        Name = p.Name ?? string.Empty,
+                        SubTotal = p.SubTotal,
+                        NetTotal = p.NetTotal
+                    }).ToList()
                 }).ToList(),
                 WorkItems = invoice.Jobs.Select(j => new InvoiceWorkItemViewModel
                 {
@@ -1023,6 +1102,7 @@ namespace Imaj.Web.Controllers
                 }).ToList(),
                 ProductCategories = invoice.ProductCategories.Select(p => new InvoiceCategorySummaryViewModel
                 {
+                    LineId = p.LineId,
                     ProdCatId = p.ProdCatId,
                     Name = p.Name ?? string.Empty,
                     SubTotal = p.SubTotal,
@@ -1430,6 +1510,61 @@ namespace Imaj.Web.Controllers
             ws.Range(row, 1, row, columnCount).Style.Font.Bold = true;
             ws.Range(row, 1, row, columnCount).Style.Fill.BackgroundColor = XLColor.FromHtml("#FEF3C7");
             ws.Range(row, 1, row, columnCount).Style.Border.TopBorder = XLBorderStyleValues.Thin;
+        }
+
+        private void ShowInvoiceMutationResult(ServiceResult result)
+        {
+            if (result.IsSuccess)
+            {
+                ShowSuccess(result.Message ?? L("SuccessTitle"));
+            }
+            else if (result.Errors.Any())
+            {
+                ShowError(string.Join(" ", result.Errors.Select(error => Ui(error, error))));
+            }
+            else
+            {
+                ShowError(result.Message ?? L("GenericError"));
+            }
+        }
+
+        private IActionResult RedirectToInvoiceDetail(
+            int reference,
+            List<string>? selectedReferences,
+            int currentIndex,
+            string? returnUrl)
+        {
+            var references = selectedReferences?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            var referenceText = reference.ToString(CultureInfo.InvariantCulture);
+            if (!references.Contains(referenceText))
+            {
+                references.Add(referenceText);
+            }
+
+            if (currentIndex < 0)
+            {
+                currentIndex = 0;
+            }
+            if (currentIndex >= references.Count)
+            {
+                currentIndex = references.Count - 1;
+            }
+
+            var resolvedReturnUrl = string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith('/')
+                ? "/Invoice/Results"
+                : returnUrl;
+
+            return RedirectToAction(nameof(Detail), new
+            {
+                reference = referenceText,
+                selectedReferences = references,
+                page = currentIndex + 1,
+                returnUrl = resolvedReturnUrl
+            });
         }
 
         private IActionResult RedirectToInvoiceSource(InvoiceWorkflowActionRequest request)

@@ -3195,6 +3195,10 @@ span.flatpickr-weekday {
     justify-content: center;
 }
 
+.invoice-footer-bar--start {
+    justify-content: flex-start;
+}
+
 .customer-footer-bar__meta,
 .job-footer-bar__meta,
 .invoice-footer-bar__meta {

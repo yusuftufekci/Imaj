@@ -54,8 +54,15 @@
     var canDoUndoEvaluate = parsedReference && canUndoEvaluate && isEvaluated && (isIssued || isKilled || isDiscarded);
     var canPrintInvoice = parsedReference && !isEvaluated && (isOpen || isConfirmed || isIssued);
     var canDoEdit = parsedReference && canEditInvoice && !isEvaluated && isOpen;
+    var canEditJobs = canDoEdit;
     var detailStateJson = JsonSerializer.Serialize(new
     {
+        reference,
+        jobCustomerCode = invoice?.JobCustomerCode ?? string.Empty,
+        jobCustomerName = invoice?.JobCustomer ?? string.Empty,
+        jobCustomerDisplay = string.IsNullOrWhiteSpace(invoice?.JobCustomerCode)
+            ? invoice?.JobCustomer ?? string.Empty
+            : invoice?.JobCustomerCode + " - " + invoice?.JobCustomer,
         invoiceCustomerCode = invoice?.InvoiceCustomerCode ?? string.Empty,
         invoiceCustomerName = invoice?.InvoiceCustomer ?? string.Empty,
         invoiceCustomerDisplay = string.IsNullOrWhiteSpace(invoice?.InvoiceCustomerCode)
@@ -65,7 +72,8 @@
     });
 }
 
-<div x-data='invoiceDetailEdit(@Html.Raw(detailStateJson))'
+<div x-data="invoiceDetailEdit($el.dataset.invoiceState)"
+     data-invoice-state="@detailStateJson"
      @@customer-selected.window="handleCustomerSelection($event.detail)"
      class="invoice-page-shell page-shell--wide space-y-3">
     @if (invoice == null)
@@ -89,6 +97,60 @@
                     <input type="hidden" name="SelectedReferences" value="@selectedReference" />
                 }
             </form>
+            @if (canEditJobs)
+            {
+                <form x-ref="addJobsToLineForm" method="post" action="/Invoice/AddJobsToInvoiceLine" class="hidden">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Reference" value="@reference" />
+                    <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                    <input type="hidden" name="LineId" x-model="targetLineId" />
+                    @foreach (var selectedReference in selectedReferences)
+                    {
+                        <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                    }
+                    <template x-for="(job, index) in selectedModalJobs" :key="'line-' + job.reference">
+                        <input type="hidden" :name="'JobReferences[' + index + ']'" :value="job.reference" />
+                    </template>
+                </form>
+                <form x-ref="addJobsToInvoiceForm" method="post" action="/Invoice/AddJobsToInvoice" class="hidden">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Reference" value="@reference" />
+                    <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                    <input type="hidden" name="Mode" x-model="invoiceAddMode" />
+                    @foreach (var selectedReference in selectedReferences)
+                    {
+                        <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                    }
+                    <template x-for="(job, index) in selectedModalJobs" :key="'invoice-' + job.reference">
+                        <input type="hidden" :name="'JobReferences[' + index + ']'" :value="job.reference" />
+                    </template>
+                </form>
+                <form x-ref="deleteJobsFromLineForm" method="post" action="/Invoice/DeleteJobsFromInvoiceLine" class="hidden">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Reference" value="@reference" />
+                    <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                    <input type="hidden" name="LineId" x-model="deleteLineId" />
+                    @foreach (var selectedReference in selectedReferences)
+                    {
+                        <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                    }
+                    <span x-ref="deleteJobsContainer"></span>
+                </form>
+                <form x-ref="deleteJobLinesForm" method="post" action="/Invoice/DeleteJobLines" class="hidden">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Reference" value="@reference" />
+                    <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                    @foreach (var selectedReference in selectedReferences)
+                    {
+                        <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                    }
+                    <span x-ref="deleteJobLinesContainer"></span>
+                </form>
+            }
 
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex-1 min-w-0">
@@ -229,12 +291,26 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @{
+                                var productCategoryFormIndex = 0;
+                            }
                             @for (var i = 0; i < invoice.Lines.Count; i++)
                             {
                                 var line = invoice.Lines[i];
                                 <tr>
                                     <td class="px-4 py-2">
-                                        <input type="checkbox" disabled @(line.Selected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                        @if (canEditJobs && !line.FreeFormat && line.WorkItems.Any())
+                                        {
+                                            <input type="checkbox"
+                                                   value="@line.Id.ToString(CultureInfo.InvariantCulture)"
+                                                   data-invoice-line-checkbox
+                                                   :disabled="isEditing"
+                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                        }
+                                        else
+                                        {
+                                            <input type="checkbox" disabled @(line.Selected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                        }
                                     </td>
                                     <td class="px-4 py-2 text-gray-900">@line.LineNo</td>
                                     <td class="px-4 py-2 text-gray-900">
@@ -307,13 +383,13 @@
                                     </td>
                                 </tr>
 
-                                if (i == 0 && (invoice.WorkItems.Any() || invoice.ProductCategories.Any()))
+                                if (line.WorkItems.Any() || line.ProductCategories.Any())
                                 {
                                     <tr class="bg-blue-50">
                                         <td colspan="7" class="px-4 py-4">
                                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                 <div class="border border-blue-200 rounded">
-                                                    <div class="bg-blue-100 px-3 py-2 text-sm font-bold text-gray-800">@Localizer["Job"] (@invoice.WorkItems.Count)</div>
+                                                    <div class="bg-blue-100 px-3 py-2 text-sm font-bold text-gray-800">@Localizer["Job"] (@line.WorkItems.Count)</div>
                                                     <table class="invoice-table invoice-table--compact">
                                                         <thead>
                                                             <tr>
@@ -324,11 +400,23 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            @foreach (var work in invoice.WorkItems)
+                                                            @foreach (var work in line.WorkItems)
                                                             {
                                                                 <tr>
                                                                     <td class="px-3 py-2">
-                                                                        <input type="checkbox" disabled @(work.Selected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                                                        @if (canEditJobs)
+                                                                        {
+                                                                           <input type="checkbox"
+                                                                                   value="@work.Reference"
+                                                                                   data-invoice-job-checkbox
+                                                                                   data-line-id="@line.Id.ToString(CultureInfo.InvariantCulture)"
+                                                                                   :disabled="isEditing"
+                                                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <input type="checkbox" disabled @(work.Selected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                                                        }
                                                                     </td>
                                                                 <td class="px-3 py-2 text-gray-900">
                                                                     <a href="/Job/Detail?id=@work.Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="text-blue-600 hover:text-blue-900 underline">
@@ -343,13 +431,28 @@
                                                         <tfoot>
                                                             <tr>
                                                                 <td colspan="3" class="px-3 py-2 text-right font-bold text-gray-900">@Localizer["Total"]</td>
-                                                                <td class="px-3 py-2 text-right font-bold text-gray-900">@invoice.WorkItems.Sum(x => x.Amount).ToString("N2")</td>
+                                                                <td class="px-3 py-2 text-right font-bold text-gray-900">@line.WorkItems.Sum(x => x.Amount).ToString("N2")</td>
                                                             </tr>
                                                         </tfoot>
                                                     </table>
+                                                    @if (canEditJobs)
+                                                    {
+                                                        <div class="invoice-footer-bar" x-show="!isEditing" x-cloak>
+                                                            <button type="button"
+                                                                    @@click="submitDeleteJobs('@line.Id.ToString(CultureInfo.InvariantCulture)')"
+                                                                    class="text-red-600 hover:text-red-900 font-bold underline text-sm">
+                                                                İş Sil
+                                                            </button>
+                                                            <button type="button"
+                                                                    @@click="openJobModal('line', '@line.Id.ToString(CultureInfo.InvariantCulture)')"
+                                                                    class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
+                                                                İş Ekle
+                                                            </button>
+                                                        </div>
+                                                    }
                                                 </div>
                                                 <div class="border border-blue-200 rounded">
-                                                    <div class="bg-blue-100 px-3 py-2 text-sm font-bold text-gray-800">@Localizer["ProductCategories"] (@invoice.ProductCategories.Count)</div>
+                                                    <div class="bg-blue-100 px-3 py-2 text-sm font-bold text-gray-800">@Localizer["ProductCategories"] (@line.ProductCategories.Count)</div>
                                                     <table class="invoice-table invoice-table--compact">
                                                         <thead>
                                                             <tr>
@@ -359,14 +462,20 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            @for (var catIndex = 0; catIndex < invoice.ProductCategories.Count; catIndex++)
+                                                            @for (var catIndex = 0; catIndex < line.ProductCategories.Count; catIndex++)
                                                             {
-                                                                var cat = invoice.ProductCategories[catIndex];
+                                                                var cat = line.ProductCategories[catIndex];
+                                                                var categoryFormIndex = productCategoryFormIndex++;
                                                                 <tr>
                                                                     <td class="px-3 py-2 text-gray-900">
                                                                         @cat.Name
                                                                         <input type="hidden"
-                                                                               name="ProductCategories[@catIndex].ProdCatId"
+                                                                               name="ProductCategories[@categoryFormIndex].LineId"
+                                                                               value="@line.Id.ToString(CultureInfo.InvariantCulture)"
+                                                                               form="invoiceDetailEditForm"
+                                                                               :disabled="!isEditing" />
+                                                                        <input type="hidden"
+                                                                               name="ProductCategories[@categoryFormIndex].ProdCatId"
                                                                                value="@cat.ProdCatId.ToString(CultureInfo.InvariantCulture)"
                                                                                form="invoiceDetailEditForm"
                                                                                :disabled="!isEditing" />
@@ -378,12 +487,13 @@
                                                                                x-cloak
                                                                                type="text"
                                                                                inputmode="decimal"
-                                                                               name="ProductCategories[@catIndex].NetTotal"
+                                                                               name="ProductCategories[@categoryFormIndex].NetTotal"
                                                                                value="@cat.NetTotal.ToString("0.##")"
                                                                                form="invoiceDetailEditForm"
                                                                                :disabled="!isEditing"
                                                                                @@input="updateCategoryTotals()"
                                                                                data-invoice-category-net
+                                                                               data-line-category-net="@line.Id.ToString(CultureInfo.InvariantCulture)"
                                                                                class="job-table-input job-table-input--money invoice-detail-money-input" />
                                                                     </td>
                                                                 </tr>
@@ -392,8 +502,11 @@
                                                         <tfoot>
                                                             <tr>
                                                                 <td class="px-3 py-2 text-right font-bold text-gray-900">@Localizer["Total"]</td>
-                                                                <td class="px-3 py-2 text-right font-bold text-gray-900">@invoice.ProductCategories.Sum(x => x.SubTotal).ToString("N2")</td>
-                                                                <td class="px-3 py-2 text-right font-bold text-gray-900" data-invoice-category-net-total>@invoice.ProductCategories.Sum(x => x.NetTotal).ToString("N2")</td>
+                                                                <td class="px-3 py-2 text-right font-bold text-gray-900">@line.ProductCategories.Sum(x => x.SubTotal).ToString("N2")</td>
+                                                                <td class="px-3 py-2 text-right font-bold text-gray-900"
+                                                                    data-line-category-net-total="@line.Id.ToString(CultureInfo.InvariantCulture)">
+                                                                    @line.ProductCategories.Sum(x => x.NetTotal).ToString("N2")
+                                                                </td>
                                                             </tr>
                                                         </tfoot>
                                                     </table>
@@ -460,12 +573,31 @@
                 </div>
             </section>
 
-            @if (invoice.WorkItems.Any())
+            @if (invoice.WorkItems.Any() || canEditJobs)
             {
-                <div class="invoice-footer-bar">
-                    <a href="/Job/Detail?id=@invoice.WorkItems.First().Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="text-blue-600 hover:text-blue-900 underline text-sm">
-                        @Localizer["ViewJob"]
-                    </a>
+                var firstWorkReference = invoice.WorkItems.FirstOrDefault()?.Reference ?? string.Empty;
+                <div class="invoice-footer-bar invoice-footer-bar--start" x-show="!isEditing" x-cloak>
+                    @if (invoice.WorkItems.Any())
+                    {
+                        <button type="button"
+                                @@click="viewSelectedJob('@firstWorkReference')"
+                                class="text-blue-600 hover:text-blue-900 underline text-sm font-bold">
+                            @Localizer["ViewJob"]
+                        </button>
+                    }
+                    @if (canEditJobs)
+                    {
+                        <button type="button"
+                                @@click="submitDeleteJobLines()"
+                                class="text-red-600 hover:text-red-900 underline text-sm font-bold">
+                            İş Satırı Sil
+                        </button>
+                        <button type="button"
+                                @@click="openJobModal('invoice', '')"
+                                class="text-indigo-600 hover:text-indigo-900 underline text-sm font-bold">
+                            İş Satırı Ekle
+                        </button>
+                    }
                 </div>
             }
 
@@ -720,6 +852,166 @@
                     @Localizer["ViewHistory"]
                 </a>
             </div>
+            @if (canEditJobs)
+            {
+                <div x-show="jobModalOpen"
+                     x-cloak
+                     x-on:keydown.escape.window="closeJobModal()"
+                     class="modal-overlay"
+                     aria-modal="true"
+                     role="dialog">
+                    <div x-show="jobModalOpen" class="modal-backdrop" @@click="closeJobModal()" aria-hidden="true"></div>
+                    <div x-show="jobModalOpen" class="modal-content modal-content--3xl invoice-job-select-modal" tabindex="-1">
+                            <div class="dense-panel__header">
+                                <h3 class="dense-panel__title">İş Sorgulama</h3>
+                            </div>
+                            <div class="p-4 space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Müşteri
+                                        <input type="text" class="dense-input mt-1" :value="jobCustomerDisplay" disabled>
+                                    </label>
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Durum
+                                        <input type="text" class="dense-input mt-1" value="Fiyatlandı" disabled>
+                                    </label>
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Değerlendirildi
+                                        <input type="text" class="dense-input mt-1" value="Hayır" disabled>
+                                    </label>
+                                </div>
+
+                                <div class="invoice-footer-bar">
+                                    <div class="flex items-center gap-2 w-full md:w-auto">
+                                        <input type="text"
+                                               x-model="jobSearch"
+                                               @@keydown.enter.prevent="fetchPricedJobs()"
+                                               class="dense-input"
+                                               placeholder="@($"{Localizer["Reference"].Value} / {Localizer["Name"].Value}")">
+                                        <button type="button"
+                                                @@click="fetchPricedJobs()"
+                                                class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                                            @Localizer["Search"]
+                                        </button>
+                                    </div>
+                                    <div class="text-sm font-bold text-gray-900">
+                                        <span>Seçilen Tutar</span>
+                                        <span x-text="formatMoney(selectedModalJobTotal)"></span>
+                                    </div>
+                                </div>
+                                <div class="px-1 text-sm text-red-700" x-show="jobLoadError" x-text="jobLoadError"></div>
+
+                                <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                                    <div class="invoice-table-wrap">
+                                        <table class="invoice-table invoice-table--compact">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">@Localizer["Reference"]</th>
+                                                    <th scope="col">@Localizer["Name"]</th>
+                                                    <th scope="col" class="text-right">@Localizer["ProductAmount"]</th>
+                                                    <th scope="col" class="text-right">@Localizer["WorkAmount"]</th>
+                                                    <th scope="col" class="w-20">
+                                                        <span class="sr-only">@Localizer["Add"]</span>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-if="isLoadingJobs">
+                                                    <tr>
+                                                        <td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">@Localizer["Loading"]</td>
+                                                    </tr>
+                                                </template>
+                                                <template x-if="!isLoadingJobs && availableJobsForDisplay.length === 0">
+                                                    <tr>
+                                                        <td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">@Localizer["NoPricedJobsFound"]</td>
+                                                    </tr>
+                                                </template>
+                                                <template x-for="job in availableJobsForDisplay" :key="job.reference">
+                                                    <tr>
+                                                        <td class="text-sm font-medium text-gray-900" x-text="job.reference"></td>
+                                                        <td class="text-sm text-gray-900" x-text="job.name"></td>
+                                                        <td class="text-right text-sm text-gray-900" x-text="formatMoney(job.productAmount)"></td>
+                                                        <td class="text-right text-sm text-gray-900" x-text="formatMoney(job.workAmount)"></td>
+                                                        <td class="text-right">
+                                                            <button type="button"
+                                                                    @@click="addModalJob(job)"
+                                                                    class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
+                                                                @Localizer["Add"]
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="invoice-table-wrap">
+                                        <table class="invoice-table invoice-table--compact">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">@Localizer["SelectedJobs"]</th>
+                                                    <th scope="col">@Localizer["Name"]</th>
+                                                    <th scope="col" class="text-right">@Localizer["ProductAmount"]</th>
+                                                    <th scope="col" class="w-10">
+                                                        <span class="sr-only">@Localizer["Delete"]</span>
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-if="selectedModalJobs.length === 0">
+                                                    <tr>
+                                                        <td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
+                                                    </tr>
+                                                </template>
+                                                <template x-for="(job, index) in selectedModalJobs" :key="job.reference">
+                                                    <tr>
+                                                        <td class="text-sm font-medium text-gray-900" x-text="job.reference"></td>
+                                                        <td class="text-sm text-gray-900" x-text="job.name"></td>
+                                                        <td class="text-right text-sm text-gray-900" x-text="formatMoney(job.productAmount)"></td>
+                                                        <td class="text-right">
+                                                            <button type="button" @@click="removeModalJob(index)" class="text-red-600 hover:text-red-900 font-bold underline text-sm">
+                                                                @Localizer["Delete"]
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="invoice-footer-bar invoice-footer-bar--center">
+                                    <button type="button"
+                                            x-show="jobModalContext === 'line'"
+                                            @@click="submitAddJobsToLine()"
+                                            :disabled="selectedModalJobs.length === 0"
+                                            class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 disabled:opacity-50">
+                                        Fatura Satırına Ekle
+                                    </button>
+                                    <button type="button"
+                                            x-show="jobModalContext === 'invoice'"
+                                            @@click="submitAddJobsToInvoice(1)"
+                                            :disabled="selectedModalJobs.length === 0"
+                                            class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 disabled:opacity-50">
+                                        Faturaya Ekle
+                                    </button>
+                                    <button type="button"
+                                            x-show="jobModalContext === 'invoice'"
+                                            @@click="submitAddJobsToInvoice(2)"
+                                            :disabled="selectedModalJobs.length === 0"
+                                            class="inline-flex items-center px-4 py-2 border border-amber-400 text-sm font-medium rounded-md text-amber-900 bg-amber-100 hover:bg-amber-200 disabled:opacity-50">
+                                        İsme Göre Faturaya Ekle
+                                    </button>
+                                    <button type="button"
+                                            @@click="closeJobModal()"
+                                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                        @Localizer["Cancel"]
+                                    </button>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            }
             <partial name="_CustomerSelectModal" />
         </div>
     }
@@ -728,14 +1020,36 @@
 @section Scripts {
     <script>
         function invoiceDetailEdit(initialState) {
+            if (typeof initialState === 'string') {
+                try {
+                    initialState = JSON.parse(initialState);
+                } catch (error) {
+                    initialState = {};
+                }
+            }
+            initialState = initialState || {};
+
             return {
                 isEditing: false,
                 invoiceCustomerCode: initialState?.invoiceCustomerCode || '',
                 invoiceCustomerName: initialState?.invoiceCustomerName || '',
                 invoiceCustomerDisplay: initialState?.invoiceCustomerDisplay || '',
+                jobCustomerCode: initialState?.jobCustomerCode || '',
+                jobCustomerName: initialState?.jobCustomerName || '',
+                jobCustomerDisplay: initialState?.jobCustomerDisplay || '',
                 defaultVatRate: initialState?.defaultVatRate || 20,
                 nextFreeLineKey: 1,
                 newFreeLines: [],
+                jobModalOpen: false,
+                jobModalContext: 'invoice',
+                targetLineId: '',
+                deleteLineId: '',
+                invoiceAddMode: 1,
+                availableJobs: [],
+                selectedModalJobs: [],
+                jobSearch: '',
+                isLoadingJobs: false,
+                jobLoadError: '',
                 enableEdit() {
                     this.isEditing = true;
                     this.$nextTick(() => {
@@ -778,6 +1092,120 @@
                     this.newFreeLines.splice(index, 1);
                     this.$nextTick(() => this.updateLineTotals());
                 },
+                openJobModal(context, lineId) {
+                    this.jobModalContext = context || 'invoice';
+                    this.targetLineId = lineId || '';
+                    this.selectedModalJobs = [];
+                    this.jobSearch = '';
+                    this.jobLoadError = '';
+                    this.jobModalOpen = true;
+                    this.fetchPricedJobs();
+                },
+                closeJobModal() {
+                    this.jobModalOpen = false;
+                    this.selectedModalJobs = [];
+                    this.availableJobs = [];
+                    this.jobLoadError = '';
+                },
+                async fetchPricedJobs() {
+                    this.isLoadingJobs = true;
+                    this.jobLoadError = '';
+                    const params = new URLSearchParams();
+                    if (this.jobCustomerCode) {
+                        params.set('jobCustomerCode', this.jobCustomerCode);
+                    }
+                    if (this.jobSearch) {
+                        params.set('search', this.jobSearch);
+                    }
+                    params.set('first', '100');
+
+                    try {
+                        const response = await fetch('/Invoice/PricedJobs?' + params.toString(), {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (!response.ok) {
+                            throw new Error('job-load-failed');
+                        }
+                        const payload = await response.json();
+                        this.availableJobs = Array.isArray(payload.items)
+                            ? payload.items.map(job => ({
+                                reference: parseInt(job.reference, 10) || 0,
+                                name: job.name || '',
+                                productAmount: parseFloat(job.productAmount) || 0,
+                                workAmount: parseFloat(job.workAmount) || 0
+                            })).filter(job => job.reference > 0)
+                            : [];
+                    } catch (error) {
+                        this.availableJobs = [];
+                        this.jobLoadError = 'Fiyatlanan işler yüklenemedi.';
+                    } finally {
+                        this.isLoadingJobs = false;
+                    }
+                },
+                addModalJob(job) {
+                    if (!job || !job.reference || this.selectedModalJobs.some(selected => selected.reference === job.reference)) {
+                        return;
+                    }
+                    this.selectedModalJobs.push({ ...job });
+                },
+                removeModalJob(index) {
+                    this.selectedModalJobs.splice(index, 1);
+                },
+                submitAddJobsToLine() {
+                    if (this.selectedModalJobs.length === 0 || !this.targetLineId) {
+                        return;
+                    }
+                    this.$nextTick(() => this.$refs.addJobsToLineForm?.submit());
+                },
+                submitAddJobsToInvoice(mode) {
+                    if (this.selectedModalJobs.length === 0) {
+                        return;
+                    }
+                    this.invoiceAddMode = mode || 1;
+                    this.$nextTick(() => this.$refs.addJobsToInvoiceForm?.submit());
+                },
+                populateDynamicInputs(container, name, values) {
+                    if (!container) {
+                        return;
+                    }
+                    container.innerHTML = '';
+                    values.forEach((value, index) => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = name + '[' + index + ']';
+                        input.value = value;
+                        container.appendChild(input);
+                    });
+                },
+                submitDeleteJobs(lineId) {
+                    const selector = '[data-invoice-job-checkbox][data-line-id="' + lineId + '"]:checked';
+                    const selected = Array.from(document.querySelectorAll(selector)).map(input => input.value);
+                    if (selected.length === 0) {
+                        window.alert('Silmek için en az bir iş seçin.');
+                        return;
+                    }
+                    this.deleteLineId = lineId;
+                    this.populateDynamicInputs(this.$refs.deleteJobsContainer, 'JobReferences', selected);
+                    this.$nextTick(() => this.$refs.deleteJobsFromLineForm?.submit());
+                },
+                submitDeleteJobLines() {
+                    const selected = Array.from(document.querySelectorAll('[data-invoice-line-checkbox]:checked')).map(input => input.value);
+                    if (selected.length === 0) {
+                        window.alert('Silmek için en az bir iş satırı seçin.');
+                        return;
+                    }
+                    this.populateDynamicInputs(this.$refs.deleteJobLinesContainer, 'LineIds', selected);
+                    this.$nextTick(() => this.$refs.deleteJobLinesForm?.submit());
+                },
+                viewSelectedJob(defaultReference) {
+                    const selected = document.querySelector('[data-invoice-job-checkbox]:checked');
+                    const reference = selected?.value || defaultReference;
+                    if (!reference) {
+                        return;
+                    }
+                    const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.href = '/Job/Detail?id=' + encodeURIComponent(reference) + '&returnUrl=' + returnUrl;
+                },
                 parseDecimal(value) {
                     let text = String(value || '').trim().replace(/\s/g, '');
                     if (!text) return 0;
@@ -799,12 +1227,20 @@
                         maximumFractionDigits: 2
                     }).format(value || 0);
                 },
+                get availableJobsForDisplay() {
+                    const selectedReferences = new Set(this.selectedModalJobs.map(job => job.reference));
+                    return this.availableJobs.filter(job => !selectedReferences.has(job.reference));
+                },
+                get selectedModalJobTotal() {
+                    return this.selectedModalJobs.reduce((sum, job) => sum + (parseFloat(job.productAmount) || 0), 0);
+                },
                 updateCategoryTotals() {
-                    let total = 0;
-                    document.querySelectorAll('[data-invoice-category-net]').forEach((input) => {
-                        total += this.parseDecimal(input.value);
-                    });
-                    document.querySelectorAll('[data-invoice-category-net-total]').forEach((cell) => {
+                    document.querySelectorAll('[data-line-category-net-total]').forEach((cell) => {
+                        const lineId = cell.dataset.lineCategoryNetTotal;
+                        let total = 0;
+                        document.querySelectorAll(`[data-invoice-category-net][data-line-category-net="${lineId}"]`).forEach((input) => {
+                            total += this.parseDecimal(input.value);
+                        });
                         cell.textContent = this.formatMoney(total);
                     });
                 },

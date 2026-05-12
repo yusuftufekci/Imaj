@@ -17,6 +17,10 @@ namespace Imaj.Service.Interfaces
         Task<ServiceResult<List<InvoiceDetailDto>>> GetDetailsByReferencesAsync(List<int> references);
         Task<ServiceResult<InvoiceHistoryDto>> GetHistoryByReferenceAsync(int reference);
         Task<ServiceResult> UpdateOpenInvoiceAsync(InvoiceUpdateDto input);
+        Task<ServiceResult> AddJobsToInvoiceLineAsync(InvoiceAddJobsToLineDto input);
+        Task<ServiceResult> AddJobsToInvoiceAsync(InvoiceAddJobsDto input);
+        Task<ServiceResult> DeleteJobsFromInvoiceLineAsync(InvoiceDeleteJobsFromLineDto input);
+        Task<ServiceResult> DeleteJobLinesAsync(InvoiceDeleteJobLinesDto input);
         Task<ServiceResult> ExecuteWorkflowActionAsync(int reference, InvoiceWorkflowAction action, DateTime? issueDate = null);
     }
 }

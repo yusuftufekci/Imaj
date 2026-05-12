@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Imaj.Service.DTOs;
 
 namespace Imaj.Web.Models
 {
@@ -69,6 +70,7 @@ namespace Imaj.Web.Models
 
     public class InvoiceUpdateCategoryViewModel
     {
+        public decimal LineId { get; set; }
         public decimal ProdCatId { get; set; }
         public decimal NetTotal { get; set; }
     }
@@ -86,6 +88,8 @@ namespace Imaj.Web.Models
         public string TaxType { get; set; } = string.Empty;
         public decimal? TaxTypeId { get; set; }
         public decimal VatRate { get; set; }
+        public List<InvoiceWorkItemViewModel> WorkItems { get; set; } = new List<InvoiceWorkItemViewModel>();
+        public List<InvoiceCategorySummaryViewModel> ProductCategories { get; set; } = new List<InvoiceCategorySummaryViewModel>();
     }
 
     public class InvoiceWorkItemViewModel
@@ -98,6 +102,7 @@ namespace Imaj.Web.Models
 
     public class InvoiceCategorySummaryViewModel
     {
+        public decimal LineId { get; set; }
         public decimal ProdCatId { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal SubTotal { get; set; }
@@ -119,5 +124,44 @@ namespace Imaj.Web.Models
     {
         public decimal TaxTypeId { get; set; }
         public decimal Rate { get; set; }
+    }
+
+    public class InvoiceAddJobsToLineViewModel
+    {
+        public int Reference { get; set; }
+        public decimal LineId { get; set; }
+        public int CurrentIndex { get; set; }
+        public string? ReturnUrl { get; set; }
+        public List<string> SelectedReferences { get; set; } = new List<string>();
+        public List<int> JobReferences { get; set; } = new List<int>();
+    }
+
+    public class InvoiceAddJobsViewModel
+    {
+        public int Reference { get; set; }
+        public InvoiceAddJobsMode Mode { get; set; } = InvoiceAddJobsMode.SingleLine;
+        public int CurrentIndex { get; set; }
+        public string? ReturnUrl { get; set; }
+        public List<string> SelectedReferences { get; set; } = new List<string>();
+        public List<int> JobReferences { get; set; } = new List<int>();
+    }
+
+    public class InvoiceDeleteJobsFromLineViewModel
+    {
+        public int Reference { get; set; }
+        public decimal LineId { get; set; }
+        public int CurrentIndex { get; set; }
+        public string? ReturnUrl { get; set; }
+        public List<string> SelectedReferences { get; set; } = new List<string>();
+        public List<int> JobReferences { get; set; } = new List<int>();
+    }
+
+    public class InvoiceDeleteJobLinesViewModel
+    {
+        public int Reference { get; set; }
+        public int CurrentIndex { get; set; }
+        public string? ReturnUrl { get; set; }
+        public List<string> SelectedReferences { get; set; } = new List<string>();
+        public List<decimal> LineIds { get; set; } = new List<decimal>();
     }
 }
