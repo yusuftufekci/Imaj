@@ -721,6 +721,12 @@ namespace Imaj.Service.Services
                     invoices = invoices.Where(i => i.Reference <= filter.ReferenceEnd.Value);
                 }
 
+                var referenceList = NormalizeInvoiceReferences(filter.ReferenceList);
+                if (referenceList.Any())
+                {
+                    invoices = invoices.Where(i => referenceList.Contains(i.Reference));
+                }
+
                 if (!string.IsNullOrWhiteSpace(filter.Name))
                 {
                     var name = filter.Name.Trim();
@@ -761,20 +767,60 @@ namespace Imaj.Service.Services
                 var pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
                 var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
-                // Materialize scoped IDs in one DB round-trip.
-                // Apply TOP (first) in SQL before materialization so DB does not process
-                // more rows than needed for the result window.
-                var scopedIdQuery = ApplyInvoiceDataScope(invoices, activeSnapshot)
-                    .OrderByDescending(i => i.IssueDate)
-                    .ThenByDescending(i => i.Id)
-                    .Select(i => i.Id);
-
-                if (first.HasValue)
+                // Materialize scoped IDs before loading joined display data.
+                // Reference-list searches preserve the user's typed order in memory;
+                // default searches keep TOP (first) in SQL for the result window.
+                List<decimal> windowIds;
+                if (referenceList.Any())
                 {
-                    scopedIdQuery = scopedIdQuery.Take(first.Value);
-                }
+                    var referenceOrder = referenceList
+                        .Select((reference, index) => new { reference, index })
+                        .ToDictionary(x => x.reference, x => x.index);
 
-                var windowIds = await scopedIdQuery.ToListAsync();
+                    var scopedRows = await ApplyInvoiceDataScope(invoices, activeSnapshot)
+                        .Select(i => new
+                        {
+                            i.Id,
+                            i.Reference,
+                            i.IssueDate
+                        })
+                        .ToListAsync();
+
+                    windowIds = scopedRows
+                        .OrderBy(i => referenceOrder.TryGetValue(i.Reference, out var index) ? index : int.MaxValue)
+                        .ThenByDescending(i => i.IssueDate)
+                        .ThenByDescending(i => i.Id)
+                        .Select(i => i.Id)
+                        .ToList();
+
+                    if (first.HasValue)
+                    {
+                        windowIds = windowIds.Take(first.Value).ToList();
+                    }
+                }
+                else
+                {
+                    var scopedInvoices = ApplyInvoiceDataScope(invoices, activeSnapshot);
+                    var scopedIdQuery = filter.ReferenceStart.HasValue
+                        ? scopedInvoices
+                            .OrderBy(i => i.Reference)
+                            .Select(i => i.Id)
+                        : filter.ReferenceEnd.HasValue
+                            ? scopedInvoices
+                                .OrderByDescending(i => i.Reference)
+                                .Select(i => i.Id)
+                            : scopedInvoices
+                                .OrderByDescending(i => i.IssueDate)
+                                .ThenByDescending(i => i.Id)
+                                .Select(i => i.Id);
+
+                    if (first.HasValue)
+                    {
+                        scopedIdQuery = scopedIdQuery.Take(first.Value);
+                    }
+
+                    windowIds = await scopedIdQuery.ToListAsync();
+                }
                 var scopeElapsedMs = stopwatch.ElapsedMilliseconds;
 
                 var totalCount = windowIds.Count;
@@ -3228,6 +3274,12 @@ namespace Imaj.Service.Services
                 query = query.Where(x => x.Reference <= filter.ReferenceEnd.Value);
             }
 
+            var referenceList = NormalizeInvoiceReferences(filter.ReferenceList);
+            if (referenceList.Any())
+            {
+                query = query.Where(x => referenceList.Contains(x.Reference));
+            }
+
             if (!string.IsNullOrWhiteSpace(filter.Name))
             {
                 var name = filter.Name.Trim();
@@ -3272,6 +3324,18 @@ namespace Imaj.Service.Services
                    || snapshot.IsDenied
                    || snapshot.CompanyScopeMode == CompanyScopeMode.Deny
                    || snapshot.AllowedFunctionIds.Count == 0;
+        }
+
+        private static List<int> NormalizeInvoiceReferences(string? references)
+        {
+            return string.IsNullOrWhiteSpace(references)
+                ? new List<int>()
+                : references.Split(',')
+                    .Select(r => int.TryParse(r.Trim(), out var value) ? value : (int?)null)
+                    .Where(r => r.HasValue)
+                    .Select(r => r!.Value)
+                    .Distinct()
+                    .ToList();
         }
 
         private IQueryable<Job> BuildScopedJobQuery(PermissionSnapshotDto snapshot)

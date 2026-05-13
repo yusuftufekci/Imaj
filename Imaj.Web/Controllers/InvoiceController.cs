@@ -89,6 +89,7 @@ namespace Imaj.Web.Controllers
                 !string.IsNullOrWhiteSpace(f.InvoiceCustomerName) ||
                 !string.IsNullOrWhiteSpace(f.ReferenceStart) ||
                 !string.IsNullOrWhiteSpace(f.ReferenceEnd) ||
+                !string.IsNullOrWhiteSpace(f.ReferenceList) ||
                 !string.IsNullOrWhiteSpace(f.Name) ||
                 !string.IsNullOrWhiteSpace(f.RelatedPerson) ||
                 !string.IsNullOrWhiteSpace(f.Evaluated);
@@ -684,6 +685,7 @@ namespace Imaj.Web.Controllers
                 InvoiceCustomerName = f.InvoiceCustomerName,
                 ReferenceStart = int.TryParse(f.ReferenceStart, out var refStart) ? refStart : null,
                 ReferenceEnd = int.TryParse(f.ReferenceEnd, out var refEnd) ? refEnd : null,
+                ReferenceList = f.ReferenceList,
                 Name = f.Name,
                 RelatedPerson = f.RelatedPerson,
                 // IssueDateStart/End string olarak gelir; InvariantCulture parse sonucunu kullan

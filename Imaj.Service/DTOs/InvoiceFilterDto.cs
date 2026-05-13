@@ -10,6 +10,7 @@ namespace Imaj.Service.DTOs
         public string? InvoiceCustomerName { get; set; }
         public int? ReferenceStart { get; set; }
         public int? ReferenceEnd { get; set; }
+        public string? ReferenceList { get; set; }
         public string? Name { get; set; }
         public string? RelatedPerson { get; set; }
         public DateTime? IssueDateStart { get; set; }

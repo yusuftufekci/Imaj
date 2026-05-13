@@ -12,6 +12,7 @@
     if (!string.IsNullOrWhiteSpace(Model.InvoiceCustomerName)) query.Add("InvoiceCustomerName", Model.InvoiceCustomerName);
     if (!string.IsNullOrWhiteSpace(Model.ReferenceStart)) query.Add("ReferenceStart", Model.ReferenceStart);
     if (!string.IsNullOrWhiteSpace(Model.ReferenceEnd)) query.Add("ReferenceEnd", Model.ReferenceEnd);
+    if (!string.IsNullOrWhiteSpace(Model.ReferenceList)) query.Add("ReferenceList", Model.ReferenceList);
     if (!string.IsNullOrWhiteSpace(Model.Name)) query.Add("Name", Model.Name);
     if (!string.IsNullOrWhiteSpace(Model.RelatedPerson)) query.Add("RelatedPerson", Model.RelatedPerson);
     // IssueDateStart/End artık string tipinde tutulmaktadır; değeri doğrudan query string'e ekliyoruz.

@@ -13,6 +13,7 @@ namespace Imaj.Web.Models
 
         public string? ReferenceStart { get; set; }
         public string? ReferenceEnd { get; set; }
+        public string? ReferenceList { get; set; }
 
         public string? Name { get; set; }
         public string? RelatedPerson { get; set; }

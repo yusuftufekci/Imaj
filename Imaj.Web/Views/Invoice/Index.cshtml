@@ -55,6 +55,10 @@
                     </div>
                 </div>
                 <div class="dense-form-row">
+                    <label for="InvoiceReferenceList">@Localizer["Reference"]</label>
+                    <input id="InvoiceReferenceList" type="text" x-model="filter.referenceList" class="dense-input">
+                </div>
+                <div class="dense-form-row">
                     <label for="InvoiceName">@Localizer["Name"]</label>
                     <input id="InvoiceName" type="text" x-model="filter.name" class="dense-input">
                 </div>
@@ -163,7 +167,7 @@
             isReportLoading: false,
 
             filter: {
-                 referenceStart: @Html.Raw(JsonValue(Model.ReferenceStart)), referenceEnd: @Html.Raw(JsonValue(Model.ReferenceEnd)),
+                 referenceStart: @Html.Raw(JsonValue(Model.ReferenceStart)), referenceEnd: @Html.Raw(JsonValue(Model.ReferenceEnd)), referenceList: @Html.Raw(JsonValue(Model.ReferenceList)),
                  name: @Html.Raw(JsonValue(Model.Name)), relatedPerson: @Html.Raw(JsonValue(Model.RelatedPerson)),
                  // IssueDateStart/End artık string tipinde; .ToString("yyyy-MM-dd") çağrısı gerekmiyor
                  issueDateStart: @Html.Raw(JsonValue(Model.IssueDateStart)), issueDateEnd: @Html.Raw(JsonValue(Model.IssueDateEnd)),
@@ -253,6 +257,7 @@
                 if (this.invoiceCustomerName) params.set('InvoiceCustomerName', this.invoiceCustomerName);
                 if (this.filter.referenceStart) params.set('ReferenceStart', this.filter.referenceStart);
                 if (this.filter.referenceEnd) params.set('ReferenceEnd', this.filter.referenceEnd);
+                if (this.filter.referenceList) params.set('ReferenceList', this.filter.referenceList);
                 if (this.filter.name) params.set('Name', this.filter.name);
                 if (this.filter.relatedPerson) params.set('RelatedPerson', this.filter.relatedPerson);
                 if (this.filter.issueDateStart) params.set('IssueDateStart', this.filter.issueDateStart);
@@ -293,6 +298,7 @@
                 if (this.invoiceCustomerName) params.set('InvoiceCustomerName', this.invoiceCustomerName);
                 if (this.filter.referenceStart) params.set('ReferenceStart', this.filter.referenceStart);
                 if (this.filter.referenceEnd) params.set('ReferenceEnd', this.filter.referenceEnd);
+                if (this.filter.referenceList) params.set('ReferenceList', this.filter.referenceList);
                 if (this.filter.name) params.set('Name', this.filter.name);
                 if (this.filter.relatedPerson) params.set('RelatedPerson', this.filter.relatedPerson);
                 if (this.filter.issueDateStart) params.set('IssueDateStart', this.filter.issueDateStart);
@@ -411,6 +417,7 @@
                 this.invoiceCustomerName = '';
                 this.filter.referenceStart = '';
                 this.filter.referenceEnd = '';
+                this.filter.referenceList = '';
                 this.filter.name = '';
                 this.filter.relatedPerson = '';
                 // IssueDateStart/End artık string tipinde

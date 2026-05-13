@@ -81,14 +81,14 @@ namespace Imaj.Service.Services
 
                 // ... (implementation of GetByFilterAsync) ...
                 // Ana sorgu - Job'lardan başla
-                var scopedJobs = ApplyJobDataScope(_unitOfWork.Repository<Job>().Query(), activeSnapshot);
+                var scopedJobs = ApplyJobDataScope(_unitOfWork.Repository<Job>().Query().AsNoTracking(), activeSnapshot);
                 var query = from j in scopedJobs
-                            join c in _unitOfWork.Repository<Customer>().Query() on j.CustomerID equals c.Id into cGroup
+                            join c in _unitOfWork.Repository<Customer>().Query().AsNoTracking() on j.CustomerID equals c.Id into cGroup
                             from customer in cGroup.DefaultIfEmpty()
-                            join xf in _unitOfWork.Repository<XFunction>().Query().Where(x => x.LanguageID == languageId)
+                            join xf in _unitOfWork.Repository<XFunction>().Query().AsNoTracking().Where(x => x.LanguageID == languageId)
                                 on j.FunctionID equals xf.FunctionID into fGroup
                             from xFunc in fGroup.DefaultIfEmpty()
-                            join xs in _unitOfWork.Repository<XState>().Query().Where(x => x.LanguageID == languageId)
+                            join xs in _unitOfWork.Repository<XState>().Query().AsNoTracking().Where(x => x.LanguageID == languageId)
                                 on j.StateID equals xs.StateID into sGroup
                             from xState in sGroup.DefaultIfEmpty()
                             select new { Job = j, CustomerCode = customer != null ? customer.Code : null, CustomerName = customer != null ? customer.Name : null, FunctionName = xFunc != null ? xFunc.Name : null, StateName = xState != null ? xState.Name : null };
@@ -301,12 +301,10 @@ namespace Imaj.Service.Services
 
                 var orderedQuery = filter.ReferenceStart.HasValue
                     ? query
-                        .OrderBy(x => x.Job.Reference == filter.ReferenceStart.Value ? 0 : 1)
-                        .ThenBy(x => x.Job.Reference)
+                        .OrderBy(x => x.Job.Reference)
                     : filter.ReferenceEnd.HasValue
                         ? query
-                            .OrderBy(x => x.Job.Reference == filter.ReferenceEnd.Value ? 0 : 1)
-                            .ThenByDescending(x => x.Job.Reference)
+                            .OrderByDescending(x => x.Job.Reference)
                         : query
                             .OrderByDescending(x => x.Job.StartDT)
                             .ThenByDescending(x => x.Job.Reference);
