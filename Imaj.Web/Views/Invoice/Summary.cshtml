@@ -242,154 +242,161 @@
             }
 
             <div class="invoice-footer-bar invoice-footer-bar--center responsive-action-group">
-                <a href="@returnUrl" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">@Localizer["Back"]</a>
-                <a href="/Invoice/Detail?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    @Localizer["ViewDetail"]
-                </a>
+                <div class="flex flex-wrap justify-center gap-2 w-full">
+                    <a href="@returnUrl" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
+                </div>
 
-                @if (canPrintInvoice)
-                {
-                    <a href="/Invoice/Print?reference=@reference"
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       class="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200">
-                        @Localizer["PrintInvoice"] PDF
+                <div class="flex flex-wrap justify-center gap-2 w-full">
+                    <a href="/Invoice/Detail?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
+                        @Localizer["ViewDetail"]
                     </a>
-                    <a href="/Invoice/DownloadPrintExcel?reference=@reference"
-                       class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
-                        @Localizer["PrintInvoice"] Excel
+
+                    @if (isOpen)
+                    {
+                        @if (canDoConfirm)
+                        {
+                            <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Reference" value="@reference" />
+                                <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Confirm)" />
+                                <input type="hidden" name="SourceView" value="Summary" />
+                                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                                @foreach (var selectedReference in selectedReferences)
+                                {
+                                    <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                                }
+                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowConfirm"]</button>
+                            </form>
+                        }
+                        @if (canDoDiscard)
+                        {
+                            <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Reference" value="@reference" />
+                                <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Discard)" />
+                                <input type="hidden" name="SourceView" value="Summary" />
+                                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                                @foreach (var selectedReference in selectedReferences)
+                                {
+                                    <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                                }
+                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">Reddet</button>
+                            </form>
+                        }
+                    }
+
+                    @if (isConfirmed && canDoUndoConfirm)
+                    {
+                        <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Reference" value="@reference" />
+                            <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.UndoConfirm)" />
+                            <input type="hidden" name="SourceView" value="Summary" />
+                            <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                            @foreach (var selectedReference in selectedReferences)
+                            {
+                                <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                            }
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoConfirm"]</button>
+                        </form>
+                    }
+
+                    @if (isIssued && canDoKill)
+                    {
+                        <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Reference" value="@reference" />
+                            <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Kill)" />
+                            <input type="hidden" name="SourceView" value="Summary" />
+                            <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                            @foreach (var selectedReference in selectedReferences)
+                            {
+                                <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                            }
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowKill"]</button>
+                        </form>
+                    }
+
+                    @if (isIssued || isKilled || isDiscarded)
+                    {
+                        @if (canDoEvaluate)
+                        {
+                            <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Reference" value="@reference" />
+                                <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Evaluate)" />
+                                <input type="hidden" name="SourceView" value="Summary" />
+                                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                                @foreach (var selectedReference in selectedReferences)
+                                {
+                                    <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                                }
+                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowEvaluate"]</button>
+                            </form>
+                        }
+                        @if (canDoUndoEvaluate)
+                        {
+                            <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Reference" value="@reference" />
+                                <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.UndoEvaluate)" />
+                                <input type="hidden" name="SourceView" value="Summary" />
+                                <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                                @foreach (var selectedReference in selectedReferences)
+                                {
+                                    <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                                }
+                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoEvaluate"]</button>
+                            </form>
+                        }
+                    }
+
+                    @if (canPrintInvoice)
+                    {
+                        <a href="/Invoice/Print?reference=@reference"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
+                            Fatura Bas
+                        </a>
+                    }
+
+                    <a href="/Invoice/History?reference=@invoice.Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                        @Localizer["ViewHistory"]
                     </a>
-                }
-
-                @if (canDoConfirm)
-                {
-                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="Reference" value="@reference" />
-                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Confirm)" />
-                        <input type="hidden" name="SourceView" value="Summary" />
-                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                        @foreach (var selectedReference in selectedReferences)
-                        {
-                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
-                        }
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowConfirm"]</button>
-                    </form>
-                }
-
-                @if (canDoUndoConfirm)
-                {
-                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="Reference" value="@reference" />
-                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.UndoConfirm)" />
-                        <input type="hidden" name="SourceView" value="Summary" />
-                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                        @foreach (var selectedReference in selectedReferences)
-                        {
-                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
-                        }
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoConfirm"]</button>
-                    </form>
-                }
+                </div>
 
                 @if (canDoIssue)
                 {
-                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex items-center gap-2 flex-wrap justify-center">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="Reference" value="@reference" />
-                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Issue)" />
-                        <input type="hidden" name="SourceView" value="Summary" />
-                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                        @foreach (var selectedReference in selectedReferences)
-                        {
-                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
-                        }
-                        <label for="invoice-issue-date-summary" class="text-sm font-medium text-gray-700">@Localizer["InvoiceIssueDate"]</label>
-                        <input id="invoice-issue-date-summary"
-                               type="date"
-                               name="IssueDate"
-                               value="@issueDateValue"
-                               required
-                               class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm rounded-md text-gray-900 bg-white" />
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowIssue"]</button>
-                    </form>
+                    <div class="flex flex-wrap justify-center gap-2 w-full">
+                        <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex items-center gap-2 flex-wrap justify-center">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Reference" value="@reference" />
+                            <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Issue)" />
+                            <input type="hidden" name="SourceView" value="Summary" />
+                            <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                            @foreach (var selectedReference in selectedReferences)
+                            {
+                                <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+                            }
+                            <label for="invoice-issue-date-summary" class="text-sm font-medium text-blue-900">@Localizer["InvoiceIssueDate"]</label>
+                            <input id="invoice-issue-date-summary"
+                                   type="date"
+                                   name="IssueDate"
+                                   value="@issueDateValue"
+                                   required
+                                   class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm rounded-md text-gray-900 bg-white" />
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowIssue"]</button>
+                        </form>
+                    </div>
                 }
-
-                @if (canDoKill)
-                {
-                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="Reference" value="@reference" />
-                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Kill)" />
-                        <input type="hidden" name="SourceView" value="Summary" />
-                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                        @foreach (var selectedReference in selectedReferences)
-                        {
-                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
-                        }
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-red-400 text-sm font-medium rounded-md text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowKill"]</button>
-                    </form>
-                }
-
-                @if (canDoDiscard)
-                {
-                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="Reference" value="@reference" />
-                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Discard)" />
-                        <input type="hidden" name="SourceView" value="Summary" />
-                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                        @foreach (var selectedReference in selectedReferences)
-                        {
-                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
-                        }
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-red-400 text-sm font-medium rounded-md text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowDiscard"]</button>
-                    </form>
-                }
-
-                @if (canDoEvaluate)
-                {
-                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="Reference" value="@reference" />
-                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.Evaluate)" />
-                        <input type="hidden" name="SourceView" value="Summary" />
-                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                        @foreach (var selectedReference in selectedReferences)
-                        {
-                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
-                        }
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-emerald-400 text-sm font-medium rounded-md text-emerald-900 bg-emerald-100 hover:bg-emerald-200">@Localizer["WorkflowEvaluate"]</button>
-                    </form>
-                }
-
-                @if (canDoUndoEvaluate)
-                {
-                    <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="Reference" value="@reference" />
-                        <input type="hidden" name="Action" value="@((int)InvoiceWorkflowAction.UndoEvaluate)" />
-                        <input type="hidden" name="SourceView" value="Summary" />
-                        <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                        @foreach (var selectedReference in selectedReferences)
-                        {
-                            <input type="hidden" name="SelectedReferences" value="@selectedReference" />
-                        }
-                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-amber-400 text-sm font-medium rounded-md text-amber-900 bg-amber-100 hover:bg-amber-200">@Localizer["WorkflowUndoEvaluate"]</button>
-                    </form>
-                }
-
-                <a href="/Invoice/History?reference=@invoice.Reference&returnUrl=@WebUtility.UrlEncode(currentUrl)" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    @Localizer["ViewHistory"]
-                </a>
             </div>
         </div>
     }

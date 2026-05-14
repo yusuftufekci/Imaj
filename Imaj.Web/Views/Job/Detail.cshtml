@@ -544,196 +544,225 @@
          })" />
          
          <div class="job-footer-bar job-footer-bar--center responsive-action-group">
-             @if (canEditJob)
-             {
-                 <button type="button"
-                         x-show="!isEditing"
-                         @@click="enableEdit()"
-                         class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                     @Localizer["Edit"]
-                 </button>
-                 <button type="submit"
-                         form="jobDetailEditForm"
-                         x-show="isEditing"
-                         x-cloak
-                         class="inline-flex items-center px-4 py-1 border border-emerald-400 text-sm font-bold rounded shadow-sm text-emerald-900 bg-emerald-100 hover:bg-emerald-200 focus:outline-none">
-                     @Localizer["Save"]
-                 </button>
-             }
-             <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/Job/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
-             @if (canShowPrintJobForm)
-             {
-                 <a href="@Url.Action("PrintJobForm", "Job", new { reference, returnUrl = Model.ReturnUrl })"
-                    target="_blank"
-                    rel="noopener"
-                    class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">
-                     @Localizer["PrintJobForm"]
-                 </a>
-             }
+             <div class="flex flex-wrap justify-center gap-2 w-full">
+                 @if (canEditJob && (isOpen || isCompleted))
+                 {
+                     <button type="button"
+                             x-show="!isEditing"
+                             @@click="enableEdit()"
+                             class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                         @Localizer["Edit"]
+                     </button>
+                     <button type="submit"
+                             form="jobDetailEditForm"
+                             x-show="isEditing"
+                             x-cloak
+                             class="inline-flex items-center px-4 py-1 border border-emerald-400 text-sm font-bold rounded shadow-sm text-emerald-900 bg-emerald-100 hover:bg-emerald-200 focus:outline-none">
+                         @Localizer["Save"]
+                     </button>
+                 }
+                 <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/Job/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
+             </div>
 
-             @if (canDoComplete)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Complete)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+             <div class="flex flex-wrap justify-center gap-2 w-full">
+                 @if (isOpen)
+                 {
+                     @if (canDoComplete)
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             @Html.AntiForgeryToken()
+                             <input type="hidden" name="Reference" value="@reference" />
+                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Complete)" />
+                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                             @foreach (var selectedId in selectedIds)
+                             {
+                                 <input type="hidden" name="SelectedIds" value="@selectedId" />
+                             }
+                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowComplete"]</button>
+                         </form>
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowComplete"]</button>
-                 </form>
-             }
-
-             @if (canDoUndoComplete)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoComplete)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+                     @if (canDoDiscard)
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             @Html.AntiForgeryToken()
+                             <input type="hidden" name="Reference" value="@reference" />
+                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Discard)" />
+                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                             @foreach (var selectedId in selectedIds)
+                             {
+                                 <input type="hidden" name="SelectedIds" value="@selectedId" />
+                             }
+                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-red-400 text-sm font-bold rounded shadow-sm text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowDiscard"]</button>
+                         </form>
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoComplete"]</button>
-                 </form>
-             }
+                 }
 
-             @if (canDoPrice)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Price)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+                 @if (isCompleted)
+                 {
+                     @if (canDoUndoComplete)
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             @Html.AntiForgeryToken()
+                             <input type="hidden" name="Reference" value="@reference" />
+                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoComplete)" />
+                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                             @foreach (var selectedId in selectedIds)
+                             {
+                                 <input type="hidden" name="SelectedIds" value="@selectedId" />
+                             }
+                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoComplete"]</button>
+                         </form>
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowPrice"]</button>
-                 </form>
-             }
-
-             @if (canDoUndoPrice)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoPrice)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+                     @if (canDoPrice)
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             @Html.AntiForgeryToken()
+                             <input type="hidden" name="Reference" value="@reference" />
+                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Price)" />
+                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                             @foreach (var selectedId in selectedIds)
+                             {
+                                 <input type="hidden" name="SelectedIds" value="@selectedId" />
+                             }
+                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowPrice"]</button>
+                         </form>
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoPrice"]</button>
-                 </form>
-             }
-
-             @if (canDoClose)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Close)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+                     @if (canDoClose)
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             @Html.AntiForgeryToken()
+                             <input type="hidden" name="Reference" value="@reference" />
+                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Close)" />
+                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                             @foreach (var selectedId in selectedIds)
+                             {
+                                 <input type="hidden" name="SelectedIds" value="@selectedId" />
+                             }
+                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowClose"]</button>
+                         </form>
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowClose"]</button>
-                 </form>
-             }
+                 }
 
-             @if (canDoUndoClose)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoClose)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+                 @if (isPriced && canDoUndoPrice)
+                 {
+                     <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         @Html.AntiForgeryToken()
+                         <input type="hidden" name="Reference" value="@reference" />
+                         <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoPrice)" />
+                         <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                         <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                         @foreach (var selectedId in selectedIds)
+                         {
+                             <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         }
+                         <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoPrice"]</button>
+                     </form>
+                 }
+
+                 @if (isClosed)
+                 {
+                     @if (canDoUndoClose)
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             @Html.AntiForgeryToken()
+                             <input type="hidden" name="Reference" value="@reference" />
+                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoClose)" />
+                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                             @foreach (var selectedId in selectedIds)
+                             {
+                                 <input type="hidden" name="SelectedIds" value="@selectedId" />
+                             }
+                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoClose"]</button>
+                         </form>
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoClose"]</button>
-                 </form>
-             }
-
-             @if (canDoDiscard)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Discard)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+                     @if (canDoEvaluate)
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             @Html.AntiForgeryToken()
+                             <input type="hidden" name="Reference" value="@reference" />
+                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Evaluate)" />
+                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                             @foreach (var selectedId in selectedIds)
+                             {
+                                 <input type="hidden" name="SelectedIds" value="@selectedId" />
+                             }
+                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowEvaluate"]</button>
+                         </form>
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-red-400 text-sm font-bold rounded shadow-sm text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowDiscard"]</button>
-                 </form>
-             }
+                 }
 
-             @if (canDoUndoDiscard)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoDiscard)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+                 @if (isDiscarded)
+                 {
+                     @if (canDoUndoEvaluate)
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             @Html.AntiForgeryToken()
+                             <input type="hidden" name="Reference" value="@reference" />
+                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoEvaluate)" />
+                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                             @foreach (var selectedId in selectedIds)
+                             {
+                                 <input type="hidden" name="SelectedIds" value="@selectedId" />
+                             }
+                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoEvaluate"]</button>
+                         </form>
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-red-400 text-sm font-bold rounded shadow-sm text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowUndoDiscard"]</button>
-                 </form>
-             }
-
-             @if (canDoEvaluate)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Evaluate)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
+                     else
                      {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
+                         @if (canDoUndoDiscard)
+                         {
+                             <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                                 @Html.AntiForgeryToken()
+                                 <input type="hidden" name="Reference" value="@reference" />
+                                 <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoDiscard)" />
+                                 <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                                 <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                                 @foreach (var selectedId in selectedIds)
+                                 {
+                                     <input type="hidden" name="SelectedIds" value="@selectedId" />
+                                 }
+                                 <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowUndoDiscard"]</button>
+                             </form>
+                         }
+                         @if (canDoEvaluate)
+                         {
+                             <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                                 @Html.AntiForgeryToken()
+                                 <input type="hidden" name="Reference" value="@reference" />
+                                 <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Evaluate)" />
+                                 <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                                 <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                                 @foreach (var selectedId in selectedIds)
+                                 {
+                                     <input type="hidden" name="SelectedIds" value="@selectedId" />
+                                 }
+                                 <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowEvaluate"]</button>
+                             </form>
+                         }
                      }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-emerald-400 text-sm font-bold rounded shadow-sm text-emerald-900 bg-emerald-100 hover:bg-emerald-200">@Localizer["WorkflowEvaluate"]</button>
-                 </form>
-             }
+                 }
 
-             @if (canDoUndoEvaluate)
-             {
-                 <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
-                     @Html.AntiForgeryToken()
-                     <input type="hidden" name="Reference" value="@reference" />
-                     <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoEvaluate)" />
-                     <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                     @foreach (var selectedId in selectedIds)
-                     {
-                         <input type="hidden" name="SelectedIds" value="@selectedId" />
-                     }
-                     <button type="submit" class="inline-flex items-center px-4 py-1 border border-amber-400 text-sm font-bold rounded shadow-sm text-amber-900 bg-amber-100 hover:bg-amber-200">@Localizer["WorkflowUndoEvaluate"]</button>
-                 </form>
-             }
-
-             <a href="/Job/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                @Localizer["ViewHistory"]
-            </a>
+                 @if (canShowPrintJobForm)
+                 {
+                     <a href="@Url.Action("PrintJobForm", "Job", new { reference, returnUrl = Model.ReturnUrl })"
+                        target="_blank"
+                        rel="noopener"
+                        class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">
+                         @Localizer["PrintJobForm"]
+                     </a>
+                 }
+                 <a href="/Job/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                    @Localizer["ViewHistory"]
+                </a>
+             </div>
          </div>
     </div>
 
