@@ -164,4 +164,53 @@ namespace Imaj.Web.Models
         public List<string> SelectedReferences { get; set; } = new List<string>();
         public List<decimal> LineIds { get; set; } = new List<decimal>();
     }
+
+    public class InvoiceJobPickerViewModel
+    {
+        public int Reference { get; set; }
+        public decimal? LineId { get; set; }
+        public string Context { get; set; } = "invoice";
+        public InvoiceAddJobsMode Mode { get; set; } = InvoiceAddJobsMode.SingleLine;
+        public int CurrentIndex { get; set; }
+        public string? ReturnUrl { get; set; }
+        public List<string> SelectedReferences { get; set; } = new List<string>();
+
+        public string JobCustomerCode { get; set; } = string.Empty;
+        public string JobCustomerName { get; set; } = string.Empty;
+        public string Function { get; set; } = string.Empty;
+        public string ReferenceStart { get; set; } = string.Empty;
+        public string ReferenceEnd { get; set; } = string.Empty;
+        public string ReferenceList { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string RelatedPerson { get; set; } = string.Empty;
+        public string StartDateStart { get; set; } = string.Empty;
+        public string StartDateEnd { get; set; } = string.Empty;
+        public string EndDateStart { get; set; } = string.Empty;
+        public string EndDateEnd { get; set; } = string.Empty;
+        public string EmailSent { get; set; } = string.Empty;
+        public string EmployeeCode { get; set; } = string.Empty;
+        public string EmployeeName { get; set; } = string.Empty;
+        public string TaskType { get; set; } = string.Empty;
+        public string OvertimeType { get; set; } = string.Empty;
+        public decimal? ProductId { get; set; }
+        public string ProductCode { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public int First { get; set; } = 100;
+        public int PageSize { get; set; } = 16;
+        public int Page { get; set; } = 1;
+        public bool Searched { get; set; }
+        public List<InvoiceJobPickerItemViewModel> Items { get; set; } = new List<InvoiceJobPickerItemViewModel>();
+    }
+
+    public class InvoiceJobPickerItemViewModel
+    {
+        public int Reference { get; set; }
+        public string Function { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public decimal WorkAmount { get; set; }
+        public decimal ProductAmount { get; set; }
+    }
 }

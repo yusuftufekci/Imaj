@@ -1,0 +1,366 @@
+@using System.Net
+@using System.Globalization
+@using System.Text.Json
+@using Imaj.Service.DTOs
+@model InvoiceJobPickerViewModel
+
+@{
+    ViewData["Title"] = Model.Searched ? "İşler" : "İş Sorgulama";
+    var backParts = new List<string>
+    {
+        "reference=" + Model.Reference.ToString(CultureInfo.InvariantCulture),
+        "page=" + (Model.CurrentIndex + 1).ToString(CultureInfo.InvariantCulture)
+    };
+    backParts.AddRange(Model.SelectedReferences.Select(x => "selectedReferences=" + WebUtility.UrlEncode(x)));
+    if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+    {
+        backParts.Add("returnUrl=" + WebUtility.UrlEncode(Model.ReturnUrl));
+    }
+    var backUrl = "/Invoice/Detail?" + string.Join("&", backParts);
+    var actionUrl = Model.Context == "line" ? "/Invoice/AddJobsToInvoiceLine" : "/Invoice/AddJobsToInvoice";
+    string JsonValue(string? value) => JsonSerializer.Serialize(value ?? string.Empty);
+    string JsonDecimal(decimal? value) => JsonSerializer.Serialize(value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
+    var criteriaParts = new List<string>
+    {
+        "Reference=" + Model.Reference.ToString(CultureInfo.InvariantCulture),
+        "LineId=" + WebUtility.UrlEncode(Model.LineId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty),
+        "Context=" + WebUtility.UrlEncode(Model.Context),
+        "Mode=" + ((int)Model.Mode).ToString(CultureInfo.InvariantCulture),
+        "CurrentIndex=" + Model.CurrentIndex.ToString(CultureInfo.InvariantCulture),
+        "ReturnUrl=" + WebUtility.UrlEncode(Model.ReturnUrl ?? string.Empty),
+        "Function=" + WebUtility.UrlEncode(Model.Function),
+        "ReferenceStart=" + WebUtility.UrlEncode(Model.ReferenceStart),
+        "ReferenceEnd=" + WebUtility.UrlEncode(Model.ReferenceEnd),
+        "ReferenceList=" + WebUtility.UrlEncode(Model.ReferenceList),
+        "Name=" + WebUtility.UrlEncode(Model.Name),
+        "RelatedPerson=" + WebUtility.UrlEncode(Model.RelatedPerson),
+        "StartDateStart=" + WebUtility.UrlEncode(Model.StartDateStart),
+        "StartDateEnd=" + WebUtility.UrlEncode(Model.StartDateEnd),
+        "EndDateStart=" + WebUtility.UrlEncode(Model.EndDateStart),
+        "EndDateEnd=" + WebUtility.UrlEncode(Model.EndDateEnd),
+        "EmailSent=" + WebUtility.UrlEncode(Model.EmailSent),
+        "EmployeeCode=" + WebUtility.UrlEncode(Model.EmployeeCode),
+        "EmployeeName=" + WebUtility.UrlEncode(Model.EmployeeName),
+        "TaskType=" + WebUtility.UrlEncode(Model.TaskType),
+        "OvertimeType=" + WebUtility.UrlEncode(Model.OvertimeType),
+        "ProductId=" + WebUtility.UrlEncode(Model.ProductId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty),
+        "ProductCode=" + WebUtility.UrlEncode(Model.ProductCode),
+        "ProductName=" + WebUtility.UrlEncode(Model.ProductName),
+        "First=" + Model.First.ToString(CultureInfo.InvariantCulture),
+        "PageSize=" + Model.PageSize.ToString(CultureInfo.InvariantCulture)
+    };
+    criteriaParts.AddRange(Model.SelectedReferences.Select(x => "SelectedReferences=" + WebUtility.UrlEncode(x)));
+    var criteriaUrl = "/Invoice/JobPicker?" + string.Join("&", criteriaParts);
+}
+
+<div x-data="invoiceJobPicker()"
+     @@product-selected.window="handleProductSelection($event.detail)"
+     @@employee-selected.window="handleEmployeeSelection($event.detail)"
+     class="invoice-page-shell invoice-legacy-detail invoice-job-picker page-shell--wide space-y-3">
+    <h2 class="invoice-page-title invoice-page-title--orange">@(Model.Searched ? "İşler" : "İş Sorgulama")</h2>
+
+    @if (!Model.Searched)
+    {
+        <form method="get" action="/Invoice/JobPicker" class="space-y-3">
+            <input type="hidden" name="Reference" value="@Model.Reference" />
+            <input type="hidden" name="LineId" value="@Model.LineId" />
+            <input type="hidden" name="Context" value="@Model.Context" />
+            @if (Model.Context == "line")
+            {
+                <input type="hidden" name="Mode" value="@((int)Model.Mode)" />
+            }
+            <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+            <input type="hidden" name="Searched" value="true" />
+            @foreach (var selectedReference in Model.SelectedReferences)
+            {
+                <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+            }
+
+            <div class="invoice-job-picker__criteria-grid">
+                <section class="dense-panel">
+                    <div class="dense-panel__header">
+                        <h3 class="dense-panel__title">İş Kriteri</h3>
+                    </div>
+                    <div class="dense-panel__body">
+                        <div class="invoice-job-picker__form">
+                            <label>
+                                <span>Fonksiyon</span>
+                                <select name="Function" class="dense-input" x-model="filter.function">
+                                    <option value=""></option>
+                                    @if (ViewBag.Functions != null)
+                                    {
+                                        @foreach (var func in ViewBag.Functions)
+                                        {
+                                            <option value="@func.Id">@func.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </label>
+                            <label>
+                                <span>Müşteri</span>
+                                <strong>@Model.JobCustomerCode - @Model.JobCustomerName</strong>
+                            </label>
+                            <label>
+                                <span>Referans Aralığı</span>
+                                <span class="invoice-job-picker__range">
+                                    <input type="text" name="ReferenceStart" value="@Model.ReferenceStart" class="dense-input" />
+                                    <input type="text" name="ReferenceEnd" value="@Model.ReferenceEnd" class="dense-input" />
+                                </span>
+                            </label>
+                            <label>
+                                <span>Referans Listesi</span>
+                                <input type="text" name="ReferenceList" value="@Model.ReferenceList" class="dense-input invoice-job-picker__wide-input" />
+                            </label>
+                            <label>
+                                <span>Ad</span>
+                                <input type="text" name="Name" value="@Model.Name" class="dense-input invoice-job-picker__name-input" />
+                            </label>
+                            <label>
+                                <span>İlgili</span>
+                                <input type="text" name="RelatedPerson" value="@Model.RelatedPerson" class="dense-input invoice-job-picker__name-input" />
+                            </label>
+                            <label>
+                                <span>Başlangıç Tarihi Aralığı</span>
+                                <span class="invoice-job-picker__range invoice-job-picker__date-range">
+                                    <input type="date" name="StartDateStart" value="@Model.StartDateStart" class="dense-input" />
+                                    <input type="date" name="StartDateEnd" value="@Model.StartDateEnd" class="dense-input" />
+                                </span>
+                            </label>
+                            <label>
+                                <span>Bitiş Tarihi Aralığı</span>
+                                <span class="invoice-job-picker__range invoice-job-picker__date-range">
+                                    <input type="date" name="EndDateStart" value="@Model.EndDateStart" class="dense-input" />
+                                    <input type="date" name="EndDateEnd" value="@Model.EndDateEnd" class="dense-input" />
+                                </span>
+                            </label>
+                            <label>
+                                <span>Durum</span>
+                                <strong>Fiyatlandı</strong>
+                            </label>
+                            <label>
+                                <span>E-Posta Yollandı</span>
+                                <select name="EmailSent" class="dense-input invoice-job-picker__short-input" x-model="filter.emailSent">
+                                    <option value=""></option>
+                                    <option value="true">Evet</option>
+                                    <option value="false">Hayır</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Değerlendirildi</span>
+                                <strong>Hayır</strong>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="invoice-job-picker__side">
+                    <section class="dense-panel">
+                        <div class="dense-panel__header">
+                            <h3 class="dense-panel__title">Mesai Kriteri</h3>
+                        </div>
+                        <div class="dense-panel__body">
+                        <div class="invoice-job-picker__mini-criteria">
+                            <input type="hidden" name="EmployeeCode" x-model="filter.employeeCode" />
+                            <input type="hidden" name="EmployeeName" x-model="filter.employeeName" />
+                            <span>Çalışan</span>
+                            <span>-</span>
+                            <span class="invoice-job-picker__selected-value" x-text="filter.employeeName || ''"></span>
+                            <a href="#" @@click.prevent="$dispatch('employee-select-open', { targetId: 'invoiceJobEmployee', showFilter: true })">Seç</a>
+                            <span>Görev Tipi</span>
+                            <select name="TaskType" class="dense-input" x-model="filter.taskType">
+                                <option value=""></option>
+                                @if (ViewBag.WorkTypes != null)
+                                {
+                                    @foreach (var wt in ViewBag.WorkTypes)
+                                    {
+                                        <option value="@wt.Id">@wt.Name</option>
+                                    }
+                                }
+                            </select>
+                            <span>Mesai Tipi</span>
+                            <select name="OvertimeType" class="dense-input" x-model="filter.overtimeType">
+                                <option value=""></option>
+                                @if (ViewBag.TimeTypes != null)
+                                {
+                                    @foreach (var tt in ViewBag.TimeTypes)
+                                    {
+                                        <option value="@tt.Id">@tt.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        </div>
+                    </section>
+                    <section class="dense-panel">
+                        <div class="dense-panel__header">
+                            <h3 class="dense-panel__title">Ürün Kriteri</h3>
+                        </div>
+                        <div class="dense-panel__body">
+                        <div class="invoice-job-picker__mini-criteria invoice-job-picker__mini-criteria--product">
+                            <input type="hidden" name="ProductId" x-model="filter.productId" />
+                            <input type="hidden" name="ProductCode" x-model="filter.productCode" />
+                            <input type="hidden" name="ProductName" x-model="filter.productName" />
+                            <span>Ürün</span>
+                            <span>-</span>
+                            <span class="invoice-job-picker__selected-value" x-text="filter.productName || ''"></span>
+                            <a href="#" @@click.prevent="$dispatch('product-select-open', { targetId: 'invoiceJobProduct', searchEndpoint: '/Job/ProductSearch', categoriesEndpoint: '/Job/ProductCategories', productGroupsEndpoint: '/Job/ProductGroups', functionsEndpoint: '/Job/ProductFunctions', functionId: filter.function || '' })">Seç</a>
+                        </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="invoice-footer-bar invoice-footer-bar--center">
+                <div class="flex flex-wrap justify-center items-center gap-1">
+                    <label>İlk <input type="text" name="First" value="@Model.First" class="dense-input invoice-job-picker__tiny-input" /></label>
+                    <label>Sayfa Boyu <input type="text" name="PageSize" value="@Model.PageSize" class="dense-input invoice-job-picker__tiny-input" /></label>
+                    <button type="submit" class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">Sorgula</button>
+                    <a href="@backUrl" class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">Geri</a>
+                </div>
+            </div>
+        </form>
+    }
+    else
+    {
+        <form method="post" action="@actionUrl">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Reference" value="@Model.Reference" />
+            <input type="hidden" name="LineId" value="@Model.LineId" />
+            <input type="hidden" name="Mode" value="@((int)Model.Mode)" />
+            <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+            @foreach (var selectedReference in Model.SelectedReferences)
+            {
+                <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+            }
+
+            <section class="invoice-table-card">
+                <div class="invoice-table-card__header">
+                    <h3 class="invoice-table-card__title">İş (@Model.Items.Count)</h3>
+                </div>
+                <div class="invoice-table-wrap">
+                    <table class="invoice-table invoice-table--compact">
+                        <thead>
+                            <tr>
+                                <th>Seçili</th>
+                                <th>Fonksiyon</th>
+                                <th>Referans</th>
+                                <th>Başlangıç Tarihi</th>
+                                <th>Bitiş Tarihi</th>
+                                <th>Müşteri</th>
+                                <th>Ad</th>
+                                <th>Durum</th>
+                                <th>Değerlendirildi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Items.Count; i++)
+                            {
+                                var item = Model.Items[i];
+                                <tr>
+                                    <td class="text-center">
+                                        <input type="checkbox" name="JobReferences" value="@item.Reference" />
+                                    </td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.Function) ? "-" : item.Function)</td>
+                                    <td>@item.Reference</td>
+                                    <td>@item.StartDate.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)</td>
+                                    <td>@item.EndDate.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)</td>
+                                    <td>@item.CustomerName</td>
+                                    <td>@item.Name</td>
+                                    <td>Fiyatlandı</td>
+                                    <td class="text-center"><input type="checkbox" disabled /></td>
+                                </tr>
+                            }
+                            @if (!Model.Items.Any())
+                            {
+                                <tr>
+                                    <td colspan="9" class="text-center">Kayıt bulunamadı.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="invoice-footer-bar invoice-footer-bar--center">
+                <div class="invoice-job-picker__pager">
+                    <span>&lt;&lt;</span>
+                    <span>&lt;</span>
+                    <a href="#"> &gt; </a>
+                    <a href="#"> &gt;&gt; </a>
+                    <a href="#">Git</a>
+                    <input type="text" value="@Model.Page" class="dense-input invoice-job-picker__tiny-input" />
+                    <span>/ 1 (@Model.Items.Count)</span>
+                </div>
+                <div class="flex flex-wrap justify-center gap-1">
+                    @if (Model.Context == "line")
+                    {
+                        <button type="submit" class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">
+                            Fatura Satırına Ekle
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="submit"
+                                name="Mode"
+                                value="@((int)InvoiceAddJobsMode.SingleLine)"
+                                class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">
+                            Faturaya Ekle
+                        </button>
+                        <button type="submit"
+                                name="Mode"
+                                value="@((int)InvoiceAddJobsMode.GroupByName)"
+                                class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">
+                            İsme Göre Faturaya Ekle
+                        </button>
+                    }
+                    <a href="@criteriaUrl" class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">Geri</a>
+                </div>
+            </div>
+        </form>
+    }
+
+    <div class="invoice-job-picker__copyright">© 2005 Imajonline.com - Her hakkı saklıdır.</div>
+
+    <partial name="_ProductSelectModal" />
+    <partial name="_EmployeeSelectModal" />
+</div>
+
+<script>
+    function invoiceJobPicker() {
+        return {
+            filter: {
+                function: @Html.Raw(JsonValue(Model.Function)),
+                employeeCode: @Html.Raw(JsonValue(Model.EmployeeCode)),
+                employeeName: @Html.Raw(JsonValue(Model.EmployeeName)),
+                taskType: @Html.Raw(JsonValue(Model.TaskType)),
+                overtimeType: @Html.Raw(JsonValue(Model.OvertimeType)),
+                emailSent: @Html.Raw(JsonValue(Model.EmailSent)),
+                productId: @Html.Raw(JsonDecimal(Model.ProductId)),
+                productCode: @Html.Raw(JsonValue(Model.ProductCode)),
+                productName: @Html.Raw(JsonValue(Model.ProductName))
+            },
+            handleProductSelection(detail) {
+                if (detail.targetId !== 'invoiceJobProduct') {
+                    return;
+                }
+                const product = detail.product || (detail.products && detail.products[0]);
+                if (!product) {
+                    return;
+                }
+                this.filter.productId = product.id || '';
+                this.filter.productCode = product.code || '';
+                this.filter.productName = product.name || '';
+            },
+            handleEmployeeSelection(detail) {
+                if (detail.targetId !== 'invoiceJobEmployee') {
+                    return;
+                }
+                const employee = detail.employee;
+                this.filter.employeeCode = employee?.code || '';
+                this.filter.employeeName = employee?.name || '';
+            }
+        };
+    }
+</script>

@@ -21,7 +21,9 @@ namespace Imaj.Web.Controllers
         private static readonly TimeSpan ReportExecutionTimeout = TimeSpan.FromSeconds(45);
         private const int DefaultSearchLimit = 100;
         private const decimal OpenInvoiceStateId = 210m;
+        private const decimal PricedJobStateId = 130m;
         private static readonly decimal[] InvoiceStateDisplayOrder = { 210m, 220m, 230m, 240m, 250m };
+        private static readonly decimal[] JobStateDisplayOrder = { 110m, 120m, 130m, 140m, 150m, 160m };
         private const decimal ConfirmMethodId = 1385m;
         private const decimal UndoConfirmMethodId = 1386m;
         private const decimal IssueMethodId = 1388m;
@@ -31,18 +33,21 @@ namespace Imaj.Web.Controllers
         private const decimal UndoEvaluateMethodId = 1490m;
 
         private readonly IInvoiceService _invoiceService;
+        private readonly IJobService _jobService;
         private readonly ILookupService _lookupService;
         private readonly IInvoiceReportExcelService _invoiceReportExcelService;
         private readonly IPermissionViewService _permissionViewService;
 
         public InvoiceController(
             IInvoiceService invoiceService,
+            IJobService jobService,
             ILookupService lookupService,
             IInvoiceReportExcelService invoiceReportExcelService,
             IPermissionViewService permissionViewService,
             ILogger<InvoiceController> logger, IStringLocalizer<SharedResource> localizer) : base(logger, localizer)
         {
             _invoiceService = invoiceService;
+            _jobService = jobService;
             _lookupService = lookupService;
             _invoiceReportExcelService = invoiceReportExcelService;
             _permissionViewService = permissionViewService;
@@ -547,6 +552,72 @@ namespace Imaj.Web.Controllers
 
             ShowInvoiceMutationResult(result);
             return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1360)]
+        public async Task<IActionResult> JobPicker(InvoiceJobPickerViewModel model)
+        {
+            await LoadJobPickerDropdownDataAsync();
+
+            if (model.Reference <= 0)
+            {
+                return RedirectToAction(nameof(Results));
+            }
+
+            var invoice = await GetInvoiceDetailViewModelAsync(model.Reference);
+            if (invoice == null)
+            {
+                return RedirectToAction(nameof(Detail), new { reference = model.Reference.ToString(CultureInfo.InvariantCulture) });
+            }
+
+            model.Context = string.Equals(model.Context, "line", StringComparison.OrdinalIgnoreCase)
+                ? "line"
+                : "invoice";
+            model.JobCustomerCode = invoice.JobCustomerCode;
+            model.JobCustomerName = invoice.JobCustomer;
+            model.First = model.First > 0 ? model.First : 100;
+            model.PageSize = model.PageSize > 0 ? model.PageSize : 16;
+            model.Page = model.Page > 0 ? model.Page : 1;
+            model.ReturnUrl = string.IsNullOrWhiteSpace(model.ReturnUrl) ? "/Invoice/Results" : model.ReturnUrl;
+            model.SelectedReferences = model.SelectedReferences?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            var referenceText = model.Reference.ToString(CultureInfo.InvariantCulture);
+            if (!model.SelectedReferences.Contains(referenceText))
+            {
+                model.SelectedReferences.Add(referenceText);
+            }
+
+            model.Searched = string.Equals(Request.Query[nameof(model.Searched)], "true", StringComparison.OrdinalIgnoreCase);
+
+            if (model.Searched)
+            {
+                var result = await _jobService.GetByFilterAsync(BuildJobPickerFilter(model));
+
+                if (result.IsSuccess && result.Data != null)
+                {
+                    model.Items = result.Data.Items.Select(x => new InvoiceJobPickerItemViewModel
+                    {
+                        Reference = x.Reference,
+                        Function = x.FunctionName ?? string.Empty,
+                        Name = x.Name ?? string.Empty,
+                        CustomerName = x.CustomerName ?? x.CustomerCode ?? string.Empty,
+                        StartDate = x.StartDate,
+                        EndDate = x.EndDate,
+                        WorkAmount = x.WorkAmount,
+                        ProductAmount = x.ProductAmount
+                    }).ToList();
+                }
+                else
+                {
+                    ShowError(result.Message ?? L("GenericError"));
+                }
+            }
+
+            return View(model);
         }
 
         [HttpGet]
@@ -1165,6 +1236,88 @@ namespace Imaj.Web.Controllers
             }
 
             return MapDetails(result.Data).FirstOrDefault();
+        }
+
+        private async Task LoadJobPickerDropdownDataAsync()
+        {
+            var statesResult = await _lookupService.GetStatesAsync(StateCategories.Job);
+            ViewBag.States = statesResult.IsSuccess && statesResult.Data != null
+                ? statesResult.Data
+                    .Where(x => JobStateDisplayOrder.Contains(x.Id))
+                    .OrderBy(x => Array.IndexOf(JobStateDisplayOrder, x.Id))
+                    .ToList()
+                : new List<StateDto>();
+
+            var functionsResult = await _lookupService.GetFunctionsAsync();
+            ViewBag.Functions = functionsResult.IsSuccess && functionsResult.Data != null
+                ? functionsResult.Data
+                : new List<FunctionDto>();
+
+            var workTypesResult = await _lookupService.GetWorkTypesAsync();
+            ViewBag.WorkTypes = workTypesResult.IsSuccess && workTypesResult.Data != null
+                ? workTypesResult.Data
+                : new List<WorkTypeDto>();
+
+            var timeTypesResult = await _lookupService.GetTimeTypesAsync();
+            ViewBag.TimeTypes = timeTypesResult.IsSuccess && timeTypesResult.Data != null
+                ? timeTypesResult.Data
+                : new List<TimeTypeDto>();
+        }
+
+        private static JobFilterDto BuildJobPickerFilter(InvoiceJobPickerViewModel model)
+        {
+            return new JobFilterDto
+            {
+                FunctionId = ParseDecimalFilter(model.Function),
+                CustomerCode = model.JobCustomerCode,
+                ReferenceStart = int.TryParse(model.ReferenceStart, out var refStart) ? refStart : null,
+                ReferenceEnd = int.TryParse(model.ReferenceEnd, out var refEnd) ? refEnd : null,
+                ReferenceList = model.ReferenceList,
+                JobName = model.Name,
+                RelatedPerson = model.RelatedPerson,
+                StartDateStart = ParseIsoDate(model.StartDateStart),
+                StartDateEnd = ParseIsoDate(model.StartDateEnd),
+                EndDateStart = ParseIsoDate(model.EndDateStart),
+                EndDateEnd = ParseIsoDate(model.EndDateEnd),
+                StateId = PricedJobStateId,
+                IsEmailSent = model.EmailSent switch
+                {
+                    "true" => true,
+                    "false" => false,
+                    _ => null
+                },
+                IsEvaluated = false,
+                HasInvoice = false,
+                EmployeeCode = model.EmployeeCode,
+                WorkTypeId = ParseDecimalFilter(model.TaskType),
+                TimeTypeId = ParseDecimalFilter(model.OvertimeType),
+                ProductId = model.ProductId,
+                ProductCode = model.ProductCode,
+                Page = model.Page > 0 ? model.Page : 1,
+                PageSize = model.PageSize > 0 ? model.PageSize : 16,
+                First = model.First > 0 ? model.First : DefaultSearchLimit
+            };
+        }
+
+        private static decimal? ParseDecimalFilter(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var invariantValue)
+                ? invariantValue
+                : decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out var currentValue)
+                    ? currentValue
+                    : null;
+        }
+
+        private static DateTime? ParseIsoDate(string? value)
+        {
+            return DateTime.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                ? date
+                : null;
         }
 
         private byte[] BuildInvoicePrintExcel(InvoiceDetailViewModel invoice)

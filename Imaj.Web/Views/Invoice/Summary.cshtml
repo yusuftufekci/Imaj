@@ -55,7 +55,7 @@
     var canPrintInvoice = parsedReference && !isEvaluated && (isOpen || isConfirmed || isIssued);
 }
 
-<div class="invoice-page-shell page-shell--wide space-y-3">
+<div class="invoice-page-shell invoice-legacy-detail page-shell--wide space-y-3">
     @if (invoice == null)
     {
         <div class="invoice-empty-state invoice-table-card">
@@ -67,9 +67,7 @@
         <div class="space-y-3">
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex-1 min-w-0">
-                    <h2 class="invoice-page-title">
-                        @Localizer["Invoice"]: <span class="text-indigo-600">@invoice.Reference</span>
-                    </h2>
+                    <h2 class="invoice-page-title invoice-page-title--orange">@Localizer["Invoice"]</h2>
                 </div>
                 <div class="mt-3 md:mt-0 invoice-page-actions">
                     <a href="@returnUrl" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">@Localizer["Back"]</a>

@@ -3425,6 +3425,454 @@ span.flatpickr-weekday {
     font-size: 0.75rem;
 }
 
+.invoice-legacy-detail.page-shell--wide {
+    width: min(2010px, calc(100vw - 40px));
+    margin-top: -0.75rem;
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.invoice-legacy-detail,
+.invoice-legacy-detail * {
+    letter-spacing: 0;
+}
+
+.invoice-legacy-detail > .space-y-3,
+.invoice-legacy-detail .space-y-3 {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.invoice-legacy-detail .md\:flex.md\:items-center.md\:justify-between {
+    position: relative;
+    display: block;
+    min-height: 1.25rem;
+    text-align: center;
+}
+
+.invoice-legacy-detail .md\:flex.md\:items-center.md\:justify-between .invoice-page-actions {
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: 0;
+}
+
+.invoice-legacy-detail .invoice-page-title {
+    color: #ff6633;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1.18rem;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+}
+
+.invoice-legacy-detail .invoice-detail-grid {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 0.65rem;
+    align-items: start;
+}
+
+.invoice-legacy-detail .invoice-note-stack {
+    gap: 0.65rem;
+}
+
+.invoice-legacy-detail .dense-panel,
+.invoice-legacy-detail .invoice-table-card {
+    border: 1px solid #a9c8ea;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+.invoice-legacy-detail .dense-panel__header,
+.invoice-legacy-detail .invoice-table-card__header {
+    min-height: 1.42rem;
+    padding: 0.07rem 0.24rem;
+    border-bottom: none;
+    background: linear-gradient(180deg, #6ba6d2 0%, #bfe3f7 100%);
+}
+
+.invoice-legacy-detail .dense-panel__title,
+.invoice-legacy-detail .invoice-table-card__title {
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 400;
+    line-height: 1.35;
+}
+
+.invoice-legacy-detail .dense-panel__body {
+    min-height: 1.18rem;
+    padding: 0.16rem 0.28rem;
+    background: #ffffff;
+}
+
+.invoice-legacy-detail .invoice-detail-grid > .dense-panel:first-child .dense-panel__body {
+    min-height: 10.55rem;
+}
+
+.invoice-legacy-detail .invoice-detail-list {
+    width: min(28.5rem, 100%);
+    margin-inline: auto;
+    gap: 0.36rem;
+}
+
+.invoice-legacy-detail .invoice-detail-item {
+    grid-template-columns: minmax(7.75rem, 8.45rem) minmax(0, 1fr);
+    column-gap: 0.3rem;
+    align-items: center;
+}
+
+.invoice-legacy-detail .invoice-detail-item__label {
+    color: #00008b;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: right;
+}
+
+.invoice-legacy-detail .invoice-detail-item__value {
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+}
+
+.invoice-legacy-detail .invoice-table-wrap {
+    background: #ffffff;
+}
+
+.invoice-legacy-detail .invoice-table {
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+.invoice-legacy-detail .invoice-table th,
+.invoice-legacy-detail .invoice-table td {
+    height: 1.25rem;
+    padding: 0.08rem 0.22rem;
+    border-top: 0;
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.15;
+    vertical-align: middle;
+}
+
+.invoice-legacy-detail .invoice-table th {
+    background: #ffffff;
+    color: #00008b;
+    font-weight: 700;
+    text-transform: none;
+}
+
+.invoice-legacy-detail .invoice-table tfoot td {
+    border-top: 1px dashed #b7cbe2;
+    color: #00008b;
+    font-weight: 700;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr:nth-child(4n + 1),
+.invoice-legacy-detail .invoice-table tbody > tr:nth-child(4n + 2) {
+    background: #fffaf0;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr.bg-blue-50 {
+    background: #fffaf0 !important;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr.bg-blue-50 > td {
+    padding: 0 0.32rem 0.2rem 5.35rem;
+    background: #fffaf0;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr.bg-blue-50:nth-child(4n) > td,
+.invoice-legacy-detail .invoice-table tbody > tr.bg-blue-50:nth-child(4n + 3) > td {
+    background: #eaf8ff;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr:hover {
+    background-color: inherit;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr.bg-blue-50 .grid {
+    gap: 0.65rem;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr.bg-blue-50 .border {
+    overflow: hidden;
+    border-color: #a9c8ea !important;
+    border-radius: 0 !important;
+    background: transparent;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr.bg-blue-50 .bg-blue-100 {
+    min-height: 1.32rem;
+    padding: 0.04rem 0.24rem;
+    background: linear-gradient(180deg, #6ba6d2 0%, #bfe3f7 100%) !important;
+    color: #000000 !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.92rem !important;
+    font-weight: 400 !important;
+    line-height: 1.35;
+}
+
+.invoice-legacy-detail input[type="checkbox"] {
+    width: 0.78rem;
+    height: 0.78rem;
+    border-radius: 0;
+}
+
+.invoice-legacy-detail .invoice-footer-bar {
+    gap: 0.2rem;
+    padding: 0.08rem 0.24rem;
+    border-top: 1px dashed #b7cbe2;
+    background: #ffffff;
+}
+
+.invoice-legacy-detail .invoice-footer-bar--center {
+    display: grid;
+    justify-items: center;
+    gap: 0.22rem;
+    border-top: none;
+    background: transparent;
+}
+
+.invoice-legacy-detail .invoice-footer-bar--start {
+    border: 1px solid #a9c8ea;
+    border-top: 0;
+}
+
+.invoice-legacy-detail :where(a, button):is(
+    [class*="bg-blue-100"],
+    [class*="bg-white"],
+    [class*="bg-emerald-100"],
+    [class*="bg-red-100"],
+    [class*="bg-slate-100"]
+) {
+    min-height: 1.32rem;
+    padding: 0 0.24rem;
+    border: 1px solid #00008b !important;
+    border-radius: 0 !important;
+    background: #b7cdfa !important;
+    color: #00008b !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem !important;
+    font-weight: 400 !important;
+    line-height: 1.15;
+    text-decoration: none;
+    box-shadow: none !important;
+}
+
+.invoice-legacy-detail :where(a, button).underline,
+.invoice-legacy-detail :where(a, button)[class*="underline"],
+.invoice-legacy-detail .invoice-table a {
+    border: 0 !important;
+    background: transparent !important;
+    color: #0000ee !important;
+    font-size: 0.8125rem !important;
+    font-weight: 700 !important;
+    text-decoration: underline;
+}
+
+.invoice-legacy-detail .responsive-action-group > .flex {
+    gap: 0.18rem;
+}
+
+.invoice-legacy-detail .dense-input,
+.invoice-legacy-detail .job-table-input,
+.invoice-legacy-detail input[type="date"] {
+    min-height: 1.22rem;
+    border: 1px solid #9ca3af;
+    border-radius: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    box-shadow: none;
+}
+
+.invoice-legacy-detail .invoice-empty-state {
+    border-radius: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.invoice-job-picker.page-shell--wide {
+    width: min(2015px, calc(100vw - 40px));
+}
+
+.invoice-job-picker .invoice-page-title {
+    margin: 0.35rem 0 0.85rem;
+}
+
+.invoice-job-picker__criteria-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.95fr);
+    gap: 0.85rem;
+    align-items: start;
+}
+
+.invoice-job-picker__side {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.invoice-job-picker__form {
+    display: grid;
+    justify-content: center;
+    gap: 0.24rem;
+    padding: 0.16rem 0 0.28rem;
+}
+
+.invoice-job-picker__form label {
+    display: grid;
+    grid-template-columns: 10.6rem minmax(0, 24rem);
+    align-items: center;
+    gap: 0.32rem;
+    min-height: 1.18rem;
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.15;
+}
+
+.invoice-job-picker__form label > span:first-child {
+    color: #00008b;
+    font-weight: 700;
+    text-align: right;
+}
+
+.invoice-job-picker__form strong {
+    color: #000000;
+    font-weight: 400;
+}
+
+.invoice-job-picker__range {
+    display: flex;
+    align-items: center;
+    gap: 0.28rem;
+}
+
+.invoice-job-picker__range .dense-input {
+    width: 4.7rem;
+}
+
+.invoice-job-picker__date-range .dense-input {
+    width: 8.15rem;
+}
+
+.invoice-job-picker__wide-input {
+    width: 25rem;
+}
+
+.invoice-job-picker__name-input {
+    width: 13rem;
+}
+
+.invoice-job-picker__short-input {
+    width: 3.25rem;
+}
+
+.invoice-job-picker__tiny-input {
+    width: 2.25rem;
+    padding-inline: 0.18rem;
+    text-align: center;
+}
+
+.invoice-job-picker__mini-criteria {
+    display: grid;
+    grid-template-columns: 4.8rem 0.7rem minmax(10rem, 16rem) 3rem;
+    justify-content: center;
+    align-items: center;
+    gap: 0.24rem;
+    min-height: 3.55rem;
+    color: #00008b;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+.invoice-job-picker__mini-criteria > span:nth-of-type(n + 4) {
+    grid-column: 1;
+    margin-top: 0.08rem;
+    text-align: right;
+}
+
+.invoice-job-picker__selected-value {
+    min-width: 0;
+    overflow: hidden;
+    color: #000000;
+    font-weight: 400;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.invoice-job-picker__mini-criteria select {
+    grid-column: 2 / 5;
+    width: 16rem;
+    max-width: 100%;
+    height: 1.35rem;
+    padding: 0 1.25rem 0 0.18rem;
+}
+
+.invoice-job-picker__mini-criteria a {
+    color: #0000ee !important;
+    font-weight: 700 !important;
+    text-decoration: underline;
+}
+
+.invoice-job-picker__mini-criteria--product {
+    grid-template-columns: 4.8rem 0.7rem minmax(10rem, 16rem) 3rem;
+    min-height: 1.45rem;
+}
+
+.invoice-job-picker .invoice-table-card {
+    margin-top: 0.3rem;
+}
+
+.invoice-job-picker .invoice-table th,
+.invoice-job-picker .invoice-table td {
+    height: 1.36rem;
+    padding: 0.08rem 0.24rem;
+    font-size: 0.8125rem;
+}
+
+.invoice-job-picker .invoice-table tbody > tr:nth-child(odd) {
+    background: #fffaf0;
+}
+
+.invoice-job-picker .invoice-table tbody > tr:nth-child(even) {
+    background: #eaf8ff;
+}
+
+.invoice-job-picker__pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.28rem;
+    color: #00008b;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+.invoice-job-picker__pager a {
+    color: #0000ee !important;
+    font-weight: 700 !important;
+    text-decoration: underline;
+}
+
+.invoice-job-picker__copyright {
+    margin-top: 1.4rem;
+    padding: 0.4rem;
+    background: #326b9f;
+    color: #ffffff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+}
+
 @media (min-width: 1024px) {
     .page-shell--wide {
         width: min(1520px, 100%);

@@ -106,6 +106,11 @@ namespace Imaj.Service.Services
                 {
                     query = query.Where(x => x.Job.CustomerID == filter.CustomerId.Value);
                 }
+                else if (!string.IsNullOrWhiteSpace(filter.CustomerCode))
+                {
+                    var customerCode = filter.CustomerCode.Trim();
+                    query = query.Where(x => x.CustomerCode == customerCode);
+                }
 
                 // Referans aralığı filtresi
                 if (filter.ReferenceStart.HasValue)
