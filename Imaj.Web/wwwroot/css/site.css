@@ -3806,6 +3806,28 @@ span.flatpickr-weekday {
     white-space: nowrap;
 }
 
+.invoice-job-picker__customer-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-width: 0;
+}
+
+.invoice-job-picker__customer-selector strong {
+    max-width: 20rem;
+    overflow: hidden;
+    color: #000000;
+    font-weight: 400;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.invoice-job-picker__customer-selector a {
+    color: #0000ee !important;
+    font-weight: 700 !important;
+    text-decoration: underline;
+}
+
 .invoice-job-picker__mini-criteria select {
     grid-column: 2 / 5;
     width: 16rem;

@@ -19,7 +19,6 @@
     var backUrl = "/Invoice/Detail?" + string.Join("&", backParts);
     var actionUrl = Model.Context == "line" ? "/Invoice/AddJobsToInvoiceLine" : "/Invoice/AddJobsToInvoice";
     string JsonValue(string? value) => JsonSerializer.Serialize(value ?? string.Empty);
-    string JsonDecimal(decimal? value) => JsonSerializer.Serialize(value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
     var criteriaParts = new List<string>
     {
         "Reference=" + Model.Reference.ToString(CultureInfo.InvariantCulture),
@@ -28,6 +27,8 @@
         "Mode=" + ((int)Model.Mode).ToString(CultureInfo.InvariantCulture),
         "CurrentIndex=" + Model.CurrentIndex.ToString(CultureInfo.InvariantCulture),
         "ReturnUrl=" + WebUtility.UrlEncode(Model.ReturnUrl ?? string.Empty),
+        "JobCustomerCode=" + WebUtility.UrlEncode(Model.JobCustomerCode),
+        "JobCustomerName=" + WebUtility.UrlEncode(Model.JobCustomerName),
         "Function=" + WebUtility.UrlEncode(Model.Function),
         "ReferenceStart=" + WebUtility.UrlEncode(Model.ReferenceStart),
         "ReferenceEnd=" + WebUtility.UrlEncode(Model.ReferenceEnd),
@@ -43,7 +44,7 @@
         "EmployeeName=" + WebUtility.UrlEncode(Model.EmployeeName),
         "TaskType=" + WebUtility.UrlEncode(Model.TaskType),
         "OvertimeType=" + WebUtility.UrlEncode(Model.OvertimeType),
-        "ProductId=" + WebUtility.UrlEncode(Model.ProductId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty),
+        "ProductId=" + WebUtility.UrlEncode(Model.ProductId),
         "ProductCode=" + WebUtility.UrlEncode(Model.ProductCode),
         "ProductName=" + WebUtility.UrlEncode(Model.ProductName),
         "First=" + Model.First.ToString(CultureInfo.InvariantCulture),
@@ -54,6 +55,7 @@
 }
 
 <div x-data="invoiceJobPicker()"
+     @@customer-selected.window="handleCustomerSelection($event.detail)"
      @@product-selected.window="handleProductSelection($event.detail)"
      @@employee-selected.window="handleEmployeeSelection($event.detail)"
      class="invoice-page-shell invoice-legacy-detail invoice-job-picker page-shell--wide space-y-3">
@@ -72,6 +74,8 @@
             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
             <input type="hidden" name="Searched" value="true" />
+            <input type="hidden" name="JobCustomerCode" x-model="filter.jobCustomerCode" />
+            <input type="hidden" name="JobCustomerName" x-model="filter.jobCustomerName" />
             @foreach (var selectedReference in Model.SelectedReferences)
             {
                 <input type="hidden" name="SelectedReferences" value="@selectedReference" />
@@ -99,7 +103,11 @@
                             </label>
                             <label>
                                 <span>Müşteri</span>
-                                <strong>@Model.JobCustomerCode - @Model.JobCustomerName</strong>
+                                <span class="invoice-job-picker__customer-selector">
+                                    <strong x-text="customerDisplay"></strong>
+                                    <span>-</span>
+                                    <a href="#" @@click.prevent="$dispatch('customer-select-open', { targetId: 'invoiceJobCustomer', searchEndpoint: '/Job/CustomerSearch', jobStatesEndpoint: '/Job/CustomerJobStates' })">Seç</a>
+                                </span>
                             </label>
                             <label>
                                 <span>Referans Aralığı</span>
@@ -325,21 +333,38 @@
 
     <partial name="_ProductSelectModal" />
     <partial name="_EmployeeSelectModal" />
+    <partial name="_CustomerSelectModal" />
 </div>
 
 <script>
     function invoiceJobPicker() {
         return {
             filter: {
+                jobCustomerCode: @Html.Raw(JsonValue(Model.JobCustomerCode)),
+                jobCustomerName: @Html.Raw(JsonValue(Model.JobCustomerName)),
                 function: @Html.Raw(JsonValue(Model.Function)),
                 employeeCode: @Html.Raw(JsonValue(Model.EmployeeCode)),
                 employeeName: @Html.Raw(JsonValue(Model.EmployeeName)),
                 taskType: @Html.Raw(JsonValue(Model.TaskType)),
                 overtimeType: @Html.Raw(JsonValue(Model.OvertimeType)),
                 emailSent: @Html.Raw(JsonValue(Model.EmailSent)),
-                productId: @Html.Raw(JsonDecimal(Model.ProductId)),
+                productId: @Html.Raw(JsonValue(Model.ProductId)),
                 productCode: @Html.Raw(JsonValue(Model.ProductCode)),
                 productName: @Html.Raw(JsonValue(Model.ProductName))
+            },
+            get customerDisplay() {
+                if (this.filter.jobCustomerCode && this.filter.jobCustomerName) {
+                    return this.filter.jobCustomerCode + ' - ' + this.filter.jobCustomerName;
+                }
+                return this.filter.jobCustomerCode || this.filter.jobCustomerName || '';
+            },
+            handleCustomerSelection(detail) {
+                if (detail.targetId !== 'invoiceJobCustomer') {
+                    return;
+                }
+                const customer = detail.customer;
+                this.filter.jobCustomerCode = customer?.code || '';
+                this.filter.jobCustomerName = customer?.name || '';
             },
             handleProductSelection(detail) {
                 if (detail.targetId !== 'invoiceJobProduct') {

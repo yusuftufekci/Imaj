@@ -192,7 +192,7 @@ namespace Imaj.Web.Models
         public string EmployeeName { get; set; } = string.Empty;
         public string TaskType { get; set; } = string.Empty;
         public string OvertimeType { get; set; } = string.Empty;
-        public decimal? ProductId { get; set; }
+        public string ProductId { get; set; } = string.Empty;
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public int First { get; set; } = 100;

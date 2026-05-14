@@ -599,7 +599,8 @@ namespace Imaj.Web.Controllers
 
                 if (result.IsSuccess && result.Data != null)
                 {
-                    model.Items = result.Data.Items.Select(x => new InvoiceJobPickerItemViewModel
+                    model.Items = result.Data.Items
+                        .Select(x => new InvoiceJobPickerItemViewModel
                     {
                         Reference = x.Reference,
                         Function = x.FunctionName ?? string.Empty,
@@ -1287,11 +1288,10 @@ namespace Imaj.Web.Controllers
                     _ => null
                 },
                 IsEvaluated = false,
-                HasInvoice = false,
                 EmployeeCode = model.EmployeeCode,
                 WorkTypeId = ParseDecimalFilter(model.TaskType),
                 TimeTypeId = ParseDecimalFilter(model.OvertimeType),
-                ProductId = model.ProductId,
+                ProductId = ParseDecimalFilter(model.ProductId),
                 ProductCode = model.ProductCode,
                 Page = model.Page > 0 ? model.Page : 1,
                 PageSize = model.PageSize > 0 ? model.PageSize : 16,
@@ -1306,11 +1306,13 @@ namespace Imaj.Web.Controllers
                 return null;
             }
 
-            return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var invariantValue)
-                ? invariantValue
-                : decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out var currentValue)
-                    ? currentValue
-                    : null;
+            return decimal.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out var currentValue)
+                ? currentValue
+                : decimal.TryParse(value, NumberStyles.Any, CultureInfo.GetCultureInfo("tr-TR"), out var turkishValue)
+                    ? turkishValue
+                    : decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var invariantValue)
+                        ? invariantValue
+                        : null;
         }
 
         private static DateTime? ParseIsoDate(string? value)
