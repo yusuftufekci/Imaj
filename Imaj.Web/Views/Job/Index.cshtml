@@ -12,7 +12,8 @@
     string JsonValue(string? value) => JsonSerializer.Serialize(value ?? string.Empty);
     string JsonDate(DateTime? value) => JsonSerializer.Serialize(value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty);
     string JsonDecimal(decimal? value) => JsonSerializer.Serialize(value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
-    var firstValue = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (filter.PageSize > 0 ? filter.PageSize : 10);
+    const int defaultSearchLimit = 100;
+    var firstValue = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : defaultSearchLimit;
     var pageSizeValue = filter.PageSize > 0 ? filter.PageSize : 10;
 }
 
@@ -23,7 +24,7 @@
         </h2>
     </div>
 
-    <form method="get" action="/Job/List" class="job-index-form space-y-2 text-left">
+    <form method="get" action="/Job/List" data-enter-search-form="true" class="job-index-form space-y-2 text-left">
         <div class="dense-panel-grid job-index-reference-grid">
             <div class="dense-panel-grid__column">
                 <section class="dense-panel job-index-reference-panel">
@@ -206,7 +207,7 @@
             <input id="JobFirst" type="number" name="Filter.First" x-model="filter.first" min="1" class="dense-input dense-toolbar__input">
             <label for="JobPageSize" class="dense-toolbar__label">@Localizer["PageSize"]</label>
             <input id="JobPageSize" type="number" name="Filter.PageSize" x-model="filter.pageSize" min="1" class="dense-input dense-toolbar__input">
-            <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-300 text-sm font-medium rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+            <button type="submit" data-enter-search-trigger class="inline-flex items-center px-4 py-1 border border-blue-300 text-sm font-medium rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                 @Localizer["Search"]
             </button>
         </div>
@@ -375,6 +376,9 @@
                     this.filter.customerCode = detail.customer.code;
                     this.filter.customerId = detail.customer.id;
                     this.customerName = detail.customer.name;
+                    window.setTimeout(() => {
+                        document.querySelector('form[action="/Job/List"] [data-enter-search-trigger]')?.focus();
+                    }, 0);
                 }
             },
             

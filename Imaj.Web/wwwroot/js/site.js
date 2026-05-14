@@ -260,6 +260,83 @@ const WorkflowActionHelper = {
     }
 };
 
+const EnterSearchHelper = (() => {
+    const interactiveSelector = 'input, select, button, [contenteditable="true"]';
+    const searchTriggerSelector = '[data-enter-search-trigger]';
+
+    const shouldIgnore = event => {
+        if (event.key !== 'Enter' || event.isComposing) {
+            return true;
+        }
+
+        const target = event.target;
+        if (!target || target.closest('.flatpickr-calendar')) {
+            return true;
+        }
+
+        if (target.matches('textarea, button, a, [contenteditable="true"]')) {
+            return true;
+        }
+
+        return !target.matches(interactiveSelector);
+    };
+
+    const submitForm = form => {
+        const submitter = form.querySelector('button[type="submit"], input[type="submit"]');
+
+        if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit(submitter || undefined);
+            return;
+        }
+
+        if (submitter) {
+            submitter.click();
+            return;
+        }
+
+        form.submit();
+    };
+
+    const handleKeydown = event => {
+        if (shouldIgnore(event)) {
+            return;
+        }
+
+        const scope = event.target.closest('[data-enter-search-scope]');
+        if (scope) {
+            const trigger = scope.querySelector(searchTriggerSelector);
+            if (trigger && !trigger.disabled) {
+                event.preventDefault();
+                trigger.click();
+            }
+            return;
+        }
+
+        const form = event.target.closest('form');
+        if (!form) {
+            return;
+        }
+
+        const actionPath = new URL(form.getAttribute('action') || window.location.href, window.location.href).pathname;
+        const isSearchForm = form.dataset.enterSearchForm === 'true'
+            || actionPath.endsWith('/List')
+            || form.id?.toLowerCase().includes('search');
+
+        if (!isSearchForm) {
+            return;
+        }
+
+        event.preventDefault();
+        submitForm(form);
+    };
+
+    const init = () => {
+        document.addEventListener('keydown', handleKeydown, true);
+    };
+
+    return { init };
+})();
+
 const DateFieldEnhancer = (() => {
     const selector = 'input[type="date"], input[type="datetime-local"]';
     const instances = new Map();
@@ -547,6 +624,7 @@ const DateFieldEnhancer = (() => {
 
 document.addEventListener('DOMContentLoaded', function () {
     WorkflowActionHelper.init();
+    EnterSearchHelper.init();
     DateFieldEnhancer.init();
 });
 

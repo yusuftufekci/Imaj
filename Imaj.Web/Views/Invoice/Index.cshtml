@@ -8,10 +8,12 @@
 @{
     ViewData["Title"] = Localizer["InvoiceSearch"];
     string JsonValue(string? value) => JsonSerializer.Serialize(value ?? string.Empty);
+    const int defaultSearchLimit = 100;
     var firstValue = Model.First.HasValue && Model.First.Value > 0
         ? Model.First.Value
-        : 100;
+        : defaultSearchLimit;
     var pageSizeValue = Model.PageSize > 0 ? Model.PageSize : 16;
+    var hasIncomingQuery = Context.Request.Query.Count > 0;
 }
 
 <div x-data="invoicePage()" @@customer-selected.window="handleSelection($event.detail)" class="invoice-page-shell invoice-index-shell invoice-index-reference page-shell--wide space-y-2">
@@ -21,12 +23,13 @@
         </h2>
     </div>
 
-    <section class="dense-panel invoice-index-search-panel">
-        <div class="dense-panel__header">
-            <h3 class="dense-panel__title">@Localizer["MainCriteria"]</h3>
-        </div>
-        <div class="dense-panel__body mobile-stack-form">
-            <div class="dense-form-grid invoice-index-criteria-list">
+    <div data-enter-search-scope>
+        <section class="dense-panel invoice-index-search-panel">
+            <div class="dense-panel__header">
+                <h3 class="dense-panel__title">@Localizer["MainCriteria"]</h3>
+            </div>
+            <div class="dense-panel__body mobile-stack-form">
+                <div class="dense-form-grid invoice-index-criteria-list">
                 <div class="dense-form-row">
                     <label>@Localizer["JobCustomer"]</label>
                     <div class="invoice-index-selector">
@@ -96,21 +99,22 @@
                         <option value="false">@Localizer["No"]</option>
                     </select>
                 </div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <div class="dense-toolbar invoice-index-toolbar">
-        <label class="dense-toolbar__label">@Localizer["First"]</label>
-        <input type="number" x-model="filter.first" min="1" class="dense-input dense-toolbar__input">
-        <label class="dense-toolbar__label">@Localizer["PageSize"]</label>
-        <input type="number" x-model="filter.pageSize" min="1" class="dense-input dense-toolbar__input">
-        <button type="button" @@click="searchInvoices()" class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-            @Localizer["Search"]
-        </button>
-        <button type="button" @@click="resetFilters()" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
-            @Localizer["Clear"]
-        </button>
+        <div class="dense-toolbar invoice-index-toolbar">
+            <label class="dense-toolbar__label">@Localizer["First"]</label>
+            <input type="number" x-model="filter.first" min="1" class="dense-input dense-toolbar__input">
+            <label class="dense-toolbar__label">@Localizer["PageSize"]</label>
+            <input type="number" x-model="filter.pageSize" min="1" class="dense-input dense-toolbar__input">
+            <button type="button" @@click="searchInvoices()" data-enter-search-trigger class="inline-flex items-center px-4 py-1 border border-transparent text-sm font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                @Localizer["Search"]
+            </button>
+            <button type="button" @@click="resetFilters()" class="inline-flex items-center px-4 py-1 border border-gray-300 text-sm font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                @Localizer["Clear"]
+            </button>
+        </div>
     </div>
 
     <div class="job-index-action-group invoice-index-report-group">
@@ -165,6 +169,9 @@
             newJobCustomerName: @Html.Raw(JsonValue(Model.NewJobCustomerName)),
 
             isReportLoading: false,
+            issueDatesAreDefault: @Html.Raw(JsonSerializer.Serialize(!hasIncomingQuery)),
+            defaultIssueDateStart: @Html.Raw(JsonValue(Model.IssueDateStart)),
+            defaultIssueDateEnd: @Html.Raw(JsonValue(Model.IssueDateEnd)),
 
             filter: {
                  referenceStart: @Html.Raw(JsonValue(Model.ReferenceStart)), referenceEnd: @Html.Raw(JsonValue(Model.ReferenceEnd)), referenceList: @Html.Raw(JsonValue(Model.ReferenceList)),
@@ -193,9 +200,15 @@
                 if (target === 'job') {
                     this.jobCustomerName = cust.name;
                     this.jobCustomerCode = cust.code;
+                    window.setTimeout(() => {
+                        document.querySelector('.invoice-index-toolbar [data-enter-search-trigger]')?.focus();
+                    }, 0);
                 } else if (target === 'invoice') {
                     this.invoiceCustomerName = cust.name;
                     this.invoiceCustomerCode = cust.code;
+                    window.setTimeout(() => {
+                        document.querySelector('.invoice-index-toolbar [data-enter-search-trigger]')?.focus();
+                    }, 0);
                 } else if (target === 'newJob') {
                     this.newJobCustomerName = cust.name;
                     this.newJobCustomerCode = cust.code;
@@ -250,6 +263,24 @@
 
             async searchInvoices() {
                 const params = new URLSearchParams();
+                const openInvoiceStateId = '210';
+                const hasFilterBeyondStatus = !!(
+                    this.jobCustomerCode
+                    || this.jobCustomerName
+                    || this.invoiceCustomerCode
+                    || this.invoiceCustomerName
+                    || this.filter.referenceStart
+                    || this.filter.referenceEnd
+                    || this.filter.referenceList
+                    || this.filter.name
+                    || this.filter.relatedPerson
+                    || this.filter.evaluated
+                );
+                const skipDefaultIssueDates = this.issueDatesAreDefault
+                    && this.filter.status === openInvoiceStateId
+                    && !hasFilterBeyondStatus
+                    && this.filter.issueDateStart === this.defaultIssueDateStart
+                    && this.filter.issueDateEnd === this.defaultIssueDateEnd;
 
                 if (this.jobCustomerCode) params.set('JobCustomerCode', this.jobCustomerCode);
                 if (this.jobCustomerName) params.set('JobCustomerName', this.jobCustomerName);
@@ -260,8 +291,8 @@
                 if (this.filter.referenceList) params.set('ReferenceList', this.filter.referenceList);
                 if (this.filter.name) params.set('Name', this.filter.name);
                 if (this.filter.relatedPerson) params.set('RelatedPerson', this.filter.relatedPerson);
-                if (this.filter.issueDateStart) params.set('IssueDateStart', this.filter.issueDateStart);
-                if (this.filter.issueDateEnd) params.set('IssueDateEnd', this.filter.issueDateEnd);
+                if (!skipDefaultIssueDates && this.filter.issueDateStart) params.set('IssueDateStart', this.filter.issueDateStart);
+                if (!skipDefaultIssueDates && this.filter.issueDateEnd) params.set('IssueDateEnd', this.filter.issueDateEnd);
                 if (this.filter.status) params.set('Status', this.filter.status);
                 if (this.filter.evaluated) params.set('Evaluated', this.filter.evaluated);
                 params.set('Page', '1');

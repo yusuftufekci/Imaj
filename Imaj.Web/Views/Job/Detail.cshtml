@@ -120,7 +120,7 @@
      @@employee-selected.window="handleEmployeeSelection($event.detail)"
      @@product-selected.window="handleProductSelection($event.detail)"
      class="job-page-shell page-shell--wide space-y-3">
-    <form id="jobDetailEditForm" method="post" action="/Job/UpdateDetail" class="hidden">
+    <form id="jobDetailEditForm" method="post" action="/Job/UpdateDetail" @@submit="normalizeDetailCollectionIndexes()" class="hidden">
         @Html.AntiForgeryToken()
         <input type="hidden" name="Code" value="@Model.Code" />
         <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
@@ -340,6 +340,9 @@
                     <button type="button" @@click="openEmployeePicker()" class="job-picker-link">
                         @Localizer["Add"]
                     </button>
+                    <button type="button" @@click="deleteSelectedOvertimes()" class="job-picker-link">
+                        @Localizer["Delete"]
+                    </button>
                 </div>
             </div>
         </div>
@@ -388,12 +391,12 @@
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Code</td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Name</td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                                <span x-show="!isEditing">@prod.Quantity</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Products[@i].Quantity" value="@prod.Quantity.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateProduct(@i)" data-product-quantity="@i" class="job-table-input job-table-input--money">
+                                <span data-product-quantity-display="@i">@prod.Quantity</span>
+                                <input type="hidden" name="Products[@i].Quantity" value="@prod.Quantity.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" data-product-quantity="@i">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                                <span x-show="!isEditing">@prod.Price.ToString("N2")</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Products[@i].Price" value="@prod.Price.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateProduct(@i)" data-product-price="@i" class="job-table-input job-table-input--money">
+                                <span>@prod.Price.ToString("N2")</span>
+                                <input type="hidden" name="Products[@i].Price" value="@prod.Price.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" data-product-price="@i">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                                 <span data-product-subtotal-display="@i">@prod.SubTotal.ToString("N2")</span>
@@ -425,6 +428,9 @@
                 <div class="job-picker-links">
                     <button type="button" @@click="openProductPicker()" class="job-picker-link">
                         @Localizer["Add"]
+                    </button>
+                    <button type="button" @@click="deleteSelectedProducts()" class="job-picker-link">
+                        @Localizer["Delete"]
                     </button>
                 </div>
                 <div class="job-create-toolbar__total">
@@ -491,8 +497,8 @@
                                 <input type="hidden" name="ProductCategories[@i].Name" value="@cat.Name" form="jobDetailEditForm" :disabled="!isEditing">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                                <span x-show="!isEditing">@cat.SubTotal.ToString("N2")</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].SubTotal" value="@cat.SubTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateCategory(@i)" data-category-subtotal="@i" class="job-table-input job-table-input--money">
+                                <span data-category-subtotal-display="@i">@cat.SubTotal.ToString("N2")</span>
+                                <input type="hidden" name="ProductCategories[@i].SubTotal" value="@cat.SubTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" data-category-subtotal="@i">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                                 <span x-show="!isEditing">@cat.Discount.ToString("N0")</span>
@@ -833,6 +839,42 @@
                         }
                     });
                 },
+                normalizeDetailCollectionIndexes() {
+                    this.normalizeCollectionIndexes('#job-detail-overtimes-body tr', 'Overtimes', [
+                        'overtimeAmount'
+                    ]);
+                    this.normalizeCollectionIndexes('#job-detail-products-body [data-product-row]', 'Products', [
+                        'productQuantity',
+                        'productQuantityDisplay',
+                        'productPrice',
+                        'productSubtotal',
+                        'productSubtotalDisplay',
+                        'productNetTotal'
+                    ]);
+                    this.normalizeCollectionIndexes('#job-detail-product-categories-body [data-category-row-key]', 'ProductCategories', [
+                        'categorySubtotal',
+                        'categorySubtotalDisplay',
+                        'categoryDiscount',
+                        'categoryDiscountAmount',
+                        'categoryNetTotal'
+                    ]);
+                },
+                normalizeCollectionIndexes(rowSelector, collectionName, datasetKeys) {
+                    [...document.querySelectorAll(rowSelector)].forEach((row, index) => {
+                        row.querySelectorAll('[name]').forEach(input => {
+                            input.name = input.name.replace(new RegExp(`${collectionName}\\[\\d+\\]`), `${collectionName}[${index}]`);
+                        });
+
+                        datasetKeys.forEach(key => {
+                            row.querySelectorAll(`[data-${this.toKebabCase(key)}]`).forEach(element => {
+                                element.dataset[key] = String(index);
+                            });
+                        });
+                    });
+                },
+                toKebabCase(value) {
+                    return String(value || '').replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
+                },
                 normalizePickerPageSize(value, fallback) {
                     const parsed = Number.parseInt(value, 10);
                     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -994,6 +1036,21 @@
 
                     tbody.appendChild(row);
                     this.updateCount('[data-overtime-count]', tbody.children.length);
+                    this.recalculateOvertimeTotals();
+                },
+                deleteSelectedOvertimes() {
+                    const tbody = document.getElementById('job-detail-overtimes-body');
+                    if (!tbody) {
+                        return;
+                    }
+
+                    [...tbody.querySelectorAll('input[type="checkbox"]:checked')]
+                        .map(checkbox => checkbox.closest('tr'))
+                        .filter(row => !!row)
+                        .forEach(row => row.remove());
+
+                    this.updateCount('[data-overtime-count]', tbody.children.length);
+                    this.recalculateOvertimeTotals();
                 },
                 addProductRow(product) {
                     const tbody = document.getElementById('job-detail-products-body');
@@ -1040,10 +1097,12 @@
                         <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">${this.escapeText(code)}</td>
                         <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">${this.escapeText(name)}</td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                            <input type="text" inputmode="decimal" name="Products[${index}].Quantity" value="${this.escapeAttr(this.formatInputDecimal(quantity))}" form="jobDetailEditForm" data-product-quantity="${index}" class="job-table-input job-table-input--money">
+                            <span data-product-quantity-display="${index}">${this.escapeText(this.formatDisplayDecimal(quantity))}</span>
+                            <input type="hidden" name="Products[${index}].Quantity" value="${this.escapeAttr(this.formatInputDecimal(quantity))}" form="jobDetailEditForm" data-product-quantity="${index}">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                            <input type="text" inputmode="decimal" name="Products[${index}].Price" value="${this.escapeAttr(this.formatInputDecimal(price))}" form="jobDetailEditForm" data-product-price="${index}" class="job-table-input job-table-input--money">
+                            <span>${this.escapeText(this.formatDisplayDecimal(price))}</span>
+                            <input type="hidden" name="Products[${index}].Price" value="${this.escapeAttr(this.formatInputDecimal(price))}" form="jobDetailEditForm" data-product-price="${index}">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                             <span data-product-subtotal-display="${index}">${this.escapeText(this.formatDisplayDecimal(subtotal))}</span>
@@ -1062,6 +1121,25 @@
                     this.sortProductRows();
                     this.updateCount('[data-product-count]', tbody.children.length);
                 },
+                deleteSelectedProducts() {
+                    const tbody = document.getElementById('job-detail-products-body');
+                    if (!tbody) {
+                        return;
+                    }
+
+                    [...tbody.querySelectorAll('input[type="checkbox"]:checked')]
+                        .map(checkbox => checkbox.closest('[data-product-row]'))
+                        .filter(row => !!row)
+                        .forEach(row => {
+                            const netInput = row.querySelector('[data-product-net-total]');
+                            const netAmount = netInput ? this.parseDecimal(netInput.value) : this.parseDecimal(row.dataset.productCurrentNet);
+                            this.addCategoryAmount(row.dataset.productCategoryId, row.dataset.productCategoryName, -netAmount);
+                            row.remove();
+                        });
+
+                    this.updateCount('[data-product-count]', tbody.children.length);
+                    this.recalculateProductTotals();
+                },
                 findProductRow(productId, code) {
                     const normalizedId = String(productId || '').trim();
                     const normalizedCode = this.normalizeProductKey(code);
@@ -1077,6 +1155,7 @@
                 },
                 incrementProductRow(row, addedQuantity, addedNetAmount) {
                     const quantityInput = row.querySelector('[data-product-quantity]');
+                    const quantityDisplay = row.querySelector('[data-product-quantity-display]');
                     const netInput = row.querySelector('[data-product-net-total]');
 
                     if (!quantityInput || !netInput) {
@@ -1088,6 +1167,9 @@
                     const nextNetAmount = this.parseDecimal(netInput.value) + Math.max(0, this.parseDecimal(addedNetAmount));
 
                     quantityInput.value = this.formatInputDecimal(nextQuantity);
+                    if (quantityDisplay) {
+                        quantityDisplay.textContent = this.formatDisplayDecimal(nextQuantity);
+                    }
                     netInput.value = this.formatInputDecimal(nextNetAmount);
                     this.recalculateProduct(productIndex);
                     this.updateProductNetAmount(netInput.dataset.productNetTotal);
@@ -1207,7 +1289,15 @@
 
                         const index = subtotalInput.dataset.categorySubtotal;
                         const current = this.parseDecimal(subtotalInput.value);
-                        subtotalInput.value = this.formatInputDecimal(Math.max(0, current + delta));
+                        const nextTotal = Math.max(0, current + delta);
+                        if (nextTotal <= 0) {
+                            row.remove();
+                            this.recalculateCategoryTotals();
+                            this.updateCount('[data-category-count]', document.querySelectorAll('[data-category-row-key]').length);
+                            return;
+                        }
+
+                        subtotalInput.value = this.formatInputDecimal(nextTotal);
                         this.recalculateCategory(index);
                         return;
                     }
@@ -1239,7 +1329,8 @@
                             <input type="hidden" name="ProductCategories[${index}].Name" value="${this.escapeAttr(categoryName || '')}" form="jobDetailEditForm">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].SubTotal" value="${this.escapeAttr(this.formatInputDecimal(subTotal))}" form="jobDetailEditForm" data-category-subtotal="${index}" class="job-table-input job-table-input--money">
+                            <span data-category-subtotal-display="${index}">${this.escapeText(this.formatDisplayDecimal(subTotal))}</span>
+                            <input type="hidden" name="ProductCategories[${index}].SubTotal" value="${this.escapeAttr(this.formatInputDecimal(subTotal))}" form="jobDetailEditForm" data-category-subtotal="${index}">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                             <input type="text" inputmode="decimal" name="ProductCategories[${index}].Discount" value="${this.escapeAttr(this.formatInputDecimal(discount))}" form="jobDetailEditForm" data-category-discount="${index}" class="job-table-input job-table-input--discount">
@@ -1345,6 +1436,7 @@
                 },
                 recalculateCategory(index) {
                     const subtotalInput = document.querySelector(`[data-category-subtotal="${index}"]`);
+                    const subtotalDisplay = document.querySelector(`[data-category-subtotal-display="${index}"]`);
                     const discountInput = document.querySelector(`[data-category-discount="${index}"]`);
                     const discountAmountInput = document.querySelector(`[data-category-discount-amount="${index}"]`);
                     const netTotalInput = document.querySelector(`[data-category-net-total="${index}"]`);
@@ -1360,6 +1452,9 @@
 
                     discountAmountInput.value = this.formatInputDecimal(discountAmount);
                     netTotalInput.value = this.formatInputDecimal(netTotal);
+                    if (subtotalDisplay) {
+                        subtotalDisplay.textContent = this.formatDisplayDecimal(subtotal);
+                    }
                     this.recalculateCategoryTotals();
                 },
                 recalculateCategoryTotals() {

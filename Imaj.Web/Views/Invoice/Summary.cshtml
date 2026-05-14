@@ -29,7 +29,9 @@
     var isEvaluated = invoice?.Evaluated ?? false;
     var isOpen = stateId == 210m;
     var isConfirmed = stateId == 220m;
-    var isIssued = stateId == 230m;
+    var isIssued = stateId == 230m
+        || string.Equals(invoice?.Status, "Kesildi", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(invoice?.Status, "Issued", StringComparison.OrdinalIgnoreCase);
     var isKilled = stateId == 240m;
     var isDiscarded = stateId == 250m;
     var issueDateValue = (invoice?.IssueDate ?? DateTime.Today).ToString("yyyy-MM-dd");
@@ -39,6 +41,7 @@
     var canIssue = await PermissionViewService.CanExecuteMethodAsync(1388m, write: true);
     var canKill = await PermissionViewService.CanExecuteMethodAsync(1389m, write: true);
     var canDiscard = await PermissionViewService.CanExecuteMethodAsync(1387m, write: true);
+    canKill = canKill || canDiscard;
     var canEvaluate = await PermissionViewService.CanExecuteMethodAsync(1390m, write: true);
     var canUndoEvaluate = await PermissionViewService.CanExecuteMethodAsync(1490m, write: true);
 

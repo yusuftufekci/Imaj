@@ -19,6 +19,7 @@ namespace Imaj.Web.Controllers
     public class JobController : Controller
     {
         private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        private const int DefaultSearchLimit = 100;
         private static readonly TimeSpan ReportExecutionTimeout = TimeSpan.FromSeconds(45);
         private static readonly decimal[] JobStateDisplayOrder = { 110m, 120m, 130m, 140m, 150m, 160m };
         private static readonly string[] DefaultCreateProductCodes = { "OPERATOR", "CAFE" };
@@ -566,7 +567,10 @@ namespace Imaj.Web.Controllers
             {
                 model.Filter.First = first.Value;
             }
-            model.Filter.First = model.Filter.First.HasValue && model.Filter.First.Value > 0 ? model.Filter.First.Value : (model.Filter.PageSize > 0 ? model.Filter.PageSize : 10);
+            model.Filter.PageSize = model.Filter.PageSize > 0 ? model.Filter.PageSize : 10;
+            model.Filter.First = model.Filter.First.HasValue && model.Filter.First.Value > 0
+                ? model.Filter.First.Value
+                : DefaultSearchLimit;
             
             // Dropdown verilerini backend'den al (geri dönüşlerde gerekli)
             await LoadDropdownDataAsync();
@@ -2161,7 +2165,9 @@ namespace Imaj.Web.Controllers
                 TimeTypeId = decimal.TryParse(filter.OvertimeType, out var timeTypeId) ? timeTypeId : null,
                 Page = filter.Page > 0 ? filter.Page : 1,
                 PageSize = filter.PageSize > 0 ? filter.PageSize : 10,
-                First = includeFirst ? filter.First : null
+                First = includeFirst
+                    ? filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : DefaultSearchLimit
+                    : null
             };
         }
 

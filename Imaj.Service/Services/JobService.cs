@@ -1679,6 +1679,17 @@ namespace Imaj.Service.Services
                     job.ExtNotes = jobDto.ExtNotes ?? string.Empty;
                     job.Stamp = 1;
 
+                    var submittedWorkIds = workDtos
+                        .Where(x => x.Id > 0)
+                        .Select(x => x.Id)
+                        .ToHashSet();
+                    foreach (var work in editableWorkRows.Where(x => !submittedWorkIds.Contains(x.Id)))
+                    {
+                        work.Deleted = 1;
+                        work.Stamp = 1;
+                        jobWorkRepo.Update(work);
+                    }
+
                     var nextWorkId = await jobWorkRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0;
                     foreach (var workDto in workDtos)
                     {
@@ -1709,6 +1720,17 @@ namespace Imaj.Service.Services
                         {
                             jobWorkRepo.Update(work);
                         }
+                    }
+
+                    var submittedProductIds = productDtos
+                        .Where(x => x.Id > 0)
+                        .Select(x => x.Id)
+                        .ToHashSet();
+                    foreach (var product in productRows.Where(x => !submittedProductIds.Contains(x.Id)))
+                    {
+                        product.Deleted = 1;
+                        product.Stamp = 1;
+                        jobProdRepo.Update(product);
                     }
 
                     var nextProductRowId = await jobProdRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0;
@@ -1743,6 +1765,17 @@ namespace Imaj.Service.Services
                         }
                     }
 
+                    var submittedCategoryIds = categoryDtos
+                        .Where(x => x.CategoryId > 0)
+                        .Select(x => x.CategoryId)
+                        .ToHashSet();
+                    foreach (var category in categoryRows.Where(x => !submittedCategoryIds.Contains(x.ProdCatID)))
+                    {
+                        category.Deleted = 1;
+                        category.Stamp = 1;
+                        jobProdCatRepo.Update(category);
+                    }
+
                     var nextProductCategoryRowId = await jobProdCatRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0;
                     foreach (var categoryDto in categoryDtos)
                     {
@@ -1774,10 +1807,13 @@ namespace Imaj.Service.Services
                         }
                     }
 
-                    job.WorkSum = workRows.Sum(x => x.Amount);
-                    job.ProdSum = categoryRows.Any()
-                        ? categoryRows.Sum(x => x.NetAmount)
-                        : productRows.Sum(x => x.NetAmount);
+                    var activeWorkRows = workRows.Where(x => x.Deleted == 0).ToList();
+                    var activeProductRows = productRows.Where(x => x.Deleted == 0).ToList();
+                    var activeCategoryRows = categoryRows.Where(x => x.Deleted == 0).ToList();
+                    job.WorkSum = activeWorkRows.Sum(x => x.Amount);
+                    job.ProdSum = activeCategoryRows.Any()
+                        ? activeCategoryRows.Sum(x => x.NetAmount)
+                        : activeProductRows.Sum(x => x.NetAmount);
                     jobRepo.Update(job);
 
                     await _unitOfWork.CommitAsync();

@@ -19,6 +19,8 @@ namespace Imaj.Web.Controllers
     {
         private const string ExcelContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
         private static readonly TimeSpan ReportExecutionTimeout = TimeSpan.FromSeconds(45);
+        private const int DefaultSearchLimit = 100;
+        private const decimal OpenInvoiceStateId = 210m;
         private static readonly decimal[] InvoiceStateDisplayOrder = { 210m, 220m, 230m, 240m, 250m };
         private const decimal ConfirmMethodId = 1385m;
         private const decimal UndoConfirmMethodId = 1386m;
@@ -65,7 +67,7 @@ namespace Imaj.Web.Controllers
                 model.IssueDateEnd = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             }
 
-            model.First = model.First.HasValue && model.First.Value > 0 ? model.First : 100;
+            model.First = model.First.HasValue && model.First.Value > 0 ? model.First : DefaultSearchLimit;
             model.PageSize = model.PageSize > 0 ? model.PageSize : 16;
 
             return View(model);
@@ -103,7 +105,7 @@ namespace Imaj.Web.Controllers
 
             f.Page = f.Page <= 0 ? 1 : f.Page;
             f.PageSize = f.PageSize <= 0 ? 10 : f.PageSize;
-            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : f.PageSize;
+            f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : DefaultSearchLimit;
 
             var serviceFilter = BuildFilter(f, includeFirst: true);
             var result = await _invoiceService.GetByFilterAsync(serviceFilter);
@@ -360,6 +362,11 @@ namespace Imaj.Web.Controllers
             }
 
             var hasPermission = await _permissionViewService.CanExecuteMethodAsync(methodId.Value, write: true);
+            if (!hasPermission && request.Action == InvoiceWorkflowAction.Kill)
+            {
+                hasPermission = await _permissionViewService.CanExecuteMethodAsync(DiscardMethodId, write: true);
+            }
+
             if (!hasPermission)
             {
                 ShowError(L("AccessDeniedMessage"));
@@ -677,6 +684,12 @@ namespace Imaj.Web.Controllers
 
         private static InvoiceFilterDto BuildFilter(InvoiceViewModel f, bool includeFirst)
         {
+            var stateId = decimal.TryParse(f.Status, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsedStateId)
+                    ? parsedStateId
+                    : (decimal?)null;
+            var ignoreIssueDateFilter = stateId == OpenInvoiceStateId && !HasInvoiceFilterBeyondStatus(f);
+
             return new InvoiceFilterDto
             {
                 JobCustomerCode = f.JobCustomerCode,
@@ -689,15 +702,30 @@ namespace Imaj.Web.Controllers
                 Name = f.Name,
                 RelatedPerson = f.RelatedPerson,
                 // IssueDateStart/End string olarak gelir; InvariantCulture parse sonucunu kullan
-                IssueDateStart = f.ParsedIssueDateStart,
-                IssueDateEnd = f.ParsedIssueDateEnd,
-                StateId = decimal.TryParse(f.Status, System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out var stateId) ? stateId : null,
+                IssueDateStart = ignoreIssueDateFilter ? null : f.ParsedIssueDateStart,
+                IssueDateEnd = ignoreIssueDateFilter ? null : f.ParsedIssueDateEnd,
+                StateId = stateId,
                 Evaluated = f.Evaluated == "true" ? true : f.Evaluated == "false" ? false : null,
                 Page = f.Page,
                 PageSize = f.PageSize > 0 ? f.PageSize : 10,
-                First = includeFirst ? f.First : null
+                First = includeFirst
+                    ? f.First.HasValue && f.First.Value > 0 ? f.First.Value : DefaultSearchLimit
+                    : null
             };
+        }
+
+        private static bool HasInvoiceFilterBeyondStatus(InvoiceViewModel f)
+        {
+            return !string.IsNullOrWhiteSpace(f.JobCustomerCode) ||
+                   !string.IsNullOrWhiteSpace(f.JobCustomerName) ||
+                   !string.IsNullOrWhiteSpace(f.InvoiceCustomerCode) ||
+                   !string.IsNullOrWhiteSpace(f.InvoiceCustomerName) ||
+                   !string.IsNullOrWhiteSpace(f.ReferenceStart) ||
+                   !string.IsNullOrWhiteSpace(f.ReferenceEnd) ||
+                   !string.IsNullOrWhiteSpace(f.ReferenceList) ||
+                   !string.IsNullOrWhiteSpace(f.Name) ||
+                   !string.IsNullOrWhiteSpace(f.RelatedPerson) ||
+                   !string.IsNullOrWhiteSpace(f.Evaluated);
         }
 
         private static InvoiceCreateDto BuildCreateRequest(InvoiceCreateViewModel model)

@@ -809,6 +809,16 @@ namespace Imaj.Service.Services
                             ? scopedInvoices
                                 .OrderByDescending(i => i.Reference)
                                 .Select(i => i.Id)
+                            : filter.IssueDateStart.HasValue
+                                ? scopedInvoices
+                                    .OrderBy(i => i.IssueDate)
+                                    .ThenBy(i => i.Reference)
+                                    .Select(i => i.Id)
+                                : filter.IssueDateEnd.HasValue
+                                    ? scopedInvoices
+                                        .OrderByDescending(i => i.IssueDate)
+                                        .ThenByDescending(i => i.Reference)
+                                        .Select(i => i.Id)
                             : scopedInvoices
                                 .OrderByDescending(i => i.IssueDate)
                                 .ThenByDescending(i => i.Id)
@@ -3365,46 +3375,7 @@ namespace Imaj.Service.Services
                 invoiceQuery = invoiceQuery.Where(i => i.CompanyID == snapshot.CompanyId.Value);
             }
 
-            var jobs = _unitOfWork.Repository<Job>().Query().AsNoTracking()
-                .Where(j => snapshot.AllowedFunctionIds.Contains(j.FunctionID));
-
-            if (snapshot.CompanyScopeMode == CompanyScopeMode.CompanyBound && snapshot.CompanyId.HasValue)
-            {
-                jobs = jobs.Where(j => j.CompanyID == snapshot.CompanyId.Value);
-            }
-
-            var activeLines = _unitOfWork.Repository<InvoLine>().Query()
-                .AsNoTracking()
-                .Where(line => line.Deleted == 0);
-
-            var activeInvoJobs = _unitOfWork.Repository<InvoJob>().Query()
-                .AsNoTracking()
-                .Where(invoJob => invoJob.Deleted == 0);
-
-            // Legacy-compatible behavior:
-            // 1) Invoices linked to at least one allowed job via InvoJob are visible.
-            // 2) Invoices with no active InvoJob link at all are also visible.
-            var invoiceIdsWithAllowedJobs =
-                (from inv in invoiceQuery
-                 join line in activeLines on inv.Id equals line.InvoiceID
-                 join invoJob in activeInvoJobs on line.Id equals invoJob.InvoLineID
-                 join job in jobs on invoJob.JobID equals job.Id
-                 select inv.Id)
-                .Distinct();
-
-            var invoiceIdsWithoutAnyInvoJob =
-                (from inv in invoiceQuery
-                 where !(from line in activeLines
-                         join invoJob in activeInvoJobs on line.Id equals invoJob.InvoLineID
-                         where line.InvoiceID == inv.Id
-                         select invoJob.Id).Any()
-                 select inv.Id);
-
-            var scopedInvoiceIds = invoiceIdsWithAllowedJobs
-                .Union(invoiceIdsWithoutAnyInvoJob)
-                .Distinct();
-
-            return invoiceQuery.Where(i => scopedInvoiceIds.Contains(i.Id));
+            return invoiceQuery;
         }
 
         private sealed class InvoiceReportBaseRow
