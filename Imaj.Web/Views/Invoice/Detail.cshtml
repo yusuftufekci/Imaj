@@ -567,7 +567,7 @@
             @if (invoice.WorkItems.Any() || canEditJobs)
             {
                 var firstWorkReference = invoice.WorkItems.FirstOrDefault()?.Reference ?? string.Empty;
-                <div class="invoice-footer-bar invoice-footer-bar--start" x-show="!isEditing" x-cloak>
+                <div class="invoice-footer-bar invoice-footer-bar--start invoice-job-line-actions" x-show="!isEditing" x-cloak>
                     @if (invoice.WorkItems.Any())
                     {
                         <button type="button"

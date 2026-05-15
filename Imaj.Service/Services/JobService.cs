@@ -2138,13 +2138,37 @@ namespace Imaj.Service.Services
 
         private async Task<bool> HasActiveInvoiceLinkAsync(decimal jobId, decimal? invoLineId)
         {
+            var invoLineIds = new HashSet<decimal>();
+
             if (invoLineId.HasValue)
             {
-                return true;
+                invoLineIds.Add(invoLineId.Value);
             }
 
-            return await _unitOfWork.Repository<InvoJob>().Query()
-                .AnyAsync(x => x.JobID == jobId && x.Deleted == 0);
+            var linkedInvoLineIds = await _unitOfWork.Repository<InvoJob>().Query()
+                .Where(x => x.JobID == jobId && x.Deleted == 0)
+                .Select(x => x.InvoLineID)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var lineId in linkedInvoLineIds)
+            {
+                invoLineIds.Add(lineId);
+            }
+
+            if (invoLineIds.Count == 0)
+            {
+                return false;
+            }
+
+            return await (
+                from line in _unitOfWork.Repository<InvoLine>().Query()
+                where invoLineIds.Contains(line.Id) && line.Deleted == 0
+                join invoice in _unitOfWork.Repository<Invoice>().Query()
+                    on line.InvoiceID equals invoice.Id
+                where LiveInvoiceStateIds.Contains(invoice.StateID)
+                select invoice.Id)
+                .AnyAsync();
         }
 
         private async Task<(decimal? InvoLineId, int? InvoiceReference, string? InvoiceName, bool HasInvoiceLink)> ResolveJobInvoiceInfoAsync(decimal jobId, decimal? currentInvoLineId)
@@ -2176,6 +2200,7 @@ namespace Imaj.Service.Services
                 where invoLineIds.Contains(line.Id) && line.Deleted == 0
                 join invoice in _unitOfWork.Repository<Invoice>().Query()
                     on line.InvoiceID equals invoice.Id
+                where LiveInvoiceStateIds.Contains(invoice.StateID)
                 orderby invoice.IssueDate descending, invoice.Id descending
                 select new
                 {
@@ -2187,7 +2212,7 @@ namespace Imaj.Service.Services
 
             if (invoiceInfo == null)
             {
-                return (invoLineIds.First(), null, null, true);
+                return (invoLineIds.First(), null, null, false);
             }
 
             return (invoiceInfo.InvoLineId, invoiceInfo.InvoiceReference, invoiceInfo.InvoiceName, true);

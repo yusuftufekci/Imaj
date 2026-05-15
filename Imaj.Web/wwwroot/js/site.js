@@ -205,6 +205,14 @@ const FormHelper = {
 const WorkflowActionHelper = {
     init() {
         const forms = document.querySelectorAll('form.workflow-action-form');
+        const disableWorkflowButtons = () => {
+            const submitButtons = document.querySelectorAll('form.workflow-action-form button[type="submit"], form.workflow-action-form input[type="submit"]');
+            submitButtons.forEach(button => {
+                button.disabled = true;
+                button.classList.add('opacity-60', 'cursor-not-allowed');
+            });
+        };
+
         forms.forEach(form => {
             form.addEventListener('submit', async event => {
                 if (form.dataset.submitting === 'true') {
@@ -212,13 +220,16 @@ const WorkflowActionHelper = {
                     return;
                 }
 
+                const actionPath = new URL(form.getAttribute('action') || window.location.href, window.location.origin).pathname.toLowerCase();
+                if (form.dataset.skipWorkflowConfirm === 'true' || actionPath === '/invoice/workflowaction' || actionPath === '/job/workflowaction') {
+                    form.dataset.submitting = 'true';
+                    disableWorkflowButtons();
+                    return;
+                }
+
                 if (form.dataset.workflowConfirmed === 'true') {
                     form.dataset.submitting = 'true';
-                    const submitButtons = document.querySelectorAll('form.workflow-action-form button[type="submit"], form.workflow-action-form input[type="submit"]');
-                    submitButtons.forEach(button => {
-                        button.disabled = true;
-                        button.classList.add('opacity-60', 'cursor-not-allowed');
-                    });
+                    disableWorkflowButtons();
 
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({

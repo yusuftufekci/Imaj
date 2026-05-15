@@ -379,11 +379,7 @@ namespace Imaj.Web.Controllers
             }
 
             var result = await _invoiceService.ExecuteWorkflowActionAsync(request.Reference, request.Action, request.IssueDate);
-            if (result.IsSuccess)
-            {
-                ShowSuccess(result.Message ?? L("SuccessTitle"));
-            }
-            else
+            if (!result.IsSuccess)
             {
                 ShowError(result.Message ?? L("GenericError"));
             }
@@ -455,15 +451,11 @@ namespace Imaj.Web.Controllers
                     .ToList()
             });
 
-            if (result.IsSuccess)
-            {
-                ShowSuccess(result.Message ?? L("SuccessTitle"));
-            }
-            else if (result.Errors.Any())
+            if (!result.IsSuccess && result.Errors.Any())
             {
                 ShowError(string.Join(" ", result.Errors.Select(error => Ui(error, error))));
             }
-            else
+            else if (!result.IsSuccess)
             {
                 ShowError(result.Message ?? L("SaveError"));
             }
@@ -503,7 +495,7 @@ namespace Imaj.Web.Controllers
                 JobReferences = model.JobReferences ?? new List<int>()
             });
 
-            ShowInvoiceMutationResult(result);
+            ShowInvoiceMutationResult(result, showSuccess: false);
             return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
         }
 
@@ -519,7 +511,7 @@ namespace Imaj.Web.Controllers
                 JobReferences = model.JobReferences ?? new List<int>()
             });
 
-            ShowInvoiceMutationResult(result);
+            ShowInvoiceMutationResult(result, showSuccess: false);
             return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
         }
 
@@ -535,7 +527,7 @@ namespace Imaj.Web.Controllers
                 JobReferences = model.JobReferences ?? new List<int>()
             });
 
-            ShowInvoiceMutationResult(result);
+            ShowInvoiceMutationResult(result, showSuccess: false);
             return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
         }
 
@@ -550,7 +542,7 @@ namespace Imaj.Web.Controllers
                 LineIds = model.LineIds ?? new List<decimal>()
             });
 
-            ShowInvoiceMutationResult(result);
+            ShowInvoiceMutationResult(result, showSuccess: false);
             return RedirectToInvoiceDetail(model.Reference, model.SelectedReferences, model.CurrentIndex, model.ReturnUrl);
         }
 
@@ -722,7 +714,6 @@ namespace Imaj.Web.Controllers
             var result = await _invoiceService.CreateAsync(BuildCreateRequest(model));
             if (result.IsSuccess && result.Data > 0)
             {
-                ShowSuccess(string.Format(L("InvoiceCreatedWithReference"), result.Data));
                 return RedirectToAction("Detail", new
                 {
                     reference = result.Data.ToString(CultureInfo.InvariantCulture),
@@ -1697,11 +1688,14 @@ namespace Imaj.Web.Controllers
             ws.Range(row, 1, row, columnCount).Style.Border.TopBorder = XLBorderStyleValues.Thin;
         }
 
-        private void ShowInvoiceMutationResult(ServiceResult result)
+        private void ShowInvoiceMutationResult(ServiceResult result, bool showSuccess = true)
         {
             if (result.IsSuccess)
             {
-                ShowSuccess(result.Message ?? L("SuccessTitle"));
+                if (showSuccess)
+                {
+                    ShowSuccess(result.Message ?? L("SuccessTitle"));
+                }
             }
             else if (result.Errors.Any())
             {

@@ -673,9 +673,6 @@ namespace Imaj.Web.Controllers
                     return Json(new { success = true, message = string.Format(L("JobCreatedWithReference"), result.Data.Reference), redirectUrl = Url.Action("Detail", new { id = result.Data.Reference }) });
                 }
 
-                // Başarılı: TempData ile success mesajı set et
-                TempData["SuccessMessage"] = string.Format(L("JobCreatedWithReference"), result.Data.Reference);
-                
                 // Redirect to Detail
                 return RedirectToAction("Detail", new { id = result.Data.Reference });
             }

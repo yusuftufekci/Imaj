@@ -3644,6 +3644,10 @@ span.flatpickr-weekday {
     border-top: 0;
 }
 
+.invoice-legacy-detail .invoice-job-line-actions {
+    gap: 0.9rem;
+}
+
 .invoice-legacy-detail :where(a, button):is(
     [class*="bg-blue-100"],
     [class*="bg-white"],
@@ -3694,6 +3698,274 @@ span.flatpickr-weekday {
 .invoice-legacy-detail .invoice-empty-state {
     border-radius: 0;
     font-family: Arial, Helvetica, sans-serif;
+}
+
+.job-legacy-detail.page-shell--wide {
+    width: min(2010px, calc(100vw - 40px));
+    margin-top: -0.75rem;
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.job-legacy-detail,
+.job-legacy-detail * {
+    letter-spacing: 0;
+}
+
+.job-legacy-detail > .space-y-3,
+.job-legacy-detail .space-y-3 {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.job-legacy-detail .md\:flex.md\:items-center.md\:justify-between {
+    position: relative;
+    display: block;
+    min-height: 1.25rem;
+    text-align: center;
+}
+
+.job-legacy-detail .md\:flex.md\:items-center.md\:justify-between .job-page-actions {
+    display: none;
+}
+
+.job-legacy-detail .job-page-title {
+    color: #ff6633;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1.18rem;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+}
+
+.job-legacy-detail .job-detail-grid {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 0.65rem;
+    align-items: start;
+}
+
+.job-legacy-detail .job-note-stack {
+    gap: 0.65rem;
+}
+
+.job-legacy-detail .dense-panel,
+.job-legacy-detail .job-table-card {
+    border: 1px solid #a9c8ea;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+.job-legacy-detail .dense-panel__header,
+.job-legacy-detail .job-table-card__header {
+    min-height: 1.42rem;
+    padding: 0.07rem 0.24rem;
+    border-bottom: none;
+    background: linear-gradient(180deg, #6ba6d2 0%, #bfe3f7 100%);
+}
+
+.job-legacy-detail .dense-panel__title,
+.job-legacy-detail .job-table-card__title {
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.92rem;
+    font-weight: 400;
+    line-height: 1.35;
+}
+
+.job-legacy-detail .dense-panel__body {
+    min-height: 1.18rem;
+    padding: 0.16rem 0.28rem;
+    background: #ffffff;
+}
+
+.job-legacy-detail .job-detail-grid > .dense-panel:first-child .dense-panel__body {
+    min-height: 18.8rem;
+}
+
+.job-legacy-detail .job-note-stack .dense-panel__body {
+    min-height: 2.75rem;
+}
+
+.job-legacy-detail .job-detail-list {
+    width: min(33rem, 100%);
+    margin-inline: auto;
+    gap: 0.58rem;
+}
+
+.job-legacy-detail .job-detail-item {
+    grid-template-columns: minmax(8.35rem, 9.15rem) minmax(0, 1fr);
+    column-gap: 0.3rem;
+    align-items: center;
+}
+
+.job-legacy-detail .job-detail-item__label {
+    color: #00008b;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: right;
+}
+
+.job-legacy-detail .job-detail-item__value {
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+}
+
+.job-legacy-detail .job-note-stack textarea.dense-input {
+    min-height: 2.45rem;
+    padding: 0;
+    border: 0;
+    background: #ffffff !important;
+    color: #000000;
+    resize: none;
+}
+
+.job-legacy-detail .job-table-wrap {
+    background: #ffffff;
+}
+
+.job-legacy-detail .job-table {
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+.job-legacy-detail .job-table th,
+.job-legacy-detail .job-table td {
+    height: 1.25rem;
+    padding: 0.08rem 0.22rem;
+    border-top: 0;
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.15;
+    vertical-align: middle;
+}
+
+.job-legacy-detail .job-table th {
+    background: #ffffff;
+    color: #00008b;
+    font-weight: 700;
+    text-transform: none;
+}
+
+.job-legacy-detail .job-table tfoot td {
+    border-top: 1px dashed #b7cbe2;
+    color: #00008b;
+    font-weight: 700;
+}
+
+.job-legacy-detail .job-table tbody > tr:nth-child(odd) {
+    background: #fffaf0;
+}
+
+.job-legacy-detail .job-table tbody > tr:nth-child(even) {
+    background: #ffffff;
+}
+
+.job-legacy-detail .job-table tbody > tr:hover {
+    background-color: inherit;
+}
+
+.job-legacy-detail .job-table-card--category-summary {
+    width: 59.8%;
+    min-width: 48rem;
+}
+
+.job-legacy-detail input[type="checkbox"] {
+    width: 0.78rem;
+    height: 0.78rem;
+    border-radius: 0;
+}
+
+.job-legacy-detail .job-footer-bar {
+    gap: 0.22rem;
+    padding: 0.08rem 0.24rem;
+    border-top: none;
+    background: transparent;
+}
+
+.job-legacy-detail .job-footer-bar--center {
+    display: grid;
+    justify-items: center;
+}
+
+.job-legacy-detail :where(a, button):is(
+    [class*="bg-blue-100"],
+    [class*="bg-white"],
+    [class*="bg-emerald-100"],
+    [class*="bg-red-100"],
+    [class*="bg-slate-100"]
+) {
+    min-height: 1.32rem;
+    padding: 0 0.24rem;
+    border: 1px solid #00008b !important;
+    border-radius: 0 !important;
+    background: #b7cdfa !important;
+    color: #00008b !important;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem !important;
+    font-weight: 400 !important;
+    line-height: 1.15;
+    text-decoration: none;
+    box-shadow: none !important;
+}
+
+.job-legacy-detail :where(a, button).underline,
+.job-legacy-detail :where(a, button)[class*="underline"],
+.job-legacy-detail .job-table a,
+.job-legacy-detail .job-picker-link {
+    border: 0 !important;
+    background: transparent !important;
+    color: #0000ee !important;
+    font-size: 0.8125rem !important;
+    font-weight: 700 !important;
+    text-decoration: underline;
+}
+
+.job-legacy-detail .responsive-action-group > .flex {
+    gap: 0.18rem;
+}
+
+.job-legacy-detail .job-picker-panel {
+    gap: 0.22rem;
+    padding: 0.12rem 0.24rem;
+    border-top: 1px dashed #b7cbe2;
+    background: #ffffff;
+}
+
+.job-legacy-detail .job-picker-panel__row,
+.job-legacy-detail .job-picker-controls,
+.job-legacy-detail .job-picker-links {
+    gap: 0.32rem;
+}
+
+.job-legacy-detail .dense-input,
+.job-legacy-detail .job-table-input,
+.job-legacy-detail .job-table-select,
+.job-legacy-detail .job-table-textarea,
+.job-legacy-detail .job-picker-select,
+.job-legacy-detail .job-picker-page-size {
+    min-height: 1.22rem;
+    border: 1px solid #9ca3af;
+    border-radius: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8125rem;
+    box-shadow: none;
+}
+
+@media (max-width: 900px) {
+    .job-legacy-detail .job-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .job-legacy-detail .job-table-card--category-summary {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 .invoice-job-picker.page-shell--wide {

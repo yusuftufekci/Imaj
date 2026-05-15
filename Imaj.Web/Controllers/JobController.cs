@@ -758,7 +758,6 @@ namespace Imaj.Web.Controllers
                 return View("EmailCompose", failedModel);
             }
 
-            TempData["SuccessMessage"] = string.Format(L("JobEmailSentSuccess"), normalizedReferences.Count);
             return LocalRedirect(model.ReturnUrl);
         }
 
@@ -841,7 +840,7 @@ namespace Imaj.Web.Controllers
                 IsEmailSent = job.IsEmailSent,
                 IsEvaluated = job.IsEvaluated,
                 InvoiceStatus = BuildInvoiceDisplay(job),
-                HasInvoiceLink = job.HasInvoiceLink || job.InvoLineId.HasValue,
+                HasInvoiceLink = job.HasInvoiceLink,
                 
                 // Mapped Notes
                 AdminNotes = job.IntNotes,
@@ -1024,9 +1023,10 @@ namespace Imaj.Web.Controllers
             };
 
             var result = await _jobService.UpdateAsync(updateDto);
-            TempData[result.IsSuccess ? "SuccessMessage" : "ErrorMessage"] = result.IsSuccess
-                ? L("JobUpdatedSuccess")
-                : this.LocalizeUiMessage(result.Message, L("SaveError"));
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = this.LocalizeUiMessage(result.Message, L("SaveError"));
+            }
 
             return RedirectToAction(nameof(Detail), new
             {
@@ -1087,8 +1087,10 @@ namespace Imaj.Web.Controllers
             }
 
             var result = await _jobService.ExecuteWorkflowActionAsync(request.Reference, request.Action);
-            TempData[result.IsSuccess ? "SuccessMessage" : "ErrorMessage"] =
-                this.LocalizeUiMessage(result.Message, result.IsSuccess ? L("SuccessTitle") : L("GenericError"));
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = this.LocalizeUiMessage(result.Message, L("GenericError"));
+            }
 
             return RedirectToDetailWithContext(request);
         }
@@ -1203,9 +1205,6 @@ namespace Imaj.Web.Controllers
                     return Json(new { success = true, message = string.Format(L("JobCreatedWithReference"), result.Data.Reference), redirectUrl = Url.Action("Detail", new { id = result.Data.Reference }) });
                 }
 
-                // Başarılı: TempData ile success mesajı set et
-                TempData["SuccessMessage"] = string.Format(L("JobCreatedWithReference"), result.Data.Reference);
-                
                 // Redirect to Detail
                 return RedirectToAction("Detail", new { id = result.Data.Reference });
             }
@@ -2271,15 +2270,24 @@ namespace Imaj.Web.Controllers
         {
             var combinedText = NormalizeProductSortValue(string.Join(' ', product.Code, product.Name, product.CategoryName));
 
-            if (combinedText.Contains("OPERATOR", StringComparison.Ordinal))
+            if (combinedText.Contains("OPERATOR", StringComparison.Ordinal) &&
+                combinedText.Contains("UCRETI", StringComparison.Ordinal))
             {
                 return 90;
             }
 
             if (combinedText.Contains("CAFE", StringComparison.Ordinal) ||
-                combinedText.Contains("KAFE", StringComparison.Ordinal))
+                combinedText.Contains("KAFE", StringComparison.Ordinal) ||
+                combinedText.Contains("KAFETERYA", StringComparison.Ordinal))
             {
                 return 91;
+            }
+
+            if ((combinedText.Contains("FAZLA", StringComparison.Ordinal) &&
+                 combinedText.Contains("MESAI", StringComparison.Ordinal)) ||
+                combinedText.Contains("OVERTIME", StringComparison.Ordinal))
+            {
+                return 92;
             }
 
             if (combinedText.Contains("SUIT", StringComparison.Ordinal))

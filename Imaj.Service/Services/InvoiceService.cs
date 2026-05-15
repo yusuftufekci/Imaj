@@ -21,6 +21,13 @@ namespace Imaj.Service.Services
         private const decimal PricedJobStateId = 130m;
         private const decimal InvoicedJobStateId = 140m;
         private static readonly decimal[] LiveInvoiceStateIds = { OpenStateId, ConfirmedStateId, IssuedStateId };
+        private static readonly string[] ProductCategoryDisplayOrder =
+        {
+            "servis",
+            "operator",
+            "kafeterya",
+            "fazla mesai"
+        };
 
         private const decimal ConfirmLogActionId = 1110m;
         private const decimal UndoConfirmLogActionId = 1120m;
@@ -742,15 +749,13 @@ namespace Imaj.Service.Services
                 if (filter.IssueDateStart.HasValue)
                 {
                     var startDate = filter.IssueDateStart.Value.Date;
-                    // IssueDate NULL olan kayıtlar tarih filtresinden elenmesin diye
-                    // NULL olanları da dahil ediyoruz.
-                    invoices = invoices.Where(i => !i.IssueDate.HasValue || i.IssueDate.Value >= startDate);
+                    invoices = invoices.Where(i => i.IssueDate.HasValue && i.IssueDate.Value >= startDate);
                 }
 
                 if (filter.IssueDateEnd.HasValue)
                 {
                     var endExclusive = filter.IssueDateEnd.Value.Date.AddDays(1);
-                    invoices = invoices.Where(i => !i.IssueDate.HasValue || i.IssueDate.Value < endExclusive);
+                    invoices = invoices.Where(i => i.IssueDate.HasValue && i.IssueDate.Value < endExclusive);
                 }
 
                 if (filter.StateId.HasValue)
@@ -1236,7 +1241,9 @@ namespace Imaj.Service.Services
                             group => group
                                 .GroupBy(x => x.ProdCatID)
                                 .Select(productGroup => MapProductCategory(productGroup, group.Key))
-                                .OrderBy(x => x.Name)
+                                .OrderBy(GetProductCategoryDisplayRank)
+                                .ThenBy(x => x.Name)
+                                .ThenBy(x => x.ProdCatId)
                                 .ToList());
 
                     var lineDtos = invoiceLines.Select(l =>
@@ -1289,7 +1296,9 @@ namespace Imaj.Service.Services
                     var productCatSummary = invoiceProdCats
                         .GroupBy(x => x.ProdCatID)
                         .Select(productGroup => MapProductCategory(productGroup))
-                        .OrderBy(x => x.Name)
+                        .OrderBy(GetProductCategoryDisplayRank)
+                        .ThenBy(x => x.Name)
+                        .ThenBy(x => x.ProdCatId)
                         .ToList();
 
                     var lineSubTotalsByTax = invoiceLines
@@ -3120,6 +3129,47 @@ namespace Imaj.Service.Services
                 || stateId == DiscardedStateId;
         }
 
+        private static int GetProductCategoryDisplayRank(InvoiceProdCatSummaryDto category)
+        {
+            var normalizedName = NormalizeProductCategoryName(category.Name);
+            for (var index = 0; index < ProductCategoryDisplayOrder.Length; index++)
+            {
+                if (normalizedName == ProductCategoryDisplayOrder[index])
+                {
+                    return index;
+                }
+            }
+
+            for (var index = 0; index < ProductCategoryDisplayOrder.Length; index++)
+            {
+                if (normalizedName.Contains(ProductCategoryDisplayOrder[index], StringComparison.Ordinal))
+                {
+                    return index;
+                }
+            }
+
+            return ProductCategoryDisplayOrder.Length;
+        }
+
+        private static string NormalizeProductCategoryName(string? name)
+        {
+            return (name ?? string.Empty)
+                .Trim()
+                .ToLowerInvariant()
+                .Replace('ı', 'i')
+                .Replace('İ', 'i')
+                .Replace('ö', 'o')
+                .Replace('Ö', 'o')
+                .Replace('ü', 'u')
+                .Replace('Ü', 'u')
+                .Replace('ş', 's')
+                .Replace('Ş', 's')
+                .Replace('ğ', 'g')
+                .Replace('Ğ', 'g')
+                .Replace('ç', 'c')
+                .Replace('Ç', 'c');
+        }
+
         private async Task<int> GetNextReferenceCoreAsync(decimal targetCompanyId)
         {
             var invoiceQuery = _unitOfWork.Repository<Invoice>().Query().AsNoTracking();
@@ -3305,14 +3355,13 @@ namespace Imaj.Service.Services
             if (filter.IssueDateStart.HasValue)
             {
                 var startDate = filter.IssueDateStart.Value.Date;
-                // IssueDate NULL olan kayıtlar tarih filtresinden elenmesin diye NULL olanlar da dahil edilir.
-                query = query.Where(x => !x.IssueDate.HasValue || x.IssueDate.Value >= startDate);
+                query = query.Where(x => x.IssueDate.HasValue && x.IssueDate.Value >= startDate);
             }
 
             if (filter.IssueDateEnd.HasValue)
             {
                 var endDateExclusive = filter.IssueDateEnd.Value.Date.AddDays(1);
-                query = query.Where(x => !x.IssueDate.HasValue || x.IssueDate.Value < endDateExclusive);
+                query = query.Where(x => x.IssueDate.HasValue && x.IssueDate.Value < endDateExclusive);
             }
 
             if (filter.StateId.HasValue)
