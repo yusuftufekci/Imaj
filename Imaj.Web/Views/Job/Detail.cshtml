@@ -52,9 +52,9 @@
     var canPrintJobForm = await PermissionViewService.CanExecuteMethodAsync(1501m);
     var canEditJob = await PermissionViewService.CanExecuteMethodAsync(1397m, write: true);
 
-    var canDoComplete = parsedReference && canComplete && !Model.IsEvaluated && isOpen;
+    var canDoComplete = parsedReference && canComplete && !Model.IsEvaluated && isOpen && Model.HasActiveWorkRows;
     var canDoUndoComplete = parsedReference && canUndoComplete && !Model.IsEvaluated && isCompleted;
-    var canDoPrice = parsedReference && canPrice && !Model.IsEvaluated && isCompleted;
+    var canDoPrice = parsedReference && canPrice && !Model.IsEvaluated && isCompleted && Model.CanPriceByProductCategorySnapshot;
     var canDoUndoPrice = parsedReference && canUndoPrice && !Model.IsEvaluated && isPriced;
     var canDoClose = parsedReference && canClose && !Model.IsEvaluated && isCompleted;
     var canDoUndoClose = parsedReference && canUndoClose && !Model.IsEvaluated && isClosed;
@@ -200,15 +200,23 @@
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["StartDate"]</dt>
                         <dd class="job-detail-item__value">
-                            <span x-show="!isEditing">@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</span>
-                            <input x-show="isEditing" x-cloak type="datetime-local" name="StartDate" value="@Model.StartDate.ToString("yyyy-MM-ddTHH:mm")" form="jobDetailEditForm" :disabled="!isEditing" class="dense-input">
+                            <template x-if="!isEditing">
+                                <span>@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</span>
+                            </template>
+                            <template x-if="isEditing">
+                                <input type="datetime-local" name="StartDate" value="@Model.StartDate.ToString("yyyy-MM-ddTHH:mm")" form="jobDetailEditForm" class="dense-input">
+                            </template>
                         </dd>
                     </div>
                     <div class="job-detail-item">
                         <dt class="job-detail-item__label">@Localizer["EndDate"]</dt>
                         <dd class="job-detail-item__value">
-                            <span x-show="!isEditing">@Model.EndDate?.ToString("dd/MM/yyyy HH:mm") @Model.EndDate?.ToString("dddd")</span>
-                            <input x-show="isEditing" x-cloak type="datetime-local" name="EndDate" value="@Model.EndDate?.ToString("yyyy-MM-ddTHH:mm")" form="jobDetailEditForm" :disabled="!isEditing" class="dense-input">
+                            <template x-if="!isEditing">
+                                <span>@Model.EndDate?.ToString("dd/MM/yyyy HH:mm") @Model.EndDate?.ToString("dddd")</span>
+                            </template>
+                            <template x-if="isEditing">
+                                <input type="datetime-local" name="EndDate" value="@Model.EndDate?.ToString("yyyy-MM-ddTHH:mm")" form="jobDetailEditForm" class="dense-input">
+                            </template>
                         </dd>
                     </div>
                     <div class="job-detail-item">

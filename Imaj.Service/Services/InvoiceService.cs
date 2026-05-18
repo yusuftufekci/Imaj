@@ -347,6 +347,8 @@ namespace Imaj.Service.Services
                         validationErrors.Add("Seçilen işlerde tanımsız ürün kategorisi var.");
                     }
 
+                    validationErrors.AddRange(ValidateJobCategorySnapshots(selectedJobs, selectedJobCategories));
+
                     var jobsWithCategories = selectedJobCategories
                         .Select(x => x.JobID)
                         .Distinct()
@@ -1115,6 +1117,16 @@ namespace Imaj.Service.Services
                     invoJobsByLineId = new Dictionary<decimal, List<InvoJob>>();
                 }
 
+                var jobIds = jobs.Select(j => j.Id).Distinct().ToList();
+                var jobProdCats = jobIds.Any()
+                    ? await _unitOfWork.Repository<JobProdCat>().Query()
+                        .Where(jpc => jobIds.Contains(jpc.JobID) && jpc.Deleted == 0)
+                        .ToListAsync()
+                    : new List<JobProdCat>();
+                var jobProdCatsByJobId = jobProdCats
+                    .GroupBy(jpc => jpc.JobID)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
                 var invoProdCats = await _unitOfWork.Repository<InvoProdCat>().Query()
                     .Where(ipc => lineIds.Contains(ipc.InvoLineID) && ipc.Deleted == 0)
                     .ToListAsync();
@@ -1207,12 +1219,16 @@ namespace Imaj.Service.Services
                     InvoiceJobDto MapJob(Job job)
                     {
                         var selected = jobSelectMap.TryGetValue(job.Id, out var flag) ? flag : job.SelectFlag;
+                        var amount = jobProdCatsByJobId.TryGetValue(job.Id, out var jobCategories) && jobCategories.Any()
+                            ? jobCategories.Sum(category => category.GrossAmount)
+                            : job.ProdSum;
+
                         return new InvoiceJobDto
                         {
                             Selected = selected,
                             Reference = job.Reference,
                             Name = job.Name,
-                            Amount = job.ProdSum
+                            Amount = RoundCurrency(amount)
                         };
                     }
 
@@ -2679,6 +2695,8 @@ namespace Imaj.Service.Services
                     }
                 }
 
+                validationErrors.AddRange(ValidateJobCategorySnapshots(selectedJobs, jobCategories));
+
                 var jobsWithCategories = jobCategories.Select(x => x.JobID).Distinct().ToHashSet();
                 var needsFallbackTax = selectedJobs.Any(job =>
                     RoundCurrency(job.ProdSum) > 0 && !jobsWithCategories.Contains(job.Id));
@@ -2702,6 +2720,35 @@ namespace Imaj.Service.Services
                 .ToList();
 
             return (true, selectedJobs, new List<string>());
+        }
+
+        private static List<string> ValidateJobCategorySnapshots(List<Job> selectedJobs, List<JobProdCat> jobCategories)
+        {
+            var invalidReferences = new List<int>();
+            var categoryTotalsByJobId = jobCategories
+                .GroupBy(x => x.JobID)
+                .ToDictionary(x => x.Key, x => RoundCurrency(x.Sum(row => row.NetAmount)));
+
+            foreach (var job in selectedJobs.Where(x => RoundCurrency(x.ProdSum) > 0))
+            {
+                if (!categoryTotalsByJobId.TryGetValue(job.Id, out var categoryTotal)
+                    || categoryTotal != RoundCurrency(job.ProdSum))
+                {
+                    invalidReferences.Add(job.Reference);
+                }
+            }
+
+            if (!invalidReferences.Any())
+            {
+                return new List<string>();
+            }
+
+            var references = string.Join(", ", invalidReferences.OrderBy(x => x).Take(10));
+            var suffix = invalidReferences.Count > 10 ? "..." : string.Empty;
+            return new List<string>
+            {
+                $"Ürün kategorisi bağlantısı eksik veya toplamı iş tutarıyla eşleşmeyen işler faturaya eklenemez: {references}{suffix}"
+            };
         }
 
         private async Task AttachJobsToLineAsync(Invoice invoice, InvoLine line, List<Job> selectedJobs, decimal userId)

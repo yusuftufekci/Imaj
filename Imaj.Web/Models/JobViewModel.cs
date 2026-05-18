@@ -128,6 +128,9 @@ namespace Imaj.Web.Models
         public decimal TotalOvertimeAmount { get; set; }
         public decimal TotalProductAmount { get; set; }
         public decimal TotalCategoryAmount { get; set; }
+        public bool HasActiveWorkRows { get; set; }
+        public bool HasActiveProductCategorySnapshot { get; set; }
+        public bool CanPriceByProductCategorySnapshot { get; set; }
     }
     
     public class JobOvertimeItem 

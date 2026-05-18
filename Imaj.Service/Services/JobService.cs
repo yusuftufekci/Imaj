@@ -553,6 +553,8 @@ namespace Imaj.Service.Services
                                 IsEmailSent = j.Mailed,
                                 IsEvaluated = j.Evaluated,
                                 InvoLineId = j.InvoLineID,
+                                WorkAmount = j.WorkSum,
+                                ProductAmount = j.ProdSum,
                                 IntNotes = j.IntNotes, // Detaylar da gelsin
                                 ExtNotes = j.ExtNotes
                             };
@@ -569,6 +571,9 @@ namespace Imaj.Service.Services
                 jobDto.InvoLineId = invoiceInfo.InvoLineId;
                 jobDto.InvoiceReference = invoiceInfo.InvoiceReference;
                 jobDto.InvoiceName = invoiceInfo.InvoiceName;
+
+                jobDto.HasActiveWorkRows = await _unitOfWork.Repository<JobWork>().Query()
+                    .AnyAsync(x => x.JobID == jobDto.Id && x.Deleted == 0);
 
                 // 2. Mesai (JobWork) Bilgileri
                 var workQuery = from jw in _unitOfWork.Repository<JobWork>().Query()
@@ -646,6 +651,10 @@ namespace Imaj.Service.Services
                                    };
 
                 jobDto.JobProdCats = await prodCatQuery.ToListAsync();
+                jobDto.HasActiveProductCategorySnapshot = jobDto.JobProdCats.Any();
+                jobDto.CanPriceByProductCategorySnapshot = CanPriceByProductCategorySnapshot(
+                    jobDto.ProductAmount,
+                    jobDto.JobProdCats);
 
                 return ServiceResult<JobDto>.Success(jobDto);
             }
@@ -1940,6 +1949,10 @@ namespace Imaj.Service.Services
                     {
                         return ServiceResult.Fail("Faturalı işte tamamlama işlemi yapılamaz.");
                     }
+                    if (!await HasActiveWorkRowsAsync(job.Id))
+                    {
+                        return ServiceResult.Fail("Altında en az bir adet mesai olmayan bir iş tamamlanamaz.");
+                    }
                     nextStateId = CompletedStateId;
                     logActionId = CompleteLogActionId;
                     break;
@@ -1963,6 +1976,11 @@ namespace Imaj.Service.Services
                     if (hasInvoiceLink)
                     {
                         return ServiceResult.Fail("Faturalı işte fiyatlama işlemi yapılamaz.");
+                    }
+                    var priceValidation = await ValidateProductCategorySnapshotForPricingAsync(job);
+                    if (!priceValidation.IsSuccess)
+                    {
+                        return priceValidation;
                     }
                     nextStateId = PricedStateId;
                     logActionId = PriceLogActionId;
@@ -2134,6 +2152,43 @@ namespace Imaj.Service.Services
         private static bool CanEvaluateJobState(decimal stateId)
         {
             return stateId == ClosedStateId || stateId == DiscardedStateId;
+        }
+
+        private async Task<bool> HasActiveWorkRowsAsync(decimal jobId)
+        {
+            return await _unitOfWork.Repository<JobWork>().Query()
+                .AnyAsync(x => x.JobID == jobId && x.Deleted == 0);
+        }
+
+        private async Task<ServiceResult> ValidateProductCategorySnapshotForPricingAsync(Job job)
+        {
+            var categoryRows = await _unitOfWork.Repository<JobProdCat>().Query()
+                .Where(x => x.JobID == job.Id && x.Deleted == 0)
+                .ToListAsync();
+
+            if (!CanPriceByProductCategorySnapshot(job.ProdSum, categoryRows))
+            {
+                return ServiceResult.Fail("Ürün kategorisi bağlantısı olmayan veya toplamı iş tutarıyla eşleşmeyen iş fiyatlandırılamaz.");
+            }
+
+            return ServiceResult.Success();
+        }
+
+        private static bool CanPriceByProductCategorySnapshot(decimal productAmount, IReadOnlyCollection<JobProdCat> categoryRows)
+        {
+            return categoryRows.Any()
+                && RoundAmount(categoryRows.Sum(x => x.NetAmount)) == RoundAmount(productAmount);
+        }
+
+        private static bool CanPriceByProductCategorySnapshot(decimal productAmount, IReadOnlyCollection<JobProdCatDto> categoryRows)
+        {
+            return categoryRows.Any()
+                && RoundAmount(categoryRows.Sum(x => x.NetAmount)) == RoundAmount(productAmount);
+        }
+
+        private static decimal RoundAmount(decimal value)
+        {
+            return Math.Round(value, 2, MidpointRounding.AwayFromZero);
         }
 
         private async Task<bool> HasActiveInvoiceLinkAsync(decimal jobId, decimal? invoLineId)

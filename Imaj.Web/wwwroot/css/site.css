@@ -3199,6 +3199,10 @@ span.flatpickr-weekday {
     justify-content: flex-start;
 }
 
+.invoice-footer-bar--inline-actions {
+    justify-content: flex-start;
+}
+
 .customer-footer-bar__meta,
 .job-footer-bar__meta,
 .invoice-footer-bar__meta {
@@ -3642,6 +3646,10 @@ span.flatpickr-weekday {
 .invoice-legacy-detail .invoice-footer-bar--start {
     border: 1px solid #a9c8ea;
     border-top: 0;
+}
+
+.invoice-legacy-detail .invoice-footer-bar--inline-actions {
+    gap: 0.9rem;
 }
 
 .invoice-legacy-detail .invoice-job-line-actions {

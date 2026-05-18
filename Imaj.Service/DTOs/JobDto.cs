@@ -27,6 +27,9 @@ namespace Imaj.Service.DTOs
         public string? InvoiceName { get; set; }
         public decimal WorkAmount { get; set; }
         public decimal ProductAmount { get; set; }
+        public bool HasActiveWorkRows { get; set; }
+        public bool HasActiveProductCategorySnapshot { get; set; }
+        public bool CanPriceByProductCategorySnapshot { get; set; }
         public string? IntNotes { get; set; }
         public string? ExtNotes { get; set; }
         

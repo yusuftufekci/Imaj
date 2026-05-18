@@ -429,7 +429,7 @@
                                                     </table>
                                                     @if (canEditJobs)
                                                     {
-                                                        <div class="invoice-footer-bar" x-show="!isEditing" x-cloak>
+                                                        <div class="invoice-footer-bar invoice-footer-bar--inline-actions" x-show="!isEditing" x-cloak>
                                                             <button type="button"
                                                                     @@click="submitDeleteJobs('@line.Id.ToString(CultureInfo.InvariantCulture)')"
                                                                     class="text-red-600 hover:text-red-900 font-bold underline text-sm">

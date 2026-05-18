@@ -841,6 +841,9 @@ namespace Imaj.Web.Controllers
                 IsEvaluated = job.IsEvaluated,
                 InvoiceStatus = BuildInvoiceDisplay(job),
                 HasInvoiceLink = job.HasInvoiceLink,
+                HasActiveWorkRows = job.HasActiveWorkRows,
+                HasActiveProductCategorySnapshot = job.HasActiveProductCategorySnapshot,
+                CanPriceByProductCategorySnapshot = job.CanPriceByProductCategorySnapshot,
                 
                 // Mapped Notes
                 AdminNotes = job.IntNotes,
