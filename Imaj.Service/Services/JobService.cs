@@ -79,47 +79,39 @@ namespace Imaj.Service.Services
 
                 var activeSnapshot = snapshot!;
 
-                // ... (implementation of GetByFilterAsync) ...
-                // Ana sorgu - Job'lardan başla
-                var scopedJobs = ApplyJobDataScope(_unitOfWork.Repository<Job>().Query().AsNoTracking(), activeSnapshot);
-                var query = from j in scopedJobs
-                            join c in _unitOfWork.Repository<Customer>().Query().AsNoTracking() on j.CustomerID equals c.Id into cGroup
-                            from customer in cGroup.DefaultIfEmpty()
-                            join xf in _unitOfWork.Repository<XFunction>().Query().AsNoTracking().Where(x => x.LanguageID == languageId)
-                                on j.FunctionID equals xf.FunctionID into fGroup
-                            from xFunc in fGroup.DefaultIfEmpty()
-                            join xs in _unitOfWork.Repository<XState>().Query().AsNoTracking().Where(x => x.LanguageID == languageId)
-                                on j.StateID equals xs.StateID into sGroup
-                            from xState in sGroup.DefaultIfEmpty()
-                            select new { Job = j, CustomerCode = customer != null ? customer.Code : null, CustomerName = customer != null ? customer.Name : null, FunctionName = xFunc != null ? xFunc.Name : null, StateName = xState != null ? xState.Name : null };
+                var jobQuery = ApplyJobDataScope(_unitOfWork.Repository<Job>().Query().AsNoTracking(), activeSnapshot);
 
                 // FİLTRELERİ AKTİF EDİYORUZ
 
                 // Fonksiyon filtresi
                 if (filter.FunctionId.HasValue)
                 {
-                    query = query.Where(x => x.Job.FunctionID == filter.FunctionId.Value);
+                    jobQuery = jobQuery.Where(x => x.FunctionID == filter.FunctionId.Value);
                 }
 
                 // Müşteri ID filtresi
                 if (filter.CustomerId.HasValue)
                 {
-                    query = query.Where(x => x.Job.CustomerID == filter.CustomerId.Value);
+                    jobQuery = jobQuery.Where(x => x.CustomerID == filter.CustomerId.Value);
                 }
                 else if (!string.IsNullOrWhiteSpace(filter.CustomerCode))
                 {
                     var customerCode = filter.CustomerCode.Trim();
-                    query = query.Where(x => x.CustomerCode == customerCode);
+                    var customerIds = _unitOfWork.Repository<Customer>().Query()
+                        .AsNoTracking()
+                        .Where(x => x.Code == customerCode)
+                        .Select(x => x.Id);
+                    jobQuery = jobQuery.Where(x => customerIds.Contains(x.CustomerID));
                 }
 
                 // Referans aralığı filtresi
                 if (filter.ReferenceStart.HasValue)
                 {
-                    query = query.Where(x => x.Job.Reference >= filter.ReferenceStart.Value);
+                    jobQuery = jobQuery.Where(x => x.Reference >= filter.ReferenceStart.Value);
                 }
                 if (filter.ReferenceEnd.HasValue)
                 {
-                    query = query.Where(x => x.Job.Reference <= filter.ReferenceEnd.Value);
+                    jobQuery = jobQuery.Where(x => x.Reference <= filter.ReferenceEnd.Value);
                 }
 
                 // Referans listesi filtresi (virgülle ayrılmış)
@@ -133,40 +125,40 @@ namespace Imaj.Service.Services
                     
                     if (refList.Any())
                     {
-                        query = query.Where(x => refList.Contains(x.Job.Reference));
+                        jobQuery = jobQuery.Where(x => refList.Contains(x.Reference));
                     }
                 }
 
                 // İş adı filtresi
                 if (!string.IsNullOrWhiteSpace(filter.JobName))
                 {
-                    query = query.Where(x => x.Job.Name.Contains(filter.JobName));
+                    jobQuery = jobQuery.Where(x => x.Name.Contains(filter.JobName));
                 }
 
                 // İlgili kişi (Contact) filtresi
                 if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
                 {
-                    query = query.Where(x => x.Job.Contact.Contains(filter.RelatedPerson));
+                    jobQuery = jobQuery.Where(x => x.Contact.Contains(filter.RelatedPerson));
                 }
 
                 // Başlangıç tarihi aralığı
                 if (filter.StartDateStart.HasValue)
                 {
-                    query = query.Where(x => x.Job.StartDT >= filter.StartDateStart.Value);
+                    jobQuery = jobQuery.Where(x => x.StartDT >= filter.StartDateStart.Value);
                 }
                 if (filter.StartDateEnd.HasValue)
                 {
-                    query = query.Where(x => x.Job.StartDT <= filter.StartDateEnd.Value);
+                    jobQuery = jobQuery.Where(x => x.StartDT <= filter.StartDateEnd.Value);
                 }
 
                 // Bitiş tarihi aralığı
                 if (filter.EndDateStart.HasValue)
                 {
-                    query = query.Where(x => x.Job.EndDT >= filter.EndDateStart.Value);
+                    jobQuery = jobQuery.Where(x => x.EndDT >= filter.EndDateStart.Value);
                 }
                 if (filter.EndDateEnd.HasValue)
                 {
-                    query = query.Where(x => x.Job.EndDT <= filter.EndDateEnd.Value);
+                    jobQuery = jobQuery.Where(x => x.EndDT <= filter.EndDateEnd.Value);
                 }
 
                 // Durum filtresi
@@ -174,24 +166,24 @@ namespace Imaj.Service.Services
                 {
                     if (IsOpenJobState(filter.StateId.Value))
                     {
-                        query = query.Where(x => x.Job.StateID == OpenStateId || x.Job.StateID == LegacyActiveStateId);
+                        jobQuery = jobQuery.Where(x => x.StateID == OpenStateId || x.StateID == LegacyActiveStateId);
                     }
                     else
                     {
-                        query = query.Where(x => x.Job.StateID == filter.StateId.Value);
+                        jobQuery = jobQuery.Where(x => x.StateID == filter.StateId.Value);
                     }
                 }
 
                 // E-Posta gönderildi filtresi
                 if (filter.IsEmailSent.HasValue)
                 {
-                    query = query.Where(x => x.Job.Mailed == filter.IsEmailSent.Value);
+                    jobQuery = jobQuery.Where(x => x.Mailed == filter.IsEmailSent.Value);
                 }
 
                 // Değerlendirildi filtresi
                 if (filter.IsEvaluated.HasValue)
                 {
-                    query = query.Where(x => x.Job.Evaluated == filter.IsEvaluated.Value);
+                    jobQuery = jobQuery.Where(x => x.Evaluated == filter.IsEvaluated.Value);
                 }
 
                 // Fatura durumu filtresi
@@ -203,11 +195,11 @@ namespace Imaj.Service.Services
 
                     if (filter.HasInvoice.Value)
                     {
-                        query = query.Where(x => x.Job.InvoLineID != null || invoicedJobIds.Contains(x.Job.Id));
+                        jobQuery = jobQuery.Where(x => x.InvoLineID != null || invoicedJobIds.Contains(x.Id));
                     }
                     else
                     {
-                        query = query.Where(x => x.Job.InvoLineID == null && !invoicedJobIds.Contains(x.Job.Id));
+                        jobQuery = jobQuery.Where(x => x.InvoLineID == null && !invoicedJobIds.Contains(x.Id));
                     }
                 }
 
@@ -215,16 +207,13 @@ namespace Imaj.Service.Services
                 if (filter.ProductId.HasValue)
                 {
                     _logger.LogInformation("Ürün filtresi uygulanıyor. ProductId: {ProductId}", filter.ProductId.Value);
-                    
-                    var jobProdRepo = _unitOfWork.Repository<JobProd>();
-                    var jobIdsWithProduct = jobProdRepo.Query()
+
+                    var jobIdsWithProduct = _unitOfWork.Repository<JobProd>().Query()
+                        .AsNoTracking()
                         .Where(jp => jp.ProductID == filter.ProductId.Value && jp.Deleted == 0)
                         .Select(jp => jp.JobID);
-                    
-                    var matchingJobIds = await jobIdsWithProduct.ToListAsync(cancellationToken);
-                    _logger.LogInformation("Ürün filtresi: {Count} iş bulundu. JobID'ler: {JobIds}", matchingJobIds.Count, string.Join(", ", matchingJobIds.Take(10)));
-                    
-                    query = query.Where(x => matchingJobIds.Contains(x.Job.Id));
+
+                    jobQuery = jobQuery.Where(x => jobIdsWithProduct.Contains(x.Id));
                 }
 
                 // ============ MESAİ KRİTERİ FİLTRELERİ ============
@@ -239,12 +228,13 @@ namespace Imaj.Service.Services
                     // Subquery olarak Employee ve JobWork tablolarını birleştir
                     var jobWorkRepo = _unitOfWork.Repository<JobWork>();
                     var employeeRepo = _unitOfWork.Repository<Employee>();
+                    var employeeCode = filter.EmployeeCode.Trim();
 
                     if (!activeSnapshot.EmployeeScopeBypass)
                     {
-                        var requestedEmployeeAllowed = await employeeRepo.Query()
+                        var requestedEmployeeAllowed = await employeeRepo.Query().AsNoTracking()
                             .AnyAsync(e =>
-                                e.Code == filter.EmployeeCode
+                                e.Code == employeeCode
                                 && activeSnapshot.AllowedEmployeeIds.Contains(e.Id), cancellationToken);
 
                         if (!requestedEmployeeAllowed)
@@ -260,15 +250,15 @@ namespace Imaj.Service.Services
                     }
 
                     // Subquery: Bu çalışanın mesai kaydı olan Job ID'leri
-                    var jobIdsWithEmployee = from jw in jobWorkRepo.Query()
-                                              join e in employeeRepo.Query() on jw.EmployeeID equals e.Id
-                                              where e.Code == filter.EmployeeCode
+                    var jobIdsWithEmployee = from jw in jobWorkRepo.Query().AsNoTracking()
+                                              join e in employeeRepo.Query().AsNoTracking() on jw.EmployeeID equals e.Id
+                                              where e.Code == employeeCode
                                                     && jw.Deleted == 0
                                                     && (activeSnapshot.EmployeeScopeBypass || activeSnapshot.AllowedEmployeeIds.Contains(jw.EmployeeID))
                                               select jw.JobID;
 
                     // Ana sorguya subquery ile filtre uygula
-                    query = query.Where(x => jobIdsWithEmployee.Contains(x.Job.Id));
+                    jobQuery = jobQuery.Where(x => jobIdsWithEmployee.Contains(x.Id));
                 }
 
                 // Görev Tipi (WorkType) filtresi
@@ -278,11 +268,12 @@ namespace Imaj.Service.Services
                     
                     // Subquery: Bu görev tipiyle mesai kaydı olan Job ID'leri
                     var jobIdsWithWorkType = _unitOfWork.Repository<JobWork>().Query()
+                        .AsNoTracking()
                         .Where(jw => jw.WorkTypeID == filter.WorkTypeId.Value && jw.Deleted == 0)
                         .Select(jw => jw.JobID);
                     
                     // Ana sorguya subquery ile filtre uygula
-                    query = query.Where(x => jobIdsWithWorkType.Contains(x.Job.Id));
+                    jobQuery = jobQuery.Where(x => jobIdsWithWorkType.Contains(x.Id));
                 }
 
                 // Mesai Tipi (TimeType) filtresi
@@ -292,11 +283,12 @@ namespace Imaj.Service.Services
                     
                     // Subquery: Bu mesai tipiyle kayıt olan Job ID'leri
                     var jobIdsWithTimeType = _unitOfWork.Repository<JobWork>().Query()
+                        .AsNoTracking()
                         .Where(jw => jw.TimeTypeID == filter.TimeTypeId.Value && jw.Deleted == 0)
                         .Select(jw => jw.JobID);
                     
                     // Ana sorguya subquery ile filtre uygula
-                    query = query.Where(x => jobIdsWithTimeType.Contains(x.Job.Id));
+                    jobQuery = jobQuery.Where(x => jobIdsWithTimeType.Contains(x.Id));
                 }
 
                 // Toplam kayıt sayısı
@@ -305,48 +297,66 @@ namespace Imaj.Service.Services
                 var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
                 var orderedQuery = filter.ReferenceStart.HasValue
-                    ? query
-                        .OrderBy(x => x.Job.Reference)
+                    ? jobQuery
+                        .OrderBy(x => x.Reference)
                     : filter.ReferenceEnd.HasValue
-                        ? query
-                            .OrderByDescending(x => x.Job.Reference)
-                        : query
-                            .OrderByDescending(x => x.Job.StartDT)
-                            .ThenByDescending(x => x.Job.Reference);
+                        ? jobQuery
+                            .OrderByDescending(x => x.Reference)
+                        : jobQuery
+                            .OrderByDescending(x => x.StartDT)
+                            .ThenByDescending(x => x.Reference);
+
+                var totalCount = first.HasValue
+                    ? first.Value
+                    : await jobQuery.CountAsync(cancellationToken);
 
                 var scopedQuery = first.HasValue
                     ? orderedQuery.Take(first.Value)
                     : orderedQuery;
-
-                var totalCount = await scopedQuery.CountAsync(cancellationToken);
                 var skip = (page - 1) * pageSize;
 
-                var items = await scopedQuery
+                var pagedJobs = scopedQuery
                     .Skip(skip)
-                    .Take(pageSize)
-                    .Select(x => new JobDto
+                    .Take(pageSize);
+
+                var items = await (from job in pagedJobs
+                    join customer in _unitOfWork.Repository<Customer>().Query().AsNoTracking()
+                        on job.CustomerID equals customer.Id into cGroup
+                    from customer in cGroup.DefaultIfEmpty()
+                    join xFunc in _unitOfWork.Repository<XFunction>().Query().AsNoTracking().Where(x => x.LanguageID == languageId)
+                        on job.FunctionID equals xFunc.FunctionID into fGroup
+                    from xFunc in fGroup.DefaultIfEmpty()
+                    join xState in _unitOfWork.Repository<XState>().Query().AsNoTracking().Where(x => x.LanguageID == languageId)
+                        on job.StateID equals xState.StateID into sGroup
+                    from xState in sGroup.DefaultIfEmpty()
+                    select new JobDto
                     {
-                        Id = x.Job.Id,
-                        Reference = x.Job.Reference,
-                        FunctionId = x.Job.FunctionID,
-                        FunctionName = x.FunctionName,
-                        CustomerId = x.Job.CustomerID,
-                        CustomerCode = x.CustomerCode,
-                        CustomerName = x.CustomerName,
-                        Name = x.Job.Name,
-                        Contact = x.Job.Contact,
-                        StartDate = x.Job.StartDT,
-                        EndDate = x.Job.EndDT,
-                        StateId = x.Job.StateID,
-                        StatusName = x.StateName,
-                        IsEmailSent = x.Job.Mailed,
-                        IsEvaluated = x.Job.Evaluated,
-                        InvoLineId = x.Job.InvoLineID,
-                        HasInvoiceLink = x.Job.InvoLineID != null,
-                        WorkAmount = x.Job.WorkSum,
-                        ProductAmount = x.Job.ProdSum
+                        Id = job.Id,
+                        Reference = job.Reference,
+                        FunctionId = job.FunctionID,
+                        FunctionName = xFunc != null ? xFunc.Name : null,
+                        CustomerId = job.CustomerID,
+                        CustomerCode = customer != null ? customer.Code : null,
+                        CustomerName = customer != null ? customer.Name : null,
+                        Name = job.Name,
+                        Contact = job.Contact,
+                        StartDate = job.StartDT,
+                        EndDate = job.EndDT,
+                        StateId = job.StateID,
+                        StatusName = xState != null ? xState.Name : null,
+                        IsEmailSent = job.Mailed,
+                        IsEvaluated = job.Evaluated,
+                        InvoLineId = job.InvoLineID,
+                        HasInvoiceLink = job.InvoLineID != null,
+                        WorkAmount = job.WorkSum,
+                        ProductAmount = job.ProdSum
                     })
                     .ToListAsync(cancellationToken);
+
+                if (first.HasValue && items.Count < pageSize)
+                {
+                    totalCount = skip + items.Count;
+                }
 
                 var result = new PagedResult<JobDto>
                 {
@@ -654,6 +664,7 @@ namespace Imaj.Service.Services
                 jobDto.HasActiveProductCategorySnapshot = jobDto.JobProdCats.Any();
                 jobDto.CanPriceByProductCategorySnapshot = CanPriceByProductCategorySnapshot(
                     jobDto.ProductAmount,
+                    jobDto.JobProds,
                     jobDto.JobProdCats);
 
                 return ServiceResult<JobDto>.Success(jobDto);
@@ -1310,6 +1321,59 @@ namespace Imaj.Service.Services
                     return ServiceResult<JobDto>.Fail("Veritabanında durum kaydı bulunamadı.");
                 }
 
+                var workDtos = jobDto.JobWorks ?? new List<JobWorkDto>();
+                var productDtos = jobDto.JobProds ?? new List<JobProdDto>();
+                var submittedCategoryDtos = jobDto.JobProdCats ?? new List<JobProdCatDto>();
+
+                var productIds = productDtos
+                    .Where(x => x.ProductId > 0)
+                    .Select(x => x.ProductId)
+                    .Distinct()
+                    .ToList();
+                var productCategoryByProductId = new Dictionary<decimal, decimal>();
+                if (productIds.Count > 0)
+                {
+                    productCategoryByProductId = await _unitOfWork.Repository<Product>().Query()
+                        .Where(x => productIds.Contains(x.Id))
+                        .Select(x => new { x.Id, x.ProdCatID })
+                        .ToDictionaryAsync(x => x.Id, x => x.ProdCatID);
+
+                    if (productCategoryByProductId.Count != productIds.Count)
+                    {
+                        return ServiceResult<JobDto>.Fail("Seçilen ürün bulunamadı.");
+                    }
+                }
+
+                foreach (var product in productDtos)
+                {
+                    if (product.ProductId <= 0)
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün seçimi zorunludur.");
+                    }
+
+                    if (!productCategoryByProductId.TryGetValue(product.ProductId, out var categoryId))
+                    {
+                        return ServiceResult<JobDto>.Fail("Seçilen ürün bulunamadı.");
+                    }
+
+                    if (product.Quantity < 0 || product.Quantity > short.MaxValue)
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün miktarı geçersiz.");
+                    }
+
+                    if (product.Price < 0 || product.NetAmount < 0)
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün tutarı geçersiz.");
+                    }
+
+                    product.CategoryId = categoryId;
+                    product.Quantity = Math.Round(product.Quantity);
+                    product.GrossAmount = RoundAmount(product.Quantity * product.Price);
+                    product.NetAmount = RoundAmount(product.NetAmount);
+                }
+
+                var categoryDtos = BuildProductCategorySnapshots(productDtos, submittedCategoryDtos);
+
                 // 2. Job Entity Oluştur
                 var job = new Job
                 {
@@ -1354,12 +1418,12 @@ namespace Imaj.Service.Services
                 decimal workSum = 0;
                 decimal prodSum = 0;
                 // 3. JobWorks Ekle
-                if (jobDto.JobWorks != null && jobDto.JobWorks.Any())
+                if (workDtos.Any())
                 {
                     var jwRepo = _unitOfWork.Repository<JobWork>();
                     var nextJwId = (await jwRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0);
 
-                    foreach (var work in jobDto.JobWorks)
+                    foreach (var work in workDtos)
                     {
                         nextJwId++;
                         var jw = new JobWork
@@ -1384,12 +1448,12 @@ namespace Imaj.Service.Services
                 }
 
                 // 4. JobProds Ekle
-                if (jobDto.JobProds != null && jobDto.JobProds.Any())
+                if (productDtos.Any())
                 {
                     var jpRepo = _unitOfWork.Repository<JobProd>();
                     var nextJpId = (await jpRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0);
 
-                    foreach (var prod in jobDto.JobProds)
+                    foreach (var prod in productDtos)
                     {
                         nextJpId++;
                         var jp = new JobProd
@@ -1397,9 +1461,9 @@ namespace Imaj.Service.Services
                             Id = nextJpId,
                             JobID = job.Id,
                             ProductID = prod.ProductId,
-                            Quantity = (short)prod.Quantity, // Cast to short
+                            Quantity = (short)prod.Quantity,
                             Price = prod.Price,
-                            GrossAmount = prod.Quantity * prod.Price, 
+                            GrossAmount = prod.GrossAmount,
                             NetAmount = prod.NetAmount,
                             Notes = prod.Notes ?? string.Empty,
                             
@@ -1414,13 +1478,13 @@ namespace Imaj.Service.Services
                 }
 
                 // 5. JobProdCats Ekle
-                if (jobDto.JobProdCats != null && jobDto.JobProdCats.Any())
+                if (categoryDtos.Any())
                 {
                     var jpcRepo = _unitOfWork.Repository<JobProdCat>();
                     var nextJpcId = (await jpcRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0);
                     decimal discountedProdSum = 0;
 
-                    foreach (var category in jobDto.JobProdCats)
+                    foreach (var category in categoryDtos)
                     {
                         nextJpcId++;
                         var jpc = new JobProdCat
@@ -1546,13 +1610,13 @@ namespace Imaj.Service.Services
 
                 var workDtos = jobDto.JobWorks ?? new List<JobWorkDto>();
                 var productDtos = jobDto.JobProds ?? new List<JobProdDto>();
-                var categoryDtos = jobDto.JobProdCats ?? new List<JobProdCatDto>();
+                var submittedCategoryDtos = jobDto.JobProdCats ?? new List<JobProdCatDto>();
 
                 var workRowsById = editableWorkRows.ToDictionary(x => x.Id);
                 var productRowsById = productRows.ToDictionary(x => x.Id);
                 var categoryRowsByCategoryId = categoryRows
                     .GroupBy(x => x.ProdCatID)
-                    .ToDictionary(x => x.Key, x => x.First());
+                    .ToDictionary(x => x.Key, x => x.OrderBy(row => row.Id).First());
 
                 var employeeIds = workDtos
                     .Where(x => x.EmployeeId > 0)
@@ -1591,7 +1655,7 @@ namespace Imaj.Service.Services
                     }
                 }
 
-                foreach (var product in productDtos.Where(x => x.CategoryId <= 0 && x.ProductId > 0))
+                foreach (var product in productDtos.Where(x => x.ProductId > 0))
                 {
                     if (productCategoryByProductId.TryGetValue(product.ProductId, out var categoryId))
                     {
@@ -1599,7 +1663,7 @@ namespace Imaj.Service.Services
                     }
                 }
 
-                var categoryIds = categoryDtos
+                var categoryIds = submittedCategoryDtos
                     .Select(x => x.CategoryId)
                     .Concat(productDtos.Select(x => x.CategoryId))
                     .Where(x => x > 0)
@@ -1661,6 +1725,13 @@ namespace Imaj.Service.Services
                         return ServiceResult<JobDto>.Fail("Ürün seçimi zorunludur.");
                     }
 
+                    if (!productCategoryByProductId.TryGetValue(product.ProductId, out var categoryId))
+                    {
+                        return ServiceResult<JobDto>.Fail("Seçilen ürün bulunamadı.");
+                    }
+
+                    product.CategoryId = categoryId;
+
                     if (product.CategoryId <= 0)
                     {
                         return ServiceResult<JobDto>.Fail("Ürün kategorisi zorunludur.");
@@ -1670,15 +1741,26 @@ namespace Imaj.Service.Services
                     {
                         return ServiceResult<JobDto>.Fail("Ürün miktarı geçersiz.");
                     }
+
+                    if (product.Price < 0 || product.NetAmount < 0)
+                    {
+                        return ServiceResult<JobDto>.Fail("Ürün tutarı geçersiz.");
+                    }
+
+                    product.Quantity = Math.Round(product.Quantity);
+                    product.GrossAmount = RoundAmount(product.Quantity * product.Price);
+                    product.NetAmount = RoundAmount(product.NetAmount);
                 }
 
-                foreach (var category in categoryDtos)
+                foreach (var category in submittedCategoryDtos)
                 {
                     if (category.CategoryId <= 0)
                     {
                         return ServiceResult<JobDto>.Fail("Ürün kategorisi zorunludur.");
                     }
                 }
+
+                var categoryDtos = BuildProductCategorySnapshots(productDtos, submittedCategoryDtos, categoryRows);
 
                 using var transaction = await _unitOfWork.BeginTransactionAsync();
                 try
@@ -1783,7 +1865,11 @@ namespace Imaj.Service.Services
                         .Where(x => x.CategoryId > 0)
                         .Select(x => x.CategoryId)
                         .ToHashSet();
-                    foreach (var category in categoryRows.Where(x => !submittedCategoryIds.Contains(x.ProdCatID)))
+                    var duplicateCategoryRowIds = categoryRows
+                        .GroupBy(x => x.ProdCatID)
+                        .SelectMany(x => x.OrderBy(row => row.Id).Skip(1).Select(row => row.Id))
+                        .ToHashSet();
+                    foreach (var category in categoryRows.Where(x => duplicateCategoryRowIds.Contains(x.Id) || !submittedCategoryIds.Contains(x.ProdCatID)))
                     {
                         category.Deleted = 1;
                         category.Stamp = 1;
@@ -2162,28 +2248,158 @@ namespace Imaj.Service.Services
 
         private async Task<ServiceResult> ValidateProductCategorySnapshotForPricingAsync(Job job)
         {
+            var productRows = await (
+                from jp in _unitOfWork.Repository<JobProd>().Query()
+                where jp.JobID == job.Id && jp.Deleted == 0
+                join product in _unitOfWork.Repository<Product>().Query()
+                    on jp.ProductID equals product.Id
+                select new JobProdDto
+                {
+                    ProductId = jp.ProductID,
+                    CategoryId = product.ProdCatID,
+                    Quantity = jp.Quantity,
+                    Price = jp.Price,
+                    GrossAmount = jp.GrossAmount,
+                    NetAmount = jp.NetAmount
+                })
+                .ToListAsync();
             var categoryRows = await _unitOfWork.Repository<JobProdCat>().Query()
                 .Where(x => x.JobID == job.Id && x.Deleted == 0)
                 .ToListAsync();
 
-            if (!CanPriceByProductCategorySnapshot(job.ProdSum, categoryRows))
+            if (!CanPriceByProductCategorySnapshot(job.ProdSum, productRows, categoryRows))
             {
-                return ServiceResult.Fail("Ürün kategorisi bağlantısı olmayan veya toplamı iş tutarıyla eşleşmeyen iş fiyatlandırılamaz.");
+                return ServiceResult.Fail("Ürün kategori özeti ürün satırlarıyla veya iş tutarıyla eşleşmeyen iş fiyatlandırılamaz.");
             }
 
             return ServiceResult.Success();
         }
 
-        private static bool CanPriceByProductCategorySnapshot(decimal productAmount, IReadOnlyCollection<JobProdCat> categoryRows)
+        private static bool CanPriceByProductCategorySnapshot(
+            decimal productAmount,
+            IReadOnlyCollection<JobProdDto> productRows,
+            IReadOnlyCollection<JobProdCat> categoryRows)
         {
-            return categoryRows.Any()
+            var categoryDtos = categoryRows
+                .Select(x => new JobProdCatDto
+                {
+                    CategoryId = x.ProdCatID,
+                    GrossAmount = x.GrossAmount,
+                    DiscPercentage = x.DiscPercentage,
+                    DiscAmount = x.DiscAmount,
+                    NetAmount = x.NetAmount
+                })
+                .ToList();
+
+            return CanPriceByProductCategorySnapshot(productAmount, productRows, categoryDtos);
+        }
+
+        private static bool CanPriceByProductCategorySnapshot(
+            decimal productAmount,
+            IReadOnlyCollection<JobProdDto> productRows,
+            IReadOnlyCollection<JobProdCatDto> categoryRows)
+        {
+            if (!categoryRows.Any())
+            {
+                return false;
+            }
+
+            var expectedRows = BuildProductCategorySnapshots(productRows, categoryRows);
+            return ProductCategorySnapshotsMatch(expectedRows, categoryRows)
                 && RoundAmount(categoryRows.Sum(x => x.NetAmount)) == RoundAmount(productAmount);
         }
 
-        private static bool CanPriceByProductCategorySnapshot(decimal productAmount, IReadOnlyCollection<JobProdCatDto> categoryRows)
+        private static List<JobProdCatDto> BuildProductCategorySnapshots(
+            IReadOnlyCollection<JobProdDto> productRows,
+            IReadOnlyCollection<JobProdCatDto> submittedCategoryRows,
+            IReadOnlyCollection<JobProdCat>? existingCategoryRows = null)
         {
-            return categoryRows.Any()
-                && RoundAmount(categoryRows.Sum(x => x.NetAmount)) == RoundAmount(productAmount);
+            var submittedByCategoryId = submittedCategoryRows
+                .Where(x => x.CategoryId > 0)
+                .GroupBy(x => x.CategoryId)
+                .ToDictionary(x => x.Key, x => x.First());
+            var existingByCategoryId = existingCategoryRows?
+                .Where(x => x.ProdCatID > 0)
+                .GroupBy(x => x.ProdCatID)
+                .ToDictionary(x => x.Key, x => x.First())
+                ?? new Dictionary<decimal, JobProdCat>();
+
+            return productRows
+                .Where(x => x.CategoryId > 0)
+                .GroupBy(x => x.CategoryId)
+                .OrderBy(x => x.Key)
+                .Select(group =>
+                {
+                    submittedByCategoryId.TryGetValue(group.Key, out var submittedCategory);
+                    existingByCategoryId.TryGetValue(group.Key, out var existingCategory);
+
+                    var grossAmount = RoundAmount(group.Sum(x => x.NetAmount));
+                    var discountPercentage = submittedCategory?.DiscPercentage
+                        ?? existingCategory?.DiscPercentage
+                        ?? (byte)0;
+                    var discountAmount = RoundAmount(grossAmount * discountPercentage / 100m);
+                    var netAmount = RoundAmount(grossAmount - discountAmount);
+
+                    return new JobProdCatDto
+                    {
+                        CategoryId = group.Key,
+                        CategoryName = submittedCategory?.CategoryName,
+                        GrossAmount = grossAmount,
+                        DiscPercentage = discountPercentage,
+                        DiscAmount = discountAmount,
+                        NetAmount = netAmount
+                    };
+                })
+                .Where(x => x.GrossAmount > 0 || x.DiscAmount > 0 || x.NetAmount > 0)
+                .ToList();
+        }
+
+        private static bool ProductCategorySnapshotsMatch(
+            IReadOnlyCollection<JobProdCatDto> expectedRows,
+            IReadOnlyCollection<JobProdCatDto> actualRows)
+        {
+            var expectedByCategoryId = expectedRows
+                .GroupBy(x => x.CategoryId)
+                .ToDictionary(x => x.Key, x => x.First());
+            var actualByCategoryId = actualRows
+                .Where(x => x.CategoryId > 0)
+                .Where(x => x.GrossAmount > 0 || x.DiscAmount > 0 || x.NetAmount > 0)
+                .GroupBy(x => x.CategoryId)
+                .ToDictionary(
+                    x => x.Key,
+                    x => new JobProdCatDto
+                    {
+                        CategoryId = x.Key,
+                        GrossAmount = RoundAmount(x.Sum(row => row.GrossAmount)),
+                        DiscAmount = RoundAmount(x.Sum(row => row.DiscAmount)),
+                        NetAmount = RoundAmount(x.Sum(row => row.NetAmount)),
+                        DiscPercentage = x.Select(row => row.DiscPercentage).Distinct().Count() == 1
+                            ? x.First().DiscPercentage
+                            : (byte)0
+                    });
+
+            if (expectedByCategoryId.Count != actualByCategoryId.Count)
+            {
+                return false;
+            }
+
+            foreach (var (categoryId, expected) in expectedByCategoryId)
+            {
+                if (!actualByCategoryId.TryGetValue(categoryId, out var actual))
+                {
+                    return false;
+                }
+
+                if (actual.DiscPercentage != expected.DiscPercentage
+                    || RoundAmount(actual.GrossAmount) != RoundAmount(expected.GrossAmount)
+                    || RoundAmount(actual.DiscAmount) != RoundAmount(expected.DiscAmount)
+                    || RoundAmount(actual.NetAmount) != RoundAmount(expected.NetAmount))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static decimal RoundAmount(decimal value)

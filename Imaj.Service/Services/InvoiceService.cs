@@ -327,6 +327,7 @@ namespace Imaj.Service.Services
                     selectedJobCategories = await _unitOfWork.Repository<JobProdCat>().Query()
                         .Where(x => selectedJobIds.Contains(x.JobID) && x.Deleted == 0)
                         .ToListAsync();
+                    var selectedJobProductRows = await LoadJobProductCategoryAmountRowsAsync(selectedJobIds);
 
                     var prodCatIds = selectedJobCategories
                         .Select(x => x.ProdCatID)
@@ -347,7 +348,7 @@ namespace Imaj.Service.Services
                         validationErrors.Add("Seçilen işlerde tanımsız ürün kategorisi var.");
                     }
 
-                    validationErrors.AddRange(ValidateJobCategorySnapshots(selectedJobs, selectedJobCategories));
+                    validationErrors.AddRange(ValidateJobCategorySnapshots(selectedJobs, selectedJobCategories, selectedJobProductRows));
 
                     var jobsWithCategories = selectedJobCategories
                         .Select(x => x.JobID)
@@ -2681,6 +2682,7 @@ namespace Imaj.Service.Services
                 var jobCategories = await _unitOfWork.Repository<JobProdCat>().Query()
                     .Where(x => selectedJobIds.Contains(x.JobID) && x.Deleted == 0)
                     .ToListAsync();
+                var jobProductRows = await LoadJobProductCategoryAmountRowsAsync(selectedJobIds);
                 var prodCatIds = jobCategories.Select(x => x.ProdCatID).Distinct().ToList();
                 if (prodCatIds.Any())
                 {
@@ -2695,7 +2697,7 @@ namespace Imaj.Service.Services
                     }
                 }
 
-                validationErrors.AddRange(ValidateJobCategorySnapshots(selectedJobs, jobCategories));
+                validationErrors.AddRange(ValidateJobCategorySnapshots(selectedJobs, jobCategories, jobProductRows));
 
                 var jobsWithCategories = jobCategories.Select(x => x.JobID).Distinct().ToHashSet();
                 var needsFallbackTax = selectedJobs.Any(job =>
@@ -2722,12 +2724,55 @@ namespace Imaj.Service.Services
             return (true, selectedJobs, new List<string>());
         }
 
-        private static List<string> ValidateJobCategorySnapshots(List<Job> selectedJobs, List<JobProdCat> jobCategories)
+        private async Task<List<JobProductCategoryAmountRow>> LoadJobProductCategoryAmountRowsAsync(IReadOnlyCollection<decimal> jobIds)
+        {
+            if (!jobIds.Any())
+            {
+                return new List<JobProductCategoryAmountRow>();
+            }
+
+            return await (
+                from jobProduct in _unitOfWork.Repository<JobProd>().Query()
+                where jobIds.Contains(jobProduct.JobID) && jobProduct.Deleted == 0
+                join product in _unitOfWork.Repository<Product>().Query()
+                    on jobProduct.ProductID equals product.Id
+                select new JobProductCategoryAmountRow
+                {
+                    JobId = jobProduct.JobID,
+                    ProdCatId = product.ProdCatID,
+                    NetAmount = jobProduct.NetAmount
+                })
+                .ToListAsync();
+        }
+
+        private static List<string> ValidateJobCategorySnapshots(
+            List<Job> selectedJobs,
+            List<JobProdCat> jobCategories,
+            List<JobProductCategoryAmountRow> jobProductRows)
         {
             var invalidReferences = new List<int>();
             var categoryTotalsByJobId = jobCategories
                 .GroupBy(x => x.JobID)
                 .ToDictionary(x => x.Key, x => RoundCurrency(x.Sum(row => row.NetAmount)));
+            var productGrossByJobAndCategory = jobProductRows
+                .GroupBy(x => new { x.JobId, x.ProdCatId })
+                .Select(x => new { x.Key, GrossAmount = RoundCurrency(x.Sum(row => row.NetAmount)) })
+                .Where(x => x.GrossAmount != 0)
+                .ToDictionary(x => x.Key, x => x.GrossAmount);
+            var categoryRowsByJobAndCategory = jobCategories
+                .GroupBy(x => new { JobId = x.JobID, ProdCatId = x.ProdCatID })
+                .Select(x => new
+                {
+                    x.Key,
+                    Snapshot = new
+                    {
+                        GrossAmount = RoundCurrency(x.Sum(row => row.GrossAmount)),
+                        DiscAmount = RoundCurrency(x.Sum(row => row.DiscAmount)),
+                        NetAmount = RoundCurrency(x.Sum(row => row.NetAmount))
+                    }
+                })
+                .Where(x => x.Snapshot.GrossAmount != 0 || x.Snapshot.DiscAmount != 0 || x.Snapshot.NetAmount != 0)
+                .ToDictionary(x => x.Key, x => x.Snapshot);
 
             foreach (var job in selectedJobs.Where(x => RoundCurrency(x.ProdSum) > 0))
             {
@@ -2735,6 +2780,36 @@ namespace Imaj.Service.Services
                     || categoryTotal != RoundCurrency(job.ProdSum))
                 {
                     invalidReferences.Add(job.Reference);
+                    continue;
+                }
+
+                var productCategoryKeys = productGrossByJobAndCategory.Keys
+                    .Where(x => x.JobId == job.Id)
+                    .Select(x => x.ProdCatId)
+                    .OrderBy(x => x)
+                    .ToList();
+                var snapshotCategoryKeys = categoryRowsByJobAndCategory.Keys
+                    .Where(x => x.JobId == job.Id)
+                    .Select(x => x.ProdCatId)
+                    .OrderBy(x => x)
+                    .ToList();
+                if (!productCategoryKeys.SequenceEqual(snapshotCategoryKeys))
+                {
+                    invalidReferences.Add(job.Reference);
+                    continue;
+                }
+
+                foreach (var prodCatId in productCategoryKeys)
+                {
+                    var key = new { JobId = job.Id, ProdCatId = prodCatId };
+                    var expectedGross = productGrossByJobAndCategory[key];
+                    var actualCategory = categoryRowsByJobAndCategory[key];
+                    if (actualCategory.GrossAmount != expectedGross
+                        || actualCategory.NetAmount != RoundCurrency(actualCategory.GrossAmount - actualCategory.DiscAmount))
+                    {
+                        invalidReferences.Add(job.Reference);
+                        break;
+                    }
                 }
             }
 
@@ -2747,8 +2822,15 @@ namespace Imaj.Service.Services
             var suffix = invalidReferences.Count > 10 ? "..." : string.Empty;
             return new List<string>
             {
-                $"Ürün kategorisi bağlantısı eksik veya toplamı iş tutarıyla eşleşmeyen işler faturaya eklenemez: {references}{suffix}"
+                $"Ürün kategori özeti ürün satırlarıyla veya iş tutarıyla eşleşmeyen işler faturaya eklenemez: {references}{suffix}"
             };
+        }
+
+        private sealed class JobProductCategoryAmountRow
+        {
+            public decimal JobId { get; init; }
+            public decimal ProdCatId { get; init; }
+            public decimal NetAmount { get; init; }
         }
 
         private async Task AttachJobsToLineAsync(Invoice invoice, InvoLine line, List<Job> selectedJobs, decimal userId)

@@ -150,7 +150,7 @@
                 <div class="flex-1 min-w-0">
                     <h2 class="invoice-page-title invoice-page-title--orange">@Localizer["Invoice"]</h2>
                 </div>
-                <div class="mt-3 md:mt-0 invoice-page-actions">
+                <div class="mt-3 md:mt-0 invoice-page-actions" x-show="!isEditing" x-cloak>
                     <a href="@returnUrl" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">@Localizer["Back"]</a>
                 </div>
             </div>
@@ -655,19 +655,21 @@
                 </div>
             </section>
 
-            @if (selectedReferences.Count > 1)
-            {
-                <div class="mt-4">
-                    <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel
-                    {
-                        CurrentPage = Model.CurrentIndex + 1,
-                        TotalCount = selectedReferences.Count,
-                        PageSize = 1,
-                        BaseUrl = "/Invoice/Detail",
-                        QueryString = queryString
-                    })" />
-                </div>
-            }
+            <div x-show="!isEditing" x-cloak>
+                @if (selectedReferences.Count > 1)
+                {
+                    <div class="mt-4">
+                        <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel
+                        {
+                            CurrentPage = Model.CurrentIndex + 1,
+                            TotalCount = selectedReferences.Count,
+                            PageSize = 1,
+                            BaseUrl = "/Invoice/Detail",
+                            QueryString = queryString
+                        })" />
+                    </div>
+                }
+            </div>
 
             <div class="invoice-footer-bar invoice-footer-bar--center responsive-action-group">
                 <div class="flex flex-wrap justify-center gap-2 w-full">
@@ -694,10 +696,21 @@
                             @Localizer["Cancel"]
                         </button>
                     }
-                    <a href="@returnUrl" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
+                    <a href="@returnUrl" x-show="!isEditing" x-cloak class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
                 </div>
 
-                <div class="flex flex-wrap justify-center gap-2 w-full">
+                <div class="flex flex-wrap justify-center gap-2 w-full" x-show="isEditing" x-cloak>
+                    <a href="/Invoice/Summary?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
+                        @Localizer["ViewSummary"]
+                    </a>
+                    <button type="button"
+                            @@click="recalculateAll()"
+                            class="inline-flex items-center px-4 py-2 border border-slate-400 text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                        @Localizer["Calculate"]
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-2 w-full" x-show="!isEditing" x-cloak>
                     <a href="/Invoice/Summary?reference=@invoice.Reference&page=@(Model.CurrentIndex + 1)&@queryString" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
                         @Localizer["ViewSummary"]
                     </a>
@@ -831,7 +844,7 @@
 
                 @if (canDoIssue)
                 {
-                    <div class="flex flex-wrap justify-center gap-2 w-full">
+                    <div class="flex flex-wrap justify-center gap-2 w-full" x-show="!isEditing" x-cloak>
                         <form method="post" action="/Invoice/WorkflowAction" class="workflow-action-form inline-flex items-center gap-2 flex-wrap justify-center">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="Reference" value="@reference" />
@@ -1013,6 +1026,11 @@
                     document.querySelectorAll('[data-invoice-line-total]').forEach((cell) => {
                         cell.textContent = this.formatMoney(total);
                     });
+                },
+                recalculateAll() {
+                    this.updateLineTotals();
+                    this.updateCategoryTotals();
+                    this.updateTaxTotals();
                 },
                 updateTaxTotals() {
                     let taxTotal = 0;
