@@ -645,7 +645,9 @@ namespace Imaj.Service.Services
 
                 // 4. Ürün Kategorileri (JobProdCat) Bilgileri
                 var prodCatQuery = from jpc in _unitOfWork.Repository<JobProdCat>().Query()
-                                   where jpc.JobID == jobDto.Id && jpc.Deleted == 0
+                                   where jpc.JobID == jobDto.Id
+                                         && jpc.Deleted == 0
+                                         && (jpc.GrossAmount > 0 || jpc.DiscAmount > 0 || jpc.NetAmount > 0)
                                    join pc in _unitOfWork.Repository<ProdCat>().Query() on jpc.ProdCatID equals pc.Id
                                    join xpc in _unitOfWork.Repository<XProdCat>().Query().Where(x => x.LanguageID == languageId)
                                        on pc.Id equals xpc.ProdCatID into xpcGroup
