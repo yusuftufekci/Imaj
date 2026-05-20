@@ -557,7 +557,7 @@ namespace Imaj.Service.Services
                     taxBases.Add((line.TaxTypeId, line.VatRate, line.Amount));
                 }
 
-                var netAmount = RoundCurrency(lineItems.Sum(x => x.Amount));
+                var subtotal = RoundCurrency(lineItems.Sum(x => x.Amount));
                 var taxRows = taxBases
                     .GroupBy(x => new { x.VatRate, x.TaxTypeId })
                     .Select(g =>
@@ -575,7 +575,7 @@ namespace Imaj.Service.Services
                     })
                     .ToList();
                 var totalTaxAmount = RoundCurrency(taxRows.Sum(x => x.TaxAmount));
-                var grossAmount = RoundCurrency(netAmount + totalTaxAmount);
+                var total = RoundCurrency(subtotal + totalTaxAmount);
 
                 await invoiceRepo.AddAsync(new Invoice
                 {
@@ -589,9 +589,10 @@ namespace Imaj.Service.Services
                     Contact = normalizedRelatedPerson,
                     Notes = normalizedNotes,
                     Footer = normalizedFooter,
-                    NetAmount = netAmount,
+                    // DB konvansiyonu: GrossAmount = matrah (KDV haric), NetAmount = net odenecek (KDV dahil)
+                    GrossAmount = subtotal,
                     TaxAmount = totalTaxAmount,
-                    GrossAmount = grossAmount,
+                    NetAmount = total,
                     Evaluated = input.Evaluated,
                     SelectFlag = false,
                     Stamp = 1,
@@ -2077,9 +2078,11 @@ namespace Imaj.Service.Services
                     }
                 }
 
-                invoice.NetAmount = RoundCurrency(lines.Sum(x => x.Amount));
+                // DB konvansiyonu: GrossAmount = matrah (KDV haric), NetAmount = net odenecek (KDV dahil)
+                var subtotal = RoundCurrency(lines.Sum(x => x.Amount));
                 invoice.TaxAmount = RoundCurrency(calculatedTaxRows.Sum(x => x.TaxAmount));
-                invoice.GrossAmount = RoundCurrency(invoice.NetAmount + invoice.TaxAmount);
+                invoice.GrossAmount = subtotal;
+                invoice.NetAmount = RoundCurrency(subtotal + invoice.TaxAmount);
                 invoiceRepo.Update(invoice);
 
                 await _unitOfWork.CommitAsync();
@@ -3268,9 +3271,11 @@ namespace Imaj.Service.Services
                 }
             }
 
-            invoice.NetAmount = RoundCurrency(lines.Sum(x => x.Amount));
+            // DB konvansiyonu: GrossAmount = matrah (KDV haric), NetAmount = net odenecek (KDV dahil)
+            var subtotal = RoundCurrency(lines.Sum(x => x.Amount));
             invoice.TaxAmount = RoundCurrency(calculatedTaxRows.Sum(x => x.TaxAmount));
-            invoice.GrossAmount = RoundCurrency(invoice.NetAmount + invoice.TaxAmount);
+            invoice.GrossAmount = subtotal;
+            invoice.NetAmount = RoundCurrency(subtotal + invoice.TaxAmount);
             invoice.Stamp = 1;
             invoiceRepo.Update(invoice);
 
