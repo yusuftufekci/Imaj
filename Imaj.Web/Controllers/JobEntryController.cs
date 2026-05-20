@@ -15,6 +15,8 @@ namespace Imaj.Web.Controllers
         private const double QueryMethodId = 1397;
         private const double AddJobEntryMethodId = 1710;
         private const double ViewJobEntryMethodId = 1711;
+        private const decimal CompleteMethodId = 1334m;
+        private const decimal DiscardMethodId = 1340m;
         private static readonly string[] DefaultCreateProductCodes = { "OPERATOR", "CAFE" };
 
         private readonly IJobService _jobService;
@@ -460,6 +462,9 @@ namespace Imaj.Web.Controllers
                 IsEmailSent = job.IsEmailSent,
                 IsEvaluated = job.IsEvaluated,
                 InvoiceStatus = job.InvoLineId.HasValue ? L("Billed") : "-",
+                HasActiveWorkRows = job.HasActiveWorkRows,
+                HasActiveProductCategorySnapshot = job.HasActiveProductCategorySnapshot,
+                CanPriceByProductCategorySnapshot = job.CanPriceByProductCategorySnapshot,
                 
                 // Mapped Notes
                 AdminNotes = job.IntNotes,
@@ -562,6 +567,39 @@ namespace Imaj.Web.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> WorkflowAction(JobWorkflowActionRequest request)
+        {
+            if (request.Reference <= 0)
+            {
+                TempData["ErrorMessage"] = L("JobNotFound");
+                return RedirectToAction("List");
+            }
+
+            var methodId = ResolveWorkflowMethodId(request.Action);
+            if (!methodId.HasValue)
+            {
+                TempData["ErrorMessage"] = L("GenericError");
+                return RedirectToDetailWithContext(request);
+            }
+
+            var hasPermission = await _permissionViewService.CanExecuteMethodAsync(methodId.Value, write: true);
+            if (!hasPermission)
+            {
+                TempData["ErrorMessage"] = L("AccessDeniedMessage");
+                return RedirectToDetailWithContext(request);
+            }
+
+            var result = await _jobService.ExecuteWorkflowActionAsync(request.Reference, request.Action);
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = this.LocalizeUiMessage(result.Message, L("GenericError"));
+            }
+
+            return RedirectToDetailWithContext(request);
+        }
+
         /// <summary>
         /// Yeni iş yaratma sayfası.
         /// Dropdown verileri veritabanından yüklenir.
@@ -614,6 +652,38 @@ namespace Imaj.Web.Controllers
                 return View(model);
             }
 
+            var createStartDate = ParseJobDateTime(model.StartDateText);
+            var createEndDate = ParseJobDateTime(model.EndDateText);
+            if (!createStartDate.HasValue || !createEndDate.HasValue)
+            {
+                if (isAjax)
+                {
+                    return Json(new { success = false, message = L("StartDateRangeInvalid") });
+                }
+
+                TempData["ErrorMessage"] = L("StartDateRangeInvalid");
+                ModelState.AddModelError(string.Empty, L("StartDateRangeInvalid"));
+                await LoadDropdownDataAsync();
+                ApplyFunctionSelection(model);
+                model.AutoOvertimeTemplates = await GetDefaultCreateOvertimeTemplatesAsync(model.FunctionId);
+                return View(model);
+            }
+
+            if (createStartDate.Value > createEndDate.Value)
+            {
+                if (isAjax)
+                {
+                    return Json(new { success = false, message = L("EndDateBeforeStart") });
+                }
+
+                TempData["ErrorMessage"] = L("EndDateBeforeStart");
+                ModelState.AddModelError(string.Empty, L("EndDateBeforeStart"));
+                await LoadDropdownDataAsync();
+                ApplyFunctionSelection(model);
+                model.AutoOvertimeTemplates = await GetDefaultCreateOvertimeTemplatesAsync(model.FunctionId);
+                return View(model);
+            }
+
             // Map View Model to DTO
             var jobDto = new JobDto
             {
@@ -623,8 +693,8 @@ namespace Imaj.Web.Controllers
                 // Function Handling
                 FunctionId = model.FunctionId ?? 1m,
                 
-                StartDate = model.StartDate,
-                EndDate = model.EndDate,
+                StartDate = createStartDate.Value,
+                EndDate = createEndDate.Value,
                 IsEmailSent = false,
                 IsEvaluated = false,
                 IntNotes = model.AdminNotes,
@@ -921,6 +991,78 @@ namespace Imaj.Web.Controllers
             return value.Equals("Tümü", StringComparison.OrdinalIgnoreCase)
                 || value.Equals("Tumu", StringComparison.OrdinalIgnoreCase)
                 || value.Equals("All", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static DateTime? ParseJobDateTime(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            // Hem eğik çizgi (/) hem nokta (.) ayraçlı formatlar desteklenir.
+            // Saat (HH:mm) girilmemişse 00:00 olarak parse edilir.
+            // Kıyas her zaman tam DateTime (saat + dakika dahil) üzerinden yapılır.
+            var formats = new[]
+            {
+                "dd/MM/yyyy HH:mm",
+                "d/M/yyyy HH:mm",
+                "dd.MM.yyyy HH:mm",
+                "d.M.yyyy HH:mm",
+                "dd/MM/yyyy",
+                "d/M/yyyy",
+                "dd.MM.yyyy",
+                "d.M.yyyy"
+            };
+            return DateTime.TryParseExact(value.Trim(), formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsed)
+                ? parsed
+                : null;
+        }
+
+        private IActionResult RedirectToDetailWithContext(JobWorkflowActionRequest request)
+        {
+            var selectedIds = request.SelectedIds?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            var referenceText = request.Reference.ToString();
+            if (!selectedIds.Contains(referenceText))
+            {
+                selectedIds.Add(referenceText);
+            }
+
+            var currentIndex = request.CurrentIndex;
+            if (currentIndex < 0)
+            {
+                currentIndex = 0;
+            }
+            if (currentIndex >= selectedIds.Count)
+            {
+                currentIndex = selectedIds.Count - 1;
+            }
+
+            var returnUrl = string.IsNullOrWhiteSpace(request.ReturnUrl) || !request.ReturnUrl.StartsWith('/')
+                ? "/JobEntry/List"
+                : request.ReturnUrl;
+
+            return RedirectToAction("Detail", new
+            {
+                id = referenceText,
+                selectedIds,
+                currentIndex,
+                returnUrl
+            });
+        }
+
+        private static decimal? ResolveWorkflowMethodId(JobWorkflowAction action)
+        {
+            return action switch
+            {
+                JobWorkflowAction.Complete => CompleteMethodId,
+                JobWorkflowAction.Discard => DiscardMethodId,
+                _ => null
+            };
         }
 
         private string L(string key)

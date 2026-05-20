@@ -1,6 +1,9 @@
 @using System.Net
 @using System.Collections.Generic
+@using Imaj.Web.Authorization
+@using Imaj.Service.DTOs
 @model JobDetailViewModel
+@inject IPermissionViewService PermissionViewService
 
 @{
     ViewData["Title"] = Localizer["JobDetail"];
@@ -23,6 +26,16 @@
     }
 
     var selectedIds = Model.SelectedIds ?? new List<string>();
+    var parsedReference = int.TryParse(Model.Code, out var reference);
+    var stateId = Model.StateId;
+    var isOpen = stateId == 1m || stateId == 110m;
+    var isCompleted = stateId == 120m;
+
+    var canComplete = await PermissionViewService.CanExecuteMethodAsync(1334m, write: true);
+    var canDiscard = await PermissionViewService.CanExecuteMethodAsync(1340m, write: true);
+    var canEditJob = await PermissionViewService.CanExecuteMethodAsync(1397m, write: true);
+    var canDoComplete = parsedReference && canComplete && !Model.IsEvaluated && isOpen && Model.HasActiveWorkRows;
+    var canDoDiscard = parsedReference && canDiscard && !Model.IsEvaluated && isOpen;
 }
 
 <div x-data="jobDetail()" class="job-page-shell page-shell--wide space-y-3">
@@ -266,10 +279,69 @@
         })" />
          
         <div class="job-footer-bar job-footer-bar--center responsive-action-group">
-            <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
-            <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
-                @Localizer["ViewHistory"]
-            </a>
+            @if (isOpen)
+            {
+                <div class="flex flex-wrap justify-center gap-2 w-full">
+                    @if (canEditJob)
+                    {
+                        <a href="/Job/Detail?id=@Model.Code&returnUrl=@WebUtility.UrlEncode($"/JobEntry/Detail?id={Model.Code}")" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Edit"]</a>
+                    }
+                    <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
+                </div>
+                <div class="flex flex-wrap justify-center gap-2 w-full">
+                    @if (canDoComplete)
+                    {
+                        <form method="post" action="/JobEntry/WorkflowAction" class="workflow-action-form inline-flex">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Reference" value="@reference" />
+                            <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Complete)" />
+                            <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                            @foreach (var selectedId in selectedIds)
+                            {
+                                <input type="hidden" name="SelectedIds" value="@selectedId" />
+                            }
+                            <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowComplete"]</button>
+                        </form>
+                    }
+                    @if (canDoDiscard)
+                    {
+                        <form method="post" action="/JobEntry/WorkflowAction" class="workflow-action-form inline-flex">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Reference" value="@reference" />
+                            <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Discard)" />
+                            <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+                            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+                            @foreach (var selectedId in selectedIds)
+                            {
+                                <input type="hidden" name="SelectedIds" value="@selectedId" />
+                            }
+                            <button type="submit" class="inline-flex items-center px-4 py-1 border border-red-400 text-sm font-bold rounded shadow-sm text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowDiscard"]</button>
+                        </form>
+                    }
+                    <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                        @Localizer["ViewHistory"]
+                    </a>
+                </div>
+            }
+            else if (isCompleted)
+            {
+                <div class="flex flex-wrap justify-center gap-2 w-full">
+                    <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
+                </div>
+                <div class="flex flex-wrap justify-center gap-2 w-full">
+                    <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                        @Localizer["ViewHistory"]
+                    </a>
+                </div>
+            }
+            else
+            {
+                <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
+                <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                    @Localizer["ViewHistory"]
+                </a>
+            }
         </div>
     </div>
 </div>

@@ -204,7 +204,7 @@
                                 <span>@Model.StartDate.ToString("dd/MM/yyyy HH:mm") @Model.StartDate.ToString("dddd")</span>
                             </template>
                             <template x-if="isEditing">
-                                <input type="datetime-local" name="StartDate" value="@Model.StartDate.ToString("yyyy-MM-ddTHH:mm")" form="jobDetailEditForm" class="dense-input">
+                                <input type="text" name="StartDateText" value="@Model.StartDate.ToString("dd/MM/yyyy HH:mm")" placeholder="19/05/2026 16:05" form="jobDetailEditForm" class="dense-input">
                             </template>
                         </dd>
                     </div>
@@ -215,7 +215,7 @@
                                 <span>@Model.EndDate?.ToString("dd/MM/yyyy HH:mm") @Model.EndDate?.ToString("dddd")</span>
                             </template>
                             <template x-if="isEditing">
-                                <input type="datetime-local" name="EndDate" value="@Model.EndDate?.ToString("yyyy-MM-ddTHH:mm")" form="jobDetailEditForm" class="dense-input">
+                                <input type="text" name="EndDateText" value="@Model.EndDate?.ToString("dd/MM/yyyy HH:mm")" placeholder="19/05/2026 16:05" form="jobDetailEditForm" class="dense-input">
                             </template>
                         </dd>
                     </div>

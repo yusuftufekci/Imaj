@@ -21,6 +21,8 @@ namespace Imaj.Service.Services
 
         // Configuration constants - easier to change globally later
         protected const int CurrentCompanyId = 7;
+        protected const string SearchCollation = "Latin1_General_100_CI_AS";
+        protected const string LikeEscapeCharacter = "~";
         protected decimal CurrentLanguageId => ResolveUiLanguageId();
 
         protected BaseService(IUnitOfWork unitOfWork, ILogger logger, IConfiguration configuration)
@@ -34,6 +36,18 @@ namespace Imaj.Service.Services
         {
             var culture = CultureInfo.CurrentUICulture.Name;
             return culture.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? 2m : 1m;
+        }
+
+        protected static string BuildContainsLikePattern(string value)
+        {
+            var escapedValue = value
+                .Trim()
+                .Replace(LikeEscapeCharacter, LikeEscapeCharacter + LikeEscapeCharacter)
+                .Replace("%", LikeEscapeCharacter + "%")
+                .Replace("_", LikeEscapeCharacter + "_")
+                .Replace("[", LikeEscapeCharacter + "[");
+
+            return $"%{escapedValue}%";
         }
 
         /// <summary>

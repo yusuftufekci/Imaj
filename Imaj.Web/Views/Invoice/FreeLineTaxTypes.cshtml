@@ -1,0 +1,137 @@
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Imaj.Web
+@inject IStringLocalizer<SharedResource> Localizer
+@model InvoiceFreeLineTaxTypePickerViewModel
+
+@{
+    ViewData["Title"] = Localizer["TaxTypes"];
+    var invoice = Model.Invoice ?? new InvoiceCreateViewModel();
+}
+
+<div class="invoice-page-shell invoice-legacy-detail invoice-tax-type-picker page-shell--wide space-y-3">
+    <h2 class="invoice-page-title invoice-page-title--orange">@Localizer["TaxTypes"]</h2>
+
+    <form method="post" action="/Invoice/AddFreeLinesFromTaxTypes" class="space-y-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Invoice.Reference" value="@invoice.Reference" />
+        <input type="hidden" name="Invoice.JobCustomerCode" value="@invoice.JobCustomerCode" />
+        <input type="hidden" name="Invoice.JobCustomerName" value="@invoice.JobCustomerName" />
+        <input type="hidden" name="Invoice.InvoiceCustomerCode" value="@invoice.InvoiceCustomerCode" />
+        <input type="hidden" name="Invoice.InvoiceCustomerName" value="@invoice.InvoiceCustomerName" />
+        <input type="hidden" name="Invoice.Ad" value="@invoice.Ad" />
+        <input type="hidden" name="Invoice.RelatedPerson" value="@invoice.RelatedPerson" />
+        <input type="hidden" name="Invoice.IssueDate" value="@invoice.IssueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+        <input type="hidden" name="Invoice.Status" value="@invoice.Status" />
+        <input type="hidden" name="Invoice.IsEvaluated" value="@(invoice.IsEvaluated ? "true" : "false")" />
+        <input type="hidden" name="Invoice.Notes" value="@invoice.Notes" />
+        <input type="hidden" name="Invoice.Footnote" value="@invoice.Footnote" />
+
+        @for (var i = 0; i < invoice.Lines.Count; i++)
+        {
+            <input type="hidden" name="Invoice.Lines[@i].Description" value="@invoice.Lines[i].Description" />
+            <input type="hidden" name="Invoice.Lines[@i].Amount" value="@invoice.Lines[i].Amount.ToString(CultureInfo.InvariantCulture)" />
+            <input type="hidden" name="Invoice.Lines[@i].VatRate" value="@invoice.Lines[i].VatRate.ToString(CultureInfo.InvariantCulture)" />
+        }
+
+        @for (var i = 0; i < invoice.Jobs.Count; i++)
+        {
+            <input type="hidden" name="Invoice.Jobs[@i].Reference" value="@invoice.Jobs[i].Reference" />
+            <input type="hidden" name="Invoice.Jobs[@i].Name" value="@invoice.Jobs[i].Name" />
+            <input type="hidden" name="Invoice.Jobs[@i].ProductAmount" value="@invoice.Jobs[i].ProductAmount.ToString(CultureInfo.InvariantCulture)" />
+            <input type="hidden" name="Invoice.Jobs[@i].WorkAmount" value="@invoice.Jobs[i].WorkAmount.ToString(CultureInfo.InvariantCulture)" />
+        }
+
+        <section class="invoice-table-card invoice-tax-type-picker__table-card">
+            <div class="invoice-table-card__header">
+                <h3 class="invoice-table-card__title">@Localizer["TaxType"]</h3>
+            </div>
+            <div class="invoice-table-wrap">
+                <table class="invoice-table invoice-table--compact">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="text-center">@Localizer["Selected"]</th>
+                            <th scope="col">@Localizer["Quantity"]</th>
+                            <th scope="col">@Localizer["Code"]</th>
+                            <th scope="col">@Localizer["Name"]</th>
+                            <th scope="col">@Localizer["Percentage"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.TaxTypes.Count; i++)
+                        {
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox"
+                                           id="TaxTypes_@(i)__Selected"
+                                           name="TaxTypes[@i].Selected"
+                                           value="true"
+                                           @(Model.TaxTypes[i].Selected || Model.TaxTypes[i].Quantity > 0 ? "checked" : "") />
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           name="TaxTypes[@i].Quantity"
+                                           value="@Model.TaxTypes[i].Quantity"
+                                           data-selects-checkbox="TaxTypes_@(i)__Selected"
+                                           class="dense-input invoice-job-picker__tiny-input" />
+                                </td>
+                                <td>
+                                    @Model.TaxTypes[i].Code
+                                    <input type="hidden" name="TaxTypes[@i].Code" value="@Model.TaxTypes[i].Code" />
+                                </td>
+                                <td>
+                                    @Model.TaxTypes[i].Name
+                                    <input type="hidden" name="TaxTypes[@i].Name" value="@Model.TaxTypes[i].Name" />
+                                </td>
+                                <td>
+                                    @Model.TaxTypes[i].Rate.ToString("0.##", CultureInfo.CurrentCulture)
+                                    <input type="hidden" name="TaxTypes[@i].Rate" value="@Model.TaxTypes[i].Rate.ToString(CultureInfo.InvariantCulture)" />
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.TaxTypes.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center">@Localizer["NoRecordsFound"]</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <div class="invoice-footer-bar invoice-footer-bar--center">
+            <div class="flex flex-wrap justify-center gap-1">
+                <button type="submit" class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">
+                    Faturaya Ekle
+                </button>
+                <button type="submit"
+                        formaction="/Invoice/ReturnToCreateFromTaxTypes"
+                        class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">
+                    @Localizer["Back"]
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <div class="invoice-job-picker__copyright">© 2005 Imajonline.com - Her hakkı saklıdır.</div>
+</div>
+
+<script>
+    document.querySelectorAll('[data-selects-checkbox]').forEach((input) => {
+        const checkbox = document.getElementById(input.dataset.selectsCheckbox);
+        if (!checkbox) {
+            return;
+        }
+
+        const syncSelection = () => {
+            const value = Number.parseInt(String(input.value || '').trim(), 10);
+            if (Number.isFinite(value) && value > 0) {
+                checkbox.checked = true;
+            }
+        };
+
+        input.addEventListener('input', syncSelection);
+        input.addEventListener('change', syncSelection);
+    });
+</script>

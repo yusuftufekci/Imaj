@@ -132,7 +132,12 @@ namespace Imaj.Service.Services
                 // İş adı filtresi
                 if (!string.IsNullOrWhiteSpace(filter.JobName))
                 {
-                    jobQuery = jobQuery.Where(x => x.Name.Contains(filter.JobName));
+                    var jobNamePattern = BuildContainsLikePattern(filter.JobName);
+                    jobQuery = jobQuery.Where(x => x.Name != null
+                        && EF.Functions.Like(
+                            EF.Functions.Collate(x.Name, SearchCollation),
+                            jobNamePattern,
+                            LikeEscapeCharacter));
                 }
 
                 // İlgili kişi (Contact) filtresi
@@ -148,7 +153,10 @@ namespace Imaj.Service.Services
                 }
                 if (filter.StartDateEnd.HasValue)
                 {
-                    jobQuery = jobQuery.Where(x => x.StartDT <= filter.StartDateEnd.Value);
+                    var startDateEnd = filter.StartDateEnd.Value;
+                    jobQuery = startDateEnd.TimeOfDay == TimeSpan.Zero
+                        ? jobQuery.Where(x => x.StartDT < startDateEnd.Date.AddDays(1))
+                        : jobQuery.Where(x => x.StartDT <= startDateEnd);
                 }
 
                 // Bitiş tarihi aralığı
@@ -158,7 +166,10 @@ namespace Imaj.Service.Services
                 }
                 if (filter.EndDateEnd.HasValue)
                 {
-                    jobQuery = jobQuery.Where(x => x.EndDT <= filter.EndDateEnd.Value);
+                    var endDateEnd = filter.EndDateEnd.Value;
+                    jobQuery = endDateEnd.TimeOfDay == TimeSpan.Zero
+                        ? jobQuery.Where(x => x.EndDT < endDateEnd.Date.AddDays(1))
+                        : jobQuery.Where(x => x.EndDT <= endDateEnd);
                 }
 
                 // Durum filtresi
@@ -189,17 +200,39 @@ namespace Imaj.Service.Services
                 // Fatura durumu filtresi
                 if (filter.HasInvoice.HasValue)
                 {
-                    var invoicedJobIds = _unitOfWork.Repository<InvoJob>().Query()
-                        .Where(ij => ij.Deleted == 0)
-                        .Select(ij => ij.JobID);
+                    var invoicedJobIds =
+                        from invoJob in _unitOfWork.Repository<InvoJob>().Query()
+                            .AsNoTracking()
+                            .Where(ij => ij.Deleted == 0)
+                        join line in _unitOfWork.Repository<InvoLine>().Query()
+                                .AsNoTracking()
+                                .Where(line => line.Deleted == 0)
+                            on invoJob.InvoLineID equals line.Id
+                        join invoice in _unitOfWork.Repository<Invoice>().Query()
+                                .AsNoTracking()
+                                .Where(invoice => LiveInvoiceStateIds.Contains(invoice.StateID))
+                            on line.InvoiceID equals invoice.Id
+                        select invoJob.JobID;
+
+                    var liveInvoiceLineIds =
+                        from line in _unitOfWork.Repository<InvoLine>().Query()
+                            .AsNoTracking()
+                            .Where(line => line.Deleted == 0)
+                        join invoice in _unitOfWork.Repository<Invoice>().Query()
+                                .AsNoTracking()
+                                .Where(invoice => LiveInvoiceStateIds.Contains(invoice.StateID))
+                            on line.InvoiceID equals invoice.Id
+                        select line.Id;
 
                     if (filter.HasInvoice.Value)
                     {
-                        jobQuery = jobQuery.Where(x => x.InvoLineID != null || invoicedJobIds.Contains(x.Id));
+                        jobQuery = jobQuery.Where(x => invoicedJobIds.Contains(x.Id)
+                                                       || (x.InvoLineID.HasValue && liveInvoiceLineIds.Contains(x.InvoLineID.Value)));
                     }
                     else
                     {
-                        jobQuery = jobQuery.Where(x => x.InvoLineID == null && !invoicedJobIds.Contains(x.Id));
+                        jobQuery = jobQuery.Where(x => !invoicedJobIds.Contains(x.Id)
+                                                       && (!x.InvoLineID.HasValue || !liveInvoiceLineIds.Contains(x.InvoLineID.Value)));
                     }
                 }
 
@@ -306,9 +339,10 @@ namespace Imaj.Service.Services
                             .OrderByDescending(x => x.StartDT)
                             .ThenByDescending(x => x.Reference);
 
+                var matchingCount = await jobQuery.CountAsync(cancellationToken);
                 var totalCount = first.HasValue
-                    ? first.Value
-                    : await jobQuery.CountAsync(cancellationToken);
+                    ? Math.Min(first.Value, matchingCount)
+                    : matchingCount;
 
                 var scopedQuery = first.HasValue
                     ? orderedQuery.Take(first.Value)
@@ -352,11 +386,6 @@ namespace Imaj.Service.Services
                         ProductAmount = job.ProdSum
                     })
                     .ToListAsync(cancellationToken);
-
-                if (first.HasValue && items.Count < pageSize)
-                {
-                    totalCount = skip + items.Count;
-                }
 
                 var result = new PagedResult<JobDto>
                 {
@@ -1316,8 +1345,9 @@ namespace Imaj.Service.Services
 
                 // StateID kontrolü - veritabanında var olmalı
                 var stateRepo = _unitOfWork.Repository<State>();
-                var stateExists = await stateRepo.Query().AnyAsync(x => x.Id == 1);
-                decimal stateIdToUse = stateExists ? 1 : await stateRepo.Query().Select(x => x.Id).FirstOrDefaultAsync();
+                var stateIdToUse = await stateRepo.Query().AnyAsync(x => x.Id == OpenStateId)
+                    ? OpenStateId
+                    : await stateRepo.Query().Select(x => x.Id).FirstOrDefaultAsync();
                 if (stateIdToUse == 0)
                 {
                     return ServiceResult<JobDto>.Fail("Veritabanında durum kaydı bulunamadı.");
@@ -2485,7 +2515,7 @@ namespace Imaj.Service.Services
 
             if (invoiceInfo == null)
             {
-                return (invoLineIds.First(), null, null, false);
+                return (null, null, null, false);
             }
 
             return (invoiceInfo.InvoLineId, invoiceInfo.InvoiceReference, invoiceInfo.InvoiceName, true);

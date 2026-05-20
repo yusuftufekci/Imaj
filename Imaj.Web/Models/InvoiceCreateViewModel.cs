@@ -50,4 +50,19 @@ namespace Imaj.Web.Models
         public decimal ProductAmount { get; set; }
         public decimal WorkAmount { get; set; }
     }
+
+    public class InvoiceFreeLineTaxTypePickerViewModel
+    {
+        public InvoiceCreateViewModel Invoice { get; set; } = new InvoiceCreateViewModel();
+        public List<InvoiceFreeLineTaxTypeOptionViewModel> TaxTypes { get; set; } = new List<InvoiceFreeLineTaxTypeOptionViewModel>();
+    }
+
+    public class InvoiceFreeLineTaxTypeOptionViewModel
+    {
+        public bool Selected { get; set; }
+        public int Quantity { get; set; }
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public decimal Rate { get; set; }
+    }
 }

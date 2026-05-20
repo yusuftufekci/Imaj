@@ -198,6 +198,7 @@ namespace Imaj.Web.Models
         public int First { get; set; } = 100;
         public int PageSize { get; set; } = 16;
         public int Page { get; set; } = 1;
+        public int TotalCount { get; set; }
         public bool Searched { get; set; }
         public List<InvoiceJobPickerItemViewModel> Items { get; set; } = new List<InvoiceJobPickerItemViewModel>();
     }

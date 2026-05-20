@@ -980,6 +980,32 @@ namespace Imaj.Web.Controllers
                 selectedIds.Add(reference.ToString(CultureInfo.InvariantCulture));
             }
 
+            var parsedStartDate = ParseJobDateTime(model.StartDateText);
+            var parsedEndDate = ParseJobDateTime(model.EndDateText) ?? parsedStartDate;
+            if (!parsedStartDate.HasValue || !parsedEndDate.HasValue)
+            {
+                TempData["ErrorMessage"] = L("StartDateRangeInvalid");
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = reference.ToString(CultureInfo.InvariantCulture),
+                    selectedIds = selectedIds.ToArray(),
+                    currentIndex = model.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
+            if (parsedEndDate.Value < parsedStartDate.Value)
+            {
+                TempData["ErrorMessage"] = L("EndDateBeforeStart");
+                return RedirectToAction(nameof(Detail), new
+                {
+                    id = reference.ToString(CultureInfo.InvariantCulture),
+                    selectedIds = selectedIds.ToArray(),
+                    currentIndex = model.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
             var updateDto = new JobDto
             {
                 Reference = reference,
@@ -987,8 +1013,8 @@ namespace Imaj.Web.Controllers
                 CustomerId = model.CustomerId,
                 Name = model.Name,
                 Contact = model.RelatedPerson,
-                StartDate = model.StartDate,
-                EndDate = model.EndDate ?? model.StartDate,
+                StartDate = parsedStartDate.Value,
+                EndDate = parsedEndDate.Value,
                 IntNotes = model.AdminNotes,
                 ExtNotes = model.CustomerNotes,
                 JobWorks = model.Overtimes.Select(x => new JobWorkDto
@@ -1149,6 +1175,38 @@ namespace Imaj.Web.Controllers
                 return View(model);
             }
 
+            var createStartDate = ParseJobDateTime(model.StartDateText);
+            var createEndDate = ParseJobDateTime(model.EndDateText);
+            if (!createStartDate.HasValue || !createEndDate.HasValue)
+            {
+                if (isAjax)
+                {
+                    return Json(new { success = false, message = L("StartDateRangeInvalid") });
+                }
+
+                TempData["ErrorMessage"] = L("StartDateRangeInvalid");
+                ModelState.AddModelError(string.Empty, L("StartDateRangeInvalid"));
+                await LoadDropdownDataAsync();
+                ApplyFunctionSelection(model);
+                model.AutoOvertimeTemplates = await GetDefaultCreateOvertimeTemplatesAsync(model.FunctionId);
+                return View(model);
+            }
+
+            if (createStartDate.Value > createEndDate.Value)
+            {
+                if (isAjax)
+                {
+                    return Json(new { success = false, message = L("EndDateBeforeStart") });
+                }
+
+                TempData["ErrorMessage"] = L("EndDateBeforeStart");
+                ModelState.AddModelError(string.Empty, L("EndDateBeforeStart"));
+                await LoadDropdownDataAsync();
+                ApplyFunctionSelection(model);
+                model.AutoOvertimeTemplates = await GetDefaultCreateOvertimeTemplatesAsync(model.FunctionId);
+                return View(model);
+            }
+
             // Map View Model to DTO
             var jobDto = new JobDto
             {
@@ -1158,8 +1216,8 @@ namespace Imaj.Web.Controllers
                 // Function Handling
                 FunctionId = model.FunctionId ?? 1m,
                 
-                StartDate = model.StartDate,
-                EndDate = model.EndDate,
+                StartDate = createStartDate.Value,
+                EndDate = createEndDate.Value,
                 IsEmailSent = false,
                 IsEvaluated = false,
                 IntNotes = model.AdminNotes,
@@ -1968,6 +2026,32 @@ namespace Imaj.Web.Controllers
         private static string FormatDateTime(DateTime value)
         {
             return value.ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture);
+        }
+
+        private static DateTime? ParseJobDateTime(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            // Hem eğik çizgi (/) hem nokta (.) ayraçlı formatlar desteklenir.
+            // Saat (HH:mm) girilmemişse 00:00 olarak parse edilir.
+            // Kıyas her zaman tam DateTime (saat + dakika dahil) üzerinden yapılır.
+            var formats = new[]
+            {
+                "dd/MM/yyyy HH:mm",
+                "d/M/yyyy HH:mm",
+                "dd.MM.yyyy HH:mm",
+                "d.M.yyyy HH:mm",
+                "dd/MM/yyyy",
+                "d/M/yyyy",
+                "dd.MM.yyyy",
+                "d.M.yyyy"
+            };
+            return DateTime.TryParseExact(value.Trim(), formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed)
+                ? parsed
+                : null;
         }
 
         private static string FormatQuantity(decimal value)

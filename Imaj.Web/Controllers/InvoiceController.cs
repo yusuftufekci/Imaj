@@ -35,6 +35,7 @@ namespace Imaj.Web.Controllers
         private readonly IInvoiceService _invoiceService;
         private readonly IJobService _jobService;
         private readonly ILookupService _lookupService;
+        private readonly ITaxTypeService _taxTypeService;
         private readonly IInvoiceReportExcelService _invoiceReportExcelService;
         private readonly IPermissionViewService _permissionViewService;
 
@@ -42,6 +43,7 @@ namespace Imaj.Web.Controllers
             IInvoiceService invoiceService,
             IJobService jobService,
             ILookupService lookupService,
+            ITaxTypeService taxTypeService,
             IInvoiceReportExcelService invoiceReportExcelService,
             IPermissionViewService permissionViewService,
             ILogger<InvoiceController> logger, IStringLocalizer<SharedResource> localizer) : base(logger, localizer)
@@ -49,6 +51,7 @@ namespace Imaj.Web.Controllers
             _invoiceService = invoiceService;
             _jobService = jobService;
             _lookupService = lookupService;
+            _taxTypeService = taxTypeService;
             _invoiceReportExcelService = invoiceReportExcelService;
             _permissionViewService = permissionViewService;
         }
@@ -548,7 +551,7 @@ namespace Imaj.Web.Controllers
 
         [HttpGet]
         [RequireMethodPermission(1360)]
-        public async Task<IActionResult> JobPicker(InvoiceJobPickerViewModel model)
+        public async Task<IActionResult> JobPicker(InvoiceJobPickerViewModel model, int? page, int? pageSize, int? first)
         {
             await LoadJobPickerDropdownDataAsync();
 
@@ -568,6 +571,18 @@ namespace Imaj.Web.Controllers
                 : "invoice";
             model.JobCustomerCode = invoice.JobCustomerCode;
             model.JobCustomerName = invoice.JobCustomer;
+            if (page.HasValue && page.Value > 0)
+            {
+                model.Page = page.Value;
+            }
+            if (pageSize.HasValue && pageSize.Value > 0)
+            {
+                model.PageSize = pageSize.Value;
+            }
+            if (first.HasValue && first.Value > 0)
+            {
+                model.First = first.Value;
+            }
             model.First = model.First > 0 ? model.First : 100;
             model.PageSize = model.PageSize > 0 ? model.PageSize : 16;
             model.Page = model.Page > 0 ? model.Page : 1;
@@ -591,6 +606,9 @@ namespace Imaj.Web.Controllers
 
                 if (result.IsSuccess && result.Data != null)
                 {
+                    model.Page = result.Data.PageNumber;
+                    model.PageSize = result.Data.PageSize;
+                    model.TotalCount = result.Data.TotalCount;
                     model.Items = result.Data.Items
                         .Select(x => new InvoiceJobPickerItemViewModel
                     {
@@ -650,6 +668,7 @@ namespace Imaj.Web.Controllers
         public async Task<IActionResult> Create(string jobCustomerCode, string jobCustomerName)
         {
             var nextReferenceResult = await _invoiceService.GetNextReferenceAsync();
+            await LoadInvoiceCreateDropdownDataAsync();
 
             var resolvedJobCode = jobCustomerCode ?? "101PROD";
             var resolvedJobName = jobCustomerName ?? "101 PRODUCTION";
@@ -704,6 +723,77 @@ namespace Imaj.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> FreeLineTaxTypes(InvoiceCreateViewModel model)
+        {
+            model.IssueDate = model.IssueDate == default ? DateTime.Today : model.IssueDate;
+            model.Footnote ??= string.Empty;
+            model.Lines ??= new List<InvoiceLineViewModel>();
+            model.Jobs ??= new List<InvoiceJobSelectionViewModel>();
+
+            var taxTypes = await GetInvoiceCreateTaxTypesAsync();
+            var pickerModel = new InvoiceFreeLineTaxTypePickerViewModel
+            {
+                Invoice = model,
+                TaxTypes = taxTypes.Select(taxType => new InvoiceFreeLineTaxTypeOptionViewModel
+                {
+                    Code = taxType.Code ?? string.Empty,
+                    Name = string.IsNullOrWhiteSpace(taxType.Name) ? taxType.Code ?? string.Empty : taxType.Name,
+                    Rate = taxType.TaxPercentage,
+                    Quantity = 0
+                }).ToList()
+            };
+
+            return View("FreeLineTaxTypes", pickerModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> AddFreeLinesFromTaxTypes(InvoiceFreeLineTaxTypePickerViewModel model)
+        {
+            var invoice = model.Invoice ?? new InvoiceCreateViewModel();
+            invoice.IssueDate = invoice.IssueDate == default ? DateTime.Today : invoice.IssueDate;
+            invoice.Footnote ??= string.Empty;
+            invoice.Lines ??= new List<InvoiceLineViewModel>();
+            invoice.Jobs ??= new List<InvoiceJobSelectionViewModel>();
+
+            foreach (var selectedTaxType in (model.TaxTypes ?? new List<InvoiceFreeLineTaxTypeOptionViewModel>())
+                         .Where(x => x.Selected || x.Quantity > 0))
+            {
+                var lineCount = selectedTaxType.Quantity > 0 ? selectedTaxType.Quantity : 1;
+                for (var i = 0; i < lineCount; i++)
+                {
+                    invoice.Lines.Add(new InvoiceLineViewModel
+                    {
+                        VatRate = selectedTaxType.Rate,
+                        Amount = 0,
+                        Description = string.Empty
+                    });
+                }
+            }
+
+            await LoadInvoiceCreateDropdownDataAsync();
+            return View("Create", invoice);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> ReturnToCreateFromTaxTypes(InvoiceFreeLineTaxTypePickerViewModel model)
+        {
+            var invoice = model.Invoice ?? new InvoiceCreateViewModel();
+            invoice.IssueDate = invoice.IssueDate == default ? DateTime.Today : invoice.IssueDate;
+            invoice.Footnote ??= string.Empty;
+            invoice.Lines ??= new List<InvoiceLineViewModel>();
+            invoice.Jobs ??= new List<InvoiceJobSelectionViewModel>();
+
+            await LoadInvoiceCreateDropdownDataAsync();
+            return View("Create", invoice);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
         public async Task<IActionResult> Save(InvoiceCreateViewModel model)
         {
             model.IssueDate = model.IssueDate == default ? DateTime.Today : model.IssueDate;
@@ -742,6 +832,8 @@ namespace Imaj.Web.Controllers
                 }
             }
 
+            await LoadInvoiceCreateDropdownDataAsync();
+
             return View("Create", model);
         }
 
@@ -752,6 +844,12 @@ namespace Imaj.Web.Controllers
                     ? parsedStateId
                     : (decimal?)null;
             var ignoreIssueDateFilter = stateId == OpenInvoiceStateId && !HasInvoiceFilterBeyondStatus(f);
+
+            // Referans girilmişse tarih filtresi uygulanmaz; sadece referansa göre aranır.
+            var hasReferenceFilter =
+                !string.IsNullOrWhiteSpace(f.ReferenceStart) ||
+                !string.IsNullOrWhiteSpace(f.ReferenceEnd) ||
+                !string.IsNullOrWhiteSpace(f.ReferenceList);
 
             return new InvoiceFilterDto
             {
@@ -764,9 +862,10 @@ namespace Imaj.Web.Controllers
                 ReferenceList = f.ReferenceList,
                 Name = f.Name,
                 RelatedPerson = f.RelatedPerson,
-                // IssueDateStart/End string olarak gelir; InvariantCulture parse sonucunu kullan
-                IssueDateStart = ignoreIssueDateFilter ? null : f.ParsedIssueDateStart,
-                IssueDateEnd = ignoreIssueDateFilter ? null : f.ParsedIssueDateEnd,
+                // Referans girilmişse tarih filtresi devre dışı bırakılır.
+                // Açık fatura durumu seçilmişse de tarih filtresi görmezden gelinir.
+                IssueDateStart = (ignoreIssueDateFilter || hasReferenceFilter) ? null : f.ParsedIssueDateStart,
+                IssueDateEnd = (ignoreIssueDateFilter || hasReferenceFilter) ? null : f.ParsedIssueDateEnd,
                 StateId = stateId,
                 Evaluated = f.Evaluated == "true" ? true : f.Evaluated == "false" ? false : null,
                 Page = f.Page,
@@ -1272,6 +1371,7 @@ namespace Imaj.Web.Controllers
                 EndDateStart = ParseIsoDate(model.EndDateStart),
                 EndDateEnd = ParseIsoDate(model.EndDateEnd),
                 StateId = PricedJobStateId,
+                HasInvoice = false,
                 IsEmailSent = model.EmailSent switch
                 {
                     "true" => true,
@@ -1288,6 +1388,30 @@ namespace Imaj.Web.Controllers
                 PageSize = model.PageSize > 0 ? model.PageSize : 16,
                 First = model.First > 0 ? model.First : DefaultSearchLimit
             };
+        }
+
+        private async Task LoadInvoiceCreateDropdownDataAsync()
+        {
+            ViewBag.TaxTypes = await GetInvoiceCreateTaxTypesAsync();
+        }
+
+        private async Task<List<TaxTypeListItemDto>> GetInvoiceCreateTaxTypesAsync()
+        {
+            var taxTypesResult = await _taxTypeService.GetTaxTypesAsync(new TaxTypeFilterDto
+            {
+                IsInvalid = false,
+                First = 100,
+                Page = 1,
+                PageSize = 100
+            });
+
+            return taxTypesResult.IsSuccess && taxTypesResult.Data != null
+                ? taxTypesResult.Data.Items
+                    .Where(x => !x.Invisible)
+                    .OrderByDescending(x => x.TaxPercentage == 18)
+                    .ThenBy(x => x.Code)
+                    .ToList()
+                : new List<TaxTypeListItemDto>();
         }
 
         private static decimal? ParseDecimalFilter(string? value)

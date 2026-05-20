@@ -101,6 +101,16 @@ namespace Imaj.Service.Services
                         on line.InvoiceID equals invoice.Id
                     select invoJob.JobID;
 
+                var liveInvoiceLineIds =
+                    from line in _unitOfWork.Repository<InvoLine>().Query()
+                            .AsNoTracking()
+                            .Where(x => x.Deleted == 0)
+                    join invoice in _unitOfWork.Repository<Invoice>().Query()
+                            .AsNoTracking()
+                            .Where(x => LiveInvoiceStateIds.Contains(x.StateID))
+                        on line.InvoiceID equals invoice.Id
+                    select line.Id;
+
                 var query =
                     from job in _unitOfWork.Repository<Job>().Query().AsNoTracking()
                     join customer in _unitOfWork.Repository<Customer>().Query().AsNoTracking()
@@ -108,7 +118,7 @@ namespace Imaj.Service.Services
                     from customer in customerGroup.DefaultIfEmpty()
                     where job.StateID == PricedJobStateId
                           && !job.Evaluated
-                          && job.InvoLineID == null
+                          && (!job.InvoLineID.HasValue || !liveInvoiceLineIds.Contains(job.InvoLineID.Value))
                           && activeSnapshot.AllowedFunctionIds.Contains(job.FunctionID)
                           && (activeSnapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound
                               || !activeSnapshot.CompanyId.HasValue
@@ -133,15 +143,24 @@ namespace Imaj.Service.Services
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
+                    var searchPattern = BuildContainsLikePattern(search);
                     if (int.TryParse(search, out var reference))
                     {
                         query = query.Where(x => x.Reference == reference
                                                  || EF.Functions.Like(x.Reference.ToString(), $"%{search}%")
-                                                 || (x.Name != null && x.Name.Contains(search)));
+                                                 || (x.Name != null
+                                                     && EF.Functions.Like(
+                                                         EF.Functions.Collate(x.Name, SearchCollation),
+                                                         searchPattern,
+                                                         LikeEscapeCharacter)));
                     }
                     else
                     {
-                        query = query.Where(x => x.Name != null && x.Name.Contains(search));
+                        query = query.Where(x => x.Name != null
+                            && EF.Functions.Like(
+                                EF.Functions.Collate(x.Name, SearchCollation),
+                                searchPattern,
+                                LikeEscapeCharacter));
                     }
                 }
 
@@ -205,11 +224,6 @@ namespace Imaj.Service.Services
                 validationErrors.Add("İlgili kişi en fazla 32 karakter olabilir.");
             }
 
-            if (!normalizedLines.Any() && !normalizedJobReferences.Any())
-            {
-                validationErrors.Add("En az bir fatura satırı veya fiyatlanan iş eklenmelidir.");
-            }
-
             foreach (var line in normalizedLines)
             {
                 if (string.IsNullOrWhiteSpace(line.Description))
@@ -217,9 +231,9 @@ namespace Imaj.Service.Services
                     validationErrors.Add("Fatura satırı açıklaması zorunludur.");
                 }
 
-                if (line.Amount <= 0)
+                if (line.Amount < 0)
                 {
-                    validationErrors.Add("Fatura satır tutarı sıfırdan büyük olmalıdır.");
+                    validationErrors.Add("Fatura satır tutarı sıfırdan küçük olamaz.");
                 }
 
                 if (line.VatRate < 0 || line.VatRate > 100)
@@ -286,6 +300,13 @@ namespace Imaj.Service.Services
                         .Where(x => LiveInvoiceStateIds.Contains(x.StateID))
                     on line.InvoiceID equals invoice.Id
                 select invoJob.JobID;
+            var liveInvoiceLineIds =
+                from line in _unitOfWork.Repository<InvoLine>().Query()
+                        .Where(x => x.Deleted == 0)
+                join invoice in _unitOfWork.Repository<Invoice>().Query()
+                        .Where(x => LiveInvoiceStateIds.Contains(x.StateID))
+                    on line.InvoiceID equals invoice.Id
+                select line.Id;
             var selectedJobs = new List<Job>();
             var selectedJobCategories = new List<JobProdCat>();
             var selectedJobCategoryById = new Dictionary<decimal, ProdCat>();
@@ -297,7 +318,7 @@ namespace Imaj.Service.Services
                     .Where(job => normalizedJobReferences.Contains(job.Reference)
                                   && job.StateID == PricedJobStateId
                                   && !job.Evaluated
-                                  && job.InvoLineID == null
+                                  && (!job.InvoLineID.HasValue || !liveInvoiceLineIds.Contains(job.InvoLineID.Value))
                                   && activeSnapshot.AllowedFunctionIds.Contains(job.FunctionID)
                                   && (activeSnapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound
                                       || !activeSnapshot.CompanyId.HasValue
@@ -2551,20 +2572,21 @@ namespace Imaj.Service.Services
                 return;
             }
 
-            var linkedJobIds = await _unitOfWork.Repository<InvoJob>().Query()
+            var invoiceJobRows = await _unitOfWork.Repository<InvoJob>().Query()
                 .Where(invoJob => invoJob.Deleted == 0 && activeLineIds.Contains(invoJob.InvoLineID))
-                .Select(invoJob => invoJob.JobID)
-                .Distinct()
                 .ToListAsync();
 
-            if (!linkedJobIds.Any())
-            {
-                return;
-            }
+            var linkedJobIds = invoiceJobRows
+                .Select(invoJob => invoJob.JobID)
+                .Distinct()
+                .ToList();
 
             var jobRepo = _unitOfWork.Repository<Job>();
+            var activeLineIdSet = activeLineIds.ToHashSet();
             var jobs = await jobRepo.Query()
-                .Where(job => linkedJobIds.Contains(job.Id) && job.StateID == InvoicedJobStateId)
+                .Where(job => job.StateID == InvoicedJobStateId
+                              && (linkedJobIds.Contains(job.Id)
+                                  || (job.InvoLineID.HasValue && activeLineIds.Contains(job.InvoLineID.Value))))
                 .ToListAsync();
 
             if (!jobs.Any())
@@ -2575,7 +2597,6 @@ namespace Imaj.Service.Services
             var jobLogRepo = _unitOfWork.Repository<JobLog>();
             var nextJobLogId = (await jobLogRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
             var actionDate = DateTime.Now;
-            var activeLineIdSet = activeLineIds.ToHashSet();
 
             foreach (var job in jobs)
             {
@@ -2648,11 +2669,19 @@ namespace Imaj.Service.Services
                     on line.InvoiceID equals liveInvoice.Id
                 select invoJob.JobID;
 
+            var liveInvoiceLineIds =
+                from line in _unitOfWork.Repository<InvoLine>().Query()
+                        .Where(x => x.Deleted == 0)
+                join liveInvoice in _unitOfWork.Repository<Invoice>().Query()
+                        .Where(x => LiveInvoiceStateIds.Contains(x.StateID))
+                    on line.InvoiceID equals liveInvoice.Id
+                select line.Id;
+
             var selectedJobs = await _unitOfWork.Repository<Job>().Query()
                 .Where(job => normalizedReferences.Contains(job.Reference)
                               && job.StateID == PricedJobStateId
                               && !job.Evaluated
-                              && job.InvoLineID == null
+                              && (!job.InvoLineID.HasValue || !liveInvoiceLineIds.Contains(job.InvoLineID.Value))
                               && job.CompanyID == invoice.CompanyID
                               && snapshot.AllowedFunctionIds.Contains(job.FunctionID)
                               && (snapshot.CompanyScopeMode != CompanyScopeMode.CompanyBound

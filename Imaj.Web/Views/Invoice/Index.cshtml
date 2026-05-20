@@ -263,7 +263,6 @@
 
             async searchInvoices() {
                 const params = new URLSearchParams();
-                const openInvoiceStateId = '210';
                 const hasFilterBeyondStatus = !!(
                     this.jobCustomerCode
                     || this.jobCustomerName
@@ -277,7 +276,7 @@
                     || this.filter.evaluated
                 );
                 const skipDefaultIssueDates = this.issueDatesAreDefault
-                    && this.filter.status === openInvoiceStateId
+                    && !!this.filter.status
                     && !hasFilterBeyondStatus
                     && this.filter.issueDateStart === this.defaultIssueDateStart
                     && this.filter.issueDateEnd === this.defaultIssueDateEnd;

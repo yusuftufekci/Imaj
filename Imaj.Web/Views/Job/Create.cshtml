@@ -48,8 +48,8 @@
             customerName = Model.CustomerName ?? string.Empty,
             name = Model.Name ?? string.Empty,
             relatedPerson = Model.RelatedPerson ?? string.Empty,
-            startDate = Model.StartDate.ToString("yyyy-MM-ddTHH:mm"),
-            endDate = Model.EndDate.ToString("yyyy-MM-ddTHH:mm")
+            startDate = Model.StartDate.ToString("dd/MM/yyyy HH:mm"),
+            endDate = Model.EndDate.ToString("dd/MM/yyyy HH:mm")
         },
         overtimes = Model.Overtimes.Select(x => new
         {
@@ -209,14 +209,14 @@
                             <div class="dense-form-row">
                                 <label for="CreateJobStartDate">@Localizer["StartDate"]</label>
                                 <div class="job-create-datetime">
-                                    <input id="CreateJobStartDate" type="datetime-local" name="StartDate" x-model="form.startDate" class="dense-input job-create-input--datetime">
+                                    <input id="CreateJobStartDate" type="text" name="StartDateText" x-model="form.startDate" placeholder="19/05/2026 16:05" class="dense-input job-create-input--datetime">
                                     <span class="job-create-datetime__day" x-text="formatWeekday(form.startDate)"></span>
                                 </div>
                             </div>
                             <div class="dense-form-row">
                                 <label for="CreateJobEndDate">@Localizer["EndDate"]</label>
                                 <div class="job-create-datetime">
-                                    <input id="CreateJobEndDate" type="datetime-local" name="EndDate" x-model="form.endDate" class="dense-input job-create-input--datetime">
+                                    <input id="CreateJobEndDate" type="text" name="EndDateText" x-model="form.endDate" placeholder="19/05/2026 16:05" class="dense-input job-create-input--datetime">
                                     <span class="job-create-datetime__day" x-text="formatWeekday(form.endDate)"></span>
                                 </div>
                             </div>

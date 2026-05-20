@@ -52,6 +52,14 @@
     };
     criteriaParts.AddRange(Model.SelectedReferences.Select(x => "SelectedReferences=" + WebUtility.UrlEncode(x)));
     var criteriaUrl = "/Invoice/JobPicker?" + string.Join("&", criteriaParts);
+    var totalCount = Model.TotalCount > 0 ? Model.TotalCount : Model.Items.Count;
+    var paginationQueryParts = Context.Request.Query
+        .Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase)
+                 && !string.Equals(q.Key, "pageSize", StringComparison.OrdinalIgnoreCase))
+        .SelectMany(q => q.Value
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => $"{q.Key}={Uri.EscapeDataString(v!)}"));
+    var paginationQuery = string.Join("&", paginationQueryParts);
 }
 
 <div x-data="invoiceJobPicker()"
@@ -235,9 +243,33 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="Reference" value="@Model.Reference" />
             <input type="hidden" name="LineId" value="@Model.LineId" />
+            <input type="hidden" name="Context" value="@Model.Context" />
             <input type="hidden" name="Mode" value="@((int)Model.Mode)" />
             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+            <input type="hidden" name="Searched" value="true" />
+            <input type="hidden" name="JobCustomerCode" value="@Model.JobCustomerCode" />
+            <input type="hidden" name="JobCustomerName" value="@Model.JobCustomerName" />
+            <input type="hidden" name="Function" value="@Model.Function" />
+            <input type="hidden" name="ReferenceStart" value="@Model.ReferenceStart" />
+            <input type="hidden" name="ReferenceEnd" value="@Model.ReferenceEnd" />
+            <input type="hidden" name="ReferenceList" value="@Model.ReferenceList" />
+            <input type="hidden" name="Name" value="@Model.Name" />
+            <input type="hidden" name="RelatedPerson" value="@Model.RelatedPerson" />
+            <input type="hidden" name="StartDateStart" value="@Model.StartDateStart" />
+            <input type="hidden" name="StartDateEnd" value="@Model.StartDateEnd" />
+            <input type="hidden" name="EndDateStart" value="@Model.EndDateStart" />
+            <input type="hidden" name="EndDateEnd" value="@Model.EndDateEnd" />
+            <input type="hidden" name="EmailSent" value="@Model.EmailSent" />
+            <input type="hidden" name="EmployeeCode" value="@Model.EmployeeCode" />
+            <input type="hidden" name="EmployeeName" value="@Model.EmployeeName" />
+            <input type="hidden" name="TaskType" value="@Model.TaskType" />
+            <input type="hidden" name="OvertimeType" value="@Model.OvertimeType" />
+            <input type="hidden" name="ProductId" value="@Model.ProductId" />
+            <input type="hidden" name="ProductCode" value="@Model.ProductCode" />
+            <input type="hidden" name="ProductName" value="@Model.ProductName" />
+            <input type="hidden" name="First" value="@Model.First" />
+            <input type="hidden" name="PageSize" value="@Model.PageSize" />
             @foreach (var selectedReference in Model.SelectedReferences)
             {
                 <input type="hidden" name="SelectedReferences" value="@selectedReference" />
@@ -251,7 +283,11 @@
                     <table class="invoice-table invoice-table--compact">
                         <thead>
                             <tr>
-                                <th>Seçili</th>
+                                <th class="text-center">
+                                    <input type="checkbox"
+                                           aria-label="Tüm işleri seç"
+                                           data-job-picker-select-all />
+                                </th>
                                 <th>Fonksiyon</th>
                                 <th>Referans</th>
                                 <th>Başlangıç Tarihi</th>
@@ -268,7 +304,10 @@
                                 var item = Model.Items[i];
                                 <tr>
                                     <td class="text-center">
-                                        <input type="checkbox" name="JobReferences" value="@item.Reference" />
+                                        <input type="checkbox"
+                                               name="JobReferences"
+                                               value="@item.Reference"
+                                               data-job-picker-row-checkbox />
                                     </td>
                                     <td>@(string.IsNullOrWhiteSpace(item.Function) ? "-" : item.Function)</td>
                                     <td>@item.Reference</td>
@@ -292,15 +331,17 @@
             </section>
 
             <div class="invoice-footer-bar invoice-footer-bar--center">
-                <div class="invoice-job-picker__pager">
-                    <span>&lt;&lt;</span>
-                    <span>&lt;</span>
-                    <a href="#"> &gt; </a>
-                    <a href="#"> &gt;&gt; </a>
-                    <a href="#">Git</a>
-                    <input type="text" value="@Model.Page" class="dense-input invoice-job-picker__tiny-input" />
-                    <span>/ 1 (@Model.Items.Count)</span>
-                </div>
+                @if (totalCount > 0)
+                {
+                    <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel
+                    {
+                        CurrentPage = Model.Page,
+                        TotalCount = totalCount,
+                        PageSize = Model.PageSize,
+                        BaseUrl = "/Invoice/JobPicker",
+                        QueryString = paginationQuery
+                    })" />
+                }
                 <div class="flex flex-wrap justify-center gap-1">
                     @if (Model.Context == "line")
                     {
@@ -388,4 +429,34 @@
             }
         };
     }
+
+    document.addEventListener('change', function (event) {
+        const selectAll = event.target.closest('[data-job-picker-select-all]');
+        if (selectAll) {
+            document
+                .querySelectorAll('[data-job-picker-row-checkbox]')
+                .forEach(function (checkbox) {
+                    checkbox.checked = selectAll.checked;
+                });
+            selectAll.indeterminate = false;
+            return;
+        }
+
+        if (!event.target.closest('[data-job-picker-row-checkbox]')) {
+            return;
+        }
+
+        const rowCheckboxes = Array.from(document.querySelectorAll('[data-job-picker-row-checkbox]'));
+        const checkedCount = rowCheckboxes.filter(function (checkbox) {
+            return checkbox.checked;
+        }).length;
+        const headerCheckbox = document.querySelector('[data-job-picker-select-all]');
+
+        if (!headerCheckbox) {
+            return;
+        }
+
+        headerCheckbox.checked = rowCheckboxes.length > 0 && checkedCount === rowCheckboxes.length;
+        headerCheckbox.indeterminate = checkedCount > 0 && checkedCount < rowCheckboxes.length;
+    });
 </script>

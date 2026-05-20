@@ -107,7 +107,9 @@ namespace Imaj.Web.Models
         public string? RelatedPerson { get; set; }
         public string? Name { get; set; }
         public DateTime StartDate { get; set; }
+        public string? StartDateText { get; set; }
         public DateTime? EndDate { get; set; }
+        public string? EndDateText { get; set; }
         public decimal StateId { get; set; }
         public string? Status { get; set; }
         
@@ -205,7 +207,9 @@ namespace Imaj.Web.Models
         public string? RelatedPerson { get; set; }
         
         public DateTime StartDate { get; set; } = DateTime.Now;
+        public string? StartDateText { get; set; }
         public DateTime EndDate { get; set; } = DateTime.Now;
+        public string? EndDateText { get; set; }
         
         public string Status { get; set; } = "Açık";
         public bool IsEmailSent { get; set; }

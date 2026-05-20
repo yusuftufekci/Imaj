@@ -109,7 +109,21 @@ function jobCreate(config) {
                 return null;
             }
 
-            const [datePart, timePart = '00:00'] = value.split('T');
+            const text = value.trim();
+            const displayMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/);
+            if (displayMatch) {
+                const day = Number.parseInt(displayMatch[1], 10);
+                const month = Number.parseInt(displayMatch[2], 10);
+                const year = Number.parseInt(displayMatch[3], 10);
+                const hour = Number.parseInt(displayMatch[4], 10);
+                const minute = Number.parseInt(displayMatch[5], 10);
+                if (![day, month, year, hour, minute].every(Number.isFinite)) {
+                    return null;
+                }
+                return new Date(year, month - 1, day, hour, minute);
+            }
+
+            const [datePart, timePart = '00:00'] = text.split('T');
             if (!datePart || !timePart) {
                 return null;
             }
@@ -498,6 +512,20 @@ function jobCreate(config) {
 
             if (!this.form.startDate) {
                 this.validationError = jobCreateText('pleaseEnterStartDate', 'Please enter a start date.');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            const parsedStartDate = this.parseDateTimeLocal(this.form.startDate);
+            const parsedEndDate = this.parseDateTimeLocal(this.form.endDate);
+            if (!parsedStartDate || !parsedEndDate) {
+                this.validationError = jobCreateText('startDateRangeInvalid', 'Please enter dates in the expected format.');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            if (parsedStartDate > parsedEndDate) {
+                this.validationError = jobCreateText('endDateBeforeStart', 'End date cannot be before start date.');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }

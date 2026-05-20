@@ -1,12 +1,15 @@
 @using System.Text.Json
-@using Microsoft.AspNetCore.Mvc.Localization
-@using Imaj.Web
 @using Microsoft.Extensions.Localization
+@using Imaj.Web
+@using Imaj.Service.DTOs
 @inject IStringLocalizer<SharedResource> Localizer
 @model InvoiceCreateViewModel
 
 @{
     ViewData["Title"] = Localizer["Invoice"];
+    var taxTypes = ViewBag.TaxTypes as List<TaxTypeListItemDto> ?? new List<TaxTypeListItemDto>();
+    var defaultTaxType = taxTypes.FirstOrDefault(x => x.TaxPercentage == 18) ?? taxTypes.FirstOrDefault();
+    var defaultVatRate = defaultTaxType?.TaxPercentage ?? 18;
     var initialStateJson = JsonSerializer.Serialize(new
     {
         invoiceCustomerCode = Model.InvoiceCustomerCode ?? string.Empty,
@@ -14,69 +17,48 @@
         invoiceCustomerDisplay = string.IsNullOrWhiteSpace(Model.InvoiceCustomerCode)
             ? string.Empty
             : string.Concat(Model.InvoiceCustomerCode, " - ", Model.InvoiceCustomerName ?? string.Empty),
-        jobCustomerCode = Model.JobCustomerCode ?? string.Empty,
         lines = Model.Lines.Select(line => new
         {
             description = line.Description ?? string.Empty,
-            amount = line.Amount,
-            vatRate = line.VatRate
+            quantity = 1,
+            price = line.Amount,
+            vatRate = line.VatRate == 0 ? defaultVatRate : line.VatRate
         }).ToList(),
-        jobs = Model.Jobs.Select(job => new
+        defaultVatRate,
+        taxTypes = taxTypes.Select(taxType => new
         {
-            reference = job.Reference,
-            name = job.Name ?? string.Empty,
-            productAmount = job.ProductAmount,
-            workAmount = job.WorkAmount
+            id = taxType.Id,
+            code = taxType.Code ?? string.Empty,
+            name = string.IsNullOrWhiteSpace(taxType.Name) ? taxType.Code : taxType.Name,
+            rate = taxType.TaxPercentage
         }).ToList(),
         labels = new
         {
-            loadError = Localizer["GenericError"].Value
+            selectLineToDelete = "Silmek için en az bir serbest satır seçin."
         }
     });
 }
 
 <div x-data='invoiceCreate(@Html.Raw(initialStateJson))'
      @@customer-selected.window="handleCustomerSelection($event.detail)"
-     class="invoice-page-shell invoice-form-page page-shell--wide space-y-3">
+     class="invoice-page-shell invoice-form-page invoice-legacy-detail page-shell--wide space-y-3">
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="rounded-md bg-red-50 p-4 border border-red-200">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium text-red-800">@TempData["ErrorMessage"]</p>
-                </div>
-            </div>
+            <p class="text-sm font-medium text-red-800">@TempData["ErrorMessage"]</p>
         </div>
     }
 
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="rounded-md bg-red-50 p-4 border border-red-200">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-red-800">@Localizer["PleaseCheckFormFields"]</h3>
-                    <div class="mt-2 text-sm text-red-700">
-                        <div asp-validation-summary="All" class="list-disc pl-5"></div>
-                    </div>
-                </div>
-            </div>
+            <h3 class="text-sm font-medium text-red-800">@Localizer["PleaseCheckFormFields"]</h3>
+            <div class="mt-2 text-sm text-red-700" asp-validation-summary="All"></div>
         </div>
     }
 
     <div class="text-center">
-        <h2 class="invoice-page-title invoice-page-title--orange">
-            @Localizer["InvoiceCreation"]
-        </h2>
+        <h2 class="invoice-page-title invoice-page-title--orange">@Localizer["Invoice"]</h2>
     </div>
 
     <form method="post" action="/Invoice/Save" class="space-y-3 mobile-stack-form">
@@ -86,72 +68,63 @@
         <input type="hidden" name="JobCustomerName" value="@Model.JobCustomerName">
         <input type="hidden" name="IssueDate" value="@Model.IssueDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)">
 
-        <div class="invoice-form-layout">
+        <div class="invoice-detail-grid">
             <section class="dense-panel">
                 <div class="dense-panel__header">
                     <h3 class="dense-panel__title">@Localizer["BasicInfo"]</h3>
                 </div>
                 <div class="dense-panel__body">
-                    <div class="dense-form-grid">
-                        <div class="dense-form-row">
-                            <label>@Localizer["Reference"]</label>
-                            <div class="invoice-detail-item__value font-semibold">@Model.Reference</div>
+                    <dl class="invoice-detail-list">
+                        <div class="invoice-detail-item">
+                            <dt class="invoice-detail-item__label">@Localizer["Reference"]</dt>
+                            <dd class="invoice-detail-item__value">@Model.Reference</dd>
                         </div>
-                        <div class="dense-form-row">
-                            <label>@Localizer["JobCustomer"]</label>
-                            <div class="invoice-detail-item__value">@Model.JobCustomerCode - @Model.JobCustomerName</div>
+                        <div class="invoice-detail-item">
+                            <dt class="invoice-detail-item__label">@Localizer["JobCustomer"]</dt>
+                            <dd class="invoice-detail-item__value">@Model.JobCustomerCode - @Model.JobCustomerName</dd>
                         </div>
-                        <div class="dense-form-row">
-                            <label>@Localizer["InvoiceCustomer"]</label>
-                            <div class="picker-inline flex items-center gap-2">
-                                <input type="text"
-                                       readonly
-                                       x-model="invoiceCustomerDisplay"
-                                       class="dense-input bg-gray-50"
-                                       placeholder="@Localizer["SelectPrompt"]">
-                                <input type="hidden" name="InvoiceCustomerCode" x-model="invoiceCustomerCode">
-                                <input type="hidden" name="InvoiceCustomerName" x-model="invoiceCustomerName">
-                                <button type="button"
-                                        @@click="$dispatch('customer-select-open', { targetId: 'invoice' })"
-                                        class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
-                                    @Localizer["Select"]
-                                </button>
-                            </div>
+                        <div class="invoice-detail-item">
+                            <dt class="invoice-detail-item__label">@Localizer["InvoiceCustomer"]</dt>
+                            <dd class="invoice-detail-item__value">
+                                <span class="job-detail-edit-selector">
+                                    <span class="job-detail-edit-selector__value" x-text="invoiceCustomerDisplay || '-'"></span>
+                                    <input type="hidden" name="InvoiceCustomerCode" x-model="invoiceCustomerCode">
+                                    <input type="hidden" name="InvoiceCustomerName" x-model="invoiceCustomerName">
+                                    <button type="button"
+                                            @@click="$dispatch('customer-select-open', { targetId: 'invoice' })"
+                                            class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
+                                        @Localizer["Select"]
+                                    </button>
+                                </span>
+                            </dd>
                         </div>
-                        <div class="dense-form-row">
-                            <label for="InvoiceCreateName">@Localizer["Name"]</label>
-                            <input id="InvoiceCreateName"
-                                   type="text"
-                                   name="Ad"
-                                   value="@Model.Ad"
-                                   class="dense-input">
+                        <div class="invoice-detail-item">
+                            <dt class="invoice-detail-item__label">@Localizer["Name"]</dt>
+                            <dd class="invoice-detail-item__value">
+                                <input type="text" name="Ad" value="@Model.Ad" maxlength="32" class="dense-input invoice-detail-edit-input">
+                            </dd>
                         </div>
-                        <div class="dense-form-row">
-                            <label for="InvoiceCreateRelated">@Localizer["Related"]</label>
-                            <input id="InvoiceCreateRelated"
-                                   type="text"
-                                   name="RelatedPerson"
-                                   value="@Model.RelatedPerson"
-                                   class="dense-input">
+                        <div class="invoice-detail-item">
+                            <dt class="invoice-detail-item__label">@Localizer["Related"]</dt>
+                            <dd class="invoice-detail-item__value">
+                                <input type="text" name="RelatedPerson" value="@Model.RelatedPerson" maxlength="32" class="dense-input invoice-detail-edit-input">
+                            </dd>
                         </div>
-                        <div class="dense-form-row">
-                            <label>@Localizer["Date"]</label>
-                            <div class="invoice-detail-item__value font-medium">@Model.IssueDate.ToString("dd.MM.yyyy")</div>
+                        <div class="invoice-detail-item">
+                            <dt class="invoice-detail-item__label">@Localizer["Date"]</dt>
+                            <dd class="invoice-detail-item__value">@Model.IssueDate.ToString("dd.MM.yyyy")</dd>
                         </div>
-                        <div class="dense-form-row">
-                            <label>@Localizer["Status"]</label>
-                            <div class="invoice-detail-item__value font-medium">@Localizer["OpenStatus"]</div>
+                        <div class="invoice-detail-item">
+                            <dt class="invoice-detail-item__label">@Localizer["Status"]</dt>
+                            <dd class="invoice-detail-item__value">@Localizer["OpenStatus"]</dd>
                         </div>
-                        <div class="dense-form-row">
-                            <label>@Localizer["Evaluated"]</label>
-                            <div class="invoice-detail-item__value">
-                                <input type="checkbox"
-                                       name="IsEvaluated"
-                                       class="dense-checkbox text-indigo-600 border-gray-300 rounded"
-                                       @(Model.IsEvaluated ? "checked" : "")>
-                            </div>
+                        <div class="invoice-detail-item">
+                            <dt class="invoice-detail-item__label">@Localizer["Evaluated"]</dt>
+                            <dd class="invoice-detail-item__value">
+                                <input type="checkbox" name="IsEvaluated" @(Model.IsEvaluated ? "checked" : "") class="dense-checkbox text-indigo-600 border-gray-300 rounded">
+                            </dd>
                         </div>
-                    </div>
+                    </dl>
                 </div>
             </section>
 
@@ -167,7 +140,7 @@
 
                 <section class="dense-panel">
                     <div class="dense-panel__header">
-                        <h3 class="dense-panel__title">@Localizer["Notes"]</h3>
+                        <h3 class="dense-panel__title">@Localizer["Footnote"]</h3>
                     </div>
                     <div class="dense-panel__body">
                         <textarea name="Footnote" rows="4" class="dense-input">@Model.Footnote</textarea>
@@ -178,201 +151,134 @@
 
         <section class="invoice-table-card">
             <div class="invoice-table-card__header">
-                <h3 class="invoice-table-card__title">
-                    @Localizer["PricedJobs"] (<span x-text="jobs.length"></span>)
-                </h3>
+                <h3 class="invoice-table-card__title">@Localizer["Line"] (<span x-text="lines.length"></span>)</h3>
             </div>
-            <div class="invoice-footer-bar">
-                <div class="flex items-center gap-2 w-full md:w-auto">
-                    <input type="text"
-                           x-model="jobSearch"
-                           @@keydown.enter.prevent="fetchPricedJobs()"
-                           class="dense-input"
-                           placeholder="@($"{Localizer["Reference"].Value} / {Localizer["Name"].Value}")">
-                    <button type="button"
-                            @@click="fetchPricedJobs()"
-                            class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
-                        @Localizer["Search"]
-                    </button>
-                </div>
-                <div class="flex items-center gap-2 font-bold text-gray-900">
-                    <span>@Localizer["ProductAmount"]</span>
-                    <span x-text="formatMoney(selectedJobProductTotal)"></span>
-                </div>
-            </div>
-            <div class="px-4 pb-2 text-sm text-red-700" x-show="jobLoadError" x-cloak x-text="jobLoadError"></div>
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 p-3">
-                <div class="invoice-table-wrap">
-                    <table class="invoice-table invoice-table--compact">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Localizer["Reference"]</th>
-                                <th scope="col">@Localizer["Name"]</th>
-                                <th scope="col" class="text-right">@Localizer["ProductAmount"]</th>
-                                <th scope="col" class="text-right">@Localizer["WorkAmount"]</th>
-                                <th scope="col" class="w-20">
-                                    <span class="sr-only">@Localizer["Add"]</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-if="isLoadingJobs">
-                                <tr>
-                                    <td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">@Localizer["Loading"]</td>
-                                </tr>
-                            </template>
-                            <template x-if="!isLoadingJobs && availableJobsForDisplay.length === 0">
-                                <tr>
-                                    <td colspan="5" class="px-4 py-3 text-center text-sm text-gray-500">@Localizer["NoPricedJobsFound"]</td>
-                                </tr>
-                            </template>
-                            <template x-for="job in availableJobsForDisplay" :key="job.reference">
-                                <tr>
-                                    <td class="text-sm font-medium text-gray-900" x-text="job.reference"></td>
-                                    <td class="text-sm text-gray-900" x-text="job.name"></td>
-                                    <td class="text-right text-sm text-gray-900" x-text="formatMoney(job.productAmount)"></td>
-                                    <td class="text-right text-sm text-gray-900" x-text="formatMoney(job.workAmount)"></td>
-                                    <td class="text-right">
-                                        <button type="button"
-                                                @@click="addJob(job)"
-                                                class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
-                                            @Localizer["Add"]
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="invoice-table-wrap">
-                    <table class="invoice-table invoice-table--compact">
-                        <thead>
-                            <tr>
-                                <th scope="col">@Localizer["SelectedJobs"]</th>
-                                <th scope="col">@Localizer["Name"]</th>
-                                <th scope="col" class="text-right">@Localizer["ProductAmount"]</th>
-                                <th scope="col" class="w-10">
-                                    <span class="sr-only">@Localizer["Delete"]</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-if="jobs.length === 0">
-                                <tr>
-                                    <td colspan="4" class="px-4 py-3 text-center text-sm text-gray-500">@Localizer["NoRecordsFound"]</td>
-                                </tr>
-                            </template>
-                            <template x-for="(job, index) in jobs" :key="job.reference">
-                                <tr>
-                                    <td class="text-sm font-medium text-gray-900">
-                                        <span x-text="job.reference"></span>
-                                        <input type="hidden" :name="'Jobs[' + index + '].Reference'" :value="job.reference">
-                                        <input type="hidden" :name="'Jobs[' + index + '].Name'" :value="job.name">
-                                        <input type="hidden" :name="'Jobs[' + index + '].ProductAmount'" :value="job.productAmount">
-                                        <input type="hidden" :name="'Jobs[' + index + '].WorkAmount'" :value="job.workAmount">
-                                    </td>
-                                    <td class="text-sm text-gray-900" x-text="job.name"></td>
-                                    <td class="text-right text-sm text-gray-900" x-text="formatMoney(job.productAmount)"></td>
-                                    <td class="text-right">
-                                        <button type="button" @@click="removeJob(index)" class="text-red-600 hover:text-red-900">
-                                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 000-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <section class="invoice-table-card">
-            <div class="invoice-table-card__header">
-                <h3 class="invoice-table-card__title">
-                    @Localizer["Line"] (<span x-text="lines.length"></span>)
-                </h3>
-            </div>
-            <div class="invoice-footer-bar">
-                <button type="button" @@click="addLine()" class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
-                    @Localizer["AddFreeLine"]
-                </button>
-            </div>
-            <div class="invoice-table-wrap">
+            <div class="invoice-table-wrap" x-show="lines.length > 0" x-cloak>
                 <table class="invoice-table invoice-table--compact">
                     <thead>
                         <tr>
-                            <th scope="col">@Localizer["Description"]</th>
-                            <th scope="col" class="text-right w-32">@Localizer["Amount"]</th>
-                            <th scope="col" class="text-right w-24">@Localizer["TaxRate"]</th>
-                            <th scope="col" class="text-right w-32">@Localizer["Total"]</th>
-                            <th scope="col" class="w-10">
-                                <span class="sr-only">@Localizer["Delete"]</span>
-                            </th>
+                            <th scope="col" class="w-20">@Localizer["Selected"]</th>
+                            <th scope="col" class="w-20">@Localizer["Sequence"]</th>
+                            <th scope="col">@Localizer["Notes"]</th>
+                            <th scope="col" class="text-right w-28">@Localizer["Quantity"]</th>
+                            <th scope="col" class="text-right w-36">@Localizer["Price"]</th>
+                            <th scope="col" class="text-right w-36">@Localizer["Amount"]</th>
+                            <th scope="col" class="w-40">@Localizer["TaxType"]</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="(line, index) in lines" :key="index">
+                        <template x-for="(line, index) in lines" :key="line.key">
                             <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" x-model="line.selected">
+                                </td>
+                                <td>
+                                    <input type="text" x-model="line.sequence" class="dense-input invoice-create-sequence-input">
+                                </td>
+                                <td>
+                                    <textarea x-model="line.description"
+                                              :name="'Lines[' + index + '].Description'"
+                                              rows="2"
+                                              class="dense-input invoice-create-line-notes"></textarea>
+                                    <input type="hidden" :name="'Lines[' + index + '].Amount'" :value="formatDecimalForPost(lineAmount(line))">
+                                    <input type="hidden" :name="'Lines[' + index + '].VatRate'" :value="line.vatRate">
+                                </td>
                                 <td>
                                     <input type="text"
-                                           x-model="line.description"
-                                           :name="'Lines[' + index + '].Description'"
-                                           class="dense-input">
+                                           inputmode="decimal"
+                                           x-model="line.quantity"
+                                           @@input="clearCalculatedTaxes()"
+                                           class="dense-input text-right invoice-create-quantity-input">
                                 </td>
                                 <td>
-                                    <input type="number"
-                                           step="0.01"
-                                           min="0"
-                                           x-model.number="line.amount"
-                                           :name="'Lines[' + index + '].Amount'"
-                                           class="dense-input text-right">
-                                </td>
-                                <td>
-                                    <input type="number"
-                                           step="1"
-                                           min="0"
-                                           max="100"
-                                           x-model.number="line.vatRate"
-                                           :name="'Lines[' + index + '].VatRate'"
-                                           class="dense-input text-right">
+                                    <input type="text"
+                                           inputmode="decimal"
+                                           x-model="line.price"
+                                           @@input="clearCalculatedTaxes()"
+                                           class="dense-input text-right invoice-create-money-input">
                                 </td>
                                 <td class="text-right text-sm font-medium text-gray-900">
-                                    <span x-text="formatMoney(line.amount * (1 + line.vatRate / 100))"></span>
+                                    <span x-text="formatMoney(lineAmount(line))"></span>
                                 </td>
-                                <td class="text-right text-sm font-medium">
-                                    <button type="button" @@click="removeLine(index)" class="text-red-600 hover:text-red-900">
-                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 000-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
+                                <td>
+                                    <span x-text="taxTypeLabelForRate(line.vatRate)"></span>
                                 </td>
                             </tr>
                         </template>
                     </tbody>
                 </table>
             </div>
-            <div class="invoice-footer-bar">
-                <div class="flex items-center gap-2 font-bold text-gray-900">
-                    <span>@Localizer["Total"]</span>
-                    <span x-text="formatMoney(totalAmount)"></span>
-                </div>
-                <div class="flex items-center gap-2 font-bold text-gray-900">
-                    <span>@Localizer["Total"]</span>
-                    <span x-text="formatMoney(grandTotal)"></span>
-                </div>
+            <div class="invoice-footer-bar invoice-footer-bar--inline-actions">
+                <button type="button" x-show="lines.length > 0" x-cloak @@click="removeSelectedLines()" class="text-red-600 hover:text-red-900 font-bold underline text-sm">
+                    Serbest Satır Sil
+                </button>
+                <button type="submit"
+                        formaction="/Invoice/FreeLineTaxTypes"
+                        formmethod="post"
+                        class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
+                    @Localizer["AddFreeLine"]
+                </button>
+            </div>
+        </section>
+
+        <section class="invoice-table-card invoice-create-tax-card">
+            <div class="invoice-table-card__header">
+                <h3 class="invoice-table-card__title">@Localizer["Taxes"] (<span x-text="taxes.length"></span>)</h3>
+            </div>
+            <div class="invoice-table-wrap">
+                <table class="invoice-table invoice-table--compact">
+                    <thead x-show="taxes.length > 0" x-cloak>
+                        <tr>
+                            <th scope="col">@Localizer["Code"]</th>
+                            <th scope="col">@Localizer["Name"]</th>
+                            <th scope="col" class="text-right">@Localizer["SubTotal"]</th>
+                            <th scope="col" class="text-right">@Localizer["Percentage"]</th>
+                            <th scope="col" class="text-right">@Localizer["TaxAmount"]</th>
+                            <th scope="col" class="text-right">@Localizer["NetAmount"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="tax in taxes" :key="tax.rate">
+                            <tr>
+                                <td x-text="tax.code"></td>
+                                <td x-text="tax.name"></td>
+                                <td class="text-right" x-text="formatMoney(tax.subTotal)"></td>
+                                <td class="text-right" x-text="formatRate(tax.rate)"></td>
+                                <td class="text-right" x-text="formatMoney(tax.taxAmount)"></td>
+                                <td class="text-right" x-text="formatMoney(tax.netTotal)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" class="text-right font-bold">@Localizer["Total"]</td>
+                            <td class="text-right font-bold" x-text="formatMoney(taxSubTotal)"></td>
+                            <td></td>
+                            <td class="text-right font-bold" x-text="formatMoney(taxTotal)"></td>
+                            <td class="text-right font-bold" x-text="formatMoney(taxNetTotal)"></td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </section>
 
         <div class="invoice-footer-bar invoice-footer-bar--center responsive-action-group">
-            <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                @Localizer["Save"]
-            </button>
-            <button type="button" onclick="history.back()" class="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                @Localizer["Cancel"]
-            </button>
+            <div class="flex flex-wrap justify-center gap-1">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    @Localizer["Save"]
+                </button>
+                <button type="button" onclick="history.back()" class="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-white bg-red-400 hover:bg-red-500 focus:outline-none">
+                    @Localizer["Cancel"]
+                </button>
+            </div>
+            <div class="flex flex-wrap justify-center gap-1">
+                <button type="button" @@click="showSummary()" class="inline-flex items-center px-4 py-2 border border-blue-400 text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200">
+                    @Localizer["ViewSummary"]
+                </button>
+                <button type="button" @@click="calculateTaxes()" class="inline-flex items-center px-4 py-2 border border-slate-400 text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                    @Localizer["Calculate"]
+                </button>
+            </div>
         </div>
     </form>
 
@@ -385,114 +291,185 @@
             invoiceCustomerCode: initialState?.invoiceCustomerCode || '',
             invoiceCustomerName: initialState?.invoiceCustomerName || '',
             invoiceCustomerDisplay: initialState?.invoiceCustomerDisplay || '',
-            jobCustomerCode: initialState?.jobCustomerCode || '',
-            lines: Array.isArray(initialState?.lines) ? initialState.lines : [],
-            jobs: Array.isArray(initialState?.jobs) ? initialState.jobs.map(job => ({
-                reference: parseInt(job.reference, 10) || 0,
-                name: job.name || '',
-                productAmount: parseFloat(job.productAmount) || 0,
-                workAmount: parseFloat(job.workAmount) || 0
-            })).filter(job => job.reference > 0) : [],
-            availableJobs: [],
-            jobSearch: '',
-            isLoadingJobs: false,
-            jobLoadError: '',
+            defaultVatRate: parseFloat(initialState?.defaultVatRate) || 18,
+            taxTypes: Array.isArray(initialState?.taxTypes) ? initialState.taxTypes.map(taxType => ({
+                id: parseFloat(taxType.id) || 0,
+                code: taxType.code || '',
+                name: taxType.name || taxType.code || '',
+                rate: parseFloat(taxType.rate) || 0
+            })).filter(taxType => taxType.rate >= 0) : [],
+            lines: [],
+            taxes: [],
+            nextLineKey: 1,
             labels: initialState?.labels || {},
 
             init() {
-                if (this.lines.length === 0) {
-                    this.addLine();
+                if (this.taxTypes.length === 0) {
+                    this.taxTypes.push({
+                        id: 0,
+                        code: 'KDV' + this.defaultVatRate,
+                        name: 'KDV %' + this.defaultVatRate,
+                        rate: this.defaultVatRate
+                    });
                 }
-                this.fetchPricedJobs();
+
+                const initialLines = Array.isArray(initialState?.lines) ? initialState.lines : [];
+                this.lines = initialLines.map((line, index) => ({
+                    key: this.nextLineKey++,
+                    selected: false,
+                    sequence: index === 0 ? '0' : String(index),
+                    description: line.description || '',
+                    quantity: String(line.quantity || 1),
+                    price: String(line.price ?? line.amount ?? 0).replace('.', ','),
+                    vatRate: parseFloat(line.vatRate) || this.defaultVatRate
+                }));
             },
 
             handleCustomerSelection(detail) {
                 if (detail.targetId === 'invoice') {
-                    this.invoiceCustomerCode = detail.customer.code;
-                    this.invoiceCustomerName = detail.customer.name;
-                    this.invoiceCustomerDisplay = detail.customer.code + ' - ' + detail.customer.name;
+                    this.invoiceCustomerCode = detail.customer?.code || '';
+                    this.invoiceCustomerName = detail.customer?.name || '';
+                    this.invoiceCustomerDisplay = this.invoiceCustomerCode
+                        ? this.invoiceCustomerCode + ' - ' + this.invoiceCustomerName
+                        : this.invoiceCustomerName;
                 }
             },
 
             addLine() {
-                this.lines.push({ description: '', amount: 0, vatRate: 20 });
+                this.lines.push({
+                    key: this.nextLineKey++,
+                    selected: false,
+                    sequence: '0',
+                    description: '',
+                    quantity: '1',
+                    price: '0',
+                    vatRate: this.defaultVatRate
+                });
+                this.clearCalculatedTaxes();
             },
 
-            removeLine(index) {
-                this.lines.splice(index, 1);
-            },
-
-            async fetchPricedJobs() {
-                this.isLoadingJobs = true;
-                this.jobLoadError = '';
-                const params = new URLSearchParams();
-                if (this.jobCustomerCode) {
-                    params.set('jobCustomerCode', this.jobCustomerCode);
-                }
-                if (this.jobSearch) {
-                    params.set('search', this.jobSearch);
-                }
-                params.set('first', '100');
-
-                try {
-                    const response = await fetch('/Invoice/PricedJobs?' + params.toString(), {
-                        headers: { 'Accept': 'application/json' }
-                    });
-                    if (!response.ok) {
-                        throw new Error('job-load-failed');
-                    }
-                    const payload = await response.json();
-                    this.availableJobs = Array.isArray(payload.items)
-                        ? payload.items.map(job => ({
-                            reference: parseInt(job.reference, 10) || 0,
-                            name: job.name || '',
-                            productAmount: parseFloat(job.productAmount) || 0,
-                            workAmount: parseFloat(job.workAmount) || 0
-                        })).filter(job => job.reference > 0)
-                        : [];
-                } catch (error) {
-                    this.availableJobs = [];
-                    this.jobLoadError = this.labels.loadError || 'Error';
-                } finally {
-                    this.isLoadingJobs = false;
-                }
-            },
-
-            addJob(job) {
-                if (!job || !job.reference || this.jobs.some(selected => selected.reference === job.reference)) {
+            removeSelectedLines() {
+                if (!this.lines.some(line => line.selected)) {
+                    window.alert(this.labels.selectLineToDelete || 'Silmek için satır seçin.');
                     return;
                 }
-                this.jobs.push({ ...job });
+
+                this.lines = this.lines.filter(line => !line.selected);
+                this.clearCalculatedTaxes();
             },
 
-            removeJob(index) {
-                this.jobs.splice(index, 1);
+            clearCalculatedTaxes() {
+                this.taxes = [];
             },
 
-            get availableJobsForDisplay() {
-                const selectedReferences = new Set(this.jobs.map(job => job.reference));
-                return this.availableJobs.filter(job => !selectedReferences.has(job.reference));
+            showSummary() {
+                this.calculateTaxes();
             },
 
-            get selectedJobProductTotal() {
-                return this.jobs.reduce((sum, job) => sum + (parseFloat(job.productAmount) || 0), 0);
+            calculateTaxes() {
+                const groups = new Map();
+                this.lines.forEach((line) => {
+                    const amount = this.lineAmount(line);
+                    if (amount <= 0) {
+                        return;
+                    }
+
+                    const rate = parseFloat(line.vatRate) || 0;
+                    const current = groups.get(rate) || 0;
+                    groups.set(rate, current + amount);
+                });
+
+                this.taxes = Array.from(groups.entries())
+                    .sort((a, b) => a[0] - b[0])
+                    .map(([rate, subTotal]) => {
+                        const taxType = this.findTaxType(rate);
+                        const roundedSubTotal = this.roundMoney(subTotal);
+                        const taxAmount = this.roundMoney(roundedSubTotal * rate / 100);
+                        return {
+                            rate,
+                            code: taxType?.code || ('KDV' + rate),
+                            name: taxType?.name || ('KDV %' + rate),
+                            subTotal: roundedSubTotal,
+                            taxAmount,
+                            netTotal: this.roundMoney(roundedSubTotal + taxAmount)
+                        };
+                    });
+            },
+
+            parseDecimal(value) {
+                let text = String(value || '').trim().replace(/\s/g, '');
+                if (!text) return 0;
+                const hasComma = text.includes(',');
+                const hasDot = text.includes('.');
+                if (hasComma && hasDot) {
+                    text = text.lastIndexOf(',') > text.lastIndexOf('.')
+                        ? text.replace(/\./g, '').replace(',', '.')
+                        : text.replace(/,/g, '');
+                } else if (hasComma) {
+                    text = text.replace(',', '.');
+                }
+                const parsed = Number.parseFloat(text);
+                return Number.isFinite(parsed) ? parsed : 0;
+            },
+
+            lineAmount(line) {
+                return this.roundMoney(this.parseDecimal(line.quantity) * this.parseDecimal(line.price));
+            },
+
+            roundMoney(value) {
+                return Math.round((Number(value) || 0) * 100) / 100;
+            },
+
+            findTaxType(rate) {
+                return this.taxTypes.find(taxType => Number(taxType.rate) === Number(rate));
+            },
+
+            taxTypeLabel(taxType) {
+                if (!taxType) {
+                    return '';
+                }
+                return taxType.code || taxType.name || ('KDV' + taxType.rate);
+            },
+
+            taxTypeLabelForRate(rate) {
+                return this.taxTypeLabel(this.findTaxType(rate));
             },
 
             get totalAmount() {
-                return this.selectedJobProductTotal + this.lines.reduce((sum, line) => sum + (parseFloat(line.amount) || 0), 0);
+                return this.roundMoney(this.lines.reduce((sum, line) => sum + this.lineAmount(line), 0));
             },
 
-            get grandTotal() {
-                return this.selectedJobProductTotal + this.lines.reduce((sum, line) => {
-                    const amount = parseFloat(line.amount) || 0;
-                    const vatRate = parseFloat(line.vatRate) || 0;
-                    return sum + amount + (amount * vatRate / 100);
-                }, 0);
+            get taxSubTotal() {
+                return this.roundMoney(this.taxes.reduce((sum, tax) => sum + tax.subTotal, 0));
+            },
+
+            get taxTotal() {
+                return this.roundMoney(this.taxes.reduce((sum, tax) => sum + tax.taxAmount, 0));
+            },
+
+            get taxNetTotal() {
+                if (this.taxes.length === 0) {
+                    return 0;
+                }
+                return this.roundMoney(this.taxes.reduce((sum, tax) => sum + tax.netTotal, 0));
             },
 
             formatMoney(value) {
-                return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value || 0);
+                return new Intl.NumberFormat(document.documentElement.lang || 'tr-TR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(value || 0);
+            },
+
+            formatRate(value) {
+                return new Intl.NumberFormat(document.documentElement.lang || 'tr-TR', {
+                    maximumFractionDigits: 0
+                }).format(value || 0);
+            },
+
+            formatDecimalForPost(value) {
+                return this.roundMoney(value).toFixed(2);
             }
-        }
+        };
     }
 </script>
