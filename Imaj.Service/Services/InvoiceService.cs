@@ -505,7 +505,7 @@ namespace Imaj.Service.Services
                         .Select(g => new
                         {
                             ProdCatId = g.Key,
-                            GrossAmount = RoundCurrency(g.Sum(x => x.GrossAmount)),
+                            GrossAmount = RoundCurrency(g.Sum(x => x.NetAmount)),
                             NetAmount = RoundCurrency(g.Sum(x => x.NetAmount))
                         })
                         .ToList();
@@ -1242,7 +1242,7 @@ namespace Imaj.Service.Services
                     {
                         var selected = jobSelectMap.TryGetValue(job.Id, out var flag) ? flag : job.SelectFlag;
                         var amount = jobProdCatsByJobId.TryGetValue(job.Id, out var jobCategories) && jobCategories.Any()
-                            ? jobCategories.Sum(category => category.GrossAmount)
+                            ? jobCategories.Sum(category => category.NetAmount)
                             : job.ProdSum;
 
                         return new InvoiceJobDto
@@ -1254,6 +1254,32 @@ namespace Imaj.Service.Services
                         };
                     }
 
+                    // Ara Tutar (SubTotal) sol taraftaki iş tutarı ile aynı hesaptan gelmeli:
+                    // her iş için JobProdCat.NetAmount toplanır, kategoriye gruplanır.
+                    // InvoProdCat.GrossAmount kullanılmaz çünkü kullanıcı düzenlemelerinde
+                    // (DistributeCategoryNetTotal) bu alan NetAmount ile üzerine yazılabiliyor.
+                    var jobDerivedSubTotalByLineCategory = new Dictionary<(decimal LineId, decimal ProdCatId), decimal>();
+                    foreach (var lineJobsEntry in jobsByLineId)
+                    {
+                        var lineJobProdCats = lineJobsEntry.Value
+                            .SelectMany(job => jobProdCatsByJobId.TryGetValue(job.Id, out var cats)
+                                ? cats
+                                : Enumerable.Empty<JobProdCat>())
+                            .GroupBy(jpc => jpc.ProdCatID);
+                        foreach (var jpcGroup in lineJobProdCats)
+                        {
+                            jobDerivedSubTotalByLineCategory[(lineJobsEntry.Key, jpcGroup.Key)] =
+                                RoundCurrency(jpcGroup.Sum(jpc => jpc.NetAmount));
+                        }
+                    }
+
+                    var jobDerivedSubTotalByCategory = invoiceJobs
+                        .SelectMany(job => jobProdCatsByJobId.TryGetValue(job.Id, out var cats)
+                            ? cats
+                            : Enumerable.Empty<JobProdCat>())
+                        .GroupBy(jpc => jpc.ProdCatID)
+                        .ToDictionary(g => g.Key, g => RoundCurrency(g.Sum(jpc => jpc.NetAmount)));
+
                     InvoiceProdCatSummaryDto MapProductCategory(IGrouping<decimal, InvoProdCat> group, decimal lineId = 0m)
                     {
                         var name = prodCatById.TryGetValue(group.Key, out var prodCat) ? prodCat.Id.ToString() : group.Key.ToString();
@@ -1262,12 +1288,26 @@ namespace Imaj.Service.Services
                             name = xProd.Name;
                         }
 
+                        decimal subTotal;
+                        if (lineId > 0m)
+                        {
+                            subTotal = jobDerivedSubTotalByLineCategory.TryGetValue((lineId, group.Key), out var lineSub)
+                                ? lineSub
+                                : 0m;
+                        }
+                        else
+                        {
+                            subTotal = jobDerivedSubTotalByCategory.TryGetValue(group.Key, out var invoiceSub)
+                                ? invoiceSub
+                                : 0m;
+                        }
+
                         return new InvoiceProdCatSummaryDto
                         {
                             LineId = lineId,
                             ProdCatId = group.Key,
                             Name = name,
-                            SubTotal = group.Sum(x => x.GrossAmount),
+                            SubTotal = subTotal,
                             NetTotal = group.Sum(x => x.NetAmount)
                         };
                     }
@@ -2984,8 +3024,8 @@ namespace Imaj.Service.Services
                 var nextInvoiceProdCatId = (await invoiceProdCatRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
                 foreach (var group in jobCategories.GroupBy(x => x.ProdCatID))
                 {
-                    var grossAmount = RoundCurrency(group.Sum(x => x.GrossAmount));
                     var netAmount = RoundCurrency(group.Sum(x => x.NetAmount));
+                    var grossAmount = netAmount;
                     var existingRow = existingRows.FirstOrDefault(x => x.ProdCatID == group.Key);
                     if (existingRow == null)
                     {
@@ -3016,8 +3056,8 @@ namespace Imaj.Service.Services
 
             foreach (var group in jobCategories.GroupBy(x => x.ProdCatID))
             {
-                var remainingGross = RoundCurrency(group.Sum(x => x.GrossAmount));
                 var remainingNet = RoundCurrency(group.Sum(x => x.NetAmount));
+                var remainingGross = remainingNet;
                 foreach (var row in existingRows.Where(x => x.ProdCatID == group.Key).OrderBy(x => x.Id))
                 {
                     if (remainingGross <= 0 && remainingNet <= 0)
@@ -3394,6 +3434,8 @@ namespace Imaj.Service.Services
             if (rows.Count == 1)
             {
                 rows[0].NetAmount = RoundCurrency(targetTotal);
+                // GrossAmount'u da güncel değerle senkronize et
+                rows[0].GrossAmount = rows[0].NetAmount;
                 return;
             }
 
@@ -3416,7 +3458,15 @@ namespace Imaj.Service.Services
                     ? RoundCurrency(targetTotal * bases[i] / basisTotal)
                     : RoundCurrency(targetTotal / rows.Count);
                 rows[i].NetAmount = amount;
+                // GrossAmount'u da güncelle; eski değerde kalırsa SubTotal ≠ iş tutarı farkı oluşur
+                rows[i].GrossAmount = amount;
                 distributed += amount;
+            }
+
+            // Son satırın GrossAmount'unu da NetAmount ile senkronize et
+            if (rows.Count > 0)
+            {
+                rows[rows.Count - 1].GrossAmount = rows[rows.Count - 1].NetAmount;
             }
         }
 

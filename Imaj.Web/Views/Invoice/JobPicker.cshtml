@@ -53,6 +53,10 @@
     criteriaParts.AddRange(Model.SelectedReferences.Select(x => "SelectedReferences=" + WebUtility.UrlEncode(x)));
     var criteriaUrl = "/Invoice/JobPicker?" + string.Join("&", criteriaParts);
     var totalCount = Model.TotalCount > 0 ? Model.TotalCount : Model.Items.Count;
+    var totalPages = Model.PageSize > 0
+        ? (int)Math.Ceiling((double)totalCount / Model.PageSize)
+        : 1;
+    totalPages = Math.Max(totalPages, 1);
     var paginationQueryParts = Context.Request.Query
         .Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase)
                  && !string.Equals(q.Key, "pageSize", StringComparison.OrdinalIgnoreCase))
@@ -60,6 +64,12 @@
             .Where(v => !string.IsNullOrWhiteSpace(v))
             .Select(v => $"{q.Key}={Uri.EscapeDataString(v!)}"));
     var paginationQuery = string.Join("&", paginationQueryParts);
+    var previousPageUrl = Model.Page > 1
+        ? $"/Invoice/JobPicker?{paginationQuery}&page={Model.Page - 1}&pageSize={Model.PageSize}"
+        : string.Empty;
+    var nextPageUrl = Model.Page < totalPages
+        ? $"/Invoice/JobPicker?{paginationQuery}&page={Model.Page + 1}&pageSize={Model.PageSize}"
+        : string.Empty;
 }
 
 <div x-data="invoiceJobPicker()"
@@ -333,14 +343,47 @@
             <div class="invoice-footer-bar invoice-footer-bar--center">
                 @if (totalCount > 0)
                 {
-                    <partial name="Components/_Pagination" model="@(new Imaj.Web.Models.Components.PaginationModel
-                    {
-                        CurrentPage = Model.Page,
-                        TotalCount = totalCount,
-                        PageSize = Model.PageSize,
-                        BaseUrl = "/Invoice/JobPicker",
-                        QueryString = paginationQuery
-                    })" />
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Sayfalama">
+                        @if (!string.IsNullOrWhiteSpace(previousPageUrl))
+                        {
+                            <a href="@previousPageUrl"
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                               title="Önceki">
+                                <span class="sr-only">Önceki</span>
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(nextPageUrl))
+                        {
+                            <a href="@nextPageUrl"
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                               title="Sonraki">
+                                <span class="sr-only">Sonraki</span>
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        }
+                    </nav>
                 }
                 <div class="flex flex-wrap justify-center gap-1">
                     @if (Model.Context == "line")
