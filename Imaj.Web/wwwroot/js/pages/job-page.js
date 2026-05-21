@@ -26,6 +26,7 @@ function jobPage() {
             taskType: '',
             overtimeType: '',
 
+            productId: '',
             productCode: '',
             productName: '',
 
@@ -34,12 +35,16 @@ function jobPage() {
 
         customerName: '',
         pageSize: 10,
+        createFunction: '',
+        createFunctionStorageKey: 'imaj.job.createFunctionId',
 
         /**
          * Sayfa başlatma
          */
         init() {
             // Başlangıç tarihlerini URL'den veya default değerlerden al
+            const rememberedFunction = window.sessionStorage?.getItem(this.createFunctionStorageKey);
+            this.createFunction = rememberedFunction || this.filter.function || '';
         },
 
         /**
@@ -58,9 +63,27 @@ function jobPage() {
          */
         handleProductSelection(detail) {
             if (detail.targetId === 'jobProduct') {
-                this.filter.productName = detail.product.name;
-                this.filter.productCode = detail.product.code;
+                const product = detail.product || (detail.products && detail.products[0]);
+                if (!product) {
+                    return;
+                }
+
+                this.filter = {
+                    ...this.filter,
+                    productName: product.name ?? product.Name ?? '',
+                    productCode: product.code ?? product.Code ?? '',
+                    productId: product.id ?? product.Id ?? ''
+                };
             }
+        },
+
+        clearProductSelection() {
+            this.filter = {
+                ...this.filter,
+                productId: '',
+                productName: '',
+                productCode: ''
+            };
         },
 
         /**
@@ -68,15 +91,38 @@ function jobPage() {
          */
         handleEmployeeSelection(detail) {
             if (detail.targetId === 'jobEmployee') {
-                const emp = detail.employee;
+                const emp = detail.employee || (detail.employees && detail.employees[0]);
                 if (emp) {
-                    this.filter.employeeName = emp.name;
-                    this.filter.employeeCode = emp.code;
+                    this.filter = {
+                        ...this.filter,
+                        employeeName: emp.name ?? emp.Name ?? '',
+                        employeeCode: emp.code ?? emp.Code ?? ''
+                    };
                 } else {
-                    this.filter.employeeName = '';
-                    this.filter.employeeCode = '';
+                    this.clearEmployeeSelection();
                 }
             }
+        },
+
+        clearEmployeeSelection() {
+            this.filter = {
+                ...this.filter,
+                employeeName: '',
+                employeeCode: ''
+            };
+        },
+
+        rememberCreateFunction() {
+            if (this.createFunction) {
+                window.sessionStorage?.setItem(this.createFunctionStorageKey, this.createFunction);
+            }
+        },
+
+        buildCreateJobUrl() {
+            this.rememberCreateFunction();
+            return this.createFunction
+                ? '/Job/Create?functionId=' + encodeURIComponent(this.createFunction)
+                : '/Job/Create';
         },
 
         /**
@@ -103,6 +149,7 @@ function jobPage() {
                 employeeName: '',
                 taskType: '',
                 overtimeType: '',
+                productId: '',
                 productCode: '',
                 productName: '',
                 page: 1,

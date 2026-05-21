@@ -21,6 +21,7 @@ namespace Imaj.Service.Services
         private const decimal PricedJobStateId = 130m;
         private const decimal InvoicedJobStateId = 140m;
         private static readonly decimal[] LiveInvoiceStateIds = { OpenStateId, ConfirmedStateId, IssuedStateId };
+        private const string TurkishInsensitiveSearchCollation = "Latin1_General_100_CI_AI";
         private static readonly string[] ProductCategoryDisplayOrder =
         {
             "servis",
@@ -150,7 +151,7 @@ namespace Imaj.Service.Services
                                                  || EF.Functions.Like(x.Reference.ToString(), $"%{search}%")
                                                  || (x.Name != null
                                                      && EF.Functions.Like(
-                                                         EF.Functions.Collate(x.Name, SearchCollation),
+                                                         EF.Functions.Collate(x.Name, TurkishInsensitiveSearchCollation),
                                                          searchPattern,
                                                          LikeEscapeCharacter)));
                     }
@@ -158,15 +159,14 @@ namespace Imaj.Service.Services
                     {
                         query = query.Where(x => x.Name != null
                             && EF.Functions.Like(
-                                EF.Functions.Collate(x.Name, SearchCollation),
+                                EF.Functions.Collate(x.Name, TurkishInsensitiveSearchCollation),
                                 searchPattern,
                                 LikeEscapeCharacter));
                     }
                 }
 
                 var jobs = await query
-                    .OrderBy(x => x.StartDate)
-                    .ThenBy(x => x.Reference)
+                    .OrderBy(x => x.Reference)
                     .Take(take)
                     .ToListAsync(cancellationToken);
 
@@ -713,8 +713,12 @@ namespace Imaj.Service.Services
                 }
                 if (!string.IsNullOrWhiteSpace(filter.JobCustomerName))
                 {
-                    var name = filter.JobCustomerName.Trim();
-                    jobCustomerFilterQuery = jobCustomerFilterQuery.Where(c => c.Name.Contains(name));
+                    var namePattern = BuildContainsLikePattern(filter.JobCustomerName);
+                    jobCustomerFilterQuery = jobCustomerFilterQuery.Where(c => c.Name != null
+                        && EF.Functions.Like(
+                            EF.Functions.Collate(c.Name, TurkishInsensitiveSearchCollation),
+                            namePattern,
+                            LikeEscapeCharacter));
                     hasJobCustomerFilter = true;
                 }
                 if (hasJobCustomerFilter)
@@ -733,8 +737,12 @@ namespace Imaj.Service.Services
                 }
                 if (!string.IsNullOrWhiteSpace(filter.InvoiceCustomerName))
                 {
-                    var name = filter.InvoiceCustomerName.Trim();
-                    invoiceCustomerFilterQuery = invoiceCustomerFilterQuery.Where(c => c.Name.Contains(name));
+                    var namePattern = BuildContainsLikePattern(filter.InvoiceCustomerName);
+                    invoiceCustomerFilterQuery = invoiceCustomerFilterQuery.Where(c => c.Name != null
+                        && EF.Functions.Like(
+                            EF.Functions.Collate(c.Name, TurkishInsensitiveSearchCollation),
+                            namePattern,
+                            LikeEscapeCharacter));
                     hasInvoiceCustomerFilter = true;
                 }
                 if (hasInvoiceCustomerFilter)
@@ -761,14 +769,22 @@ namespace Imaj.Service.Services
 
                 if (!string.IsNullOrWhiteSpace(filter.Name))
                 {
-                    var name = filter.Name.Trim();
-                    invoices = invoices.Where(i => i.Name.Contains(name));
+                    var namePattern = BuildContainsLikePattern(filter.Name);
+                    invoices = invoices.Where(i => i.Name != null
+                        && EF.Functions.Like(
+                            EF.Functions.Collate(i.Name, TurkishInsensitiveSearchCollation),
+                            namePattern,
+                            LikeEscapeCharacter));
                 }
 
                 if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
                 {
-                    var related = filter.RelatedPerson.Trim();
-                    invoices = invoices.Where(i => i.Contact.Contains(related));
+                    var relatedPattern = BuildContainsLikePattern(filter.RelatedPerson);
+                    invoices = invoices.Where(i => i.Contact != null
+                        && EF.Functions.Like(
+                            EF.Functions.Collate(i.Contact, TurkishInsensitiveSearchCollation),
+                            relatedPattern,
+                            LikeEscapeCharacter));
                 }
 
                 if (filter.IssueDateStart.HasValue)
@@ -798,28 +814,21 @@ namespace Imaj.Service.Services
                 var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
                 // Materialize scoped IDs before loading joined display data.
-                // Reference-list searches preserve the user's typed order in memory;
-                // default searches keep TOP (first) in SQL for the result window.
+                // Default searches keep TOP (first) in SQL for the result window.
                 List<decimal> windowIds;
                 if (referenceList.Any())
                 {
-                    var referenceOrder = referenceList
-                        .Select((reference, index) => new { reference, index })
-                        .ToDictionary(x => x.reference, x => x.index);
-
                     var scopedRows = await ApplyInvoiceDataScope(invoices, activeSnapshot)
                         .Select(i => new
                         {
                             i.Id,
-                            i.Reference,
-                            i.IssueDate
+                            i.Reference
                         })
                         .ToListAsync();
 
                     windowIds = scopedRows
-                        .OrderBy(i => referenceOrder.TryGetValue(i.Reference, out var index) ? index : int.MaxValue)
-                        .ThenByDescending(i => i.IssueDate)
-                        .ThenByDescending(i => i.Id)
+                        .OrderBy(i => i.Reference)
+                        .ThenBy(i => i.Id)
                         .Select(i => i.Id)
                         .ToList();
 
@@ -831,28 +840,10 @@ namespace Imaj.Service.Services
                 else
                 {
                     var scopedInvoices = ApplyInvoiceDataScope(invoices, activeSnapshot);
-                    var scopedIdQuery = filter.ReferenceStart.HasValue
-                        ? scopedInvoices
-                            .OrderBy(i => i.Reference)
-                            .Select(i => i.Id)
-                        : filter.ReferenceEnd.HasValue
-                            ? scopedInvoices
-                                .OrderByDescending(i => i.Reference)
-                                .Select(i => i.Id)
-                            : filter.IssueDateStart.HasValue
-                                ? scopedInvoices
-                                    .OrderBy(i => i.IssueDate)
-                                    .ThenBy(i => i.Reference)
-                                    .Select(i => i.Id)
-                                : filter.IssueDateEnd.HasValue
-                                    ? scopedInvoices
-                                        .OrderByDescending(i => i.IssueDate)
-                                        .ThenByDescending(i => i.Reference)
-                                        .Select(i => i.Id)
-                            : scopedInvoices
-                                .OrderByDescending(i => i.IssueDate)
-                                .ThenByDescending(i => i.Id)
-                                .Select(i => i.Id);
+                    var scopedIdQuery = scopedInvoices
+                        .OrderBy(i => i.Reference)
+                        .ThenBy(i => i.Id)
+                        .Select(i => i.Id);
 
                     if (first.HasValue)
                     {
@@ -989,9 +980,7 @@ namespace Imaj.Service.Services
 
                 var activeSnapshot = snapshot!;
                 var items = await BuildInvoiceReportBaseQuery(filter, activeSnapshot)
-                    .OrderBy(x => x.CustomerName)
-                    .ThenBy(x => x.IssueDate)
-                    .ThenBy(x => x.Reference)
+                    .OrderBy(x => x.Reference)
                     .Select(x => new InvoiceDetailedReportRowDto
                     {
                         CustomerCode = x.CustomerCode,
@@ -3521,8 +3510,11 @@ namespace Imaj.Service.Services
 
             if (!string.IsNullOrWhiteSpace(filter.JobCustomerName))
             {
-                var name = filter.JobCustomerName.Trim();
-                query = query.Where(x => x.JobCustomerName.Contains(name));
+                var namePattern = BuildContainsLikePattern(filter.JobCustomerName);
+                query = query.Where(x => EF.Functions.Like(
+                    EF.Functions.Collate(x.JobCustomerName, TurkishInsensitiveSearchCollation),
+                    namePattern,
+                    LikeEscapeCharacter));
             }
 
             if (!string.IsNullOrWhiteSpace(filter.InvoiceCustomerCode))
@@ -3533,8 +3525,11 @@ namespace Imaj.Service.Services
 
             if (!string.IsNullOrWhiteSpace(filter.InvoiceCustomerName))
             {
-                var name = filter.InvoiceCustomerName.Trim();
-                query = query.Where(x => x.InvoiceCustomerName.Contains(name));
+                var namePattern = BuildContainsLikePattern(filter.InvoiceCustomerName);
+                query = query.Where(x => EF.Functions.Like(
+                    EF.Functions.Collate(x.InvoiceCustomerName, TurkishInsensitiveSearchCollation),
+                    namePattern,
+                    LikeEscapeCharacter));
             }
 
             if (filter.ReferenceStart.HasValue)
@@ -3555,14 +3550,20 @@ namespace Imaj.Service.Services
 
             if (!string.IsNullOrWhiteSpace(filter.Name))
             {
-                var name = filter.Name.Trim();
-                query = query.Where(x => x.Name.Contains(name));
+                var namePattern = BuildContainsLikePattern(filter.Name);
+                query = query.Where(x => EF.Functions.Like(
+                    EF.Functions.Collate(x.Name, TurkishInsensitiveSearchCollation),
+                    namePattern,
+                    LikeEscapeCharacter));
             }
 
             if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
             {
-                var relatedPerson = filter.RelatedPerson.Trim();
-                query = query.Where(x => x.RelatedPerson.Contains(relatedPerson));
+                var relatedPersonPattern = BuildContainsLikePattern(filter.RelatedPerson);
+                query = query.Where(x => EF.Functions.Like(
+                    EF.Functions.Collate(x.RelatedPerson, TurkishInsensitiveSearchCollation),
+                    relatedPersonPattern,
+                    LikeEscapeCharacter));
             }
 
             if (filter.IssueDateStart.HasValue)

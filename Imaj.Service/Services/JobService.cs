@@ -28,6 +28,7 @@ namespace Imaj.Service.Services
         private const decimal ConfirmedInvoiceStateId = 220m;
         private const decimal IssuedInvoiceStateId = 230m;
         private static readonly decimal[] LiveInvoiceStateIds = { OpenInvoiceStateId, ConfirmedInvoiceStateId, IssuedInvoiceStateId };
+        private const string TurkishInsensitiveSearchCollation = "Latin1_General_100_CI_AI";
 
         private const decimal CreateLogActionId = 510m;
         private const decimal CompleteLogActionId = 610m;
@@ -135,7 +136,7 @@ namespace Imaj.Service.Services
                     var jobNamePattern = BuildContainsLikePattern(filter.JobName);
                     jobQuery = jobQuery.Where(x => x.Name != null
                         && EF.Functions.Like(
-                            EF.Functions.Collate(x.Name, SearchCollation),
+                            EF.Functions.Collate(x.Name, TurkishInsensitiveSearchCollation),
                             jobNamePattern,
                             LikeEscapeCharacter));
                 }
@@ -143,7 +144,12 @@ namespace Imaj.Service.Services
                 // İlgili kişi (Contact) filtresi
                 if (!string.IsNullOrWhiteSpace(filter.RelatedPerson))
                 {
-                    jobQuery = jobQuery.Where(x => x.Contact.Contains(filter.RelatedPerson));
+                    var relatedPersonPattern = BuildContainsLikePattern(filter.RelatedPerson);
+                    jobQuery = jobQuery.Where(x => x.Contact != null
+                        && EF.Functions.Like(
+                            EF.Functions.Collate(x.Contact, TurkishInsensitiveSearchCollation),
+                            relatedPersonPattern,
+                            LikeEscapeCharacter));
                 }
 
                 // Başlangıç tarihi aralığı
@@ -329,15 +335,7 @@ namespace Imaj.Service.Services
                 var pageSize = filter.PageSize > 0 ? filter.PageSize : 20;
                 var first = filter.First.HasValue && filter.First.Value > 0 ? filter.First.Value : (int?)null;
 
-                var orderedQuery = filter.ReferenceStart.HasValue
-                    ? jobQuery
-                        .OrderBy(x => x.Reference)
-                    : filter.ReferenceEnd.HasValue
-                        ? jobQuery
-                            .OrderByDescending(x => x.Reference)
-                        : jobQuery
-                            .OrderByDescending(x => x.StartDT)
-                            .ThenByDescending(x => x.Reference);
+                var orderedQuery = jobQuery.OrderBy(x => x.Reference);
 
                 var matchingCount = await jobQuery.CountAsync(cancellationToken);
                 var totalCount = first.HasValue

@@ -29,6 +29,49 @@
         return url;
     }
 
+    string NormalizeCategoryLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Trim()
+            .Replace('ı', 'i')
+            .Replace('İ', 'I')
+            .Normalize(System.Text.NormalizationForm.FormD);
+        var builder = new System.Text.StringBuilder(normalized.Length);
+        foreach (var character in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString().ToUpperInvariant();
+    }
+
+    bool IsNonServiceChargeCategory(string? value)
+    {
+        var normalized = NormalizeCategoryLabel(value);
+        return normalized.Contains("OPERATOR")
+            || normalized.Contains("OPERAT")
+            || normalized.Contains("MESAI")
+            || normalized.Contains("OVERTIME")
+            || normalized.Contains("FAZLA")
+            || normalized.Contains("KAFETERYA")
+            || normalized.Contains("KAFE")
+            || normalized.Contains("CAFE")
+            || normalized.Contains("CAFETERIA");
+    }
+
+    bool IsServiceCategory(string? value)
+    {
+        var normalized = NormalizeCategoryLabel(value);
+        return !string.IsNullOrWhiteSpace(normalized) && !IsNonServiceChargeCategory(normalized);
+    }
+
     var selectedIds = Model.SelectedIds ?? new List<string>();
     var parsedReference = int.TryParse(Model.Code, out var reference);
     var stateId = Model.StateId;
@@ -63,6 +106,12 @@
     var canDoEvaluate = parsedReference && canEvaluate && !Model.IsEvaluated && (isClosed || isDiscarded);
     var canDoUndoEvaluate = parsedReference && canUndoEvaluate && Model.IsEvaluated && (isClosed || isDiscarded);
     var canShowPrintJobForm = parsedReference && canPrintJobForm && (isCompleted || isPriced || isInvoiced);
+    var orderedProductCategories = Model.ProductCategories
+        .Select((category, index) => new { Category = category, Index = index })
+        .OrderBy(x => IsServiceCategory(x.Category.Name) ? 0 : 1)
+        .ThenBy(x => x.Index)
+        .Select(x => x.Category)
+        .ToList();
     var currentFunctionId = Model.FunctionId.ToString(CultureInfo.InvariantCulture);
     var defaultWorkTypeId = (ViewBag.WorkTypes != null && ((List<WorkTypeDto>)ViewBag.WorkTypes).Count > 0)
         ? ((List<WorkTypeDto>)ViewBag.WorkTypes)[0].Id
@@ -311,8 +360,8 @@
                                 </select>
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                                <span x-show="!isEditing">@ot.Quantity</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Overtimes[@i].Quantity" value="@ot.Quantity.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" class="job-table-input job-table-input--money">
+                                <span x-show="!isEditing">@ot.Quantity.ToString("0.##")</span>
+                                <input x-show="isEditing" x-cloak type="text" inputmode="numeric" name="Overtimes[@i].Quantity" value="@ot.Quantity.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" class="job-table-input job-table-input--money" style="width: 4rem;">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                                 <span x-show="!isEditing">@ot.Amount.ToString("N2")</span>
@@ -490,9 +539,9 @@
                     </tr>
                 </thead>
                 <tbody id="job-detail-product-categories-body">
-                    @for (var i = 0; i < Model.ProductCategories.Count; i++)
+                    @for (var i = 0; i < orderedProductCategories.Count; i++)
                     {
-                        var cat = Model.ProductCategories[i];
+                        var cat = orderedProductCategories[i];
                         var categoryKey = cat.CategoryId > 0
                             ? cat.CategoryId.ToString(CultureInfo.InvariantCulture)
                             : (cat.Name ?? string.Empty).Trim().ToLowerInvariant();
@@ -508,15 +557,15 @@
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                                 <span x-show="!isEditing">@cat.Discount.ToString("N0")</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].Discount" value="@cat.Discount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateCategory(@i)" data-category-discount="@i" class="job-table-input job-table-input--discount">
+                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].Discount" value="@cat.Discount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="recalculateCategory(@i)" data-category-discount="@i" class="job-table-input job-table-input--discount" style="width: 4.5rem;">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                                <span x-show="!isEditing">@cat.DiscountAmount.ToString("N2")</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].DiscountAmount" value="@cat.DiscountAmount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" readonly data-category-discount-amount="@i" class="job-table-input job-table-input--money bg-gray-50">
+                                <span data-category-discount-amount-display="@i">@cat.DiscountAmount.ToString("N2")</span>
+                                <input type="hidden" name="ProductCategories[@i].DiscountAmount" value="@cat.DiscountAmount.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" data-category-discount-amount="@i">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                                <span x-show="!isEditing">@cat.NetTotal.ToString("N2")</span>
-                                <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="ProductCategories[@i].NetTotal" value="@cat.NetTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" readonly data-category-net-total="@i" class="job-table-input job-table-input--money bg-gray-50">
+                                <span data-category-net-total-display="@i">@cat.NetTotal.ToString("N2")</span>
+                                <input type="hidden" name="ProductCategories[@i].NetTotal" value="@cat.NetTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" data-category-net-total="@i">
                             </td>
                         </tr>
                     }
@@ -551,6 +600,13 @@
                      SelectedIds = selectedIds,
                      ReturnUrl = Model.ReturnUrl
                  })" />
+                 <label class="mt-2 flex items-center justify-center gap-2 text-sm font-medium text-gray-700">
+                     <input type="checkbox"
+                            x-model="autoAdvance"
+                            @@change="rememberAutoAdvance()"
+                            class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                     <span>Otomatik ilerle</span>
+                 </label>
              }
          </div>
          
@@ -647,11 +703,12 @@
                          <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
-                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Price)" />
-                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
-                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-                             @foreach (var selectedId in selectedIds)
-                             {
+	                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Price)" />
+	                             <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
+	                             <input type="hidden" name="AutoAdvance" :value="autoAdvance ? 'true' : 'false'" />
+	                             <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+	                             @foreach (var selectedId in selectedIds)
+	                             {
                                  <input type="hidden" name="SelectedIds" value="@selectedId" />
                              }
                              <button type="submit" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200">@Localizer["WorkflowPrice"]</button>
@@ -820,16 +877,23 @@
                 nextOvertimeIndex: initialState?.counts?.overtimes || 0,
                 nextProductIndex: initialState?.counts?.products || 0,
                 nextCategoryIndex: initialState?.counts?.categories || 0,
+                autoAdvance: false,
+                autoAdvanceStorageKey: 'imaj.job.detail.autoAdvance',
                 async init() {
                     if (this.initialized) {
                         return;
                     }
 
+                    this.autoAdvance = window.sessionStorage?.getItem(this.autoAdvanceStorageKey) === 'true';
                     this.initialized = true;
                     this.bindDynamicInputHandlers();
                     this.sortProductRows();
+                    this.sortCategoryRows();
                     await this.loadProductGroups();
                     await this.loadCustomerProductCategories();
+                },
+                rememberAutoAdvance() {
+                    window.sessionStorage?.setItem(this.autoAdvanceStorageKey, this.autoAdvance ? 'true' : 'false');
                 },
                 enableEdit() {
                     this.isEditing = true;
@@ -914,6 +978,8 @@
                         'categorySubtotalDisplay',
                         'categoryDiscount',
                         'categoryDiscountAmount',
+                        'categoryDiscountAmountDisplay',
+                        'categoryNetTotalDisplay',
                         'categoryNetTotal'
                     ]);
                 },
@@ -946,6 +1012,14 @@
                     const selectedOption = functionSelect?.selectedOptions?.[0];
                     return selectedOption?.textContent || this.productPicker.functionName || '';
                 },
+                resolvePreferredProductGroup() {
+                    const preferredGroup = this.productGroups.find(group => {
+                        const name = this.normalizeSortText(group?.name);
+                        return name.includes('SERVIS') || name.includes('HIZMET') || name.includes('SERVICE');
+                    });
+
+                    return preferredGroup?.name || this.productGroups[0]?.name || '';
+                },
                 async loadProductGroups() {
                     if (!this.productPicker.productGroupsEndpoint) {
                         this.productGroups = [];
@@ -969,7 +1043,7 @@
 
                         const groups = await response.json();
                         this.productGroups = Array.isArray(groups) ? groups : [];
-                        this.selectedProductGroup = this.productGroups[0]?.name || '';
+                        this.selectedProductGroup = this.resolvePreferredProductGroup();
                     } catch (error) {
                         console.error('Product groups could not be loaded:', error);
                         this.productGroups = [];
@@ -1083,7 +1157,7 @@
                             </select>
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                            <input type="text" inputmode="decimal" name="Overtimes[${index}].Quantity" value="${this.escapeAttr(this.formatInputDecimal(quantity))}" form="jobDetailEditForm" class="job-table-input job-table-input--money">
+                            <input type="text" inputmode="numeric" name="Overtimes[${index}].Quantity" value="${this.escapeAttr(this.formatQuantityInput(quantity))}" form="jobDetailEditForm" class="job-table-input job-table-input--money" style="width: 4rem;">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                             <input type="text" inputmode="decimal" name="Overtimes[${index}].Amount" value="${this.escapeAttr(this.formatInputDecimal(0))}" form="jobDetailEditForm" data-overtime-amount="${index}" class="job-table-input job-table-input--money">
@@ -1286,6 +1360,22 @@
                 normalizeProductKey(value) {
                     return this.normalizeSortText(value).trim();
                 },
+                isNonServiceChargeCategoryName(value) {
+                    const normalized = this.normalizeSortText(value);
+                    return normalized.includes('OPERATOR')
+                        || normalized.includes('OPERAT')
+                        || normalized.includes('MESAI')
+                        || normalized.includes('OVERTIME')
+                        || normalized.includes('FAZLA')
+                        || normalized.includes('KAFETERYA')
+                        || normalized.includes('KAFE')
+                        || normalized.includes('CAFE')
+                        || normalized.includes('CAFETERIA');
+                },
+                isServiceCategoryName(value) {
+                    const normalized = this.normalizeSortText(value);
+                    return !!normalized && !this.isNonServiceChargeCategoryName(normalized);
+                },
                 getProductSortRank(row) {
                     const combinedText = this.normalizeSortText([
                         row.dataset.productCode,
@@ -1293,19 +1383,19 @@
                         row.dataset.productCategoryName
                     ].join(' '));
 
-                    if (combinedText.includes('OPERATOR') && combinedText.includes('UCRETI')) {
+                    if (combinedText.includes('OPERATOR') || combinedText.includes('OPERAT')) {
                         return 90;
                     }
 
-                    if (combinedText.includes('CAFE') || combinedText.includes('KAFE') || combinedText.includes('KAFETERYA')) {
+                    if (combinedText.includes('MESAI') || combinedText.includes('OVERTIME') || combinedText.includes('FAZLA')) {
                         return 91;
                     }
 
-                    if ((combinedText.includes('FAZLA') && combinedText.includes('MESAI')) || combinedText.includes('OVERTIME')) {
+                    if (combinedText.includes('CAFE') || combinedText.includes('KAFE') || combinedText.includes('KAFETERYA') || combinedText.includes('CAFETERIA')) {
                         return 92;
                     }
 
-                    if (combinedText.includes('SUIT')) {
+                    if (combinedText) {
                         return 0;
                     }
 
@@ -1328,6 +1418,22 @@
                             const leftLabel = `${left.dataset.productCode || ''} ${left.dataset.productName || ''}`;
                             const rightLabel = `${right.dataset.productCode || ''} ${right.dataset.productName || ''}`;
                             return leftLabel.localeCompare(rightLabel, 'tr');
+                        })
+                        .forEach(row => tbody.appendChild(row));
+                },
+                sortCategoryRows() {
+                    const tbody = document.getElementById('job-detail-product-categories-body');
+                    if (!tbody) {
+                        return;
+                    }
+
+                    [...tbody.querySelectorAll('[data-category-row-key]')]
+                        .sort((left, right) => {
+                            const leftName = left.querySelector('input[name$=".Name"]')?.value || left.textContent || '';
+                            const rightName = right.querySelector('input[name$=".Name"]')?.value || right.textContent || '';
+                            const rankDiff = (this.isServiceCategoryName(leftName) ? 0 : 1)
+                                - (this.isServiceCategoryName(rightName) ? 0 : 1);
+                            return rankDiff !== 0 ? rankDiff : 0;
                         })
                         .forEach(row => tbody.appendChild(row));
                 },
@@ -1361,6 +1467,7 @@
 
                         subtotalInput.value = this.formatInputDecimal(nextTotal);
                         this.recalculateCategory(index);
+                        this.sortCategoryRows();
                         return;
                     }
 
@@ -1395,16 +1502,19 @@
                             <input type="hidden" name="ProductCategories[${index}].SubTotal" value="${this.escapeAttr(this.formatInputDecimal(subTotal))}" form="jobDetailEditForm" data-category-subtotal="${index}">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].Discount" value="${this.escapeAttr(this.formatInputDecimal(discount))}" form="jobDetailEditForm" data-category-discount="${index}" class="job-table-input job-table-input--discount">
+                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].Discount" value="${this.escapeAttr(this.formatInputDecimal(discount))}" form="jobDetailEditForm" data-category-discount="${index}" class="job-table-input job-table-input--discount" style="width: 4.5rem;">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].DiscountAmount" value="${this.escapeAttr(this.formatInputDecimal(discountAmount))}" form="jobDetailEditForm" readonly data-category-discount-amount="${index}" class="job-table-input job-table-input--money bg-gray-50">
+                            <span data-category-discount-amount-display="${index}">${this.escapeText(this.formatDisplayDecimal(discountAmount))}</span>
+                            <input type="hidden" name="ProductCategories[${index}].DiscountAmount" value="${this.escapeAttr(this.formatInputDecimal(discountAmount))}" form="jobDetailEditForm" data-category-discount-amount="${index}">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
-                            <input type="text" inputmode="decimal" name="ProductCategories[${index}].NetTotal" value="${this.escapeAttr(this.formatInputDecimal(netTotal))}" form="jobDetailEditForm" readonly data-category-net-total="${index}" class="job-table-input job-table-input--money bg-gray-50">
+                            <span data-category-net-total-display="${index}">${this.escapeText(this.formatDisplayDecimal(netTotal))}</span>
+                            <input type="hidden" name="ProductCategories[${index}].NetTotal" value="${this.escapeAttr(this.formatInputDecimal(netTotal))}" form="jobDetailEditForm" data-category-net-total="${index}">
                         </td>`;
 
                     tbody.appendChild(row);
+                    this.sortCategoryRows();
                     this.recalculateCategoryTotals();
                     this.updateCount('[data-category-count]', tbody.children.length);
                 },
@@ -1446,6 +1556,14 @@
                     const lang = document.documentElement.lang || navigator.language || 'tr-TR';
                     const separator = lang.toLowerCase().startsWith('tr') ? ',' : '.';
                     return normalized.toFixed(2).replace('.', separator);
+                },
+                formatQuantityInput(value) {
+                    const normalized = Number.isFinite(value) ? value : 0;
+                    if (Number.isInteger(normalized)) {
+                        return String(normalized);
+                    }
+
+                    return String(normalized).replace('.', ',');
                 },
                 formatDisplayDecimal(value) {
                     const normalized = Number.isFinite(value) ? value : 0;
@@ -1521,7 +1639,9 @@
                     const subtotalDisplay = document.querySelector(`[data-category-subtotal-display="${index}"]`);
                     const discountInput = document.querySelector(`[data-category-discount="${index}"]`);
                     const discountAmountInput = document.querySelector(`[data-category-discount-amount="${index}"]`);
+                    const discountAmountDisplay = document.querySelector(`[data-category-discount-amount-display="${index}"]`);
                     const netTotalInput = document.querySelector(`[data-category-net-total="${index}"]`);
+                    const netTotalDisplay = document.querySelector(`[data-category-net-total-display="${index}"]`);
 
                     if (!subtotalInput || !discountInput || !discountAmountInput || !netTotalInput) {
                         return;
@@ -1534,6 +1654,12 @@
 
                     discountAmountInput.value = this.formatInputDecimal(discountAmount);
                     netTotalInput.value = this.formatInputDecimal(netTotal);
+                    if (discountAmountDisplay) {
+                        discountAmountDisplay.textContent = this.formatDisplayDecimal(discountAmount);
+                    }
+                    if (netTotalDisplay) {
+                        netTotalDisplay.textContent = this.formatDisplayDecimal(netTotal);
+                    }
                     if (subtotalDisplay) {
                         subtotalDisplay.textContent = this.formatDisplayDecimal(subtotal);
                     }

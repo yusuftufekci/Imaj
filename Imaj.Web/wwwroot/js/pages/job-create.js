@@ -9,6 +9,7 @@ function jobCreate(config) {
         productPicker: config.productPicker || {},
         customerPicker: config.customerPicker || {},
         customerProductCategoriesEndpoint: config.customerProductCategoriesEndpoint || '',
+        createFunctionStorageKey: 'imaj.job.createFunctionId',
 
         validationError: '',
         validationErrorDetails: [],
@@ -47,9 +48,15 @@ function jobCreate(config) {
         productCategories: [],
 
         async init() {
+            if (this.redirectToRememberedFunction()) {
+                return;
+            }
+
+            this.rememberSelectedFunction();
             this.overtimes = (config.overtimes || []).map(item => this.createOvertimeItem(item));
             this.products = (config.products || []).map(prod => this.createProductItem(prod));
             this.productCategories = (config.productCategories || []).map(cat => this.createCategoryItem(cat));
+            this.sortProducts();
             this.recalculateProductCategories();
             this.syncAutoOvertimes();
 
@@ -60,6 +67,51 @@ function jobCreate(config) {
 
             await this.loadProductGroups();
             await this.loadCustomerProductCategories();
+        },
+
+        getCreateFunctionId() {
+            return this.getSelectedFunctionId();
+        },
+
+        rememberSelectedFunction() {
+            const functionId = this.getCreateFunctionId();
+            if (functionId) {
+                window.sessionStorage?.setItem(this.createFunctionStorageKey, String(functionId));
+            }
+        },
+
+        redirectToRememberedFunction() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('functionId')) {
+                return false;
+            }
+
+            const rememberedFunction = window.sessionStorage?.getItem(this.createFunctionStorageKey);
+            const currentFunction = this.getCreateFunctionId();
+            if (!rememberedFunction || rememberedFunction === String(currentFunction || '')) {
+                return false;
+            }
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('functionId', rememberedFunction);
+            window.location.replace(url.toString());
+            return true;
+        },
+
+        buildCreateReturnUrl() {
+            const url = new URL('/Job/Create', window.location.origin);
+            const functionId = this.getCreateFunctionId();
+            if (functionId) {
+                url.searchParams.set('functionId', functionId);
+            }
+
+            return `${url.pathname}${url.search}`;
+        },
+
+        buildDetailRedirectUrl(rawUrl) {
+            const url = new URL(rawUrl || '/Job/Detail', window.location.origin);
+            url.searchParams.set('returnUrl', this.buildCreateReturnUrl());
+            return `${url.pathname}${url.search}`;
         },
 
         parseDecimal(value, fallback = 0) {
@@ -102,6 +154,57 @@ function jobCreate(config) {
 
         normalizeCode(value) {
             return String(value || '').trim().toUpperCase();
+        },
+
+        normalizeText(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toUpperCase();
+        },
+
+        isNonServiceChargeText(value) {
+            const normalized = this.normalizeText(value);
+            return normalized.includes('OPERATOR')
+                || normalized.includes('OPERAT')
+                || normalized.includes('MESAI')
+                || normalized.includes('OVERTIME')
+                || normalized.includes('FAZLA')
+                || normalized.includes('KAFETERYA')
+                || normalized.includes('KAFE')
+                || normalized.includes('CAFE')
+                || normalized.includes('CAFETERIA');
+        },
+
+        getServiceSortRank(value) {
+            const normalized = this.normalizeText(value);
+            if (!normalized) {
+                return 10;
+            }
+
+            return this.isNonServiceChargeText(normalized) ? 90 : 0;
+        },
+
+        sortProducts() {
+            this.products = [...this.products].sort((left, right) => {
+                const leftText = [left.productGroup, left.categoryName, left.code, left.name].join(' ');
+                const rightText = [right.productGroup, right.categoryName, right.code, right.name].join(' ');
+                const rankDiff = this.getServiceSortRank(leftText) - this.getServiceSortRank(rightText);
+                if (rankDiff !== 0) {
+                    return rankDiff;
+                }
+
+                return `${left.code || ''} ${left.name || ''}`.localeCompare(`${right.code || ''} ${right.name || ''}`, 'tr');
+            });
+        },
+
+        resolvePreferredProductGroup() {
+            const preferredGroup = this.productGroups.find(group => {
+                const name = this.normalizeText(group?.name);
+                return name.includes('SERVIS') || name.includes('HIZMET') || name.includes('SERVICE');
+            });
+
+            return preferredGroup?.name || this.productGroups[0]?.name || '';
         },
 
         parseDateTimeLocal(value) {
@@ -209,6 +312,7 @@ function jobCreate(config) {
                 name: prod.name || '',
                 categoryId: prod.categoryId || 0,
                 categoryName: prod.categoryName || prod.category || '',
+                productGroup: prod.productGroup || prod.groupName || prod.group || '',
                 quantity,
                 price,
                 netAmount,
@@ -283,6 +387,11 @@ function jobCreate(config) {
 
             this.productCategories = Array.from(groupedCategories.values())
                 .sort((left, right) => {
+                    const rankDiff = this.getServiceSortRank(left.name) - this.getServiceSortRank(right.name);
+                    if (rankDiff !== 0) {
+                        return rankDiff;
+                    }
+
                     const sequenceDiff = this.parseDecimal(left.sequence) - this.parseDecimal(right.sequence);
                     if (sequenceDiff !== 0) {
                         return sequenceDiff;
@@ -399,7 +508,7 @@ function jobCreate(config) {
 
                 const hasCurrentSelection = this.productGroups.some(group => group?.name === this.selectedProductGroup);
                 if (!hasCurrentSelection) {
-                    this.selectedProductGroup = this.productGroups[0]?.name || '';
+                    this.selectedProductGroup = this.resolvePreferredProductGroup();
                 }
             } catch (error) {
                 console.error('Product groups could not be loaded:', error);
@@ -535,6 +644,7 @@ function jobCreate(config) {
             }
 
             this.isSubmitting = true;
+            this.rememberSelectedFunction();
 
             const formElement = this.$refs.createJobForm;
             const formData = new FormData(formElement);
@@ -551,7 +661,7 @@ function jobCreate(config) {
                 if (response.ok) {
                     const result = await response.json();
                     if (result.success) {
-                        window.location.href = result.redirectUrl;
+                        window.location.href = this.buildDetailRedirectUrl(result.redirectUrl);
                     } else {
                         this.validationError = result.message || jobCreateText('genericError', 'An error occurred.');
                         if (result.errors && result.errors.length > 0) {
@@ -636,6 +746,7 @@ function jobCreate(config) {
                         name: prod.name,
                         categoryId: prod.categoryId || 0,
                         categoryName: prod.categoryName || prod.category || '',
+                        productGroup: prod.productGroup || prod.groupName || prod.group || '',
                         quantity: prod.quantity,
                         price: prod.price || 0,
                         netAmount: prod.netAmount,
@@ -643,6 +754,7 @@ function jobCreate(config) {
                     }));
                 });
 
+                this.sortProducts();
                 this.recalculateProductCategories();
             }
         },

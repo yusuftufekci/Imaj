@@ -29,6 +29,7 @@ namespace Imaj.Web.Models
         public JobWorkflowAction Action { get; set; }
         public List<string> SelectedIds { get; set; } = new();
         public int CurrentIndex { get; set; }
+        public bool AutoAdvance { get; set; }
         public string? ReturnUrl { get; set; }
     }
 

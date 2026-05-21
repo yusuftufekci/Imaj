@@ -788,9 +788,7 @@ namespace Imaj.Web.Controllers
                  id = selectedIds[currentIndex];
             }
 
-            var normalizedReturnUrl = string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith('/')
-                ? "/Job/List"
-                : returnUrl;
+            var normalizedReturnUrl = NormalizeJobDetailReturnUrl(returnUrl, Request.Headers.Referer.ToString());
             if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
             {
                 return RedirectToAction(nameof(Detail), new
@@ -1261,13 +1259,19 @@ namespace Imaj.Web.Controllers
             
             if (result.IsSuccess && result.Data != null)
             {
+                var createReturnUrl = "/Job";
                 if (isAjax)
                 {
-                    return Json(new { success = true, message = string.Format(L("JobCreatedWithReference"), result.Data.Reference), redirectUrl = Url.Action("Detail", new { id = result.Data.Reference }) });
+                    return Json(new
+                    {
+                        success = true,
+                        message = string.Format(L("JobCreatedWithReference"), result.Data.Reference),
+                        redirectUrl = Url.Action("Detail", new { id = result.Data.Reference, returnUrl = createReturnUrl })
+                    });
                 }
 
                 // Redirect to Detail
-                return RedirectToAction("Detail", new { id = result.Data.Reference });
+                return RedirectToAction("Detail", new { id = result.Data.Reference, returnUrl = createReturnUrl });
             }
             
             // Başarısız
@@ -1801,6 +1805,22 @@ namespace Imaj.Web.Controllers
                 : "/Job/List";
         }
 
+        private static string NormalizeJobDetailReturnUrl(string? returnUrl, string? referer)
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/'))
+            {
+                return returnUrl;
+            }
+
+            if (Uri.TryCreate(referer, UriKind.Absolute, out var refererUri)
+                && string.Equals(refererUri.AbsolutePath, "/Job/Create", StringComparison.OrdinalIgnoreCase))
+            {
+                return "/Job";
+            }
+
+            return "/Job/List";
+        }
+
         private JobEmailComposeViewModel BuildJobEmailComposeViewModel(
             JobEmailDraftDto draft,
             string returnUrl,
@@ -2313,6 +2333,11 @@ namespace Imaj.Web.Controllers
             }
 
             var currentIndex = request.CurrentIndex;
+            if (request.AutoAdvance && request.Action == JobWorkflowAction.Price && selectedIds.Count > 1)
+            {
+                currentIndex++;
+            }
+
             if (currentIndex < 0)
             {
                 currentIndex = 0;

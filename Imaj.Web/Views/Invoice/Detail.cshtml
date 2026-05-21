@@ -45,6 +45,37 @@
         pickerParts.AddRange(selectedReferences.Select(x => "selectedReferences=" + WebUtility.UrlEncode(x)));
         return "/Invoice/JobPicker?" + string.Join("&", pickerParts);
     }
+
+    string NormalizeCategoryLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Trim()
+            .Replace('ı', 'i')
+            .Replace('İ', 'I')
+            .Normalize(System.Text.NormalizationForm.FormD);
+        var builder = new System.Text.StringBuilder(normalized.Length);
+        foreach (var character in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString().ToUpperInvariant();
+    }
+
+    bool IsServiceFeeCategory(string? value)
+    {
+        var normalized = NormalizeCategoryLabel(value);
+        return (normalized.Contains("SERVIS") && normalized.Contains("UCRET"))
+            || (normalized.Contains("SERVICE") && (normalized.Contains("FEE") || normalized.Contains("CHARGE")));
+    }
+
     var parsedReference = int.TryParse(invoice?.Reference, out var reference);
     var stateId = invoice?.StateId ?? 0m;
     var isEvaluated = invoice?.Evaluated ?? false;
@@ -456,37 +487,52 @@
                                                             @for (var catIndex = 0; catIndex < line.ProductCategories.Count; catIndex++)
                                                             {
                                                                 var cat = line.ProductCategories[catIndex];
-                                                                var categoryFormIndex = productCategoryFormIndex++;
+                                                                var isServiceFeeCategory = IsServiceFeeCategory(cat.Name);
+                                                                var categoryFormIndex = isServiceFeeCategory ? productCategoryFormIndex++ : -1;
                                                                 <tr>
                                                                     <td class="px-3 py-2 text-gray-900">
                                                                         @cat.Name
-                                                                        <input type="hidden"
-                                                                               name="ProductCategories[@categoryFormIndex].LineId"
-                                                                               value="@line.Id.ToString(CultureInfo.InvariantCulture)"
-                                                                               form="invoiceDetailEditForm"
-                                                                               :disabled="!isEditing" />
-                                                                        <input type="hidden"
-                                                                               name="ProductCategories[@categoryFormIndex].ProdCatId"
-                                                                               value="@cat.ProdCatId.ToString(CultureInfo.InvariantCulture)"
-                                                                               form="invoiceDetailEditForm"
-                                                                               :disabled="!isEditing" />
+                                                                        @if (isServiceFeeCategory)
+                                                                        {
+                                                                            <input type="hidden"
+                                                                                   name="ProductCategories[@categoryFormIndex].LineId"
+                                                                                   value="@line.Id.ToString(CultureInfo.InvariantCulture)"
+                                                                                   form="invoiceDetailEditForm"
+                                                                                   :disabled="!isEditing" />
+                                                                            <input type="hidden"
+                                                                                   name="ProductCategories[@categoryFormIndex].ProdCatId"
+                                                                                   value="@cat.ProdCatId.ToString(CultureInfo.InvariantCulture)"
+                                                                                   form="invoiceDetailEditForm"
+                                                                                   :disabled="!isEditing" />
+                                                                        }
                                                                     </td>
                                                                     <td class="px-3 py-2 text-right text-gray-900">@cat.SubTotal.ToString("N2")</td>
-                                                                    <td class="px-3 py-2 text-right text-gray-900">
-                                                                        <span x-show="!isEditing">@cat.NetTotal.ToString("N2")</span>
-                                                                        <input x-show="isEditing"
-                                                                               x-cloak
-                                                                               type="text"
-                                                                               inputmode="decimal"
-                                                                               name="ProductCategories[@categoryFormIndex].NetTotal"
-                                                                               value="@cat.NetTotal.ToString("0.##")"
-                                                                               form="invoiceDetailEditForm"
-                                                                               :disabled="!isEditing"
-                                                                               @@input="updateCategoryTotals()"
-                                                                               data-invoice-category-net
-                                                                               data-line-category-net="@line.Id.ToString(CultureInfo.InvariantCulture)"
-                                                                               class="job-table-input job-table-input--money invoice-detail-money-input" />
-                                                                    </td>
+                                                                    @if (isServiceFeeCategory)
+                                                                    {
+                                                                        <td class="px-3 py-2 text-right text-gray-900">
+                                                                            <span x-show="!isEditing">@cat.NetTotal.ToString("N2")</span>
+                                                                            <input x-show="isEditing"
+                                                                                   x-cloak
+                                                                                   type="text"
+                                                                                   inputmode="decimal"
+                                                                                   name="ProductCategories[@categoryFormIndex].NetTotal"
+                                                                                   value="@cat.NetTotal.ToString("0.##")"
+                                                                                   form="invoiceDetailEditForm"
+                                                                                   :disabled="!isEditing"
+                                                                                   @@input="updateCategoryTotals()"
+                                                                                   data-invoice-category-net
+                                                                                   data-line-category-net="@line.Id.ToString(CultureInfo.InvariantCulture)"
+                                                                                   class="job-table-input job-table-input--money invoice-detail-money-input" />
+                                                                        </td>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <td class="px-3 py-2 text-right text-gray-900"
+                                                                            data-invoice-category-net-static="@cat.NetTotal.ToString(CultureInfo.InvariantCulture)"
+                                                                            data-line-category-net="@line.Id.ToString(CultureInfo.InvariantCulture)">
+                                                                            @cat.NetTotal.ToString("N2")
+                                                                        </td>
+                                                                    }
                                                                 </tr>
                                                             }
                                                         </tbody>
@@ -1006,6 +1052,9 @@
                     document.querySelectorAll('[data-line-category-net-total]').forEach((cell) => {
                         const lineId = cell.dataset.lineCategoryNetTotal;
                         let total = 0;
+                        document.querySelectorAll(`[data-invoice-category-net-static][data-line-category-net="${lineId}"]`).forEach((staticCell) => {
+                            total += this.parseDecimal(staticCell.dataset.invoiceCategoryNetStatic);
+                        });
                         document.querySelectorAll(`[data-invoice-category-net][data-line-category-net="${lineId}"]`).forEach((input) => {
                             total += this.parseDecimal(input.value);
                         });

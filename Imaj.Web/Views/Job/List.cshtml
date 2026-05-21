@@ -6,6 +6,7 @@
     var currentListUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
     var currentSearchUrl = "/Job" + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : string.Empty);
     var stateMapJson = JsonSerializer.Serialize(Model.Items.ToDictionary(x => x.Code ?? string.Empty, x => x.StateId));
+    var allPageIdsJson = JsonSerializer.Serialize(Model.Items.Select(x => x.Code ?? string.Empty).Where(x => !string.IsNullOrWhiteSpace(x)).ToList());
 
     var queryParts = Context.Request.Query
         .Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase)
@@ -14,9 +15,10 @@
             .Where(v => !string.IsNullOrWhiteSpace(v))
             .Select(v => $"{q.Key}={Uri.EscapeDataString(v!)}"));
     var paginationQuery = string.Join("&", queryParts);
+    var selectionScopeJson = JsonSerializer.Serialize($"/Job/List?{paginationQuery}");
 }
 
-<div x-data='jobList(@Html.Raw(stateMapJson))' class="job-page-shell page-shell--wide space-y-3">
+<div x-data='jobList(@Html.Raw(stateMapJson), @Html.Raw(allPageIdsJson), @Html.Raw(selectionScopeJson))' x-init="init()" class="job-page-shell page-shell--wide space-y-3">
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
             <h2 class="job-page-title">
@@ -33,6 +35,9 @@
     <form id="resultsForm" method="post" action="/Job/Detail">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@currentListUrl" />
+        <template x-for="id in selectedIds" :key="id">
+            <input type="hidden" name="selectedIds" :value="id">
+        </template>
         <div class="job-table-card">
             <div class="job-table-card__header">
                 <h3 class="job-table-card__title">@Localizer["Job"]</h3>
@@ -44,8 +49,8 @@
                                 <tr>
                                     <th scope="col">
                                         <div class="flex items-center">
-                                            <input type="checkbox" @@click="toggleAll" x-model="allSelected" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2">
-                                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer" @@click="toggleAll(); allSelected = !allSelected">@Localizer["Select"]</span>
+                                            <input type="checkbox" :checked="isPageFullySelected()" @@change="toggleAll($event.target.checked)" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded mr-2">
+                                            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer" @@click="toggleAll(!isPageFullySelected())">@Localizer["Select"]</span>
                                         </div>
                                     </th>
                                     <th scope="col">@Localizer["Function"]</th>
@@ -63,7 +68,7 @@
                                 {
                                     <tr>
                                         <td class="whitespace-nowrap">
-                                            <input type="checkbox" name="selectedIds" value="@item.Code" x-model="selectedIds" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                            <input type="checkbox" value="@item.Code" :checked="isSelected('@item.Code')" @@change="toggleSelection('@item.Code', $event.target.checked)" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                         </td>
                                         <td class="whitespace-nowrap text-sm text-gray-900">@item.Function</td>
                                         <td class="whitespace-nowrap text-sm font-bold">
@@ -107,7 +112,9 @@
             }
 
             <div class="job-footer-bar job-footer-bar--center responsive-action-group">
-                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                 <button type="submit"
+                         @@click.prevent="submitDetail($event)"
+                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     @Localizer["View"]
                 </button>
                 <button type="submit"
@@ -126,29 +133,125 @@
 </div>
 
 <script>
-    function jobList(jobStates) {
+    function jobList(jobStates, allPageIds, selectionScope) {
         return {
             selectedIds: [],
-            allSelected: false,
+            selectedStateMap: {},
             jobStates: jobStates || {},
             allowedEmailStates: [120, 130, 140],
-            // We need the list of all IDs on the current page to implement Select All properly
-            // Serialize all codes to a JS array
-            allPageIds: [@Html.Raw(string.Join(",", Model.Items.Select(x => $"'{x.Code}'")))],
+            allPageIds: allPageIds || [],
+            storageKey: 'imaj.job.listSelection:' + (selectionScope || window.location.pathname),
+            keepSelectionOnUnload: false,
 
-            toggleAll() {
-                // If allSelected is currently true (before click), we are unchecking.
-                // However, x-model updates after click. 
-                // Let's rely on the bound state or just simple logic.
-                
-                // Wait for tick or handle manually. simpler:
-                this.allSelected = !this.allSelected;
-                
-                if (this.allSelected) {
-                    this.selectedIds = [...this.allPageIds];
-                } else {
+            init() {
+                this.bindSelectionLifecycle();
+                this.restoreSelection();
+                this.mergeKnownStates();
+            },
+
+            bindSelectionLifecycle() {
+                document.addEventListener('click', event => {
+                    const link = event.target.closest('a[href]');
+                    if (!link) {
+                        return;
+                    }
+
+                    const url = new URL(link.href, window.location.origin);
+                    const isSameListFlow = url.origin === window.location.origin && url.pathname === '/Job/List';
+                    this.keepSelectionOnUnload = isSameListFlow;
+                    if (!isSameListFlow) {
+                        this.clearStoredSelection();
+                    }
+                }, true);
+
+                window.addEventListener('pagehide', () => {
+                    if (!this.keepSelectionOnUnload) {
+                        this.clearStoredSelection();
+                    }
+                });
+
+                window.addEventListener('pageshow', () => {
+                    if (!window.sessionStorage?.getItem(this.storageKey)) {
+                        this.selectedIds = [];
+                        this.selectedStateMap = {};
+                    }
+                });
+            },
+
+            restoreSelection() {
+                try {
+                    const stored = JSON.parse(window.sessionStorage?.getItem(this.storageKey) || '{}');
+                    this.selectedIds = Array.isArray(stored.selectedIds)
+                        ? [...new Set(stored.selectedIds.map(id => String(id)).filter(Boolean))]
+                        : [];
+                    this.selectedStateMap = stored.selectedStateMap || {};
+                } catch {
                     this.selectedIds = [];
+                    this.selectedStateMap = {};
                 }
+            },
+
+            persistSelection() {
+                window.sessionStorage?.setItem(this.storageKey, JSON.stringify({
+                    selectedIds: this.selectedIds,
+                    selectedStateMap: this.selectedStateMap
+                }));
+            },
+
+            clearStoredSelection() {
+                window.sessionStorage?.removeItem(this.storageKey);
+            },
+
+            mergeKnownStates() {
+                this.selectedIds.forEach(id => {
+                    if (Object.prototype.hasOwnProperty.call(this.jobStates, id)) {
+                        this.selectedStateMap[id] = this.jobStates[id];
+                    }
+                });
+                this.persistSelection();
+            },
+
+            isSelected(id) {
+                return this.selectedIds.includes(String(id));
+            },
+
+            isPageFullySelected() {
+                return this.allPageIds.length > 0 && this.allPageIds.every(id => this.isSelected(id));
+            },
+
+            toggleSelection(id, shouldSelect) {
+                const normalizedId = String(id || '');
+                if (!normalizedId) {
+                    return;
+                }
+
+                if (shouldSelect) {
+                    if (!this.selectedIds.includes(normalizedId)) {
+                        this.selectedIds.push(normalizedId);
+                    }
+                    if (Object.prototype.hasOwnProperty.call(this.jobStates, normalizedId)) {
+                        this.selectedStateMap[normalizedId] = this.jobStates[normalizedId];
+                    }
+                } else {
+                    this.selectedIds = this.selectedIds.filter(selectedId => selectedId !== normalizedId);
+                    delete this.selectedStateMap[normalizedId];
+                }
+
+                this.persistSelection();
+            },
+
+            toggleAll(shouldSelect) {
+                this.allPageIds.forEach(id => this.toggleSelection(id, shouldSelect));
+            },
+
+            submitDetail(event) {
+                if (this.selectedIds.length === 0) {
+                    Toast.error('@Localizer["PleaseSelectAtLeastOneJob"]');
+                    return;
+                }
+
+                this.clearStoredSelection();
+                this.submitForm(event.currentTarget);
             },
 
             submitEmailCompose(event) {
@@ -158,7 +261,7 @@
                 }
 
                 const hasInvalidSelection = this.selectedIds.some(id => {
-                    const stateId = Number(this.jobStates[id]);
+                    const stateId = Number(this.selectedStateMap[id] ?? this.jobStates[id]);
                     return !this.allowedEmailStates.includes(stateId);
                 });
 
@@ -167,9 +270,14 @@
                     return;
                 }
 
-                const form = event.currentTarget.form;
+                this.clearStoredSelection();
+                this.submitForm(event.currentTarget);
+            },
+
+            submitForm(submitter) {
+                const form = submitter.form;
                 if (form && typeof form.requestSubmit === 'function') {
-                    form.requestSubmit(event.currentTarget);
+                    form.requestSubmit(submitter);
                     return;
                 }
 
