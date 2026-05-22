@@ -23,6 +23,7 @@ namespace Imaj.Service.DTOs
     {
         public string? Description { get; set; }
         public decimal Amount { get; set; }
+        public decimal? TaxTypeId { get; set; }
         public decimal VatRate { get; set; }
     }
 

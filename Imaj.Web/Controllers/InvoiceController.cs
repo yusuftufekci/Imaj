@@ -298,6 +298,7 @@ namespace Imaj.Web.Controllers
                 ReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? "/Invoice/Results" : returnUrl
             };
 
+            await LoadInvoiceCreateDropdownDataAsync();
             return View(model);
         }
 
@@ -424,7 +425,10 @@ namespace Imaj.Web.Controllers
                     .Select(x => new InvoiceUpdateLineDto
                     {
                         Id = x.Id,
+                        Sequence = x.Sequence,
                         Notes = x.Notes,
+                        Quantity = x.Quantity,
+                        Price = x.Price,
                         Amount = x.Amount,
                         VatRate = x.VatRate
                     })
@@ -432,8 +436,12 @@ namespace Imaj.Web.Controllers
                 NewFreeLines = (model.NewFreeLines ?? new List<InvoiceUpdateFreeLineViewModel>())
                     .Select(x => new InvoiceUpdateFreeLineDto
                     {
+                        Sequence = x.Sequence,
                         Description = x.Description,
+                        Quantity = x.Quantity,
+                        Price = x.Price,
                         Amount = x.Amount,
+                        TaxTypeId = x.TaxTypeId,
                         VatRate = x.VatRate
                     })
                     .ToList(),
@@ -733,9 +741,11 @@ namespace Imaj.Web.Controllers
             var taxTypes = await GetInvoiceCreateTaxTypesAsync();
             var pickerModel = new InvoiceFreeLineTaxTypePickerViewModel
             {
+                Context = "create",
                 Invoice = model,
                 TaxTypes = taxTypes.Select(taxType => new InvoiceFreeLineTaxTypeOptionViewModel
                 {
+                    Id = taxType.Id,
                     Code = taxType.Code ?? string.Empty,
                     Name = string.IsNullOrWhiteSpace(taxType.Name) ? taxType.Code ?? string.Empty : taxType.Name,
                     Rate = taxType.TaxPercentage,
@@ -765,6 +775,7 @@ namespace Imaj.Web.Controllers
                 {
                     invoice.Lines.Add(new InvoiceLineViewModel
                     {
+                        TaxTypeId = selectedTaxType.Id,
                         VatRate = selectedTaxType.Rate,
                         Amount = 0,
                         Description = string.Empty
@@ -774,6 +785,71 @@ namespace Imaj.Web.Controllers
 
             await LoadInvoiceCreateDropdownDataAsync();
             return View("Create", invoice);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> DetailFreeLineTaxTypes(InvoiceUpdateViewModel model)
+        {
+            NormalizeDetailUpdateModel(model);
+
+            var taxTypes = await GetInvoiceCreateTaxTypesAsync();
+            var pickerModel = new InvoiceFreeLineTaxTypePickerViewModel
+            {
+                Context = "detail",
+                DetailUpdate = model,
+                TaxTypes = taxTypes.Select(taxType => new InvoiceFreeLineTaxTypeOptionViewModel
+                {
+                    Id = taxType.Id,
+                    Code = taxType.Code ?? string.Empty,
+                    Name = string.IsNullOrWhiteSpace(taxType.Name) ? taxType.Code ?? string.Empty : taxType.Name,
+                    Rate = taxType.TaxPercentage,
+                    Quantity = 0
+                }).ToList()
+            };
+
+            return View("FreeLineTaxTypes", pickerModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> AddDetailFreeLinesFromTaxTypes(InvoiceFreeLineTaxTypePickerViewModel model)
+        {
+            var detailUpdate = model.DetailUpdate ?? new InvoiceUpdateViewModel();
+            NormalizeDetailUpdateModel(detailUpdate);
+
+            foreach (var selectedTaxType in (model.TaxTypes ?? new List<InvoiceFreeLineTaxTypeOptionViewModel>())
+                         .Where(x => x.Selected || x.Quantity > 0))
+            {
+                var lineCount = selectedTaxType.Quantity > 0 ? selectedTaxType.Quantity : 1;
+                for (var i = 0; i < lineCount; i++)
+                {
+                    detailUpdate.NewFreeLines.Add(new InvoiceUpdateFreeLineViewModel
+                    {
+                        Sequence = 0,
+                        TaxTypeId = selectedTaxType.Id,
+                        VatRate = selectedTaxType.Rate,
+                        Quantity = 1,
+                        Price = 0,
+                        Amount = 0,
+                        Description = string.Empty
+                    });
+                }
+            }
+
+            return await ReturnDetailViewWithPendingUpdateAsync(detailUpdate);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(1360, write: true)]
+        public async Task<IActionResult> ReturnToDetailFromTaxTypes(InvoiceFreeLineTaxTypePickerViewModel model)
+        {
+            var detailUpdate = model.DetailUpdate ?? new InvoiceUpdateViewModel();
+            NormalizeDetailUpdateModel(detailUpdate);
+            return await ReturnDetailViewWithPendingUpdateAsync(detailUpdate);
         }
 
         [HttpPost]
@@ -908,6 +984,7 @@ namespace Imaj.Web.Controllers
                 {
                     Description = line.Description,
                     Amount = line.Amount,
+                    TaxTypeId = line.TaxTypeId,
                     VatRate = line.VatRate
                 }).ToList(),
                 Jobs = model.Jobs.Select(job => new InvoiceCreateJobDto
@@ -915,6 +992,58 @@ namespace Imaj.Web.Controllers
                     Reference = job.Reference
                 }).ToList()
             };
+        }
+
+        private async Task<IActionResult> ReturnDetailViewWithPendingUpdateAsync(InvoiceUpdateViewModel update)
+        {
+            if (update.Reference <= 0)
+            {
+                ShowError(L("InvoiceReferenceRequired"));
+                return RedirectToAction(nameof(Results));
+            }
+
+            NormalizeDetailUpdateModel(update);
+            var result = await _invoiceService.GetDetailsByReferencesAsync(new List<int> { update.Reference });
+            var referenceText = update.Reference.ToString(CultureInfo.InvariantCulture);
+            var selectedReferences = update.SelectedReferences?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList() ?? new List<string>();
+            if (!selectedReferences.Contains(referenceText))
+            {
+                selectedReferences.Add(referenceText);
+            }
+
+            var model = new InvoiceDisplayViewModel
+            {
+                Invoices = MapDetails(result.Data ?? new List<InvoiceDetailDto>()),
+                SelectedReferences = selectedReferences,
+                CurrentIndex = update.CurrentIndex < 0 ? 0 : update.CurrentIndex,
+                SourceView = "Detail",
+                ReturnUrl = string.IsNullOrWhiteSpace(update.ReturnUrl) ? "/Invoice/Results" : update.ReturnUrl,
+                PendingUpdate = update
+            };
+
+            await LoadInvoiceCreateDropdownDataAsync();
+            return View("Detail", model);
+        }
+
+        private static void NormalizeDetailUpdateModel(InvoiceUpdateViewModel model)
+        {
+            model.SelectedReferences ??= new List<string>();
+            model.Lines ??= new List<InvoiceUpdateLineViewModel>();
+            model.NewFreeLines ??= new List<InvoiceUpdateFreeLineViewModel>();
+            model.ProductCategories ??= new List<InvoiceUpdateCategoryViewModel>();
+            model.Taxes ??= new List<InvoiceUpdateTaxViewModel>();
+
+            if (model.Reference > 0)
+            {
+                var referenceText = model.Reference.ToString(CultureInfo.InvariantCulture);
+                if (!model.SelectedReferences.Contains(referenceText))
+                {
+                    model.SelectedReferences.Add(referenceText);
+                }
+            }
         }
 
         private PrintableReportViewModel BuildDetailedPrintableReport(

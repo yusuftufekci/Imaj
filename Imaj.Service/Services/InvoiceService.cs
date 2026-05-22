@@ -401,7 +401,13 @@ namespace Imaj.Service.Services
             }
 
             var requestedVatRates = normalizedLines
+                .Where(x => !x.TaxTypeId.HasValue || x.TaxTypeId.Value <= 0)
                 .Select(x => (short)x.VatRate)
+                .Distinct()
+                .ToList();
+            var requestedTaxTypeIds = normalizedLines
+                .Where(x => x.TaxTypeId.HasValue && x.TaxTypeId.Value > 0)
+                .Select(x => x.TaxTypeId!.Value)
                 .Distinct()
                 .ToList();
             var taxTypeQuery = _unitOfWork.Repository<TaxType>().Query().AsNoTracking();
@@ -410,10 +416,12 @@ namespace Imaj.Service.Services
                 taxTypeQuery = taxTypeQuery.Where(x => x.CompanyID == targetCompanyId);
             }
 
-            var taxTypes = requestedVatRates.Count == 0
+            var taxTypes = requestedVatRates.Count == 0 && requestedTaxTypeIds.Count == 0
                 ? new List<TaxType>()
                 : await taxTypeQuery
-                    .Where(x => requestedVatRates.Contains(x.TaxPercentage) && !x.Invisible)
+                    .Where(x => !x.Invisible
+                                && (requestedVatRates.Contains(x.TaxPercentage)
+                                    || requestedTaxTypeIds.Contains(x.Id)))
                     .ToListAsync();
             var taxTypeByRate = taxTypes
                 .GroupBy(x => x.TaxPercentage)
@@ -426,6 +434,14 @@ namespace Imaj.Service.Services
             foreach (var missingVatRate in missingVatRates)
             {
                 validationErrors.Add($"%{missingVatRate} vergi oranı için tanımlı vergi tipi bulunamadı.");
+            }
+            var freeLineTaxTypeById = taxTypes.ToDictionary(x => x.Id);
+            var missingFreeLineTaxTypeIds = requestedTaxTypeIds
+                .Where(id => !freeLineTaxTypeById.ContainsKey(id))
+                .ToList();
+            if (missingFreeLineTaxTypeIds.Any())
+            {
+                validationErrors.Add("Seçilen vergi tipi bulunamadı.");
             }
 
             var jobTaxTypeIds = selectedJobCategoryById.Values
@@ -549,12 +565,13 @@ namespace Imaj.Service.Services
                         Sequence = (short)(index + 1),
                         Description = line.Description!,
                         Amount = RoundCurrency(line.Amount),
-                        VatRate = (short)line.VatRate,
-                        TaxTypeId = taxTypeByRate[(short)line.VatRate].Id
+                        TaxType = line.TaxTypeId.HasValue && line.TaxTypeId.Value > 0
+                            ? freeLineTaxTypeById[line.TaxTypeId.Value]
+                            : taxTypeByRate[(short)line.VatRate]
                     }))
                 {
-                    lineItems.Add((line.Sequence, line.Description, line.Amount, line.TaxTypeId, true, false));
-                    taxBases.Add((line.TaxTypeId, line.VatRate, line.Amount));
+                    lineItems.Add((line.Sequence, line.Description, line.Amount, line.TaxType.Id, true, false));
+                    taxBases.Add((line.TaxType.Id, line.TaxType.TaxPercentage, line.Amount));
                 }
 
                 var subtotal = RoundCurrency(lineItems.Sum(x => x.Amount));
@@ -1553,8 +1570,12 @@ namespace Imaj.Service.Services
             var newFreeLines = (input.NewFreeLines ?? new List<InvoiceUpdateFreeLineDto>())
                 .Select(x => new InvoiceUpdateFreeLineDto
                 {
+                    Sequence = x.Sequence,
                     Description = x.Description?.Trim(),
-                    Amount = RoundCurrency(x.Amount),
+                    Quantity = x.Quantity,
+                    Price = RoundCurrency(x.Price),
+                    Amount = RoundCurrency(x.Quantity * x.Price),
+                    TaxTypeId = x.TaxTypeId,
                     VatRate = x.VatRate
                 })
                 .Where(x => !string.IsNullOrWhiteSpace(x.Description) || x.Amount != 0)
@@ -1618,6 +1639,16 @@ namespace Imaj.Service.Services
                 if (string.IsNullOrWhiteSpace(line.Description))
                 {
                     validationErrors.Add("Fatura satırı açıklaması zorunludur.");
+                }
+
+                if (line.Quantity <= 0 || line.Quantity != decimal.Truncate(line.Quantity))
+                {
+                    validationErrors.Add("Fatura satır miktarı sıfırdan büyük tam sayı olmalıdır.");
+                }
+
+                if (line.Price < 0)
+                {
+                    validationErrors.Add("Fatura satır fiyatı sıfırdan küçük olamaz.");
                 }
 
                 if (line.Amount <= 0)
@@ -1792,9 +1823,25 @@ namespace Imaj.Service.Services
             }
             foreach (var lineUpdate in lineUpdateMap.Values)
             {
-                if (linesById.TryGetValue(lineUpdate.Id, out var line) && line.FreeFormat && lineUpdate.Amount <= 0)
+                if (linesById.TryGetValue(lineUpdate.Id, out var line) && line.FreeFormat)
                 {
-                    validationErrors.Add("Fatura satır tutarı sıfırdan büyük olmalıdır.");
+                    var quantity = lineUpdate.Quantity <= 0 ? 1 : lineUpdate.Quantity;
+                    var price = RoundCurrency(lineUpdate.Price);
+                    var amount = RoundCurrency(quantity * price);
+                    if (lineUpdate.Quantity <= 0 || lineUpdate.Quantity != decimal.Truncate(lineUpdate.Quantity))
+                    {
+                        validationErrors.Add("Fatura satır miktarı sıfırdan büyük tam sayı olmalıdır.");
+                    }
+
+                    if (price < 0)
+                    {
+                        validationErrors.Add("Fatura satır fiyatı sıfırdan küçük olamaz.");
+                    }
+
+                    if (amount <= 0)
+                    {
+                        validationErrors.Add("Fatura satır tutarı sıfırdan büyük olmalıdır.");
+                    }
                 }
             }
 
@@ -1807,15 +1854,22 @@ namespace Imaj.Service.Services
                 .Where(x => x.TaxTypeId > 0)
                 .Select(x => x.TaxTypeId)
                 .Distinct();
+            var newFreeLineTaxTypeIds = newFreeLines
+                .Where(x => x.TaxTypeId.HasValue && x.TaxTypeId.Value > 0)
+                .Select(x => x.TaxTypeId!.Value)
+                .Distinct();
             var taxTypeIds = categoryTaxTypeIds
                 .Concat(lineTaxTypeIds)
                 .Concat(taxUpdateIds)
+                .Concat(newFreeLineTaxTypeIds)
                 .Distinct()
                 .ToList();
             var requestedVatRates = lineUpdates
                 .Where(x => x.Id > 0 && linesById.TryGetValue(x.Id, out var line) && line.FreeFormat)
                 .Select(x => (short)x.VatRate)
-                .Concat(newFreeLines.Select(x => (short)x.VatRate))
+                .Concat(newFreeLines
+                    .Where(x => !x.TaxTypeId.HasValue || x.TaxTypeId.Value <= 0)
+                    .Select(x => (short)x.VatRate))
                 .Distinct()
                 .ToList();
             var taxTypesByRequestedRates = requestedVatRates.Any()
@@ -1854,7 +1908,11 @@ namespace Imaj.Service.Services
                 .Where(x => x.TaxTypeId > 0)
                 .Select(x => x.TaxTypeId)
                 .Any(id => !taxTypeMap.ContainsKey(id));
-            if (missingCategoryTaxType || missingLineTaxType || missingTaxUpdateType)
+            var missingNewFreeLineTaxType = newFreeLines
+                .Where(x => x.TaxTypeId.HasValue && x.TaxTypeId.Value > 0)
+                .Select(x => x.TaxTypeId!.Value)
+                .Any(id => !taxTypeMap.ContainsKey(id));
+            if (missingCategoryTaxType || missingLineTaxType || missingTaxUpdateType || missingNewFreeLineTaxType)
             {
                 return ServiceResult.Fail("Faturada tanımsız vergi tipi var.");
             }
@@ -1877,13 +1935,15 @@ namespace Imaj.Service.Services
                 foreach (var lineUpdate in lineUpdateMap)
                 {
                     var line = linesById[lineUpdate.Key];
+                    line.Sequence = lineUpdate.Value.Sequence;
                     line.Notes = lineUpdate.Value.Notes?.Trim() ?? string.Empty;
                     if (line.FreeFormat)
                     {
                         var vatRate = (short)lineUpdate.Value.VatRate;
-                        line.Amount = RoundCurrency(lineUpdate.Value.Amount);
-                        line.Price = line.Amount;
-                        line.Quantity = 1;
+                        var quantity = lineUpdate.Value.Quantity <= 0 ? 1 : lineUpdate.Value.Quantity;
+                        line.Quantity = (short)quantity;
+                        line.Price = RoundCurrency(lineUpdate.Value.Price);
+                        line.Amount = RoundCurrency(quantity * line.Price);
                         line.TaxTypeID = taxTypeByRate[vatRate].Id;
                     }
 
@@ -1897,21 +1957,23 @@ namespace Imaj.Service.Services
                     : (short)1;
                 foreach (var freeLine in newFreeLines)
                 {
-                    var vatRate = (short)freeLine.VatRate;
+                    var taxType = freeLine.TaxTypeId.HasValue && freeLine.TaxTypeId.Value > 0
+                        ? taxTypeMap[freeLine.TaxTypeId.Value]
+                        : taxTypeByRate[(short)freeLine.VatRate];
                     var line = new InvoLine
                     {
                         Id = nextLineId++,
                         InvoiceID = invoice.Id,
                         FreeFormat = true,
-                        Quantity = 1,
-                        Price = freeLine.Amount,
+                        Quantity = (short)(freeLine.Quantity <= 0 ? 1 : freeLine.Quantity),
+                        Price = RoundCurrency(freeLine.Price),
                         Amount = freeLine.Amount,
                         Notes = freeLine.Description ?? string.Empty,
-                        Sequence = nextSequence++,
+                        Sequence = freeLine.Sequence,
                         Deleted = 0,
                         SelectFlag = false,
                         Stamp = 1,
-                        TaxTypeID = taxTypeByRate[vatRate].Id
+                        TaxTypeID = taxType.Id
                     };
                     lines.Add(line);
                     linesById[line.Id] = line;
@@ -3393,6 +3455,7 @@ namespace Imaj.Service.Services
                 {
                     Description = x.Description?.Trim(),
                     Amount = RoundCurrency(x.Amount),
+                    TaxTypeId = x.TaxTypeId,
                     VatRate = x.VatRate
                 })
                 .Where(x => !string.IsNullOrWhiteSpace(x.Description) || x.Amount != 0)

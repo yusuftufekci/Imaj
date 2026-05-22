@@ -39,6 +39,7 @@ namespace Imaj.Web.Models
     {
         public string? Description { get; set; }
         public decimal Amount { get; set; }
+        public decimal? TaxTypeId { get; set; }
         public decimal VatRate { get; set; } = 20; // Default VAT
         public decimal Total => Amount + (Amount * VatRate / 100);
     }
@@ -53,12 +54,15 @@ namespace Imaj.Web.Models
 
     public class InvoiceFreeLineTaxTypePickerViewModel
     {
+        public string Context { get; set; } = "create";
         public InvoiceCreateViewModel Invoice { get; set; } = new InvoiceCreateViewModel();
+        public InvoiceUpdateViewModel DetailUpdate { get; set; } = new InvoiceUpdateViewModel();
         public List<InvoiceFreeLineTaxTypeOptionViewModel> TaxTypes { get; set; } = new List<InvoiceFreeLineTaxTypeOptionViewModel>();
     }
 
     public class InvoiceFreeLineTaxTypeOptionViewModel
     {
+        public decimal Id { get; set; }
         public bool Selected { get; set; }
         public int Quantity { get; set; }
         public string Code { get; set; } = string.Empty;

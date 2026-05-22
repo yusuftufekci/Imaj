@@ -22,6 +22,7 @@
             description = line.Description ?? string.Empty,
             quantity = 1,
             price = line.Amount,
+            taxTypeId = line.TaxTypeId,
             vatRate = line.VatRate == 0 ? defaultVatRate : line.VatRate
         }).ToList(),
         defaultVatRate,
@@ -181,6 +182,7 @@
                                               rows="2"
                                               class="dense-input invoice-create-line-notes"></textarea>
                                     <input type="hidden" :name="'Lines[' + index + '].Amount'" :value="formatDecimalForPost(lineAmount(line))">
+                                    <input type="hidden" :name="'Lines[' + index + '].TaxTypeId'" :value="line.taxTypeId || ''">
                                     <input type="hidden" :name="'Lines[' + index + '].VatRate'" :value="line.vatRate">
                                 </td>
                                 <td>
@@ -201,7 +203,7 @@
                                     <span x-text="formatMoney(lineAmount(line))"></span>
                                 </td>
                                 <td>
-                                    <span x-text="taxTypeLabelForRate(line.vatRate)"></span>
+                                    <span x-text="taxTypeLabelForLine(line)"></span>
                                 </td>
                             </tr>
                         </template>
@@ -238,7 +240,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="tax in taxes" :key="tax.rate">
+                        <template x-for="tax in taxes" :key="tax.id || tax.rate">
                             <tr>
                                 <td x-text="tax.code"></td>
                                 <td x-text="tax.name"></td>
@@ -321,6 +323,7 @@
                     description: line.description || '',
                     quantity: String(line.quantity || 1),
                     price: String(line.price ?? line.amount ?? 0).replace('.', ','),
+                    taxTypeId: parseFloat(line.taxTypeId) || null,
                     vatRate: parseFloat(line.vatRate) || this.defaultVatRate
                 }));
             },
@@ -343,6 +346,7 @@
                     description: '',
                     quantity: '1',
                     price: '0',
+                    taxTypeId: null,
                     vatRate: this.defaultVatRate
                 });
                 this.clearCalculatedTaxes();
@@ -375,17 +379,21 @@
                     }
 
                     const rate = parseFloat(line.vatRate) || 0;
-                    const current = groups.get(rate) || 0;
-                    groups.set(rate, current + amount);
+                    const taxType = this.taxTypeForLine(line) || { id: 0, code: 'KDV' + rate, name: 'KDV %' + rate, rate };
+                    const key = taxType.id > 0 ? 'id:' + taxType.id : 'rate:' + rate;
+                    const current = groups.get(key) || { taxType, subTotal: 0 };
+                    current.subTotal += amount;
+                    groups.set(key, current);
                 });
 
-                this.taxes = Array.from(groups.entries())
-                    .sort((a, b) => a[0] - b[0])
-                    .map(([rate, subTotal]) => {
-                        const taxType = this.findTaxType(rate);
+                this.taxes = Array.from(groups.values())
+                    .sort((a, b) => Number(a.taxType.rate) - Number(b.taxType.rate) || String(a.taxType.code).localeCompare(String(b.taxType.code)))
+                    .map(({ taxType, subTotal }) => {
+                        const rate = parseFloat(taxType.rate) || 0;
                         const roundedSubTotal = this.roundMoney(subTotal);
                         const taxAmount = this.roundMoney(roundedSubTotal * rate / 100);
                         return {
+                            id: taxType.id || 0,
                             rate,
                             code: taxType?.code || ('KDV' + rate),
                             name: taxType?.name || ('KDV %' + rate),
@@ -424,6 +432,14 @@
                 return this.taxTypes.find(taxType => Number(taxType.rate) === Number(rate));
             },
 
+            findTaxTypeById(id) {
+                return this.taxTypes.find(taxType => Number(taxType.id) === Number(id));
+            },
+
+            taxTypeForLine(line) {
+                return this.findTaxTypeById(line.taxTypeId) || this.findTaxType(line.vatRate);
+            },
+
             taxTypeLabel(taxType) {
                 if (!taxType) {
                     return '';
@@ -433,6 +449,10 @@
 
             taxTypeLabelForRate(rate) {
                 return this.taxTypeLabel(this.findTaxType(rate));
+            },
+
+            taxTypeLabelForLine(line) {
+                return this.taxTypeLabel(this.taxTypeForLine(line));
             },
 
             get totalAmount() {

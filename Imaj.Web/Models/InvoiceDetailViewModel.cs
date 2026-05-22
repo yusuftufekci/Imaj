@@ -11,6 +11,7 @@ namespace Imaj.Web.Models
         public int CurrentIndex { get; set; }
         public string SourceView { get; set; } = "Detail";
         public string? ReturnUrl { get; set; }
+        public InvoiceUpdateViewModel? PendingUpdate { get; set; }
     }
 
     public class InvoiceDetailViewModel
@@ -56,15 +57,22 @@ namespace Imaj.Web.Models
     public class InvoiceUpdateLineViewModel
     {
         public decimal Id { get; set; }
+        public short Sequence { get; set; }
         public string? Notes { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Price { get; set; }
         public decimal Amount { get; set; }
         public decimal VatRate { get; set; }
     }
 
     public class InvoiceUpdateFreeLineViewModel
     {
+        public short Sequence { get; set; }
         public string? Description { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Price { get; set; }
         public decimal Amount { get; set; }
+        public decimal? TaxTypeId { get; set; }
         public decimal VatRate { get; set; }
     }
 

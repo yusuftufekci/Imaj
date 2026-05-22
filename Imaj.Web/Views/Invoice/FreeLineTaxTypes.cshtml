@@ -7,39 +7,100 @@
 @{
     ViewData["Title"] = Localizer["TaxTypes"];
     var invoice = Model.Invoice ?? new InvoiceCreateViewModel();
+    var detailUpdate = Model.DetailUpdate ?? new InvoiceUpdateViewModel();
+    var isDetailContext = string.Equals(Model.Context, "detail", StringComparison.OrdinalIgnoreCase);
+    var addAction = isDetailContext ? "/Invoice/AddDetailFreeLinesFromTaxTypes" : "/Invoice/AddFreeLinesFromTaxTypes";
+    var backAction = isDetailContext ? "/Invoice/ReturnToDetailFromTaxTypes" : "/Invoice/ReturnToCreateFromTaxTypes";
 }
 
 <div class="invoice-page-shell invoice-legacy-detail invoice-tax-type-picker page-shell--wide space-y-3">
     <h2 class="invoice-page-title invoice-page-title--orange">@Localizer["TaxTypes"]</h2>
 
-    <form method="post" action="/Invoice/AddFreeLinesFromTaxTypes" class="space-y-3">
+    <form method="post" action="@addAction" class="space-y-3">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="Invoice.Reference" value="@invoice.Reference" />
-        <input type="hidden" name="Invoice.JobCustomerCode" value="@invoice.JobCustomerCode" />
-        <input type="hidden" name="Invoice.JobCustomerName" value="@invoice.JobCustomerName" />
-        <input type="hidden" name="Invoice.InvoiceCustomerCode" value="@invoice.InvoiceCustomerCode" />
-        <input type="hidden" name="Invoice.InvoiceCustomerName" value="@invoice.InvoiceCustomerName" />
-        <input type="hidden" name="Invoice.Ad" value="@invoice.Ad" />
-        <input type="hidden" name="Invoice.RelatedPerson" value="@invoice.RelatedPerson" />
-        <input type="hidden" name="Invoice.IssueDate" value="@invoice.IssueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
-        <input type="hidden" name="Invoice.Status" value="@invoice.Status" />
-        <input type="hidden" name="Invoice.IsEvaluated" value="@(invoice.IsEvaluated ? "true" : "false")" />
-        <input type="hidden" name="Invoice.Notes" value="@invoice.Notes" />
-        <input type="hidden" name="Invoice.Footnote" value="@invoice.Footnote" />
-
-        @for (var i = 0; i < invoice.Lines.Count; i++)
+        <input type="hidden" name="Context" value="@Model.Context" />
+        @if (isDetailContext)
         {
-            <input type="hidden" name="Invoice.Lines[@i].Description" value="@invoice.Lines[i].Description" />
-            <input type="hidden" name="Invoice.Lines[@i].Amount" value="@invoice.Lines[i].Amount.ToString(CultureInfo.InvariantCulture)" />
-            <input type="hidden" name="Invoice.Lines[@i].VatRate" value="@invoice.Lines[i].VatRate.ToString(CultureInfo.InvariantCulture)" />
+            <input type="hidden" name="DetailUpdate.Reference" value="@detailUpdate.Reference" />
+            <input type="hidden" name="DetailUpdate.CurrentIndex" value="@detailUpdate.CurrentIndex" />
+            <input type="hidden" name="DetailUpdate.ReturnUrl" value="@detailUpdate.ReturnUrl" />
+            <input type="hidden" name="DetailUpdate.InvoiceCustomerCode" value="@detailUpdate.InvoiceCustomerCode" />
+            <input type="hidden" name="DetailUpdate.InvoiceCustomerName" value="@detailUpdate.InvoiceCustomerName" />
+            <input type="hidden" name="DetailUpdate.Name" value="@detailUpdate.Name" />
+            <input type="hidden" name="DetailUpdate.RelatedPerson" value="@detailUpdate.RelatedPerson" />
+            <input type="hidden" name="DetailUpdate.Notes" value="@detailUpdate.Notes" />
+            <input type="hidden" name="DetailUpdate.FooterNote" value="@detailUpdate.FooterNote" />
+
+            @for (var i = 0; i < detailUpdate.SelectedReferences.Count; i++)
+            {
+                <input type="hidden" name="DetailUpdate.SelectedReferences[@i]" value="@detailUpdate.SelectedReferences[i]" />
+            }
+
+            @for (var i = 0; i < detailUpdate.Lines.Count; i++)
+            {
+                <input type="hidden" name="DetailUpdate.Lines[@i].Id" value="@detailUpdate.Lines[i].Id.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.Lines[@i].Sequence" value="@detailUpdate.Lines[i].Sequence.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.Lines[@i].Notes" value="@detailUpdate.Lines[i].Notes" />
+                <input type="hidden" name="DetailUpdate.Lines[@i].Quantity" value="@detailUpdate.Lines[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.Lines[@i].Price" value="@detailUpdate.Lines[i].Price.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.Lines[@i].Amount" value="@detailUpdate.Lines[i].Amount.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.Lines[@i].VatRate" value="@detailUpdate.Lines[i].VatRate.ToString(CultureInfo.InvariantCulture)" />
+            }
+
+            @for (var i = 0; i < detailUpdate.NewFreeLines.Count; i++)
+            {
+                <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Sequence" value="@detailUpdate.NewFreeLines[i].Sequence.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Description" value="@detailUpdate.NewFreeLines[i].Description" />
+                <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Quantity" value="@detailUpdate.NewFreeLines[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Price" value="@detailUpdate.NewFreeLines[i].Price.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Amount" value="@detailUpdate.NewFreeLines[i].Amount.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.NewFreeLines[@i].TaxTypeId" value="@(detailUpdate.NewFreeLines[i].TaxTypeId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+                <input type="hidden" name="DetailUpdate.NewFreeLines[@i].VatRate" value="@detailUpdate.NewFreeLines[i].VatRate.ToString(CultureInfo.InvariantCulture)" />
+            }
+
+            @for (var i = 0; i < detailUpdate.ProductCategories.Count; i++)
+            {
+                <input type="hidden" name="DetailUpdate.ProductCategories[@i].LineId" value="@detailUpdate.ProductCategories[i].LineId.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.ProductCategories[@i].ProdCatId" value="@detailUpdate.ProductCategories[i].ProdCatId.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.ProductCategories[@i].NetTotal" value="@detailUpdate.ProductCategories[i].NetTotal.ToString(CultureInfo.InvariantCulture)" />
+            }
+
+            @for (var i = 0; i < detailUpdate.Taxes.Count; i++)
+            {
+                <input type="hidden" name="DetailUpdate.Taxes[@i].TaxTypeId" value="@detailUpdate.Taxes[i].TaxTypeId.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="DetailUpdate.Taxes[@i].Rate" value="@detailUpdate.Taxes[i].Rate.ToString(CultureInfo.InvariantCulture)" />
+            }
         }
-
-        @for (var i = 0; i < invoice.Jobs.Count; i++)
+        else
         {
-            <input type="hidden" name="Invoice.Jobs[@i].Reference" value="@invoice.Jobs[i].Reference" />
-            <input type="hidden" name="Invoice.Jobs[@i].Name" value="@invoice.Jobs[i].Name" />
-            <input type="hidden" name="Invoice.Jobs[@i].ProductAmount" value="@invoice.Jobs[i].ProductAmount.ToString(CultureInfo.InvariantCulture)" />
-            <input type="hidden" name="Invoice.Jobs[@i].WorkAmount" value="@invoice.Jobs[i].WorkAmount.ToString(CultureInfo.InvariantCulture)" />
+            <input type="hidden" name="Invoice.Reference" value="@invoice.Reference" />
+            <input type="hidden" name="Invoice.JobCustomerCode" value="@invoice.JobCustomerCode" />
+            <input type="hidden" name="Invoice.JobCustomerName" value="@invoice.JobCustomerName" />
+            <input type="hidden" name="Invoice.InvoiceCustomerCode" value="@invoice.InvoiceCustomerCode" />
+            <input type="hidden" name="Invoice.InvoiceCustomerName" value="@invoice.InvoiceCustomerName" />
+            <input type="hidden" name="Invoice.Ad" value="@invoice.Ad" />
+            <input type="hidden" name="Invoice.RelatedPerson" value="@invoice.RelatedPerson" />
+            <input type="hidden" name="Invoice.IssueDate" value="@invoice.IssueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+            <input type="hidden" name="Invoice.Status" value="@invoice.Status" />
+            <input type="hidden" name="Invoice.IsEvaluated" value="@(invoice.IsEvaluated ? "true" : "false")" />
+            <input type="hidden" name="Invoice.Notes" value="@invoice.Notes" />
+            <input type="hidden" name="Invoice.Footnote" value="@invoice.Footnote" />
+
+            @for (var i = 0; i < invoice.Lines.Count; i++)
+            {
+                <input type="hidden" name="Invoice.Lines[@i].Description" value="@invoice.Lines[i].Description" />
+                <input type="hidden" name="Invoice.Lines[@i].Amount" value="@invoice.Lines[i].Amount.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Invoice.Lines[@i].TaxTypeId" value="@(invoice.Lines[i].TaxTypeId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+                <input type="hidden" name="Invoice.Lines[@i].VatRate" value="@invoice.Lines[i].VatRate.ToString(CultureInfo.InvariantCulture)" />
+            }
+
+            @for (var i = 0; i < invoice.Jobs.Count; i++)
+            {
+                <input type="hidden" name="Invoice.Jobs[@i].Reference" value="@invoice.Jobs[i].Reference" />
+                <input type="hidden" name="Invoice.Jobs[@i].Name" value="@invoice.Jobs[i].Name" />
+                <input type="hidden" name="Invoice.Jobs[@i].ProductAmount" value="@invoice.Jobs[i].ProductAmount.ToString(CultureInfo.InvariantCulture)" />
+                <input type="hidden" name="Invoice.Jobs[@i].WorkAmount" value="@invoice.Jobs[i].WorkAmount.ToString(CultureInfo.InvariantCulture)" />
+            }
         }
 
         <section class="invoice-table-card invoice-tax-type-picker__table-card">
@@ -77,6 +138,7 @@
                                 </td>
                                 <td>
                                     @Model.TaxTypes[i].Code
+                                    <input type="hidden" name="TaxTypes[@i].Id" value="@Model.TaxTypes[i].Id.ToString(CultureInfo.InvariantCulture)" />
                                     <input type="hidden" name="TaxTypes[@i].Code" value="@Model.TaxTypes[i].Code" />
                                 </td>
                                 <td>
@@ -106,7 +168,7 @@
                     Faturaya Ekle
                 </button>
                 <button type="submit"
-                        formaction="/Invoice/ReturnToCreateFromTaxTypes"
+                        formaction="@backAction"
                         class="inline-flex items-center border border-blue-400 text-sm font-medium text-blue-900 bg-blue-100 hover:bg-blue-200">
                     @Localizer["Back"]
                 </button>

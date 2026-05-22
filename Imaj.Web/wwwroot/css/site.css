@@ -3596,6 +3596,18 @@ span.flatpickr-weekday {
     background: #eaf8ff;
 }
 
+.invoice-legacy-detail .invoice-table tbody > tr.invoice-line-entry--cream,
+.invoice-legacy-detail .invoice-table tbody > tr.invoice-line-entry--cream > td,
+.invoice-legacy-detail .invoice-table tbody > tr.invoice-line-detail-row.invoice-line-entry--cream > td {
+    background: #fffaf0 !important;
+}
+
+.invoice-legacy-detail .invoice-table tbody > tr.invoice-line-entry--blue,
+.invoice-legacy-detail .invoice-table tbody > tr.invoice-line-entry--blue > td,
+.invoice-legacy-detail .invoice-table tbody > tr.invoice-line-detail-row.invoice-line-entry--blue > td {
+    background: #eaf8ff !important;
+}
+
 .invoice-legacy-detail .invoice-table tbody > tr:hover {
     background-color: inherit;
 }

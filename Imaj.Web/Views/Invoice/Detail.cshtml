@@ -10,6 +10,9 @@
 @{
     ViewData["Title"] = Localizer["Invoice"];
     var invoice = Model.Invoices.FirstOrDefault();
+    var taxTypes = ViewBag.TaxTypes as List<TaxTypeListItemDto> ?? new List<TaxTypeListItemDto>();
+    var defaultTaxType = taxTypes.FirstOrDefault(x => x.TaxPercentage == 18) ?? taxTypes.FirstOrDefault();
+    var defaultVatRate = defaultTaxType?.TaxPercentage ?? 20;
     var lineTotal = invoice?.Lines.Sum(x => x.Amount) ?? 0m;
     var taxTotal = invoice?.Taxes.Sum(x => x.TaxAmount) ?? 0m;
     var netTotal = invoice?.Taxes.Sum(x => x.NetTotal) ?? 0m;
@@ -26,6 +29,39 @@
     var queryString = string.Join("&", queryParts);
     var currentUrl = "/Invoice/Detail?reference=" + invoice?.Reference + "&page=" + (Model.CurrentIndex + 1) + (string.IsNullOrWhiteSpace(queryString) ? string.Empty : "&" + queryString);
     var selectedReferences = Model.SelectedReferences ?? new List<string>();
+    var pendingUpdate = Model.PendingUpdate;
+    var pendingLinesById = pendingUpdate?.Lines?.ToDictionary(x => x.Id) ?? new Dictionary<decimal, InvoiceUpdateLineViewModel>();
+    var pendingCategoriesByKey = pendingUpdate?.ProductCategories?.ToDictionary(x => (x.LineId, x.ProdCatId)) ?? new Dictionary<(decimal LineId, decimal ProdCatId), InvoiceUpdateCategoryViewModel>();
+    var pendingTaxesById = pendingUpdate?.Taxes?.ToDictionary(x => x.TaxTypeId) ?? new Dictionary<decimal, InvoiceUpdateTaxViewModel>();
+    var pendingNewFreeLines = pendingUpdate?.NewFreeLines ?? new List<InvoiceUpdateFreeLineViewModel>();
+    var taxTypesById = taxTypes.ToDictionary(x => x.Id);
+    TaxTypeListItemDto? ResolveTaxType(decimal? taxTypeId, decimal rate)
+    {
+        if (taxTypeId.HasValue && taxTypesById.TryGetValue(taxTypeId.Value, out var taxTypeById))
+        {
+            return taxTypeById;
+        }
+
+        return taxTypes.FirstOrDefault(x => x.TaxPercentage == (short)rate);
+    }
+
+    string ResolveTaxTypeLabel(decimal? taxTypeId, decimal rate)
+    {
+        var taxType = ResolveTaxType(taxTypeId, rate);
+        return taxType == null
+            ? "KDV" + rate.ToString("0.##", CultureInfo.InvariantCulture)
+            : string.IsNullOrWhiteSpace(taxType.Code) ? taxType.Name : taxType.Code;
+    }
+
+    var editName = pendingUpdate?.Name ?? invoice?.Name ?? string.Empty;
+    var editRelatedPerson = pendingUpdate?.RelatedPerson ?? invoice?.RelatedPerson ?? string.Empty;
+    var editNotes = pendingUpdate?.Notes ?? invoice?.Notes ?? string.Empty;
+    var editFooterNote = pendingUpdate?.FooterNote ?? invoice?.FooterNote ?? string.Empty;
+    var editInvoiceCustomerCode = pendingUpdate?.InvoiceCustomerCode ?? invoice?.InvoiceCustomerCode ?? string.Empty;
+    var editInvoiceCustomerName = pendingUpdate?.InvoiceCustomerName ?? invoice?.InvoiceCustomer ?? string.Empty;
+    var editInvoiceCustomerDisplay = string.IsNullOrWhiteSpace(editInvoiceCustomerCode)
+        ? editInvoiceCustomerName
+        : editInvoiceCustomerCode + " - " + editInvoiceCustomerName;
     string BuildJobPickerUrl(string context, decimal? lineId = null, InvoiceAddJobsMode mode = InvoiceAddJobsMode.SingleLine)
     {
         var pickerParts = new List<string>
@@ -116,12 +152,33 @@
         jobCustomerDisplay = string.IsNullOrWhiteSpace(invoice?.JobCustomerCode)
             ? invoice?.JobCustomer ?? string.Empty
             : invoice?.JobCustomerCode + " - " + invoice?.JobCustomer,
-        invoiceCustomerCode = invoice?.InvoiceCustomerCode ?? string.Empty,
-        invoiceCustomerName = invoice?.InvoiceCustomer ?? string.Empty,
-        invoiceCustomerDisplay = string.IsNullOrWhiteSpace(invoice?.InvoiceCustomerCode)
-            ? invoice?.InvoiceCustomer ?? string.Empty
-            : invoice?.InvoiceCustomerCode + " - " + invoice?.InvoiceCustomer,
-        defaultVatRate = 20
+        invoiceCustomerCode = editInvoiceCustomerCode,
+        invoiceCustomerName = editInvoiceCustomerName,
+        invoiceCustomerDisplay = editInvoiceCustomerDisplay,
+        defaultVatRate,
+        initialEditMode = pendingUpdate != null,
+        newFreeLines = pendingNewFreeLines.Select((line, index) => new
+        {
+            key = index + 1,
+            sequence = line.Sequence,
+            description = line.Description ?? string.Empty,
+            quantity = line.Quantity <= 0 ? 1 : line.Quantity,
+            price = line.Price,
+            amount = line.Amount,
+            taxTypeId = line.TaxTypeId,
+            taxTypeLabel = ResolveTaxTypeLabel(line.TaxTypeId, line.VatRate),
+            vatRate = line.VatRate
+        }).ToList(),
+        existingLineCount = invoice?.Lines.Count ?? 0,
+        existingTaxCount = invoice?.Taxes.Count ?? 0,
+        existingTaxTypeIds = invoice?.Taxes.Select(tax => tax.TaxTypeId).ToList() ?? new List<decimal>(),
+        taxTypes = taxTypes.Select(taxType => new
+        {
+            id = taxType.Id,
+            code = taxType.Code ?? string.Empty,
+            name = string.IsNullOrWhiteSpace(taxType.Name) ? taxType.Code : taxType.Name,
+            rate = taxType.TaxPercentage
+        }).ToList()
     });
 }
 
@@ -223,7 +280,7 @@
                                            x-cloak
                                            type="text"
                                            name="Name"
-                                           value="@invoice.Name"
+                                           value="@editName"
                                            form="invoiceDetailEditForm"
                                            :disabled="!isEditing"
                                            maxlength="32"
@@ -239,7 +296,7 @@
                                            x-cloak
                                            type="text"
                                            name="RelatedPerson"
-                                           value="@invoice.RelatedPerson"
+                                           value="@editRelatedPerson"
                                            form="invoiceDetailEditForm"
                                            :disabled="!isEditing"
                                            maxlength="32"
@@ -276,7 +333,7 @@
                                       name="Notes"
                                       form="invoiceDetailEditForm"
                                       :disabled="!isEditing"
-                                      class="dense-input invoice-detail-edit-textarea">@invoice.Notes</textarea>
+                                      class="dense-input invoice-detail-edit-textarea">@editNotes</textarea>
                         </div>
                     </section>
                     <section class="dense-panel">
@@ -290,7 +347,7 @@
                                       name="FooterNote"
                                       form="invoiceDetailEditForm"
                                       :disabled="!isEditing"
-                                      class="dense-input invoice-detail-edit-textarea">@invoice.FooterNote</textarea>
+                                      class="dense-input invoice-detail-edit-textarea">@editFooterNote</textarea>
                         </div>
                     </section>
                 </div>
@@ -298,7 +355,7 @@
 
             <section class="invoice-table-card">
                 <div class="invoice-table-card__header">
-                    <h3 class="invoice-table-card__title">@Localizer["Line"] (@invoice.Lines.Count)</h3>
+                    <h3 class="invoice-table-card__title">@Localizer["Line"] (<span x-text="@invoice.Lines.Count + newFreeLines.length"></span>)</h3>
                 </div>
                 <div class="invoice-table-wrap mobile-table-panel">
                     <table class="invoice-table invoice-table--compact">
@@ -320,7 +377,14 @@
                             @for (var i = 0; i < invoice.Lines.Count; i++)
                             {
                                 var line = invoice.Lines[i];
-                                <tr>
+                                pendingLinesById.TryGetValue(line.Id, out var pendingLine);
+                                var editLineSequence = pendingLine?.Sequence ?? (short)line.LineNo;
+                                var editLineNotes = pendingLine?.Notes ?? line.Notes;
+                                var editLineQuantity = pendingLine?.Quantity > 0 ? pendingLine.Quantity : line.Quantity;
+                                var editLinePrice = pendingLine?.Price ?? line.Price;
+                                var editLineAmount = pendingLine?.Amount ?? line.Amount;
+                                var editLineVatRate = pendingLine?.VatRate ?? line.VatRate;
+                                <tr class="invoice-line-entry @(i % 2 == 0 ? "invoice-line-entry--cream" : "invoice-line-entry--blue")">
                                     <td class="px-4 py-2">
                                         @if (canEditJobs && !line.FreeFormat && line.WorkItems.Any())
                                         {
@@ -335,7 +399,18 @@
                                             <input type="checkbox" disabled @(line.Selected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                         }
                                     </td>
-                                    <td class="px-4 py-2 text-gray-900">@line.LineNo</td>
+                                    <td class="px-4 py-2 text-gray-900">
+                                        <span x-show="!isEditing">@line.LineNo</span>
+                                        <input x-show="isEditing"
+                                               x-cloak
+                                               type="text"
+                                               inputmode="numeric"
+                                               name="Lines[@i].Sequence"
+                                               value="@editLineSequence.ToString(CultureInfo.InvariantCulture)"
+                                               form="invoiceDetailEditForm"
+                                               :disabled="!isEditing"
+                                               class="dense-input invoice-create-sequence-input" />
+                                    </td>
                                     <td class="px-4 py-2 text-gray-900">
                                         <span x-show="!isEditing">@line.Notes</span>
                                         <input type="hidden"
@@ -347,28 +422,82 @@
                                                x-cloak
                                                type="text"
                                                name="Lines[@i].Notes"
-                                               value="@line.Notes"
+                                               value="@editLineNotes"
                                                form="invoiceDetailEditForm"
                                                :disabled="!isEditing"
                                                class="dense-input invoice-line-note-input" />
                                     </td>
-                                    <td class="px-4 py-2 text-right text-gray-900">@line.Quantity</td>
-                                    <td class="px-4 py-2 text-right text-gray-900">@line.Price.ToString("N2")</td>
                                     <td class="px-4 py-2 text-right text-gray-900">
                                         @if (line.FreeFormat)
                                         {
-                                            <span x-show="!isEditing">@line.Amount.ToString("N2")</span>
+                                            <span x-show="!isEditing">@line.Quantity</span>
+                                            <input x-show="isEditing"
+                                                   x-cloak
+                                                   type="text"
+                                                   inputmode="numeric"
+                                                   name="Lines[@i].Quantity"
+                                                   value="@editLineQuantity.ToString("0.##", CultureInfo.InvariantCulture)"
+                                                   form="invoiceDetailEditForm"
+                                                   :disabled="!isEditing"
+                                                   @@input="updateFreeLineAmount($event.target); updateLineTotals(); updateTaxTotals()"
+                                                   data-invoice-line-quantity
+                                                   data-line-index="@i"
+                                                   class="job-table-input invoice-create-quantity-input text-right" />
+                                        }
+                                        else
+                                        {
+                                            @line.Quantity
+                                            <input type="hidden"
+                                                   name="Lines[@i].Quantity"
+                                                   value="@line.Quantity.ToString(CultureInfo.InvariantCulture)"
+                                                   form="invoiceDetailEditForm"
+                                                   :disabled="!isEditing" />
+                                        }
+                                    </td>
+                                    <td class="px-4 py-2 text-right text-gray-900">
+                                        @if (line.FreeFormat)
+                                        {
+                                            <span x-show="!isEditing">@line.Price.ToString("N2")</span>
                                             <input x-show="isEditing"
                                                    x-cloak
                                                    type="text"
                                                    inputmode="decimal"
-                                                   name="Lines[@i].Amount"
-                                                   value="@line.Amount.ToString("0.##")"
+                                                   name="Lines[@i].Price"
+                                                   value="@editLinePrice.ToString("0.##", CultureInfo.InvariantCulture)"
                                                    form="invoiceDetailEditForm"
                                                    :disabled="!isEditing"
-                                                   @@input="updateLineTotals()"
-                                                   data-invoice-line-amount
+                                                   @@input="updateFreeLineAmount($event.target); updateLineTotals(); updateTaxTotals()"
+                                                   data-invoice-line-price
+                                                   data-line-index="@i"
                                                    class="job-table-input job-table-input--money invoice-detail-money-input" />
+                                        }
+                                        else
+                                        {
+                                            @line.Price.ToString("N2")
+                                            <input type="hidden"
+                                                   name="Lines[@i].Price"
+                                                   value="@line.Price.ToString(CultureInfo.InvariantCulture)"
+                                                   form="invoiceDetailEditForm"
+                                                   :disabled="!isEditing" />
+                                        }
+                                    </td>
+                                    <td class="px-4 py-2 text-right text-gray-900">
+                                        @if (line.FreeFormat)
+                                        {
+                                            <span x-show="!isEditing">@line.Amount.ToString("N2")</span>
+                                            <span x-show="isEditing"
+                                                  x-cloak
+                                                  data-invoice-line-amount-display
+                                                  data-line-index="@i">@editLineAmount.ToString("N2")</span>
+                                            <input type="hidden"
+                                                   name="Lines[@i].Amount"
+                                                   value="@editLineAmount.ToString("0.##", CultureInfo.InvariantCulture)"
+                                                   form="invoiceDetailEditForm"
+                                                   :disabled="!isEditing"
+                                                   data-invoice-line-amount
+                                                   data-line-index="@i"
+                                                   data-invoice-line-original-amount="@line.Amount.ToString(CultureInfo.InvariantCulture)"
+                                                   data-invoice-line-tax-type-id="@line.TaxTypeId?.ToString(CultureInfo.InvariantCulture)" />
                                         }
                                         else
                                         {
@@ -389,7 +518,7 @@
                                                    type="text"
                                                    inputmode="numeric"
                                                    name="Lines[@i].VatRate"
-                                                   value="@line.VatRate.ToString("0.##")"
+                                                   value="@editLineVatRate.ToString("0.##", CultureInfo.InvariantCulture)"
                                                    form="invoiceDetailEditForm"
                                                    :disabled="!isEditing"
                                                    class="job-table-input job-table-input--discount invoice-detail-tax-input" />
@@ -408,7 +537,7 @@
 
                                 if (line.WorkItems.Any() || line.ProductCategories.Any())
                                 {
-                                    <tr class="bg-blue-50">
+                                    <tr class="bg-blue-50 invoice-line-detail-row @(i % 2 == 0 ? "invoice-line-entry--cream" : "invoice-line-entry--blue")">
                                         <td colspan="7" class="px-4 py-4">
                                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                                 <div class="border border-blue-200 rounded">
@@ -489,6 +618,8 @@
                                                                 var cat = line.ProductCategories[catIndex];
                                                                 var isServiceFeeCategory = IsServiceFeeCategory(cat.Name);
                                                                 var categoryFormIndex = isServiceFeeCategory ? productCategoryFormIndex++ : -1;
+                                                                pendingCategoriesByKey.TryGetValue((line.Id, cat.ProdCatId), out var pendingCategory);
+                                                                var editCategoryNetTotal = pendingCategory?.NetTotal ?? cat.NetTotal;
                                                                 <tr>
                                                                     <td class="px-3 py-2 text-gray-900">
                                                                         @cat.Name
@@ -516,7 +647,7 @@
                                                                                    type="text"
                                                                                    inputmode="decimal"
                                                                                    name="ProductCategories[@categoryFormIndex].NetTotal"
-                                                                                   value="@cat.NetTotal.ToString("0.##")"
+                                                                                   value="@editCategoryNetTotal.ToString("0.##", CultureInfo.InvariantCulture)"
                                                                                    form="invoiceDetailEditForm"
                                                                                    :disabled="!isEditing"
                                                                                    @@input="updateCategoryTotals()"
@@ -554,7 +685,7 @@
                                 }
                             }
                             <template x-for="(line, index) in newFreeLines" :key="line.key">
-                                <tr>
+                                <tr :class="(existingLineCount + index) % 2 === 0 ? 'invoice-line-entry invoice-line-entry--cream' : 'invoice-line-entry invoice-line-entry--blue'">
                                     <td class="px-4 py-2">
                                         <button type="button"
                                                 @@click="removeFreeLine(index)"
@@ -562,7 +693,14 @@
                                             @Localizer["Delete"]
                                         </button>
                                     </td>
-                                    <td class="px-4 py-2 text-gray-900">-</td>
+                                    <td class="px-4 py-2 text-gray-900">
+                                        <input type="text"
+                                               inputmode="numeric"
+                                               x-model="line.sequence"
+                                               :name="'NewFreeLines[' + index + '].Sequence'"
+                                               form="invoiceDetailEditForm"
+                                               class="dense-input invoice-create-sequence-input" />
+                                    </td>
                                     <td class="px-4 py-2 text-gray-900">
                                         <input type="text"
                                                x-model="line.description"
@@ -570,24 +708,39 @@
                                                form="invoiceDetailEditForm"
                                                class="dense-input invoice-line-note-input" />
                                     </td>
-                                    <td class="px-4 py-2 text-right text-gray-900">1</td>
+                                    <td class="px-4 py-2 text-right text-gray-900">
+                                        <input type="text"
+                                               inputmode="numeric"
+                                               x-model="line.quantity"
+                                               :name="'NewFreeLines[' + index + '].Quantity'"
+                                               form="invoiceDetailEditForm"
+                                               @@input="updateLineTotals(); updateTaxTotals()"
+                                               class="job-table-input invoice-create-quantity-input text-right" />
+                                    </td>
                                     <td class="px-4 py-2 text-right text-gray-900">
                                         <input type="text"
                                                inputmode="decimal"
-                                               x-model="line.amount"
-                                               :name="'NewFreeLines[' + index + '].Amount'"
+                                               x-model="line.price"
+                                               :name="'NewFreeLines[' + index + '].Price'"
                                                form="invoiceDetailEditForm"
-                                               @@input="updateLineTotals()"
+                                               @@input="updateLineTotals(); updateTaxTotals()"
                                                class="job-table-input job-table-input--money invoice-detail-money-input" />
+                                        <input type="hidden"
+                                               :name="'NewFreeLines[' + index + '].Amount'"
+                                               :value="formatDecimalForPost(lineAmount(line))"
+                                               form="invoiceDetailEditForm" />
+                                        <input type="hidden"
+                                               :name="'NewFreeLines[' + index + '].TaxTypeId'"
+                                               :value="line.taxTypeId || ''"
+                                               form="invoiceDetailEditForm" />
                                     </td>
-                                    <td class="px-4 py-2 text-right text-gray-900" x-text="formatMoney(parseDecimal(line.amount))"></td>
+                                    <td class="px-4 py-2 text-right text-gray-900" x-text="formatMoney(lineAmount(line))"></td>
                                     <td class="px-4 py-2 text-gray-900">
-                                        <input type="text"
-                                               inputmode="numeric"
+                                        <span x-text="line.taxTypeLabel"></span>
+                                        <input type="hidden"
                                                x-model="line.vatRate"
                                                :name="'NewFreeLines[' + index + '].VatRate'"
-                                               form="invoiceDetailEditForm"
-                                               class="job-table-input job-table-input--discount invoice-detail-tax-input" />
+                                               form="invoiceDetailEditForm" />
                                     </td>
                                 </tr>
                             </template>
@@ -602,8 +755,10 @@
                     </table>
                 </div>
                 <div class="invoice-footer-bar" x-show="isEditing" x-cloak>
-                    <button type="button"
-                            @@click="addFreeLine()"
+                    <button type="submit"
+                            form="invoiceDetailEditForm"
+                            formaction="/Invoice/DetailFreeLineTaxTypes"
+                            formmethod="post"
                             class="text-indigo-600 hover:text-indigo-900 font-bold underline text-sm">
                         @Localizer["AddFreeLine"]
                     </button>
@@ -612,12 +767,11 @@
 
             @if (invoice.WorkItems.Any() || canEditJobs)
             {
-                var firstWorkReference = invoice.WorkItems.FirstOrDefault()?.Reference ?? string.Empty;
                 <div class="invoice-footer-bar invoice-footer-bar--start invoice-job-line-actions" x-show="!isEditing" x-cloak>
                     @if (invoice.WorkItems.Any())
                     {
                         <button type="button"
-                                @@click="viewSelectedJob('@firstWorkReference')"
+                                @@click="viewSelectedJobs()"
                                 class="text-blue-600 hover:text-blue-900 underline text-sm font-bold">
                             @Localizer["ViewJob"]
                         </button>
@@ -639,7 +793,7 @@
 
             <section class="invoice-table-card">
                 <div class="invoice-table-card__header">
-                    <h3 class="invoice-table-card__title">@Localizer["Taxes"] (@invoice.Taxes.Count)</h3>
+                    <h3 class="invoice-table-card__title">@Localizer["Taxes"] (<span x-text="taxRowCount"></span>)</h3>
                 </div>
                 <div class="invoice-table-wrap mobile-table-panel">
                     <table class="invoice-table invoice-table--compact">
@@ -657,10 +811,12 @@
                             @for (var taxIndex = 0; taxIndex < invoice.Taxes.Count; taxIndex++)
                             {
                                 var tax = invoice.Taxes[taxIndex];
+                                pendingTaxesById.TryGetValue(tax.TaxTypeId, out var pendingTax);
+                                var editTaxRate = pendingTax?.Rate ?? tax.Rate;
                                 <tr>
                                     <td class="px-4 py-2 text-gray-900">@tax.Code</td>
                                     <td class="px-4 py-2 text-gray-900">@tax.Name</td>
-                                    <td class="px-4 py-2 text-right text-gray-900">@tax.SubTotal.ToString("N2")</td>
+                                    <td id="invoice-tax-subtotal-@taxIndex" class="px-4 py-2 text-right text-gray-900">@tax.SubTotal.ToString("N2")</td>
                                     <td class="px-4 py-2 text-right text-gray-900">
                                         <span x-show="!isEditing">@tax.Rate.ToString("N0")</span>
                                         <input type="hidden"
@@ -673,12 +829,14 @@
                                                type="text"
                                                inputmode="numeric"
                                                name="Taxes[@taxIndex].Rate"
-                                               value="@tax.Rate.ToString("0.##")"
+                                               value="@editTaxRate.ToString("0.##", CultureInfo.InvariantCulture)"
                                                form="invoiceDetailEditForm"
                                                :disabled="!isEditing"
                                                @@input="updateTaxTotals()"
                                                data-invoice-tax-rate
+                                               data-invoice-tax-type-id="@tax.TaxTypeId.ToString(CultureInfo.InvariantCulture)"
                                                data-invoice-tax-subtotal="@tax.SubTotal.ToString(CultureInfo.InvariantCulture)"
+                                               data-invoice-tax-subtotal-target="invoice-tax-subtotal-@taxIndex"
                                                data-invoice-tax-amount-target="invoice-tax-amount-@taxIndex"
                                                data-invoice-tax-net-target="invoice-tax-net-@taxIndex"
                                                class="job-table-input job-table-input--discount invoice-detail-tax-input" />
@@ -687,11 +845,33 @@
                                     <td id="invoice-tax-net-@taxIndex" class="px-4 py-2 text-right text-gray-900" data-invoice-tax-net>@tax.NetTotal.ToString("N2")</td>
                                 </tr>
                             }
+                            <template x-for="(tax, index) in additionalTaxRows" :key="'new-' + tax.key">
+                                <tr x-show="isEditing" x-cloak>
+                                    <td class="px-4 py-2 text-gray-900" x-text="tax.code"></td>
+                                    <td class="px-4 py-2 text-gray-900" x-text="tax.name"></td>
+                                    <td class="px-4 py-2 text-right text-gray-900" x-text="formatMoney(tax.subTotal)"></td>
+                                    <td class="px-4 py-2 text-right text-gray-900">
+                                        <input type="hidden"
+                                               :name="'Taxes[' + (existingTaxCount + index) + '].TaxTypeId'"
+                                               :value="tax.id"
+                                               form="invoiceDetailEditForm" />
+                                        <input type="text"
+                                               inputmode="numeric"
+                                               :name="'Taxes[' + (existingTaxCount + index) + '].Rate'"
+                                               x-model="newTaxRates[tax.key]"
+                                               form="invoiceDetailEditForm"
+                                               @@input="updateTaxTotals()"
+                                               class="job-table-input job-table-input--discount invoice-detail-tax-input" />
+                                    </td>
+                                    <td class="px-4 py-2 text-right text-gray-900" x-text="formatMoney(tax.taxAmount)"></td>
+                                    <td class="px-4 py-2 text-right text-gray-900" x-text="formatMoney(tax.netTotal)"></td>
+                                </tr>
+                            </template>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="2" class="px-4 py-2 text-right font-bold text-gray-900">@Localizer["Total"]</td>
-                                <td class="px-4 py-2 text-right font-bold text-gray-900">@invoice.Taxes.Sum(x => x.SubTotal).ToString("N2")</td>
+                                <td class="px-4 py-2 text-right font-bold text-gray-900" data-invoice-tax-subtotal-total>@invoice.Taxes.Sum(x => x.SubTotal).ToString("N2")</td>
                                 <td class="px-4 py-2 text-right font-bold text-gray-900"></td>
                                 <td class="px-4 py-2 text-right font-bold text-gray-900" data-invoice-tax-amount-total>@taxTotal.ToString("N2")</td>
                                 <td class="px-4 py-2 text-right font-bold text-gray-900" data-invoice-tax-net-total>@netTotal.ToString("N2")</td>
@@ -930,19 +1110,51 @@
                 }
             }
             initialState = initialState || {};
+            const initialNewFreeLines = Array.isArray(initialState?.newFreeLines) ? initialState.newFreeLines : [];
+            const defaultVatRate = parseFloat(initialState?.defaultVatRate) || 20;
 
             return {
-                isEditing: false,
+                isEditing: !!initialState?.initialEditMode,
                 invoiceCustomerCode: initialState?.invoiceCustomerCode || '',
                 invoiceCustomerName: initialState?.invoiceCustomerName || '',
                 invoiceCustomerDisplay: initialState?.invoiceCustomerDisplay || '',
                 jobCustomerCode: initialState?.jobCustomerCode || '',
                 jobCustomerName: initialState?.jobCustomerName || '',
                 jobCustomerDisplay: initialState?.jobCustomerDisplay || '',
-                defaultVatRate: initialState?.defaultVatRate || 20,
-                nextFreeLineKey: 1,
-                newFreeLines: [],
+                defaultVatRate,
+                taxTypes: Array.isArray(initialState?.taxTypes) ? initialState.taxTypes.map(taxType => ({
+                    id: parseFloat(taxType.id) || 0,
+                    code: taxType.code || '',
+                    name: taxType.name || taxType.code || '',
+                    rate: parseFloat(taxType.rate) || 0
+                })) : [],
+                existingTaxTypeIds: Array.isArray(initialState?.existingTaxTypeIds)
+                    ? initialState.existingTaxTypeIds.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0)
+                    : [],
+                existingTaxCount: Number(initialState?.existingTaxCount) || 0,
+                existingLineCount: Number(initialState?.existingLineCount) || 0,
+                newTaxRates: {},
+                nextFreeLineKey: initialNewFreeLines.length + 1,
+                newFreeLines: initialNewFreeLines.map((line, index) => ({
+                    key: line.key || index + 1,
+                    sequence: String(line.sequence ?? 0),
+                    description: line.description || '',
+                    quantity: String(line.quantity ?? 1).replace('.', ','),
+                    price: String(line.price ?? line.amount ?? 0).replace('.', ','),
+                    taxTypeId: parseFloat(line.taxTypeId) || null,
+                    taxTypeLabel: line.taxTypeLabel || '',
+                    vatRate: parseFloat(line.vatRate) || defaultVatRate
+                })),
                 deleteLineId: '',
+                init() {
+                    if (this.isEditing) {
+                        this.$nextTick(() => {
+                            this.updateLineTotals();
+                            this.updateCategoryTotals();
+                            this.updateTaxTotals();
+                        });
+                    }
+                },
                 enableEdit() {
                     this.isEditing = true;
                     this.$nextTick(() => {
@@ -972,18 +1184,26 @@
                             : this.invoiceCustomerName;
                     }
                 },
-                addFreeLine() {
+                addFreeLine(taxType) {
+                    const resolvedTaxType = taxType || this.taxTypes.find((item) => Number(item.rate) === Number(this.defaultVatRate)) || {};
                     this.newFreeLines.push({
                         key: this.nextFreeLineKey++,
+                        sequence: '0',
                         description: '',
-                        amount: 0,
-                        vatRate: this.defaultVatRate
+                        quantity: '1',
+                        price: '0',
+                        taxTypeId: resolvedTaxType.id || null,
+                        taxTypeLabel: this.taxTypeLabel(resolvedTaxType),
+                        vatRate: resolvedTaxType.rate || this.defaultVatRate
                     });
                     this.$nextTick(() => this.updateLineTotals());
                 },
                 removeFreeLine(index) {
                     this.newFreeLines.splice(index, 1);
-                    this.$nextTick(() => this.updateLineTotals());
+                    this.$nextTick(() => {
+                        this.updateLineTotals();
+                        this.updateTaxTotals();
+                    });
                 },
                 populateDynamicInputs(container, name, values) {
                     if (!container) {
@@ -1018,14 +1238,22 @@
                     this.populateDynamicInputs(this.$refs.deleteJobLinesContainer, 'LineIds', selected);
                     this.$nextTick(() => this.$refs.deleteJobLinesForm?.submit());
                 },
-                viewSelectedJob(defaultReference) {
-                    const selected = document.querySelector('[data-invoice-job-checkbox]:checked');
-                    const reference = selected?.value || defaultReference;
-                    if (!reference) {
+                viewSelectedJobs() {
+                    const references = Array.from(document.querySelectorAll('[data-invoice-job-checkbox]:checked'))
+                        .map((input) => String(input.value || '').trim())
+                        .filter((reference) => reference.length > 0);
+                    const selectedReferences = Array.from(new Set(references));
+                    if (selectedReferences.length === 0) {
+                        window.alert('Görüntülemek için en az bir iş seçin.');
                         return;
                     }
-                    const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-                    window.location.href = '/Job/Detail?id=' + encodeURIComponent(reference) + '&returnUrl=' + returnUrl;
+
+                    const params = new URLSearchParams();
+                    params.set('id', selectedReferences[0]);
+                    params.set('currentIndex', '0');
+                    selectedReferences.forEach((reference) => params.append('selectedIds', reference));
+                    params.set('returnUrl', window.location.pathname + window.location.search);
+                    window.location.href = '/Job/Detail?' + params.toString();
                 },
                 parseDecimal(value) {
                     let text = String(value || '').trim().replace(/\s/g, '');
@@ -1042,10 +1270,117 @@
                     const parsed = Number.parseFloat(text);
                     return Number.isFinite(parsed) ? parsed : 0;
                 },
+                parseInteger(value) {
+                    const parsed = Number.parseInt(String(value || '').trim(), 10);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                },
+                roundMoney(value) {
+                    return Math.round((Number(value) || 0) * 100) / 100;
+                },
+                lineAmount(line) {
+                    return this.roundMoney(this.parseDecimal(line.quantity) * this.parseDecimal(line.price));
+                },
+                formatDecimalForPost(value) {
+                    return String(this.roundMoney(value)).replace(',', '.');
+                },
+                updateFreeLineAmount(input) {
+                    const lineIndex = input?.dataset?.lineIndex;
+                    if (lineIndex === undefined) {
+                        return;
+                    }
+
+                    const quantityInput = document.querySelector(`[data-invoice-line-quantity][data-line-index="${lineIndex}"]`);
+                    const priceInput = document.querySelector(`[data-invoice-line-price][data-line-index="${lineIndex}"]`);
+                    const amountInput = document.querySelector(`[data-invoice-line-amount][data-line-index="${lineIndex}"]`);
+                    const amountDisplay = document.querySelector(`[data-invoice-line-amount-display][data-line-index="${lineIndex}"]`);
+                    const amount = this.roundMoney(this.parseDecimal(quantityInput?.value) * this.parseDecimal(priceInput?.value));
+                    if (amountInput) {
+                        amountInput.value = this.formatDecimalForPost(amount);
+                    }
+                    if (amountDisplay) {
+                        amountDisplay.textContent = this.formatMoney(amount);
+                    }
+                },
+                taxTypeLabel(taxType) {
+                    if (!taxType) {
+                        return '';
+                    }
+                    return taxType.code || taxType.name || ('KDV' + taxType.rate);
+                },
+                taxTypeForLine(line) {
+                    return this.taxTypes.find((taxType) => Number(taxType.id) === Number(line.taxTypeId))
+                        || this.taxTypes.find((taxType) => Number(taxType.rate) === Number(line.vatRate))
+                        || {
+                            id: Number(line.taxTypeId) || 0,
+                            code: line.taxTypeLabel || ('KDV' + line.vatRate),
+                            name: line.taxTypeLabel || ('KDV %' + line.vatRate),
+                            rate: Number(line.vatRate) || 0
+                        };
+                },
+                get newFreeLineTaxes() {
+                    const groups = new Map();
+                    this.newFreeLines.forEach((line) => {
+                        const amount = this.lineAmount(line);
+                        if (amount === 0) {
+                            return;
+                        }
+
+                        const taxType = this.taxTypeForLine(line);
+                        const rate = Number(taxType.rate) || Number(line.vatRate) || 0;
+                        const key = taxType.id > 0 ? 'id:' + taxType.id : 'rate:' + rate;
+                        const current = groups.get(key) || { taxType, subTotal: 0 };
+                        current.subTotal += amount;
+                        groups.set(key, current);
+                    });
+
+                    return Array.from(groups.values())
+                        .sort((a, b) => Number(a.taxType.rate) - Number(b.taxType.rate) || String(a.taxType.code).localeCompare(String(b.taxType.code)))
+                        .map(({ taxType, subTotal }) => {
+                            const rate = Number(taxType.rate) || 0;
+                            const roundedSubTotal = this.roundMoney(subTotal);
+                            const taxAmount = this.roundMoney(roundedSubTotal * rate / 100);
+                            return {
+                                key: taxType.id > 0 ? 'id:' + taxType.id : 'rate:' + rate,
+                                id: taxType.id || 0,
+                                code: taxType.code || ('KDV' + rate),
+                                name: taxType.name || taxType.code || ('KDV %' + rate),
+                                rate,
+                                subTotal: roundedSubTotal,
+                                taxAmount,
+                                netTotal: this.roundMoney(roundedSubTotal + taxAmount)
+                            };
+                        });
+                },
+                get additionalTaxRows() {
+                    return this.newFreeLineTaxes
+                        .filter((tax) => !this.existingTaxTypeIds.includes(Number(tax.id)))
+                        .map((tax) => {
+                            if (this.newTaxRates[tax.key] === undefined) {
+                                this.newTaxRates[tax.key] = String(tax.rate);
+                            }
+
+                            const rate = this.parseDecimal(this.newTaxRates[tax.key]);
+                            const taxAmount = this.roundMoney(tax.subTotal * rate / 100);
+                            return {
+                                ...tax,
+                                rate,
+                                taxAmount,
+                                netTotal: this.roundMoney(tax.subTotal + taxAmount)
+                            };
+                        });
+                },
+                get taxRowCount() {
+                    return this.existingTaxTypeIds.length + this.additionalTaxRows.length;
+                },
                 formatMoney(value) {
                     return new Intl.NumberFormat(document.documentElement.lang || 'tr-TR', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
+                    }).format(value || 0);
+                },
+                formatRate(value) {
+                    return new Intl.NumberFormat(document.documentElement.lang || 'tr-TR', {
+                        maximumFractionDigits: 0
                     }).format(value || 0);
                 },
                 updateCategoryTotals() {
@@ -1070,7 +1405,7 @@
                         total += this.parseDecimal(input.value);
                     });
                     this.newFreeLines.forEach((line) => {
-                        total += this.parseDecimal(line.amount);
+                        total += this.lineAmount(line);
                     });
                     document.querySelectorAll('[data-invoice-line-total]').forEach((cell) => {
                         cell.textContent = this.formatMoney(total);
@@ -1082,20 +1417,50 @@
                     this.updateTaxTotals();
                 },
                 updateTaxTotals() {
+                    let subTotal = 0;
                     let taxTotal = 0;
                     let netTotal = 0;
+                    const newFreeLineTaxById = new Map(this.newFreeLineTaxes.map((tax) => [Number(tax.id), tax]));
+                    const existingFreeLineDeltaByTaxId = new Map();
+                    document.querySelectorAll('[data-invoice-line-amount][data-invoice-line-tax-type-id]').forEach((input) => {
+                        const taxTypeId = Number(input.dataset.invoiceLineTaxTypeId) || 0;
+                        if (taxTypeId <= 0) {
+                            return;
+                        }
+
+                        const currentAmount = this.parseDecimal(input.value);
+                        const originalAmount = this.parseDecimal(input.dataset.invoiceLineOriginalAmount);
+                        existingFreeLineDeltaByTaxId.set(
+                            taxTypeId,
+                            (existingFreeLineDeltaByTaxId.get(taxTypeId) || 0) + this.roundMoney(currentAmount - originalAmount)
+                        );
+                    });
                     document.querySelectorAll('[data-invoice-tax-rate]').forEach((input) => {
-                        const subTotal = this.parseDecimal(input.dataset.invoiceTaxSubtotal);
+                        const taxTypeId = Number(input.dataset.invoiceTaxTypeId) || 0;
+                        const freeLineTax = newFreeLineTaxById.get(taxTypeId);
+                        const existingFreeLineDelta = existingFreeLineDeltaByTaxId.get(taxTypeId) || 0;
+                        const rowSubTotal = this.roundMoney(this.parseDecimal(input.dataset.invoiceTaxSubtotal) + existingFreeLineDelta + (freeLineTax?.subTotal || 0));
                         const rate = this.parseDecimal(input.value);
-                        const taxAmount = Math.round((subTotal * rate / 100) * 100) / 100;
-                        const netAmount = Math.round((subTotal + taxAmount) * 100) / 100;
+                        const taxAmount = this.roundMoney(rowSubTotal * rate / 100);
+                        const netAmount = this.roundMoney(rowSubTotal + taxAmount);
+                        subTotal += rowSubTotal;
                         taxTotal += taxAmount;
                         netTotal += netAmount;
 
+                        const subTotalTarget = document.getElementById(input.dataset.invoiceTaxSubtotalTarget);
                         const taxTarget = document.getElementById(input.dataset.invoiceTaxAmountTarget);
                         const netTarget = document.getElementById(input.dataset.invoiceTaxNetTarget);
+                        if (subTotalTarget) subTotalTarget.textContent = this.formatMoney(rowSubTotal);
                         if (taxTarget) taxTarget.textContent = this.formatMoney(taxAmount);
                         if (netTarget) netTarget.textContent = this.formatMoney(netAmount);
+                    });
+                    this.additionalTaxRows.forEach((tax) => {
+                        subTotal += tax.subTotal;
+                        taxTotal += tax.taxAmount;
+                        netTotal += tax.netTotal;
+                    });
+                    document.querySelectorAll('[data-invoice-tax-subtotal-total]').forEach((cell) => {
+                        cell.textContent = this.formatMoney(subTotal);
                     });
                     document.querySelectorAll('[data-invoice-tax-amount-total]').forEach((cell) => {
                         cell.textContent = this.formatMoney(taxTotal);
