@@ -134,10 +134,10 @@
                         <div class="dense-form-grid">
                             <div class="dense-form-row">
                                 <label>@Localizer["Employee"]</label>
-                                <div class="job-index-selector">
+                                <div class="job-index-selector job-index-selector--employee">
                                     <input type="hidden" name="Filter.EmployeeCode" x-model="filter.employeeCode">
                                     <input type="hidden" name="Filter.EmployeeName" x-model="filter.employeeName">
-                                    <span class="job-index-selector__value" x-text='filter.employeeName || @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["AllOption"].Value))'></span>
+                                    <span class="job-index-selector__value" x-text='employeeDisplayText()'></span>
                                     <span class="job-index-selector__separator">-</span>
                                     <button type="button" @@click="$dispatch('employee-select-open', { targetId: 'jobEmployee', showFilter: true })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
                                         @Localizer["Select"]
@@ -294,15 +294,27 @@
 
             handleEmployeeSelection(detail) {
                 if (detail.targetId === 'jobEmployee') {
-                    const emp = detail.employee;
+                    const emp = detail.employee || (detail.employees && detail.employees[0]);
                     if (emp) {
-                        this.filter.employeeName = emp.name;
-                        this.filter.employeeCode = emp.code;
+                        this.filter = {
+                            ...this.filter,
+                            employeeName: emp.name ?? emp.Name ?? emp.employeeName ?? emp.EmployeeName ?? '',
+                            employeeCode: emp.code ?? emp.Code ?? emp.employeeCode ?? emp.EmployeeCode ?? ''
+                        };
                     } else {
-                        this.filter.employeeName = '';
-                        this.filter.employeeCode = '';
+                        this.filter = {
+                            ...this.filter,
+                            employeeName: '',
+                            employeeCode: ''
+                        };
                     }
                 }
+            },
+
+            employeeDisplayText() {
+                const name = (this.filter.employeeName || '').trim();
+                const code = (this.filter.employeeCode || '').trim();
+                return name || code || @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Localizer["AllOption"].Value));
             }
         }
     }

@@ -2204,6 +2204,9 @@ namespace Imaj.Service.Services
                 await AttachJobsToLineAsync(invoice, line, selectedJobsResult.Jobs, userId);
                 await _unitOfWork.CommitAsync();
 
+                await RebuildInvoiceJobLineFinancialsFromJobsAsync(invoice.Id);
+                await _unitOfWork.CommitAsync();
+
                 var totalsResult = await RecalculateInvoiceFinancialsAsync(invoice.Id);
                 if (!totalsResult.IsSuccess)
                 {
@@ -2315,6 +2318,9 @@ namespace Imaj.Service.Services
                     await _unitOfWork.CommitAsync();
                 }
 
+                await RebuildInvoiceJobLineFinancialsFromJobsAsync(invoice.Id);
+                await _unitOfWork.CommitAsync();
+
                 var totalsResult = await RecalculateInvoiceFinancialsAsync(invoice.Id);
                 if (!totalsResult.IsSuccess)
                 {
@@ -2410,6 +2416,9 @@ namespace Imaj.Service.Services
 
                 await _unitOfWork.CommitAsync();
 
+                await RebuildInvoiceJobLineFinancialsFromJobsAsync(invoice.Id);
+                await _unitOfWork.CommitAsync();
+
                 var totalsResult = await RecalculateInvoiceFinancialsAsync(invoice.Id);
                 if (!totalsResult.IsSuccess)
                 {
@@ -2485,6 +2494,9 @@ namespace Imaj.Service.Services
                     await SoftDeleteJobLineAsync(line);
                 }
 
+                await _unitOfWork.CommitAsync();
+
+                await RebuildInvoiceJobLineFinancialsFromJobsAsync(invoice.Id);
                 await _unitOfWork.CommitAsync();
 
                 var totalsResult = await RecalculateInvoiceFinancialsAsync(invoice.Id);
@@ -3154,6 +3166,97 @@ namespace Imaj.Service.Services
                 row.Deleted = 1;
                 row.Stamp = 1;
                 invoiceProdCatRepo.Update(row);
+            }
+        }
+
+        private async Task RebuildInvoiceJobLineFinancialsFromJobsAsync(decimal invoiceId)
+        {
+            var lineRepo = _unitOfWork.Repository<InvoLine>();
+            var invoiceProdCatRepo = _unitOfWork.Repository<InvoProdCat>();
+            var jobLines = await lineRepo.Query()
+                .Where(x => x.InvoiceID == invoiceId && x.Deleted == 0 && !x.FreeFormat)
+                .ToListAsync();
+            if (!jobLines.Any())
+            {
+                return;
+            }
+
+            var lineIds = jobLines.Select(x => x.Id).ToList();
+            var lineJobs = await (from invoiceJob in _unitOfWork.Repository<InvoJob>().Query()
+                                  where lineIds.Contains(invoiceJob.InvoLineID) && invoiceJob.Deleted == 0
+                                  join job in _unitOfWork.Repository<Job>().Query()
+                                      on invoiceJob.JobID equals job.Id
+                                  select new { invoiceJob.InvoLineID, Job = job })
+                .ToListAsync();
+
+            var jobIds = lineJobs.Select(x => x.Job.Id).Distinct().ToList();
+            var jobCategories = jobIds.Any()
+                ? await _unitOfWork.Repository<JobProdCat>().Query()
+                    .Where(x => jobIds.Contains(x.JobID) && x.Deleted == 0)
+                    .ToListAsync()
+                : new List<JobProdCat>();
+            var jobCategoryRowsByJobId = jobCategories
+                .GroupBy(x => x.JobID)
+                .ToDictionary(x => x.Key, x => x.ToList());
+
+            var existingCategoryRows = await invoiceProdCatRepo.Query()
+                .Where(x => lineIds.Contains(x.InvoLineID) && x.Deleted == 0)
+                .ToListAsync();
+            foreach (var row in existingCategoryRows)
+            {
+                row.Deleted = 1;
+                row.Stamp = 1;
+                invoiceProdCatRepo.Update(row);
+            }
+
+            var nextInvoiceProdCatId = (await invoiceProdCatRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+            foreach (var lineGroup in lineJobs.GroupBy(x => x.InvoLineID))
+            {
+                var line = jobLines.FirstOrDefault(x => x.Id == lineGroup.Key);
+                if (line == null)
+                {
+                    continue;
+                }
+
+                var lineAmount = 0m;
+                var categoryAmounts = new Dictionary<decimal, decimal>();
+                foreach (var lineJob in lineGroup)
+                {
+                    if (jobCategoryRowsByJobId.TryGetValue(lineJob.Job.Id, out var categories) && categories.Any())
+                    {
+                        foreach (var category in categories)
+                        {
+                            var amount = RoundCurrency(category.NetAmount);
+                            categoryAmounts[category.ProdCatID] = RoundCurrency(
+                                (categoryAmounts.TryGetValue(category.ProdCatID, out var current) ? current : 0m) + amount);
+                            lineAmount = RoundCurrency(lineAmount + amount);
+                        }
+                    }
+                    else
+                    {
+                        lineAmount = RoundCurrency(lineAmount + lineJob.Job.ProdSum);
+                    }
+                }
+
+                foreach (var categoryAmount in categoryAmounts)
+                {
+                    await invoiceProdCatRepo.AddAsync(new InvoProdCat
+                    {
+                        Id = nextInvoiceProdCatId++,
+                        InvoLineID = line.Id,
+                        ProdCatID = categoryAmount.Key,
+                        GrossAmount = categoryAmount.Value,
+                        NetAmount = categoryAmount.Value,
+                        Deleted = 0,
+                        Stamp = 1
+                    });
+                }
+
+                line.Amount = RoundCurrency(lineAmount);
+                line.Price = line.Amount;
+                line.Quantity = 1;
+                line.Stamp = 1;
+                lineRepo.Update(line);
             }
         }
 

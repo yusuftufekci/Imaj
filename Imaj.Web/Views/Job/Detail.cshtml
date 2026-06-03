@@ -349,15 +349,8 @@
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
                                 <span x-show="!isEditing">@ot.OvertimeType</span>
-                                <select x-show="isEditing" x-cloak name="Overtimes[@i].TimeTypeId" form="jobDetailEditForm" :disabled="!isEditing" class="job-table-select">
-                                    @if (ViewBag.TimeTypes != null)
-                                    {
-                                        @foreach (var tt in ViewBag.TimeTypes)
-                                        {
-                                            <option value="@tt.Id" selected="@(tt.Id == ot.TimeTypeId)">@tt.Name</option>
-                                        }
-                                    }
-                                </select>
+                                <span x-show="isEditing" x-cloak>@ot.OvertimeType</span>
+                                <input type="hidden" name="Overtimes[@i].TimeTypeId" value="@ot.TimeTypeId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                                 <span x-show="!isEditing">@ot.Quantity.ToString("0.##")</span>
@@ -1135,6 +1128,7 @@
                     const workTypeId = employee.defaultWorkTypeId || employee.workTypeId || this.defaultWorkTypeId || 0;
                     const workTypeName = employee.defaultWorkTypeName || employee.workTypeName || this.resolveWorkTypeName(workTypeId);
                     const timeTypeId = this.defaultTimeTypeId || '';
+                    const timeTypeName = this.resolveTimeTypeName(timeTypeId);
                     const quantity = this.parseDecimal(employee.quantity || 1);
                     const row = document.createElement('tr');
 
@@ -1152,9 +1146,8 @@
                             <input type="hidden" name="Overtimes[${index}].WorkTypeId" value="${this.escapeAttr(workTypeId)}" form="jobDetailEditForm">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
-                            <select name="Overtimes[${index}].TimeTypeId" form="jobDetailEditForm" class="job-table-select">
-                                ${this.createTimeTypeOptions(timeTypeId)}
-                            </select>
+                            ${this.escapeText(timeTypeName)}
+                            <input type="hidden" name="Overtimes[${index}].TimeTypeId" value="${this.escapeAttr(timeTypeId)}" form="jobDetailEditForm">
                         </td>
                         <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">
                             <input type="text" inputmode="numeric" name="Overtimes[${index}].Quantity" value="${this.escapeAttr(this.formatQuantityInput(quantity))}" form="jobDetailEditForm" class="job-table-input job-table-input--money" style="width: 4rem;">
@@ -1334,6 +1327,14 @@
                 resolveWorkTypeName(workTypeId) {
                     const key = String(workTypeId || '');
                     return this.workTypeNames[key] || this.defaultWorkTypeName || key || '-';
+                },
+                resolveTimeTypeName(timeTypeId) {
+                    const key = String(timeTypeId || '');
+                    const match = (this.timeTypes || []).find(timeType => {
+                        const id = timeType.id ?? timeType.Id ?? '';
+                        return String(id) === key;
+                    });
+                    return (match?.name ?? match?.Name) || key || '-';
                 },
                 createTimeTypeOptions(selectedId) {
                     return (this.timeTypes || []).map(timeType => {

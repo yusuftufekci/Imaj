@@ -128,12 +128,19 @@ const employeeCustomMethods = {
             if (result) {
                 const rawItems = result.items || result.Items || result.data || result.Data || [];
                 this.items = (Array.isArray(rawItems) ? rawItems : []).map(item => {
-                    const selectedItem = this.selectedItems.find(x => x.code === item.code);
-                    return {
+                    const normalizedItem = {
                         ...item,
+                        id: item.id ?? item.Id ?? item.employeeId ?? item.EmployeeId ?? item.EmployeeID ?? '',
+                        code: item.code ?? item.Code ?? item.employeeCode ?? item.EmployeeCode ?? '',
+                        name: item.name ?? item.Name ?? item.employeeName ?? item.EmployeeName ?? '',
+                        invisible: item.invisible ?? item.Invisible ?? false
+                    };
+                    const selectedItem = this.selectedItems.find(x => x.code === normalizedItem.code);
+                    return {
+                        ...normalizedItem,
                         quantity: selectedItem
                             ? selectedItem.quantity
-                            : this.normalizeQuantity(item.quantity)
+                            : this.normalizeQuantity(normalizedItem.quantity)
                     };
                 });
                 this.totalCount = result.totalCount || result.TotalCount || 0;

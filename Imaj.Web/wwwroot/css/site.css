@@ -1877,6 +1877,24 @@ span.flatpickr-weekday {
     line-height: 1;
 }
 
+.job-index-selector--employee {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    align-items: center;
+    width: 100%;
+}
+
+.job-index-selector--employee .job-index-selector__value {
+    grid-column: 1 / -1;
+    max-width: 100%;
+    min-height: 1.2em;
+}
+
+.job-index-selector--employee .job-index-selector__separator {
+    display: none;
+}
+
 .job-index-input--select {
     width: min(100%, 6.5rem);
     max-width: 6.5rem;

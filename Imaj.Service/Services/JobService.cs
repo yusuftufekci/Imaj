@@ -1836,7 +1836,10 @@ namespace Imaj.Service.Services
                         }
 
                         work.WorkTypeID = workDto.WorkTypeId;
-                        work.TimeTypeID = workDto.TimeTypeId;
+                        if (isNewWork)
+                        {
+                            work.TimeTypeID = workDto.TimeTypeId;
+                        }
                         work.Quantity = (short)Math.Round(workDto.Quantity);
                         work.Amount = workDto.Amount;
                         work.Notes = workDto.Notes ?? string.Empty;
