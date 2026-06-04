@@ -29,6 +29,21 @@ namespace Imaj.Web.Services.Reports
             return stream.ToArray();
         }
 
+        public byte[] BuildSummaryReport(List<ProductReportRowDto> rows, ProductReportExcelContext context)
+        {
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add(L("SummaryProductSheet"));
+
+            ConfigureSheet(ws);
+            SetSummaryColumns(ws);
+            WriteSummaryHeader(ws, context);
+            WriteSummaryTable(ws, rows);
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
         private static void ConfigureSheet(IXLWorksheet ws)
         {
             ws.Style.Font.FontName = "Arial";
@@ -46,6 +61,14 @@ namespace Imaj.Web.Services.Reports
             ws.Column(7).Width = 34; // Notlar
             ws.Column(8).Width = 10; // Miktar
             ws.Column(9).Width = 12; // Tutar
+        }
+
+        private static void SetSummaryColumns(IXLWorksheet ws)
+        {
+            ws.Column(1).Width = 30; // Product Group
+            ws.Column(2).Width = 34; // Product
+            ws.Column(3).Width = 12; // Quantity
+            ws.Column(4).Width = 16; // Amount
         }
 
         private void WriteHeader(IXLWorksheet ws, ProductReportExcelContext context)
@@ -77,6 +100,33 @@ namespace Imaj.Web.Services.Reports
             ws.Cell(3, 9).Style.Font.Bold = true;
             ws.Range(4, 9, 4, 9).Merge();
             ws.Cell(4, 9).Value = context.CustomerDisplay;
+        }
+
+        private void WriteSummaryHeader(IXLWorksheet ws, ProductReportExcelContext context)
+        {
+            ws.Range(1, 1, 1, 4).Merge();
+            ws.Cell(1, 1).Value = L("SummaryProductReportTitle");
+            ws.Cell(1, 1).Style.Font.Bold = true;
+            ws.Cell(1, 1).Style.Font.FontSize = 18;
+            ws.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            ws.Cell(3, 1).Value = L("DateRange");
+            ws.Cell(3, 1).Style.Font.Bold = true;
+            ws.Cell(3, 2).Value = context.StartDate.Date;
+            ws.Cell(3, 2).Style.DateFormat.Format = "dd/MM/yyyy";
+            ws.Cell(3, 3).Value = context.EndDate.Date;
+            ws.Cell(3, 3).Style.DateFormat.Format = "dd/MM/yyyy";
+
+            ws.Cell(4, 1).Value = L("ProductGroupWithColon");
+            ws.Cell(4, 1).Style.Font.Bold = true;
+            ws.Cell(4, 2).Value = context.ProductGroupDisplay;
+            ws.Cell(4, 3).Value = L("ProductWithColon");
+            ws.Cell(4, 3).Style.Font.Bold = true;
+            ws.Cell(4, 4).Value = context.ProductDisplay;
+
+            ws.Cell(5, 3).Value = L("CustomerWithColon");
+            ws.Cell(5, 3).Style.Font.Bold = true;
+            ws.Cell(5, 4).Value = context.CustomerDisplay;
         }
 
         private void WriteTable(IXLWorksheet ws, List<ProductReportRowDto> rows)
@@ -173,6 +223,97 @@ namespace Imaj.Web.Services.Reports
             var tableEndRow = currentRow;
             ws.Range(headerRow, 1, tableEndRow, 9).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             ws.Range(headerRow, 1, tableEndRow, 9).Style.Border.InsideBorder = XLBorderStyleValues.Hair;
+            ws.SheetView.FreezeRows(headerRow);
+        }
+
+        private void WriteSummaryTable(IXLWorksheet ws, List<ProductReportRowDto> rows)
+        {
+            const int headerRow = 6;
+            var headers = new[]
+            {
+                L("ProductGroupColumn"),
+                L("ProductColumn"),
+                L("Quantity"),
+                L("Amount")
+            };
+
+            for (var i = 0; i < headers.Length; i++)
+            {
+                var cell = ws.Cell(headerRow, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#F1F1F1");
+                cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                if (i >= headers.Length - 2)
+                {
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                }
+            }
+
+            var currentRow = headerRow + 1;
+            var groupedRows = rows
+                .GroupBy(x => new { x.ProductGroupName, x.ProductCode, x.ProductName })
+                .Select(g => new
+                {
+                    g.Key.ProductGroupName,
+                    g.Key.ProductCode,
+                    g.Key.ProductName,
+                    Quantity = g.Sum(x => x.Quantity),
+                    Amount = g.Sum(x => x.Amount)
+                })
+                .OrderBy(x => x.ProductGroupName)
+                .ThenBy(x => x.ProductName)
+                .ToList();
+
+            foreach (var productGroup in groupedRows.GroupBy(x => x.ProductGroupName))
+            {
+                foreach (var row in productGroup)
+                {
+                    ws.Cell(currentRow, 1).Value = row.ProductGroupName;
+                    ws.Cell(currentRow, 2).Value = row.ProductName;
+                    ws.Cell(currentRow, 3).Value = row.Quantity;
+                    ws.Cell(currentRow, 4).Value = row.Amount;
+
+                    ws.Cell(currentRow, 3).Style.NumberFormat.Format = "#,##0.##";
+                    ws.Cell(currentRow, 4).Style.NumberFormat.Format = "#,##0.00";
+                    ws.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    ws.Cell(currentRow, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    ws.Range(currentRow, 1, currentRow, 4).Style.Border.BottomBorder = XLBorderStyleValues.Dashed;
+
+                    currentRow++;
+                }
+
+                ws.Range(currentRow, 1, currentRow, 2).Merge();
+                ws.Cell(currentRow, 1).Value = productGroup.Key;
+                ws.Cell(currentRow, 3).Value = productGroup.Sum(x => x.Quantity);
+                ws.Cell(currentRow, 4).Value = productGroup.Sum(x => x.Amount);
+                ws.Cell(currentRow, 3).Style.NumberFormat.Format = "#,##0.##";
+                ws.Cell(currentRow, 4).Style.NumberFormat.Format = "#,##0.00";
+                ws.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Cell(currentRow, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Range(currentRow, 1, currentRow, 4).Style.Font.Bold = true;
+                ws.Range(currentRow, 1, currentRow, 4).Style.Fill.BackgroundColor = XLColor.FromHtml("#FAFAFA");
+                ws.Range(currentRow, 1, currentRow, 4).Style.Border.TopBorder = XLBorderStyleValues.Dashed;
+
+                currentRow++;
+            }
+
+            ws.Range(currentRow, 1, currentRow, 2).Merge();
+            ws.Cell(currentRow, 1).Value = L("ReportTotal");
+            ws.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(currentRow, 3).Value = groupedRows.Sum(x => x.Quantity);
+            ws.Cell(currentRow, 4).Value = groupedRows.Sum(x => x.Amount);
+            ws.Cell(currentRow, 3).Style.NumberFormat.Format = "#,##0.##";
+            ws.Cell(currentRow, 4).Style.NumberFormat.Format = "#,##0.00";
+            ws.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(currentRow, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Range(currentRow, 1, currentRow, 4).Style.Font.Bold = true;
+            ws.Range(currentRow, 1, currentRow, 4).Style.Fill.BackgroundColor = XLColor.FromHtml("#EFEFEF");
+            ws.Range(currentRow, 1, currentRow, 4).Style.Border.TopBorder = XLBorderStyleValues.Double;
+
+            var tableEndRow = currentRow;
+            ws.Range(headerRow, 1, tableEndRow, 4).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            ws.Range(headerRow, 1, tableEndRow, 4).Style.Border.InsideBorder = XLBorderStyleValues.Hair;
             ws.SheetView.FreezeRows(headerRow);
         }
 

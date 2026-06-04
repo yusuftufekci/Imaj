@@ -72,6 +72,44 @@ namespace Imaj.Web.Controllers
             return View("~/Views/Shared/PrintableReport.cshtml", model);
         }
 
+        [HttpGet]
+        [RequireMethodPermission(1754)]
+        public async Task<IActionResult> DownloadSummaryExcel([FromQuery] ProductReportDownloadRequest request)
+        {
+            if (!TryCreateReportContext(request, out var filter, out var excelContext, out var badRequest))
+            {
+                return badRequest!;
+            }
+
+            var reportResult = await _productReportService.GetDetailedReportAsync(filter);
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var fileBytes = _productReportExcelService.BuildSummaryReport(reportResult.Data, excelContext);
+            return File(fileBytes, ExcelContentType, BuildFileName(L("SummaryProductFilePrefix")));
+        }
+
+        [HttpGet]
+        [RequireMethodPermission(1754)]
+        public async Task<IActionResult> ViewSummaryReport([FromQuery] ProductReportDownloadRequest request)
+        {
+            if (!TryCreateReportContext(request, out var filter, out var excelContext, out var badRequest))
+            {
+                return badRequest!;
+            }
+
+            var reportResult = await _productReportService.GetDetailedReportAsync(filter);
+            if (!reportResult.IsSuccess || reportResult.Data == null)
+            {
+                return BadRequest(this.LocalizeUiMessage(reportResult.Message, L("ReportDataUnavailable")));
+            }
+
+            var model = BuildSummaryPrintableReport(reportResult.Data, excelContext);
+            return View("~/Views/Shared/PrintableReport.cshtml", model);
+        }
+
         private bool TryCreateReportContext(
             ProductReportDownloadRequest request,
             out ProductReportFilterDto filter,
@@ -206,6 +244,91 @@ namespace Imaj.Web.Controllers
                     new() { Title = L("Customer") },
                     new() { Title = L("Name") },
                     new() { Title = L("Notes") },
+                    new() { Title = L("Quantity"), Alignment = "right" },
+                    new() { Title = L("Amount"), Alignment = "right" }
+                },
+                Rows = reportRows
+            };
+        }
+
+        private PrintableReportViewModel BuildSummaryPrintableReport(
+            List<ProductReportRowDto> rows,
+            ProductReportExcelContext context)
+        {
+            var summaryRows = rows
+                .GroupBy(x => new { x.ProductGroupName, x.ProductCode, x.ProductName })
+                .Select(g => new
+                {
+                    g.Key.ProductGroupName,
+                    g.Key.ProductCode,
+                    g.Key.ProductName,
+                    Quantity = g.Sum(x => x.Quantity),
+                    Amount = g.Sum(x => x.Amount)
+                })
+                .OrderBy(x => x.ProductGroupName)
+                .ThenBy(x => x.ProductName)
+                .ToList();
+
+            var reportRows = new List<PrintableReportRow>();
+            foreach (var productGroup in summaryRows.GroupBy(x => x.ProductGroupName))
+            {
+                foreach (var row in productGroup)
+                {
+                    reportRows.Add(new PrintableReportRow
+                    {
+                        Cells = new List<PrintableReportCell>
+                        {
+                            new() { Value = row.ProductGroupName },
+                            new() { Value = row.ProductName },
+                            new() { Value = FormatQuantity(row.Quantity), Alignment = "right" },
+                            new() { Value = FormatAmount(row.Amount), Alignment = "right" }
+                        }
+                    });
+                }
+
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GroupTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = productGroup.Key, ColSpan = 2 },
+                        new() { Value = FormatQuantity(productGroup.Sum(x => x.Quantity)), Alignment = "right" },
+                        new() { Value = FormatAmount(productGroup.Sum(x => x.Amount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            if (summaryRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), ColSpan = 2, Alignment = "right" },
+                        new() { Value = FormatQuantity(summaryRows.Sum(x => x.Quantity)), Alignment = "right" },
+                        new() { Value = FormatAmount(summaryRows.Sum(x => x.Amount)), Alignment = "right" }
+                    }
+                });
+            }
+
+            return new PrintableReportViewModel
+            {
+                Title = L("SummaryProductReportTitle"),
+                Orientation = "portrait",
+                GeneratedAtDisplay = BuildGeneratedAtDisplay(),
+                EmptyMessage = L("NoRecordsFound"),
+                MetaItems = new List<PrintableReportMetaItem>
+                {
+                    new() { Label = L("DateRange"), Value = $"{FormatDate(context.StartDate)} - {FormatDate(context.EndDate)}" },
+                    new() { Label = L("ProductGroupWithColon"), Value = context.ProductGroupDisplay },
+                    new() { Label = L("ProductWithColon"), Value = context.ProductDisplay },
+                    new() { Label = L("CustomerWithColon"), Value = context.CustomerDisplay }
+                },
+                Columns = new List<PrintableReportColumn>
+                {
+                    new() { Title = L("ProductGroupColumn") },
+                    new() { Title = L("ProductColumn") },
                     new() { Title = L("Quantity"), Alignment = "right" },
                     new() { Title = L("Amount"), Alignment = "right" }
                 },

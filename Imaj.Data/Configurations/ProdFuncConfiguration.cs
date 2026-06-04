@@ -20,6 +20,16 @@ namespace Imaj.Data.Configurations
             builder.Property(e => e.Deleted).HasColumnType("decimal(8, 0)").IsRequired();
             builder.Property(e => e.SelectFlag).HasColumnType("bit").IsRequired();
             builder.Property(e => e.Stamp).HasColumnType("smallint").IsRequired();
+
+            builder.HasOne(d => d.Product)
+                .WithMany(p => p.ProdFuncs)
+                .HasForeignKey(d => d.ProductID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasOne(d => d.Function)
+                .WithMany(p => p.ProdFuncs)
+                .HasForeignKey(d => d.FunctionID)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

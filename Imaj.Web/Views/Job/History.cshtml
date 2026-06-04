@@ -1,7 +1,30 @@
+@using System.Net
 @model Imaj.Web.Models.JobHistoryViewModel
 
 @{
     ViewData["Title"] = Localizer["JobHistory"];
+
+    string BuildDetailUrl()
+    {
+        var ids = Model.SelectedIds ?? new List<string>();
+        var queryParts = new List<string>
+        {
+            $"id={WebUtility.UrlEncode(Model.Reference)}"
+        };
+
+        foreach (var selectedId in ids)
+        {
+            queryParts.Add($"selectedIds={WebUtility.UrlEncode(selectedId)}");
+        }
+
+        queryParts.Add($"currentIndex={Model.CurrentIndex}");
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            queryParts.Add($"returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}");
+        }
+
+        return $"/Job/Detail?{string.Join("&", queryParts)}";
+    }
 }
 
 <div class="job-page-shell page-shell--wide space-y-3">
@@ -12,7 +35,7 @@
             </h2>
         </div>
         <div class="mt-3 md:mt-0 job-page-actions">
-            <a href="/Job/Detail?id=@Model.JobId" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+            <a href="@BuildDetailUrl()" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                 @Localizer["Back"]
             </a>
         </div>
@@ -140,7 +163,7 @@
     </section>
 
     <div class="job-footer-bar job-footer-bar--center">
-        <a href="/Job/Detail?id=@Model.JobId" class="inline-flex items-center px-4 py-1 border border-blue-600 text-sm font-bold rounded shadow-sm text-white bg-blue-500 hover:bg-blue-700 focus:outline-none">@Localizer["Back"]</a>
+        <a href="@BuildDetailUrl()" class="inline-flex items-center px-4 py-1 border border-blue-600 text-sm font-bold rounded shadow-sm text-white bg-blue-500 hover:bg-blue-700 focus:outline-none">@Localizer["Back"]</a>
     </div>
 
     <div class="text-center text-xs text-white bg-blue-900 py-2 mt-4">

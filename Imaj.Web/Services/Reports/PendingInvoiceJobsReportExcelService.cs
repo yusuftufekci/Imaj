@@ -48,23 +48,31 @@ namespace Imaj.Web.Services.Reports
             }
             else
             {
-                foreach (var row in orderedRows)
+                foreach (var customerGroup in orderedRows.GroupBy(x => new { x.CustomerCode, x.CustomerName }))
                 {
-                    var customerDisplay = string.IsNullOrWhiteSpace(row.CustomerName) ? row.CustomerCode : row.CustomerName;
+                    var customerDisplay = string.IsNullOrWhiteSpace(customerGroup.Key.CustomerName)
+                        ? customerGroup.Key.CustomerCode
+                        : customerGroup.Key.CustomerName;
 
-                    ws.Cell(currentRow, 1).Value = customerDisplay;
-                    ws.Cell(currentRow, 2).Value = row.Reference;
-                    ws.Cell(currentRow, 3).Value = row.JobName;
-                    ws.Cell(currentRow, 4).Value = row.StartDate.Date;
-                    ws.Cell(currentRow, 5).Value = row.EndDate?.Date;
-                    ws.Cell(currentRow, 6).Value = row.Amount;
+                    foreach (var row in customerGroup)
+                    {
+                        ws.Cell(currentRow, 1).Value = customerDisplay;
+                        ws.Cell(currentRow, 2).Value = row.Reference;
+                        ws.Cell(currentRow, 3).Value = row.JobName;
+                        ws.Cell(currentRow, 4).Value = row.StartDate.Date;
+                        ws.Cell(currentRow, 5).Value = row.EndDate?.Date;
+                        ws.Cell(currentRow, 6).Value = row.Amount;
 
-                    ws.Cell(currentRow, 4).Style.DateFormat.Format = "dd/MM/yyyy";
-                    ws.Cell(currentRow, 5).Style.DateFormat.Format = "dd/MM/yyyy";
-                    ws.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0.00";
-                    ws.Cell(currentRow, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-                    ws.Range(currentRow, 1, currentRow, 6).Style.Border.BottomBorder = XLBorderStyleValues.Dashed;
+                        ws.Cell(currentRow, 4).Style.DateFormat.Format = "dd/MM/yyyy";
+                        ws.Cell(currentRow, 5).Style.DateFormat.Format = "dd/MM/yyyy";
+                        ws.Cell(currentRow, 6).Style.NumberFormat.Format = "#,##0.00";
+                        ws.Cell(currentRow, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                        ws.Range(currentRow, 1, currentRow, 6).Style.Border.BottomBorder = XLBorderStyleValues.Dashed;
 
+                        currentRow++;
+                    }
+
+                    WriteDetailedCustomerTotalRow(ws, currentRow, customerDisplay, customerGroup.Count(), customerGroup.Sum(x => x.Amount));
                     currentRow++;
                 }
 
@@ -149,6 +157,24 @@ namespace Imaj.Web.Services.Reports
             ws.Column(1).Width = 40;
             ws.Column(2).Width = 12;
             ws.Column(3).Width = 16;
+        }
+
+        private void WriteDetailedCustomerTotalRow(IXLWorksheet ws, int row, string customerDisplay, int count, decimal amount)
+        {
+            ws.Range(row, 1, row, 3).Merge();
+            ws.Cell(row, 1).Value = customerDisplay;
+            ws.Cell(row, 4).Value = $"{L("Count")} {count:N0}";
+            ws.Cell(row, 5).Value = L("Amount");
+            ws.Cell(row, 6).Value = amount;
+
+            ws.Range(row, 1, row, 6).Style.Font.Bold = true;
+            ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = XLColor.FromHtml("#F8FAFC");
+            ws.Range(row, 1, row, 6).Style.Border.TopBorder = XLBorderStyleValues.Dashed;
+            ws.Range(row, 1, row, 6).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+            ws.Cell(row, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(row, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(row, 6).Style.NumberFormat.Format = "#,##0.00";
+            ws.Cell(row, 6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
         }
 
         private void WriteHeader(IXLWorksheet ws, string title, PendingInvoiceJobsReportExcelContext context, int columnCount)

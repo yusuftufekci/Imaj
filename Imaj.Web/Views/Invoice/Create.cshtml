@@ -179,7 +179,9 @@
                                 <td>
                                     <textarea x-model="line.description"
                                               :name="'Lines[' + index + '].Description'"
-                                              rows="2"
+                                              rows="1"
+                                              x-init="autosizeNoteField($el)"
+                                              @@input="autosizeNoteField($event.target)"
                                               class="dense-input invoice-create-line-notes"></textarea>
                                     <input type="hidden" :name="'Lines[' + index + '].Amount'" :value="formatDecimalForPost(lineAmount(line))">
                                     <input type="hidden" :name="'Lines[' + index + '].TaxTypeId'" :value="line.taxTypeId || ''">
@@ -326,6 +328,7 @@
                     taxTypeId: parseFloat(line.taxTypeId) || null,
                     vatRate: parseFloat(line.vatRate) || this.defaultVatRate
                 }));
+                this.$nextTick(() => this.autosizeNoteFields());
             },
 
             handleCustomerSelection(detail) {
@@ -350,6 +353,22 @@
                     vatRate: this.defaultVatRate
                 });
                 this.clearCalculatedTaxes();
+                this.$nextTick(() => this.autosizeNoteFields());
+            },
+
+            autosizeNoteField(element) {
+                if (!element) {
+                    return;
+                }
+
+                element.style.height = 'auto';
+                element.style.height = element.scrollHeight + 'px';
+            },
+
+            autosizeNoteFields() {
+                this.$root
+                    ?.querySelectorAll('.invoice-create-line-notes')
+                    .forEach((element) => this.autosizeNoteField(element));
             },
 
             removeSelectedLines() {

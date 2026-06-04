@@ -411,21 +411,22 @@
                                                :disabled="!isEditing"
                                                class="dense-input invoice-create-sequence-input" />
                                     </td>
-                                    <td class="px-4 py-2 text-gray-900">
-                                        <span x-show="!isEditing">@line.Notes</span>
+                                    <td class="px-4 py-2 text-gray-900 align-top">
+                                        <span x-show="!isEditing" class="whitespace-pre-wrap">@line.Notes</span>
                                         <input type="hidden"
                                                name="Lines[@i].Id"
                                                value="@line.Id.ToString(CultureInfo.InvariantCulture)"
                                                form="invoiceDetailEditForm"
                                                :disabled="!isEditing" />
-                                        <input x-show="isEditing"
-                                               x-cloak
-                                               type="text"
-                                               name="Lines[@i].Notes"
-                                               value="@editLineNotes"
-                                               form="invoiceDetailEditForm"
-                                               :disabled="!isEditing"
-                                               class="dense-input invoice-line-note-input" />
+                                        <textarea x-show="isEditing"
+                                                  x-cloak
+                                                  name="Lines[@i].Notes"
+                                                  rows="1"
+                                                  form="invoiceDetailEditForm"
+                                                  :disabled="!isEditing"
+                                                  x-init="autosizeNoteField($el)"
+                                                  @@input="autosizeNoteField($event.target)"
+                                                  class="dense-input invoice-line-note-input">@editLineNotes</textarea>
                                     </td>
                                     <td class="px-4 py-2 text-right text-gray-900">
                                         @if (line.FreeFormat)
@@ -701,12 +702,14 @@
                                                form="invoiceDetailEditForm"
                                                class="dense-input invoice-create-sequence-input" />
                                     </td>
-                                    <td class="px-4 py-2 text-gray-900">
-                                        <input type="text"
-                                               x-model="line.description"
-                                               :name="'NewFreeLines[' + index + '].Description'"
-                                               form="invoiceDetailEditForm"
-                                               class="dense-input invoice-line-note-input" />
+                                    <td class="px-4 py-2 text-gray-900 align-top">
+                                        <textarea x-model="line.description"
+                                                  :name="'NewFreeLines[' + index + '].Description'"
+                                                  rows="1"
+                                                  form="invoiceDetailEditForm"
+                                                  x-init="autosizeNoteField($el)"
+                                                  @@input="autosizeNoteField($event.target)"
+                                                  class="dense-input invoice-line-note-input"></textarea>
                                     </td>
                                     <td class="px-4 py-2 text-right text-gray-900">
                                         <input type="text"
@@ -1152,6 +1155,7 @@
                             this.updateLineTotals();
                             this.updateCategoryTotals();
                             this.updateTaxTotals();
+                            this.autosizeNoteFields();
                         });
                     }
                 },
@@ -1161,6 +1165,7 @@
                         this.updateLineTotals();
                         this.updateCategoryTotals();
                         this.updateTaxTotals();
+                        this.autosizeNoteFields();
                     });
                 },
                 cancelEdit() {
@@ -1196,7 +1201,25 @@
                         taxTypeLabel: this.taxTypeLabel(resolvedTaxType),
                         vatRate: resolvedTaxType.rate || this.defaultVatRate
                     });
-                    this.$nextTick(() => this.updateLineTotals());
+                    this.$nextTick(() => {
+                        this.updateLineTotals();
+                        this.autosizeNoteFields();
+                    });
+                },
+
+                autosizeNoteField(element) {
+                    if (!element) {
+                        return;
+                    }
+
+                    element.style.height = 'auto';
+                    element.style.height = element.scrollHeight + 'px';
+                },
+
+                autosizeNoteFields() {
+                    this.$root
+                        ?.querySelectorAll('.invoice-line-note-input')
+                        .forEach((element) => this.autosizeNoteField(element));
                 },
                 removeFreeLine(index) {
                     this.newFreeLines.splice(index, 1);

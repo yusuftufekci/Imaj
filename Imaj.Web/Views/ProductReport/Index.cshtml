@@ -73,6 +73,12 @@
                         <button type="button" @@click="openDetailedReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
                             @Localizer["DetailedProductReportTitle"] - PDF
                         </button>
+                        <button type="button" @@click="downloadSummaryReport()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                            @Localizer["SummaryProductReportTitle"] - Excel
+                        </button>
+                        <button type="button" @@click="openSummaryReportPage()" :disabled="isReportLoading" :class="{ 'opacity-50 cursor-not-allowed': isReportLoading }" class="inline-flex items-center px-4 py-1 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-900 bg-slate-100 hover:bg-slate-200 focus:outline-none">
+                            @Localizer["SummaryProductReportTitle"] - PDF
+                        </button>
                     }
                     else
                     {
@@ -292,6 +298,74 @@
                 }
             },
 
+            async downloadSummaryReport() {
+                const params = this.buildReportParams();
+                if (!params) {
+                    return;
+                }
+
+                if (this.isReportLoading) {
+                    return;
+                }
+
+                this.isReportLoading = true;
+                this.showLoading();
+                let loadingClosed = false;
+
+                try {
+                    const response = await fetch(`/ProductReport/DownloadSummaryExcel?${params.toString()}`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const rawMessage = await response.text();
+                        const fallback = this.messages.reportDataUnavailable;
+                        this.hideLoading();
+                        loadingClosed = true;
+                        this.showError(this.normalizeErrorMessage(rawMessage, fallback));
+                        return;
+                    }
+
+                    const blob = await response.blob();
+                    const contentDisposition = response.headers.get('content-disposition') || '';
+                    const fileNameUtfMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+                    const fileNameMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+
+                    let fileName = 'report.xlsx';
+                    if (fileNameUtfMatch && fileNameUtfMatch[1]) {
+                        fileName = decodeURIComponent(fileNameUtfMatch[1]);
+                    } else if (fileNameMatch && fileNameMatch[1]) {
+                        fileName = fileNameMatch[1];
+                    }
+
+                    const objectUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = objectUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(objectUrl);
+                } catch (error) {
+                    const fallback = (window.imajTexts && window.imajTexts.connectionError)
+                        || (window.imajTexts && window.imajTexts.genericError)
+                        || this.messages.reportDataUnavailable;
+
+                    this.hideLoading();
+                    loadingClosed = true;
+                    this.showError(fallback);
+                } finally {
+                    if (!loadingClosed) {
+                        this.hideLoading();
+                    }
+
+                    this.isReportLoading = false;
+                }
+            },
+
             openDetailedReportPage() {
                 const params = this.buildReportParams();
                 if (!params) {
@@ -299,6 +373,15 @@
                 }
 
                 window.open(`/ProductReport/ViewDetailedReport?${params.toString()}`, '_blank', 'noopener');
+            },
+
+            openSummaryReportPage() {
+                const params = this.buildReportParams();
+                if (!params) {
+                    return;
+                }
+
+                window.open(`/ProductReport/ViewSummaryReport?${params.toString()}`, '_blank', 'noopener');
             }
         }
     }

@@ -531,8 +531,14 @@
   <data name="DetailedProductSheet" xml:space="preserve">
     <value>Detaylı Ürün</value>
   </data>
+  <data name="SummaryProductSheet" xml:space="preserve">
+    <value>Özet Ürün</value>
+  </data>
   <data name="DetailedProductReportTitle" xml:space="preserve">
     <value>Detaylı Ürün Raporu</value>
+  </data>
+  <data name="SummaryProductReportTitle" xml:space="preserve">
+    <value>Özet Ürün Raporu</value>
   </data>
   <data name="DetailedOvertimeFilePrefix" xml:space="preserve">
     <value>detayli-mesai-raporu</value>
@@ -545,6 +551,9 @@
   </data>
   <data name="DetailedProductFilePrefix" xml:space="preserve">
     <value>detayli-urun-raporu</value>
+  </data>
+  <data name="SummaryProductFilePrefix" xml:space="preserve">
+    <value>ozet-urun-raporu</value>
   </data>
   <data name="DetailedInvoiceReportFilePrefix" xml:space="preserve">
     <value>detayli-fatura-raporu</value>

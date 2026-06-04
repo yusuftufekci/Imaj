@@ -25,6 +25,25 @@
         return url;
     }
 
+    string BuildHistoryUrl()
+    {
+        var ids = Model.SelectedIds ?? new List<string>();
+        var queryParts = new List<string>();
+
+        foreach (var selectedId in ids)
+        {
+            queryParts.Add($"selectedIds={WebUtility.UrlEncode(selectedId)}");
+        }
+
+        queryParts.Add($"currentIndex={Model.CurrentIndex}");
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            queryParts.Add($"returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}");
+        }
+
+        return $"/JobEntry/GetHistory/{WebUtility.UrlEncode(Model.Code)}?{string.Join("&", queryParts)}";
+    }
+
     var selectedIds = Model.SelectedIds ?? new List<string>();
     var parsedReference = int.TryParse(Model.Code, out var reference);
     var stateId = Model.StateId;
@@ -154,7 +173,7 @@
                     {
                         <tr>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                <input type="checkbox" disabled @(ot.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                <input type="checkbox" disabled class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeCode</td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeName</td>
@@ -200,7 +219,7 @@
                     {
                         <tr>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                <input type="checkbox" disabled @(prod.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                <input type="checkbox" disabled class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Code</td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Name</td>
@@ -319,7 +338,7 @@
                             <button type="submit" class="inline-flex items-center px-4 py-1 border border-red-400 text-sm font-bold rounded shadow-sm text-red-900 bg-red-100 hover:bg-red-200">@Localizer["WorkflowDiscard"]</button>
                         </form>
                     }
-                    <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                    <a href="@BuildHistoryUrl()" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                         @Localizer["ViewHistory"]
                     </a>
                 </div>
@@ -330,7 +349,7 @@
                     <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
                 </div>
                 <div class="flex flex-wrap justify-center gap-2 w-full">
-                    <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                    <a href="@BuildHistoryUrl()" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                         @Localizer["ViewHistory"]
                     </a>
                 </div>
@@ -338,7 +357,7 @@
             else
             {
                 <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
-                <a href="/JobEntry/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                <a href="@BuildHistoryUrl()" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                     @Localizer["ViewHistory"]
                 </a>
             }

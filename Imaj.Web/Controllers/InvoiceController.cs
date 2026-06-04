@@ -599,6 +599,10 @@ namespace Imaj.Web.Controllers
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct()
                 .ToList() ?? new List<string>();
+            model.JobReferences = model.JobReferences?
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList() ?? new List<int>();
 
             var referenceText = model.Reference.ToString(CultureInfo.InvariantCulture);
             if (!model.SelectedReferences.Contains(referenceText))

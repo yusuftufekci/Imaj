@@ -36,6 +36,10 @@ namespace Imaj.Web.Models
         public string AdminNotes { get; set; } = string.Empty;
         public string CustomerNotes { get; set; } = string.Empty;
 
+        public List<string> SelectedIds { get; set; } = new List<string>();
+        public int CurrentIndex { get; set; }
+        public string ReturnUrl { get; set; } = string.Empty;
+
         public List<JobHistoryItem> Items { get; set; } = new List<JobHistoryItem>();
     }
 }

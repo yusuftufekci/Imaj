@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Imaj.Core.Entities
 {
     public class Product : BaseEntity
@@ -15,5 +17,6 @@ namespace Imaj.Core.Entities
         public virtual Company? Company { get; set; }
         public virtual ProdCat? ProdCat { get; set; }
         public virtual ProdGrp? ProdGrp { get; set; }
+        public virtual ICollection<ProdFunc> ProdFuncs { get; set; } = new List<ProdFunc>();
     }
 }

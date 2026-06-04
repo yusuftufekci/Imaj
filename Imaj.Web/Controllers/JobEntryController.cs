@@ -52,7 +52,7 @@ namespace Imaj.Web.Controllers
         /// </summary>
         [HttpGet]
         [RequireMethodPermission(ViewJobEntryMethodId)]
-        public async Task<IActionResult> GetHistory(int id)
+        public async Task<IActionResult> GetHistory(int id, string[]? selectedIds = null, int currentIndex = 0, string? returnUrl = null)
         {
             // If id is Reference:
             var reference = id; 
@@ -70,11 +70,25 @@ namespace Imaj.Web.Controllers
             var historyItems = historyResult.IsSuccess && historyResult.Data != null
                 ? historyResult.Data
                 : new List<JobLogDto>();
+            var normalizedSelectedIds = selectedIds?.ToList() ?? new List<string>();
+            var referenceText = job.Reference.ToString();
+            if (normalizedSelectedIds.Count == 0)
+            {
+                normalizedSelectedIds.Add(referenceText);
+                currentIndex = 0;
+            }
+            else
+            {
+                currentIndex = Math.Clamp(currentIndex, 0, normalizedSelectedIds.Count - 1);
+            }
+            var normalizedReturnUrl = string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith('/')
+                ? "/JobEntry/List"
+                : returnUrl;
 
             var model = new JobHistoryViewModel
             {
                 JobId = job.Id, // PK
-                Reference = job.Reference.ToString(),
+                Reference = referenceText,
                 Function = job.FunctionName ?? string.Empty,
                 CustomerName = job.CustomerName ?? string.Empty,
                 RelatedPerson = job.Contact ?? string.Empty, // "İlgili"
@@ -87,6 +101,9 @@ namespace Imaj.Web.Controllers
                 InvoiceStatus = job.InvoLineId.HasValue ? L("Billed") : "-",
                 AdminNotes = job.IntNotes ?? string.Empty,
                 CustomerNotes = job.ExtNotes ?? string.Empty,
+                SelectedIds = normalizedSelectedIds,
+                CurrentIndex = currentIndex,
+                ReturnUrl = normalizedReturnUrl,
                 
                 Items = historyItems.Select(x => new JobHistoryItem
                 {

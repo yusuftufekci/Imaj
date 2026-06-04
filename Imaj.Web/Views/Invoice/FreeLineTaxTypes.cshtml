@@ -28,8 +28,8 @@
             <input type="hidden" name="DetailUpdate.InvoiceCustomerName" value="@detailUpdate.InvoiceCustomerName" />
             <input type="hidden" name="DetailUpdate.Name" value="@detailUpdate.Name" />
             <input type="hidden" name="DetailUpdate.RelatedPerson" value="@detailUpdate.RelatedPerson" />
-            <input type="hidden" name="DetailUpdate.Notes" value="@detailUpdate.Notes" />
-            <input type="hidden" name="DetailUpdate.FooterNote" value="@detailUpdate.FooterNote" />
+            <textarea hidden name="DetailUpdate.Notes">@detailUpdate.Notes</textarea>
+            <textarea hidden name="DetailUpdate.FooterNote">@detailUpdate.FooterNote</textarea>
 
             @for (var i = 0; i < detailUpdate.SelectedReferences.Count; i++)
             {
@@ -40,7 +40,7 @@
             {
                 <input type="hidden" name="DetailUpdate.Lines[@i].Id" value="@detailUpdate.Lines[i].Id.ToString(CultureInfo.InvariantCulture)" />
                 <input type="hidden" name="DetailUpdate.Lines[@i].Sequence" value="@detailUpdate.Lines[i].Sequence.ToString(CultureInfo.InvariantCulture)" />
-                <input type="hidden" name="DetailUpdate.Lines[@i].Notes" value="@detailUpdate.Lines[i].Notes" />
+                <textarea hidden name="DetailUpdate.Lines[@i].Notes">@detailUpdate.Lines[i].Notes</textarea>
                 <input type="hidden" name="DetailUpdate.Lines[@i].Quantity" value="@detailUpdate.Lines[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
                 <input type="hidden" name="DetailUpdate.Lines[@i].Price" value="@detailUpdate.Lines[i].Price.ToString(CultureInfo.InvariantCulture)" />
                 <input type="hidden" name="DetailUpdate.Lines[@i].Amount" value="@detailUpdate.Lines[i].Amount.ToString(CultureInfo.InvariantCulture)" />
@@ -50,7 +50,7 @@
             @for (var i = 0; i < detailUpdate.NewFreeLines.Count; i++)
             {
                 <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Sequence" value="@detailUpdate.NewFreeLines[i].Sequence.ToString(CultureInfo.InvariantCulture)" />
-                <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Description" value="@detailUpdate.NewFreeLines[i].Description" />
+                <textarea hidden name="DetailUpdate.NewFreeLines[@i].Description">@detailUpdate.NewFreeLines[i].Description</textarea>
                 <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Quantity" value="@detailUpdate.NewFreeLines[i].Quantity.ToString(CultureInfo.InvariantCulture)" />
                 <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Price" value="@detailUpdate.NewFreeLines[i].Price.ToString(CultureInfo.InvariantCulture)" />
                 <input type="hidden" name="DetailUpdate.NewFreeLines[@i].Amount" value="@detailUpdate.NewFreeLines[i].Amount.ToString(CultureInfo.InvariantCulture)" />
@@ -83,12 +83,12 @@
             <input type="hidden" name="Invoice.IssueDate" value="@invoice.IssueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
             <input type="hidden" name="Invoice.Status" value="@invoice.Status" />
             <input type="hidden" name="Invoice.IsEvaluated" value="@(invoice.IsEvaluated ? "true" : "false")" />
-            <input type="hidden" name="Invoice.Notes" value="@invoice.Notes" />
-            <input type="hidden" name="Invoice.Footnote" value="@invoice.Footnote" />
+            <textarea hidden name="Invoice.Notes">@invoice.Notes</textarea>
+            <textarea hidden name="Invoice.Footnote">@invoice.Footnote</textarea>
 
             @for (var i = 0; i < invoice.Lines.Count; i++)
             {
-                <input type="hidden" name="Invoice.Lines[@i].Description" value="@invoice.Lines[i].Description" />
+                <textarea hidden name="Invoice.Lines[@i].Description">@invoice.Lines[i].Description</textarea>
                 <input type="hidden" name="Invoice.Lines[@i].Amount" value="@invoice.Lines[i].Amount.ToString(CultureInfo.InvariantCulture)" />
                 <input type="hidden" name="Invoice.Lines[@i].TaxTypeId" value="@(invoice.Lines[i].TaxTypeId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
                 <input type="hidden" name="Invoice.Lines[@i].VatRate" value="@invoice.Lines[i].VatRate.ToString(CultureInfo.InvariantCulture)" />

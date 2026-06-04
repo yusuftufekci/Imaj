@@ -29,6 +29,25 @@
         return url;
     }
 
+    string BuildHistoryUrl()
+    {
+        var ids = Model.SelectedIds ?? new List<string>();
+        var queryParts = new List<string>();
+
+        foreach (var selectedId in ids)
+        {
+            queryParts.Add($"selectedIds={WebUtility.UrlEncode(selectedId)}");
+        }
+
+        queryParts.Add($"currentIndex={Model.CurrentIndex}");
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            queryParts.Add($"returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}");
+        }
+
+        return $"/Job/GetHistory/{WebUtility.UrlEncode(Model.Code)}?{string.Join("&", queryParts)}";
+    }
+
     string NormalizeCategoryLabel(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -339,7 +358,7 @@
                                 <input type="hidden" name="Overtimes[@i].Id" value="@ot.Id" form="jobDetailEditForm" :disabled="!isEditing">
                                 <input type="hidden" name="Overtimes[@i].EmployeeId" value="@ot.EmployeeId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
                                 <input type="hidden" name="Overtimes[@i].IsSelected" value="false" form="jobDetailEditForm" :disabled="!isEditing">
-                                <input type="checkbox" name="Overtimes[@i].IsSelected" value="true" form="jobDetailEditForm" :disabled="!isEditing" @(ot.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                <input type="checkbox" name="Overtimes[@i].IsSelected" value="true" form="jobDetailEditForm" :disabled="!isEditing" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeCode</td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@ot.EmployeeName</td>
@@ -434,7 +453,7 @@
                                 <input type="hidden" name="Products[@i].ProductId" value="@prod.ProductId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
                                 <input type="hidden" name="Products[@i].CategoryId" value="@prod.CategoryId.ToString(CultureInfo.InvariantCulture)" form="jobDetailEditForm" :disabled="!isEditing">
                                 <input type="hidden" name="Products[@i].IsSelected" value="false" form="jobDetailEditForm" :disabled="!isEditing">
-                                <input type="checkbox" name="Products[@i].IsSelected" value="true" form="jobDetailEditForm" :disabled="!isEditing" @(prod.IsSelected ? "checked" : "") class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                <input type="checkbox" name="Products[@i].IsSelected" value="true" form="jobDetailEditForm" :disabled="!isEditing" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Code</td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Name</td>
@@ -835,7 +854,7 @@
                          @Localizer["PrintJobForm"]
                      </a>
                  }
-                 <a href="/Job/GetHistory/@Model.Code" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
+                 <a href="@BuildHistoryUrl()" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">
                     @Localizer["ViewHistory"]
                 </a>
              </div>

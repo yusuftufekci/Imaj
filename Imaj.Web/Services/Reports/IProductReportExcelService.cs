@@ -5,6 +5,7 @@ namespace Imaj.Web.Services.Reports
     public interface IProductReportExcelService
     {
         byte[] BuildDetailedReport(List<ProductReportRowDto> rows, ProductReportExcelContext context);
+        byte[] BuildSummaryReport(List<ProductReportRowDto> rows, ProductReportExcelContext context);
     }
 
     public class ProductReportExcelContext

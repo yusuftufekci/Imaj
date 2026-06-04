@@ -51,6 +51,7 @@
         "PageSize=" + Model.PageSize.ToString(CultureInfo.InvariantCulture)
     };
     criteriaParts.AddRange(Model.SelectedReferences.Select(x => "SelectedReferences=" + WebUtility.UrlEncode(x)));
+    criteriaParts.AddRange(Model.JobReferences.Select(x => "JobReferences=" + x.ToString(CultureInfo.InvariantCulture)));
     var criteriaUrl = "/Invoice/JobPicker?" + string.Join("&", criteriaParts);
     var totalCount = Model.TotalCount > 0 ? Model.TotalCount : Model.Items.Count;
     var totalPages = Model.PageSize > 0
@@ -70,6 +71,12 @@
     var nextPageUrl = Model.Page < totalPages
         ? $"/Invoice/JobPicker?{paginationQuery}&page={Model.Page + 1}&pageSize={Model.PageSize}"
         : string.Empty;
+    var currentPageReferences = Model.Items.Select(x => x.Reference).ToHashSet();
+    var persistedJobReferences = Model.JobReferences
+        .Where(x => !currentPageReferences.Contains(x))
+        .Distinct()
+        .ToList();
+    var selectedJobReferencesJson = JsonSerializer.Serialize(Model.JobReferences.Distinct().ToList());
 }
 
 <div x-data="invoiceJobPicker()"
@@ -97,6 +104,10 @@
             @foreach (var selectedReference in Model.SelectedReferences)
             {
                 <input type="hidden" name="SelectedReferences" value="@selectedReference" />
+            }
+            @foreach (var jobReference in Model.JobReferences)
+            {
+                <input type="hidden" name="JobReferences" value="@jobReference" />
             }
 
             <div class="invoice-job-picker__criteria-grid">
@@ -284,6 +295,10 @@
             {
                 <input type="hidden" name="SelectedReferences" value="@selectedReference" />
             }
+            @foreach (var jobReference in persistedJobReferences)
+            {
+                <input type="hidden" name="JobReferences" value="@jobReference" data-job-picker-persisted-reference />
+            }
 
             <section class="invoice-table-card">
                 <div class="invoice-table-card__header">
@@ -317,6 +332,7 @@
                                         <input type="checkbox"
                                                name="JobReferences"
                                                value="@item.Reference"
+                                               @(Model.JobReferences.Contains(item.Reference) ? "checked" : "")
                                                data-job-picker-row-checkbox />
                                     </td>
                                     <td>@(string.IsNullOrWhiteSpace(item.Function) ? "-" : item.Function)</td>
@@ -347,6 +363,7 @@
                         @if (!string.IsNullOrWhiteSpace(previousPageUrl))
                         {
                             <a href="@previousPageUrl"
+                               data-job-picker-page-link
                                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                                title="Önceki">
                                 <span class="sr-only">Önceki</span>
@@ -367,6 +384,7 @@
                         @if (!string.IsNullOrWhiteSpace(nextPageUrl))
                         {
                             <a href="@nextPageUrl"
+                               data-job-picker-page-link
                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                                title="Sonraki">
                                 <span class="sr-only">Sonraki</span>
@@ -423,6 +441,7 @@
 <script>
     function invoiceJobPicker() {
         return {
+            selectedJobReferences: @Html.Raw(selectedJobReferencesJson),
             filter: {
                 jobCustomerCode: @Html.Raw(JsonValue(Model.JobCustomerCode)),
                 jobCustomerName: @Html.Raw(JsonValue(Model.JobCustomerName)),
@@ -473,6 +492,97 @@
         };
     }
 
+    function getCurrentPageJobReferences() {
+        return Array.from(document.querySelectorAll('[data-job-picker-row-checkbox]'))
+            .map(function (checkbox) {
+                return checkbox.value;
+            });
+    }
+
+    function collectSelectedJobReferences() {
+        const currentPageReferences = new Set(getCurrentPageJobReferences());
+        const selected = new Set();
+
+        document
+            .querySelectorAll('input[name="JobReferences"]')
+            .forEach(function (input) {
+                if (!input.value || currentPageReferences.has(input.value)) {
+                    return;
+                }
+                selected.add(input.value);
+            });
+
+        document
+            .querySelectorAll('[data-job-picker-row-checkbox]:checked')
+            .forEach(function (checkbox) {
+                selected.add(checkbox.value);
+            });
+
+        return Array.from(selected);
+    }
+
+    function appendSelectedJobsToUrl(url) {
+        const target = new URL(url, window.location.origin);
+        target.searchParams.delete('JobReferences');
+        collectSelectedJobReferences().forEach(function (reference) {
+            target.searchParams.append('JobReferences', reference);
+        });
+        return target.pathname + target.search + target.hash;
+    }
+
+    function refreshHeaderCheckbox() {
+        const rowCheckboxes = Array.from(document.querySelectorAll('[data-job-picker-row-checkbox]'));
+        const checkedCount = rowCheckboxes.filter(function (checkbox) {
+            return checkbox.checked;
+        }).length;
+        const headerCheckbox = document.querySelector('[data-job-picker-select-all]');
+
+        if (!headerCheckbox) {
+            return;
+        }
+
+        headerCheckbox.checked = rowCheckboxes.length > 0 && checkedCount === rowCheckboxes.length;
+        headerCheckbox.indeterminate = checkedCount > 0 && checkedCount < rowCheckboxes.length;
+    }
+
+    document.addEventListener('DOMContentLoaded', refreshHeaderCheckbox);
+
+    document.addEventListener('click', function (event) {
+        const pageLink = event.target.closest('[data-job-picker-page-link]');
+        if (!pageLink) {
+            return;
+        }
+
+        event.preventDefault();
+        window.location.href = appendSelectedJobsToUrl(pageLink.href);
+    });
+
+    document.addEventListener('submit', function (event) {
+        const form = event.target.closest('form[action="/Invoice/AddJobsToInvoice"], form[action="/Invoice/AddJobsToInvoiceLine"]');
+        if (!form) {
+            return;
+        }
+
+        const selectedReferences = collectSelectedJobReferences();
+        const currentPageReferences = new Set(getCurrentPageJobReferences());
+        form.querySelectorAll('[data-job-picker-persisted-reference]').forEach(function (input) {
+            input.remove();
+        });
+
+        selectedReferences.forEach(function (reference) {
+            if (currentPageReferences.has(reference)) {
+                return;
+            }
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'JobReferences';
+            input.value = reference;
+            input.dataset.jobPickerPersistedReference = 'true';
+            form.appendChild(input);
+        });
+    });
+
     document.addEventListener('change', function (event) {
         const selectAll = event.target.closest('[data-job-picker-select-all]');
         if (selectAll) {
@@ -488,18 +598,6 @@
         if (!event.target.closest('[data-job-picker-row-checkbox]')) {
             return;
         }
-
-        const rowCheckboxes = Array.from(document.querySelectorAll('[data-job-picker-row-checkbox]'));
-        const checkedCount = rowCheckboxes.filter(function (checkbox) {
-            return checkbox.checked;
-        }).length;
-        const headerCheckbox = document.querySelector('[data-job-picker-select-all]');
-
-        if (!headerCheckbox) {
-            return;
-        }
-
-        headerCheckbox.checked = rowCheckboxes.length > 0 && checkedCount === rowCheckboxes.length;
-        headerCheckbox.indeterminate = checkedCount > 0 && checkedCount < rowCheckboxes.length;
+        refreshHeaderCheckbox();
     });
 </script>

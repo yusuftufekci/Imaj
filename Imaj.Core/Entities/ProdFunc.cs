@@ -7,5 +7,8 @@ namespace Imaj.Core.Entities
         public decimal Deleted { get; set; }
         public bool SelectFlag { get; set; }
         public short Stamp { get; set; }
+
+        public virtual Product? Product { get; set; }
+        public virtual Function? Function { get; set; }
     }
 }

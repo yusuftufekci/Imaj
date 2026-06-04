@@ -531,8 +531,14 @@
   <data name="DetailedProductSheet" xml:space="preserve">
     <value>Detailed Product</value>
   </data>
+  <data name="SummaryProductSheet" xml:space="preserve">
+    <value>Summary Product</value>
+  </data>
   <data name="DetailedProductReportTitle" xml:space="preserve">
     <value>Detailed Product Report</value>
+  </data>
+  <data name="SummaryProductReportTitle" xml:space="preserve">
+    <value>Summary Product Report</value>
   </data>
   <data name="DetailedOvertimeFilePrefix" xml:space="preserve">
     <value>detailed-overtime-report</value>
@@ -545,6 +551,9 @@
   </data>
   <data name="DetailedProductFilePrefix" xml:space="preserve">
     <value>detailed-product-report</value>
+  </data>
+  <data name="SummaryProductFilePrefix" xml:space="preserve">
+    <value>summary-product-report</value>
   </data>
   <data name="DetailedInvoiceReportFilePrefix" xml:space="preserve">
     <value>detailed-invoice-report</value>

@@ -20,5 +20,6 @@ namespace Imaj.Core.Entities
         public virtual Company? Company { get; set; }
         public virtual Interval? Interval { get; set; }
         public virtual ICollection<EmpFunc> EmpFuncs { get; set; } = new List<EmpFunc>();
+        public virtual ICollection<ProdFunc> ProdFuncs { get; set; } = new List<ProdFunc>();
     }
 }

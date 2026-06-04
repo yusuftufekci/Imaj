@@ -78,7 +78,7 @@ namespace Imaj.Web.Controllers
         /// İş geçmişini tam sayfa olarak görüntüler.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetHistory(int id)
+        public async Task<IActionResult> GetHistory(int id, string[]? selectedIds = null, int currentIndex = 0, string? returnUrl = null)
         {
             // If id is Reference:
             var reference = id; 
@@ -96,11 +96,22 @@ namespace Imaj.Web.Controllers
             var historyItems = historyResult.IsSuccess
                 ? historyResult.Data ?? new List<JobLogDto>()
                 : new List<JobLogDto>();
+            var normalizedSelectedIds = selectedIds?.ToList() ?? new List<string>();
+            var referenceText = job.Reference.ToString(CultureInfo.InvariantCulture);
+            if (normalizedSelectedIds.Count == 0)
+            {
+                normalizedSelectedIds.Add(referenceText);
+                currentIndex = 0;
+            }
+            else
+            {
+                currentIndex = Math.Clamp(currentIndex, 0, normalizedSelectedIds.Count - 1);
+            }
 
             var model = new JobHistoryViewModel
             {
                 JobId = job.Id, // PK
-                Reference = job.Reference.ToString(),
+                Reference = referenceText,
                 Function = job.FunctionName ?? string.Empty,
                 CustomerName = job.CustomerName ?? string.Empty,
                 RelatedPerson = job.Contact ?? string.Empty, // "İlgili"
@@ -113,6 +124,9 @@ namespace Imaj.Web.Controllers
                 InvoiceStatus = BuildInvoiceDisplay(job),
                 AdminNotes = job.IntNotes ?? string.Empty,
                 CustomerNotes = job.ExtNotes ?? string.Empty,
+                SelectedIds = normalizedSelectedIds,
+                CurrentIndex = currentIndex,
+                ReturnUrl = NormalizeListReturnUrl(returnUrl),
                 
                 Items = historyItems.Select(x => new JobHistoryItem
                 {
@@ -1443,20 +1457,38 @@ namespace Imaj.Web.Controllers
                 .ThenBy(x => x.Reference)
                 .ToList();
 
-            var reportRows = orderedRows
-                .Select(row => new PrintableReportRow
+            var reportRows = new List<PrintableReportRow>();
+            foreach (var customerGroup in orderedRows.GroupBy(x => new { x.CustomerCode, x.CustomerName }))
+            {
+                var customerDisplay = ResolveCustomerDisplay(customerGroup.Key.CustomerName, customerGroup.Key.CustomerCode);
+                foreach (var row in customerGroup)
                 {
+                    reportRows.Add(new PrintableReportRow
+                    {
+                        Cells = new List<PrintableReportCell>
+                        {
+                            new() { Value = customerDisplay },
+                            new() { Value = row.Reference.ToString(CultureInfo.CurrentCulture), Alignment = "right" },
+                            new() { Value = row.JobName },
+                            new() { Value = FormatDate(row.StartDate), Alignment = "center" },
+                            new() { Value = row.EndDate.HasValue ? FormatDate(row.EndDate.Value) : "-", Alignment = "center" },
+                            new() { Value = FormatAmount(row.Amount), Alignment = "right" }
+                        }
+                    });
+                }
+
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GroupTotal,
                     Cells = new List<PrintableReportCell>
                     {
-                        new() { Value = ResolveCustomerDisplay(row.CustomerName, row.CustomerCode) },
-                        new() { Value = row.Reference.ToString(CultureInfo.CurrentCulture), Alignment = "right" },
-                        new() { Value = row.JobName },
-                        new() { Value = FormatDate(row.StartDate), Alignment = "center" },
-                        new() { Value = row.EndDate.HasValue ? FormatDate(row.EndDate.Value) : "-", Alignment = "center" },
-                        new() { Value = FormatAmount(row.Amount), Alignment = "right" }
+                        new() { Value = customerDisplay, ColSpan = 3 },
+                        new() { Value = $"{L("Count")} {customerGroup.Count().ToString("N0", CultureInfo.CurrentCulture)}", Alignment = "right" },
+                        new() { Value = L("Amount"), Alignment = "right" },
+                        new() { Value = FormatAmount(customerGroup.Sum(x => x.Amount)), Alignment = "right" }
                     }
-                })
-                .ToList();
+                });
+            }
 
             return new PrintableReportViewModel
             {

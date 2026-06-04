@@ -3052,8 +3052,13 @@ span.flatpickr-weekday {
     min-height: 4rem;
 }
 
-.invoice-line-note-input {
+.invoice-page-shell textarea.invoice-line-note-input {
     min-width: 18rem;
+    width: min(100%, 46rem);
+    min-height: 1.45rem;
+    overflow: hidden;
+    resize: none;
+    white-space: pre-wrap;
 }
 
 .invoice-detail-money-input {
@@ -3536,7 +3541,7 @@ span.flatpickr-weekday {
 .invoice-legacy-detail .invoice-detail-list {
     width: min(28.5rem, 100%);
     margin-inline: auto;
-    gap: 0.36rem;
+    gap: 0.6rem;
 }
 
 .invoice-legacy-detail .invoice-detail-item {
@@ -3550,7 +3555,7 @@ span.flatpickr-weekday {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 0.8125rem;
     font-weight: 700;
-    line-height: 1.15;
+    line-height: 1.25;
     text-align: right;
 }
 
@@ -3558,7 +3563,7 @@ span.flatpickr-weekday {
     color: #000000;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 0.8125rem;
-    line-height: 1.2;
+    line-height: 1.3;
 }
 
 .invoice-legacy-detail .invoice-table-wrap {
@@ -3738,10 +3743,12 @@ span.flatpickr-weekday {
     text-align: center;
 }
 
-.invoice-legacy-detail .invoice-create-line-notes {
+.invoice-page-shell textarea.invoice-create-line-notes,
+.invoice-legacy-detail textarea.invoice-create-line-notes {
     width: min(100%, 46rem);
-    min-height: 2.1rem;
-    resize: vertical;
+    min-height: 1.45rem;
+    overflow: hidden;
+    resize: none;
 }
 
 .invoice-legacy-detail .invoice-create-quantity-input {
