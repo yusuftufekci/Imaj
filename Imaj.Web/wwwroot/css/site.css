@@ -2757,6 +2757,17 @@ span.flatpickr-weekday {
     text-align: right;
 }
 
+.job-table-input--no-spinner {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.job-table-input--no-spinner::-webkit-inner-spin-button,
+.job-table-input--no-spinner::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
 .job-create-reference .job-table-select {
     min-width: 5.2rem;
 }

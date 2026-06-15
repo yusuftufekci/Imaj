@@ -1148,6 +1148,7 @@ namespace Imaj.Service.Services
                             on jw.TimeTypeID equals xt.TimeTypeID into tGroup
                         from timeType in tGroup.DefaultIfEmpty()
                         where jw.Deleted == 0
+                              && j.StateID != DiscardedStateId
                               && j.StartDT >= startDate
                               && j.StartDT < endDate
                               && snapshot.AllowedFunctionIds.Contains(j.FunctionID)

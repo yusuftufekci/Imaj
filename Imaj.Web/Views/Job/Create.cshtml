@@ -458,7 +458,7 @@
                                            x-model="item.netAmount"
                                            @@input="updateProductNetAmount(item, $event.target.value)"
                                            :name="'Products[' + index + '].NetAmount'"
-                                           class="job-table-input job-table-input--money">
+                                           class="job-table-input job-table-input--money job-table-input--no-spinner">
                                 </td>
                                 <td class="px-4 py-2">
                                     <textarea x-model="item.notes"
