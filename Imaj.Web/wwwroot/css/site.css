@@ -3375,6 +3375,11 @@ span.flatpickr-weekday {
     resize: vertical;
 }
 
+.job-note-display {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere;
+}
+
 .job-action-stack {
     display: grid;
     gap: 0;

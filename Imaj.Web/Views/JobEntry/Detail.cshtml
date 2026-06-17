@@ -52,7 +52,8 @@
 
     var canComplete = await PermissionViewService.CanExecuteMethodAsync(1334m, write: true);
     var canDiscard = await PermissionViewService.CanExecuteMethodAsync(1340m, write: true);
-    var canEditJob = await PermissionViewService.CanExecuteMethodAsync(1397m, write: true);
+    var canEditJob = await PermissionViewService.CanExecuteMethodAsync(1397m, write: true)
+        || await PermissionViewService.CanExecuteMethodAsync(1710m, write: true);
     var canDoComplete = parsedReference && canComplete && !Model.IsEvaluated && isOpen && Model.HasActiveWorkRows;
     var canDoDiscard = parsedReference && canDiscard && !Model.IsEvaluated && isOpen;
 }
@@ -227,7 +228,7 @@
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.Price.ToString("N2")</td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.SubTotal.ToString("N2")</td>
                             <td class="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900">@prod.NetTotal.ToString("N2")</td>
-                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">@prod.Notes</td>
+                            <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900 job-note-display">@prod.Notes</td>
                         </tr>
                     }
                 </tbody>
@@ -303,7 +304,7 @@
                 <div class="flex flex-wrap justify-center gap-2 w-full">
                     @if (canEditJob)
                     {
-                        <a href="/Job/Detail?id=@Model.Code&returnUrl=@WebUtility.UrlEncode($"/JobEntry/Detail?id={Model.Code}")" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Edit"]</a>
+                        <a href="/JobEntry/EditDetail?id=@Model.Code&returnUrl=@WebUtility.UrlEncode($"/JobEntry/Detail?id={Model.Code}")" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Edit"]</a>
                     }
                     <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/JobEntry/List" : Model.ReturnUrl)" class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
                 </div>

@@ -7,6 +7,7 @@ using Imaj.Web.Extensions;
 using Imaj.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using System.Globalization;
 
 namespace Imaj.Web.Controllers
 {
@@ -291,9 +292,13 @@ namespace Imaj.Web.Controllers
         /// page ve pageSize URL query string'den ayrı alınabilir (pagination linkleri için)
         /// </summary>
         [AcceptVerbs("GET", "POST")]
-        [RequireMethodPermission(QueryMethodId)]
         public async Task<IActionResult> List(JobViewModel model, int? page, int? pageSize, int? first)
         {
+            if (!await CanQueryJobEntryAsync())
+            {
+                return Forbid();
+            }
+
             // Pagination değerlerini URL'den gelen değerlerle override et
             // Bu sayede /JobEntry/List?page=2&pageSize=10 şeklinde linkler çalışır
             if (page.HasValue && page.Value > 0)
@@ -582,6 +587,288 @@ namespace Imaj.Web.Controllers
             }
 
             return View(model);
+        }
+
+        [AcceptVerbs("GET", "POST")]
+        [RequireMethodPermission(ViewJobEntryMethodId)]
+        public async Task<IActionResult> EditDetail(string? id, string[]? selectedIds = null, int currentIndex = 0, string? returnUrl = null)
+        {
+            if (string.IsNullOrEmpty(id) && selectedIds != null && selectedIds.Length > 0)
+            {
+                id = selectedIds[0];
+                currentIndex = 0;
+            }
+
+            if (string.IsNullOrEmpty(id))
+            {
+                return RedirectToAction("Index");
+            }
+
+            if (selectedIds != null && selectedIds.Length > 0)
+            {
+                if (currentIndex < 0) currentIndex = 0;
+                if (currentIndex >= selectedIds.Length) currentIndex = selectedIds.Length - 1;
+
+                id = selectedIds[currentIndex];
+            }
+
+            var normalizedReturnUrl = NormalizeJobEntryReturnUrl(returnUrl, "/JobEntry/List");
+            if (Microsoft.AspNetCore.Http.HttpMethods.IsPost(Request.Method))
+            {
+                return RedirectToAction(nameof(EditDetail), new
+                {
+                    id,
+                    selectedIds,
+                    currentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
+            if (!int.TryParse(id, out var reference))
+            {
+                return RedirectToAction("Index");
+            }
+
+            await LoadDropdownDataAsync();
+
+            var result = await _jobService.GetByReferenceAsync(reference);
+            if (!result.IsSuccess || result.Data == null)
+            {
+                return RedirectToAction("List");
+            }
+
+            var job = result.Data;
+            var model = new JobDetailViewModel
+            {
+                Code = job.Reference.ToString(CultureInfo.InvariantCulture),
+                FunctionId = job.FunctionId,
+                Function = job.FunctionName,
+                CustomerId = job.CustomerId,
+                CustomerCode = job.CustomerCode,
+                CustomerName = job.CustomerName,
+                Name = job.Name,
+                RelatedPerson = job.Contact,
+                StartDate = job.StartDate,
+                EndDate = job.EndDate,
+                StateId = job.StateId,
+                Status = job.StatusName,
+                IsEmailSent = job.IsEmailSent,
+                IsEvaluated = job.IsEvaluated,
+                InvoiceStatus = job.HasInvoiceLink || job.InvoLineId.HasValue ? L("Billed") : "-",
+                HasInvoiceLink = job.HasInvoiceLink,
+                HasActiveWorkRows = job.HasActiveWorkRows,
+                HasActiveProductCategorySnapshot = job.HasActiveProductCategorySnapshot,
+                CanPriceByProductCategorySnapshot = job.CanPriceByProductCategorySnapshot,
+                AdminNotes = job.IntNotes,
+                CustomerNotes = job.ExtNotes,
+                SelectedIds = selectedIds?.ToList() ?? new List<string> { id },
+                CurrentIndex = currentIndex,
+                TotalSelected = selectedIds?.Length ?? 1,
+                ReturnUrl = normalizedReturnUrl
+            };
+
+            if (job.JobWorks != null && job.JobWorks.Any())
+            {
+                model.Overtimes = job.JobWorks.Select(jw => new JobOvertimeItem
+                {
+                    Id = jw.Id,
+                    EmployeeId = jw.EmployeeId,
+                    IsSelected = jw.SelectFlag,
+                    EmployeeCode = jw.EmployeeCode,
+                    EmployeeName = jw.EmployeeName,
+                    WorkTypeId = jw.WorkTypeId,
+                    TaskType = jw.WorkTypeName,
+                    TimeTypeId = jw.TimeTypeId,
+                    OvertimeType = jw.TimeTypeName,
+                    Quantity = jw.Quantity,
+                    Amount = jw.Amount,
+                    Notes = jw.Notes
+                }).ToList();
+
+                model.TotalOvertimeAmount = model.Overtimes.Sum(x => x.Amount);
+            }
+
+            if (job.JobProds != null && job.JobProds.Any())
+            {
+                model.Products = job.JobProds.Select(jp => new JobProductItem
+                {
+                    Id = jp.Id,
+                    ProductId = jp.ProductId,
+                    IsSelected = jp.SelectFlag,
+                    Code = jp.ProductCode,
+                    Name = jp.ProductName,
+                    CategoryId = jp.CategoryId,
+                    CategoryName = jp.CategoryName,
+                    Quantity = jp.Quantity,
+                    Price = jp.Price,
+                    SubTotal = jp.GrossAmount,
+                    NetTotal = jp.NetAmount,
+                    Notes = jp.Notes
+                }).ToList();
+
+                model.TotalProductAmount = model.Products.Sum(x => x.NetTotal);
+            }
+
+            if (job.JobProdCats != null && job.JobProdCats.Any())
+            {
+                model.ProductCategories = job.JobProdCats
+                    .GroupBy(jp => new { jp.CategoryId, jp.CategoryName })
+                    .Select(g =>
+                    {
+                        var subTotal = g.Sum(x => x.GrossAmount);
+                        var netTotal = g.Sum(x => x.NetAmount);
+                        var discAmount = g.Sum(x => x.DiscAmount);
+                        return new JobCategorySummaryItem
+                        {
+                            CategoryId = g.Key.CategoryId,
+                            Name = g.Key.CategoryName,
+                            SubTotal = subTotal,
+                            NetTotal = netTotal,
+                            DiscountAmount = discAmount,
+                            Discount = subTotal > 0 ? (discAmount / subTotal) * 100 : 0
+                        };
+                    })
+                    .ToList();
+
+                model.TotalCategoryAmount = model.ProductCategories.Sum(x => x.NetTotal);
+            }
+            else if (job.JobProds != null && job.JobProds.Any())
+            {
+                model.ProductCategories = job.JobProds
+                    .GroupBy(jp => new { jp.CategoryId, jp.CategoryName })
+                    .Select(g =>
+                    {
+                        var subTotal = g.Sum(x => x.Price == 0 ? x.NetAmount : x.GrossAmount);
+                        var netTotal = g.Sum(x => x.NetAmount);
+                        return new JobCategorySummaryItem
+                        {
+                            CategoryId = g.Key.CategoryId,
+                            Name = g.Key.CategoryName,
+                            SubTotal = subTotal,
+                            NetTotal = netTotal,
+                            DiscountAmount = subTotal - netTotal,
+                            Discount = subTotal > 0 ? ((subTotal - netTotal) / subTotal) * 100 : 0
+                        };
+                    })
+                    .ToList();
+
+                model.TotalCategoryAmount = model.ProductCategories.Sum(x => x.NetTotal);
+            }
+
+            ViewData["StartEditing"] = true;
+            return View("~/Views/Job/Detail.cshtml", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequireMethodPermission(AddJobEntryMethodId, write: true)]
+        public async Task<IActionResult> UpdateDetail(JobDetailViewModel model)
+        {
+            var selectedIds = model.SelectedIds ?? new List<string>();
+            var normalizedReturnUrl = NormalizeJobEntryReturnUrl(model.ReturnUrl, "/JobEntry/List");
+
+            if (!int.TryParse(model.Code, out var reference) || reference <= 0)
+            {
+                TempData["ErrorMessage"] = L("JobNotFound");
+                return LocalRedirect(normalizedReturnUrl);
+            }
+
+            if (selectedIds.Count == 0)
+            {
+                selectedIds.Add(reference.ToString(CultureInfo.InvariantCulture));
+            }
+
+            var parsedStartDate = ParseJobDateTime(model.StartDateText);
+            var parsedEndDate = ParseJobDateTime(model.EndDateText) ?? parsedStartDate;
+            if (!parsedStartDate.HasValue || !parsedEndDate.HasValue)
+            {
+                TempData["ErrorMessage"] = L("StartDateRangeInvalid");
+                return RedirectToAction(nameof(EditDetail), new
+                {
+                    id = reference.ToString(CultureInfo.InvariantCulture),
+                    selectedIds = selectedIds.ToArray(),
+                    currentIndex = model.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
+            if (parsedEndDate.Value < parsedStartDate.Value)
+            {
+                TempData["ErrorMessage"] = L("EndDateBeforeStart");
+                return RedirectToAction(nameof(EditDetail), new
+                {
+                    id = reference.ToString(CultureInfo.InvariantCulture),
+                    selectedIds = selectedIds.ToArray(),
+                    currentIndex = model.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
+            var updateDto = new JobDto
+            {
+                Reference = reference,
+                FunctionId = model.FunctionId,
+                CustomerId = model.CustomerId,
+                Name = model.Name,
+                Contact = model.RelatedPerson,
+                StartDate = parsedStartDate.Value,
+                EndDate = parsedEndDate.Value,
+                IntNotes = model.AdminNotes,
+                ExtNotes = model.CustomerNotes,
+                JobWorks = (model.Overtimes ?? new List<JobOvertimeItem>()).Select(x => new JobWorkDto
+                {
+                    Id = x.Id,
+                    EmployeeId = x.EmployeeId,
+                    WorkTypeId = x.WorkTypeId,
+                    TimeTypeId = x.TimeTypeId,
+                    Quantity = x.Quantity,
+                    Amount = x.Amount,
+                    Notes = x.Notes,
+                    SelectFlag = x.IsSelected
+                }).ToList(),
+                JobProds = (model.Products ?? new List<JobProductItem>()).Select(x => new JobProdDto
+                {
+                    Id = x.Id,
+                    ProductId = x.ProductId,
+                    CategoryId = x.CategoryId,
+                    Quantity = x.Quantity,
+                    Price = x.Price,
+                    GrossAmount = x.SubTotal,
+                    NetAmount = x.NetTotal,
+                    Notes = x.Notes,
+                    SelectFlag = x.IsSelected
+                }).ToList(),
+                JobProdCats = (model.ProductCategories ?? new List<JobCategorySummaryItem>()).Select(x => new JobProdCatDto
+                {
+                    CategoryId = x.CategoryId,
+                    CategoryName = x.Name,
+                    GrossAmount = x.SubTotal,
+                    DiscAmount = x.DiscountAmount,
+                    DiscPercentage = (byte)Math.Clamp((int)Math.Round(x.Discount), 0, 100),
+                    NetAmount = x.NetTotal
+                }).ToList()
+            };
+
+            var result = await _jobService.UpdateAsync(updateDto);
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = this.LocalizeUiMessage(result.Message, L("SaveError"));
+                return RedirectToAction(nameof(EditDetail), new
+                {
+                    id = reference.ToString(CultureInfo.InvariantCulture),
+                    selectedIds = selectedIds.ToArray(),
+                    currentIndex = model.CurrentIndex,
+                    returnUrl = normalizedReturnUrl
+                });
+            }
+
+            return RedirectToAction(nameof(Detail), new
+            {
+                id = reference.ToString(CultureInfo.InvariantCulture),
+                selectedIds = selectedIds.ToArray(),
+                currentIndex = model.CurrentIndex,
+                returnUrl = normalizedReturnUrl
+            });
         }
 
         [HttpPost]
@@ -944,6 +1231,8 @@ namespace Imaj.Web.Controllers
         {
             return await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId)
                 || await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId, write: true)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)ViewJobEntryMethodId)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)ViewJobEntryMethodId, write: true)
                 || await _permissionViewService.CanExecuteMethodAsync((decimal)AddJobEntryMethodId)
                 || await _permissionViewService.CanExecuteMethodAsync((decimal)AddJobEntryMethodId, write: true);
         }
@@ -952,8 +1241,18 @@ namespace Imaj.Web.Controllers
         {
             return await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId)
                 || await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId, write: true)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)ViewJobEntryMethodId)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)ViewJobEntryMethodId, write: true)
                 || await _permissionViewService.CanExecuteMethodAsync((decimal)AddJobEntryMethodId)
                 || await _permissionViewService.CanExecuteMethodAsync((decimal)AddJobEntryMethodId, write: true);
+        }
+
+        private async Task<bool> CanQueryJobEntryAsync()
+        {
+            return await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)QueryMethodId, write: true)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)ViewJobEntryMethodId)
+                || await _permissionViewService.CanExecuteMethodAsync((decimal)ViewJobEntryMethodId, write: true);
         }
 
         private static CustomerFilterDto BuildCustomerFilter(CustomerFilterModel filter)
@@ -1070,6 +1369,13 @@ namespace Imaj.Web.Controllers
                 currentIndex,
                 returnUrl
             });
+        }
+
+        private static string NormalizeJobEntryReturnUrl(string? returnUrl, string fallback)
+        {
+            return !string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/')
+                ? returnUrl
+                : fallback;
         }
 
         private static decimal? ResolveWorkflowMethodId(JobWorkflowAction action)

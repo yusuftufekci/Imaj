@@ -129,7 +129,16 @@ namespace Imaj.Web.Services.Reports
                     currentRow++;
                 }
 
-                currentRow--;
+                ws.Cell(currentRow, 1).Value = L("ReportTotal");
+                ws.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Cell(currentRow, 2).Value = orderedRows.Sum(x => x.Count);
+                ws.Cell(currentRow, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Cell(currentRow, 3).Value = orderedRows.Sum(x => x.Amount);
+                ws.Cell(currentRow, 3).Style.NumberFormat.Format = "#,##0.00";
+                ws.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                ws.Range(currentRow, 1, currentRow, 3).Style.Font.Bold = true;
+                ws.Range(currentRow, 1, currentRow, 3).Style.Fill.BackgroundColor = XLColor.FromHtml("#EFEFEF");
+                ws.Range(currentRow, 1, currentRow, 3).Style.Border.TopBorder = XLBorderStyleValues.Double;
             }
 
             FinalizeTable(ws, headerRow, currentRow, 3);

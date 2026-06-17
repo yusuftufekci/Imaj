@@ -1530,6 +1530,20 @@ namespace Imaj.Web.Controllers
                 })
                 .ToList();
 
+            if (orderedRows.Any())
+            {
+                reportRows.Add(new PrintableReportRow
+                {
+                    Kind = PrintableReportRowKind.GrandTotal,
+                    Cells = new List<PrintableReportCell>
+                    {
+                        new() { Value = L("ReportTotal"), Alignment = "right" },
+                        new() { Value = orderedRows.Sum(x => x.Count).ToString("N0", CultureInfo.CurrentCulture), Alignment = "right" },
+                        new() { Value = FormatAmount(orderedRows.Sum(x => x.Amount)), Alignment = "right" }
+                    }
+                });
+            }
+
             return new PrintableReportViewModel
             {
                 Title = L("SummaryPendingInvoiceJobsReportTitle"),

@@ -9,6 +9,11 @@
 
 @{
     ViewData["Title"] = Localizer["JobDetail"];
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var isJobEntryRoute = string.Equals(currentController, "JobEntry", StringComparison.OrdinalIgnoreCase);
+    var endpointPrefix = isJobEntryRoute ? "/JobEntry" : "/Job";
+    var detailEndpoint = isJobEntryRoute ? "/JobEntry/EditDetail" : "/Job/Detail";
+    var defaultReturnUrl = isJobEntryRoute ? "/JobEntry/List" : "/Job/List";
     
     // Logic to build query string for navigation
     string BuildNavUrl(int index) {
@@ -21,7 +26,7 @@
         var nextId = Model.SelectedIds[index];
         var idsQuery = string.Join("&selectedIds=", Model.SelectedIds);
         
-        var url = $"/Job/Detail?id={nextId}&currentIndex={index}&selectedIds={idsQuery}";
+        var url = $"{detailEndpoint}?id={nextId}&currentIndex={index}&selectedIds={idsQuery}";
         if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
         {
             url += $"&returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}";
@@ -45,7 +50,29 @@
             queryParts.Add($"returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}");
         }
 
-        return $"/Job/GetHistory/{WebUtility.UrlEncode(Model.Code)}?{string.Join("&", queryParts)}";
+        return $"{endpointPrefix}/GetHistory/{WebUtility.UrlEncode(Model.Code)}?{string.Join("&", queryParts)}";
+    }
+
+    string BuildReadOnlyDetailUrl()
+    {
+        var ids = Model.SelectedIds ?? new List<string>();
+        var queryParts = new List<string>
+        {
+            $"id={WebUtility.UrlEncode(Model.Code)}"
+        };
+
+        foreach (var selectedId in ids)
+        {
+            queryParts.Add($"selectedIds={WebUtility.UrlEncode(selectedId)}");
+        }
+
+        queryParts.Add($"currentIndex={Model.CurrentIndex}");
+        if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+        {
+            queryParts.Add($"returnUrl={WebUtility.UrlEncode(Model.ReturnUrl)}");
+        }
+
+        return $"{endpointPrefix}/Detail?{string.Join("&", queryParts)}";
     }
 
     string NormalizeCategoryLabel(string? value)
@@ -112,7 +139,8 @@
     var canEvaluate = await PermissionViewService.CanExecuteMethodAsync(1341m, write: true);
     var canUndoEvaluate = await PermissionViewService.CanExecuteMethodAsync(1488m, write: true);
     var canPrintJobForm = await PermissionViewService.CanExecuteMethodAsync(1501m);
-    var canEditJob = await PermissionViewService.CanExecuteMethodAsync(1397m, write: true);
+    var canEditJob = await PermissionViewService.CanExecuteMethodAsync(1397m, write: true)
+        || (isJobEntryRoute && await PermissionViewService.CanExecuteMethodAsync(1710m, write: true));
 
     var canDoComplete = parsedReference && canComplete && !Model.IsEvaluated && isOpen && Model.HasActiveWorkRows;
     var canDoUndoComplete = parsedReference && canUndoComplete && !Model.IsEvaluated && isCompleted;
@@ -155,6 +183,8 @@
         : new List<object>();
     var detailStateJson = JsonSerializer.Serialize(new
     {
+        startEditing = ViewData["StartEditing"] as bool? == true,
+        cancelUrl = isJobEntryRoute ? BuildReadOnlyDetailUrl() : string.Empty,
         customerId = Model.CustomerId.ToString(CultureInfo.InvariantCulture),
         customerName = Model.CustomerName ?? string.Empty,
         defaultWorkTypeId,
@@ -172,13 +202,13 @@
         {
             functionId = currentFunctionId,
             functionName = Model.Function ?? string.Empty,
-            searchEndpoint = "/Job/ProductSearch",
-            categoriesEndpoint = "/Job/ProductCategories",
-            productGroupsEndpoint = "/Job/ProductGroups",
-            functionsEndpoint = "/Job/ProductFunctions",
+            searchEndpoint = $"{endpointPrefix}/ProductSearch",
+            categoriesEndpoint = $"{endpointPrefix}/ProductCategories",
+            productGroupsEndpoint = $"{endpointPrefix}/ProductGroups",
+            functionsEndpoint = $"{endpointPrefix}/ProductFunctions",
             defaultPageSize = 16
         },
-        customerProductCategoriesEndpoint = "/Job/CustomerProductCategories"
+        customerProductCategoriesEndpoint = $"{endpointPrefix}/CustomerProductCategories"
     });
 }
 
@@ -188,7 +218,7 @@
      @@employee-selected.window="handleEmployeeSelection($event.detail)"
      @@product-selected.window="handleProductSelection($event.detail)"
      class="job-page-shell job-legacy-detail page-shell--wide space-y-3">
-    <form id="jobDetailEditForm" method="post" action="/Job/UpdateDetail" @@submit="normalizeDetailCollectionIndexes()" class="hidden">
+    <form id="jobDetailEditForm" method="post" action="@(endpointPrefix)/UpdateDetail" @@submit="normalizeDetailCollectionIndexes()" class="hidden">
         @Html.AntiForgeryToken()
         <input type="hidden" name="Code" value="@Model.Code" />
         <input type="hidden" name="CurrentIndex" value="@Model.CurrentIndex" />
@@ -204,7 +234,7 @@
             <h2 class="job-page-title job-page-title--orange">@Localizer["Job"]</h2>
         </div>
         <div class="mt-3 md:mt-0 job-page-actions" x-show="!isEditing" x-cloak>
-            <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/Job/List" : Model.ReturnUrl)" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+            <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? defaultReturnUrl : Model.ReturnUrl)" class="inline-flex items-center border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                 @Localizer["Back"]
             </a>
         </div>
@@ -244,7 +274,7 @@
                                 <input type="hidden" name="CustomerId" form="jobDetailEditForm" :value="customerId" :disabled="!isEditing">
                                 <span class="job-detail-edit-selector__value" x-text="customerName || '-'"></span>
                                 <button type="button"
-                                        @@click="$dispatch('customer-select-open', { targetId: 'jobDetailEdit', searchEndpoint: '/Job/CustomerSearch', jobStatesEndpoint: '/Job/CustomerJobStates' })"
+                                        @@click="$dispatch('customer-select-open', { targetId: 'jobDetailEdit', searchEndpoint: '@(endpointPrefix)/CustomerSearch', jobStatesEndpoint: '@(endpointPrefix)/CustomerJobStates' })"
                                         class="job-picker-link">
                                     @Localizer["Select"]
                                 </button>
@@ -474,7 +504,7 @@
                                 <input x-show="isEditing" x-cloak type="text" inputmode="decimal" name="Products[@i].NetTotal" value="@prod.NetTotal.ToString("0.##")" form="jobDetailEditForm" :disabled="!isEditing" @@input="updateProductNetAmount(@i)" data-product-net-total="@i" class="job-table-input job-table-input--money">
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
-                                <span x-show="!isEditing">@prod.Notes</span>
+                                <span x-show="!isEditing" class="job-note-display">@prod.Notes</span>
                                 <textarea x-show="isEditing" x-cloak name="Products[@i].Notes" form="jobDetailEditForm" :disabled="!isEditing" rows="2" class="job-table-textarea job-table-textarea--single">@prod.Notes</textarea>
                             </td>
                         </tr>
@@ -608,7 +638,7 @@
                      PreviousUrl = BuildNavUrl(Model.CurrentIndex - 1),
                      NextUrl = BuildNavUrl(Model.CurrentIndex + 1),
                      LastUrl = BuildNavUrl(selectedIds.Count - 1),
-                     FormAction = "/Job/Detail",
+                     FormAction = detailEndpoint,
                      SelectedIds = selectedIds,
                      ReturnUrl = Model.ReturnUrl
                  })" />
@@ -647,7 +677,7 @@
                          @Localizer["Cancel"]
                      </button>
                  }
-                 <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? "/Job/List" : Model.ReturnUrl)" x-show="!isEditing" x-cloak class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
+                 <a href="@(string.IsNullOrWhiteSpace(Model.ReturnUrl) ? defaultReturnUrl : Model.ReturnUrl)" x-show="!isEditing" x-cloak class="inline-flex items-center px-4 py-1 border border-blue-400 text-sm font-bold rounded shadow-sm text-blue-900 bg-blue-100 hover:bg-blue-200 focus:outline-none">@Localizer["Back"]</a>
              </div>
 
              <div class="flex flex-wrap justify-center gap-2 w-full" x-show="isEditing" x-cloak>
@@ -663,7 +693,7 @@
                  {
                      @if (canDoComplete)
                      {
-                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
                              <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Complete)" />
@@ -678,7 +708,7 @@
                      }
                      @if (canDoDiscard)
                      {
-                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
                              <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Discard)" />
@@ -697,7 +727,7 @@
                  {
                      @if (canDoUndoComplete)
                      {
-                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
                              <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoComplete)" />
@@ -712,7 +742,7 @@
                      }
                      @if (canDoPrice)
                      {
-                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
 	                             <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Price)" />
@@ -728,7 +758,7 @@
                      }
                      @if (canDoClose)
                      {
-                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
                              <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Close)" />
@@ -745,7 +775,7 @@
 
                  @if (isPriced && canDoUndoPrice)
                  {
-                     <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                     <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                          @Html.AntiForgeryToken()
                          <input type="hidden" name="Reference" value="@reference" />
                          <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoPrice)" />
@@ -763,7 +793,7 @@
                  {
                      @if (canDoUndoClose)
                      {
-                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
                              <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoClose)" />
@@ -778,7 +808,7 @@
                      }
                      @if (canDoEvaluate)
                      {
-                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
                              <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Evaluate)" />
@@ -797,7 +827,7 @@
                  {
                      @if (canDoUndoEvaluate)
                      {
-                         <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                         <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                              @Html.AntiForgeryToken()
                              <input type="hidden" name="Reference" value="@reference" />
                              <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoEvaluate)" />
@@ -814,7 +844,7 @@
                      {
                          @if (canDoUndoDiscard)
                          {
-                             <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                                  @Html.AntiForgeryToken()
                                  <input type="hidden" name="Reference" value="@reference" />
                                  <input type="hidden" name="Action" value="@((int)JobWorkflowAction.UndoDiscard)" />
@@ -829,7 +859,7 @@
                          }
                          @if (canDoEvaluate)
                          {
-                             <form method="post" action="/Job/WorkflowAction" class="workflow-action-form inline-flex">
+                             <form method="post" action="@(endpointPrefix)/WorkflowAction" class="workflow-action-form inline-flex">
                                  @Html.AntiForgeryToken()
                                  <input type="hidden" name="Reference" value="@reference" />
                                  <input type="hidden" name="Action" value="@((int)JobWorkflowAction.Evaluate)" />
@@ -871,7 +901,7 @@
         function jobDetail(initialState) {
             return {
                 initialized: false,
-                isEditing: false,
+                isEditing: initialState?.startEditing === true,
                 customerId: initialState?.customerId || '',
                 customerName: initialState?.customerName || '',
                 defaultWorkTypeId: initialState?.defaultWorkTypeId || 0,
@@ -911,6 +941,11 @@
                     this.isEditing = true;
                 },
                 cancelEdit() {
+                    if (initialState?.cancelUrl) {
+                        window.location.href = initialState.cancelUrl;
+                        return;
+                    }
+
                     window.location.reload();
                 },
                 handleCustomerSelection(detail) {
