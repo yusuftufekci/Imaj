@@ -103,18 +103,61 @@ textarea:focus {
    Common flatpickr-based date/datetime layer.
    ============================================ */
 .imaj-date-display {
-    padding-right: 2.4rem !important;
+    padding-right: 0.55rem !important;
     background-color: #fff !important;
-    background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
-    background-position: calc(100% - 1.1rem) calc(50% - 0.15rem), calc(100% - 0.75rem) calc(50% - 0.15rem);
-    background-size: 0.38rem 0.38rem, 0.38rem 0.38rem;
-    background-repeat: no-repeat;
-    cursor: pointer;
+    background-image: none !important;
+    cursor: text;
 }
 
 .imaj-date-display:disabled {
     cursor: not-allowed;
     background-color: #f8fafc !important;
+}
+
+.imaj-date-control {
+    display: inline-flex;
+    align-items: stretch;
+    min-width: 0;
+    vertical-align: middle;
+}
+
+.imaj-date-control .imaj-date-display {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.imaj-date-trigger {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    min-width: 2rem;
+    border: 1px solid #cbd5e1;
+    border-left: 0;
+    border-radius: 0 0.35rem 0.35rem 0;
+    background: #eff6ff;
+    color: #1d4ed8;
+    cursor: pointer;
+}
+
+.imaj-date-trigger:hover {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.imaj-date-trigger:disabled {
+    cursor: not-allowed;
+    background: #f8fafc;
+    color: #94a3b8;
+}
+
+.imaj-date-trigger svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .flatpickr-calendar {
@@ -152,6 +195,10 @@ textarea:focus {
 }
 
 .flatpickr-current-month {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
     padding-top: 0.22rem;
     font-size: 0.76rem;
 }
@@ -161,6 +208,31 @@ textarea:focus {
     font-weight: 700;
     color: #0f172a;
     font-size: 0.76rem;
+}
+
+.flatpickr-current-month .imaj-date-native-year {
+    display: none;
+}
+
+.flatpickr-current-month .imaj-date-year-select {
+    height: 1.6rem;
+    min-width: 4.35rem;
+    border: 1px solid #bfdbfe;
+    border-radius: 0.4rem;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    padding: 0 1.35rem 0 0.45rem;
+}
+
+.flatpickr-current-month .imaj-date-year-select:focus {
+    border-color: #2563eb;
+    outline: 2px solid rgba(37, 99, 235, 0.2);
+    outline-offset: 1px;
 }
 
 .flatpickr-weekdays {
@@ -1920,6 +1992,15 @@ span.flatpickr-weekday {
     max-width: 4.95rem;
 }
 
+.job-index-input--date,
+.job-index-input--date + .imaj-date-display,
+.job-index-input--date + .imaj-date-control .imaj-date-display {
+    width: min(100%, 7.7rem);
+    max-width: 7.7rem;
+    min-height: 1.95rem;
+    font-size: 0.82rem;
+}
+
 .job-index-input--side-select {
     width: min(100%, 6.15rem);
     max-width: 6.15rem;
@@ -1934,6 +2015,10 @@ span.flatpickr-weekday {
 
 .job-index-range .dense-input {
     flex: 0 0 auto;
+}
+
+.job-index-range .imaj-date-control:nth-of-type(2) {
+    margin-left: 0.9rem;
 }
 
 .job-index-reference .picker-inline--lookup {
@@ -4558,6 +4643,16 @@ span.flatpickr-weekday {
 
     .job-index-range .dense-input {
         flex: 1 1 auto;
+    }
+
+    .job-index-range .imaj-date-control {
+        width: 100%;
+    }
+
+    .job-index-range .imaj-date-control .imaj-date-display {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: none;
     }
 
     .job-index-input--select,

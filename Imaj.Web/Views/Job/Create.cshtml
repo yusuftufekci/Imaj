@@ -10,9 +10,18 @@
     var defaultWorkTypeName = (ViewBag.WorkTypes != null && ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).Count > 0)
         ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes)[0].Name
         : string.Empty;
-    var defaultTimeTypeId = (ViewBag.TimeTypes != null && ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes).Count > 0)
-        ? ((List<Imaj.Service.DTOs.TimeTypeDto>)ViewBag.TimeTypes)[0].Id
-        : 0;
+    var timeTypes = ViewBag.TimeTypes as List<Imaj.Service.DTOs.TimeTypeDto> ?? new List<Imaj.Service.DTOs.TimeTypeDto>();
+    var normalTimeType = timeTypes.FirstOrDefault(x =>
+        string.Equals(x.Name, "Normal Mesai", System.StringComparison.OrdinalIgnoreCase))
+        ?? timeTypes.FirstOrDefault(x =>
+            x.Name.Contains("Normal", System.StringComparison.OrdinalIgnoreCase)
+            && (x.Name.Contains("Mesai", System.StringComparison.OrdinalIgnoreCase)
+                || x.Name.Contains("Overtime", System.StringComparison.OrdinalIgnoreCase)))
+        ?? timeTypes.FirstOrDefault();
+    var defaultTimeTypeId = normalTimeType?.Id ?? 0;
+    var defaultTimeTypeName = !string.IsNullOrWhiteSpace(normalTimeType?.Name)
+        ? normalTimeType.Name
+        : "Normal Mesai";
     var workTypeNames = (ViewBag.WorkTypes != null
         ? ((List<Imaj.Service.DTOs.WorkTypeDto>)ViewBag.WorkTypes).ToDictionary(
             x => x.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -24,6 +33,8 @@
         defaultWorkTypeName,
         workTypeNames,
         defaultTimeTypeId,
+        defaultTimeTypeName,
+        forceDefaultTimeType = true,
         productPicker = new
         {
             functionId = currentFunctionId,
@@ -315,15 +326,8 @@
                                     <input type="hidden" :name="'Overtimes[' + index + '].WorkTypeId'" :value="item.taskType">
                                 </td>
                                  <td class="px-4 py-2">
-                                     <select x-model="item.overtimeType" :name="'Overtimes[' + index + '].TimeTypeId'" class="job-table-select">
-                                         @if (ViewBag.TimeTypes != null)
-                                         {
-                                             @foreach (var tt in ViewBag.TimeTypes)
-                                             {
-                                                 <option value="@tt.Id">@tt.Name</option>
-                                             }
-                                         }
-                                     </select>
+                                     <span x-text="defaultTimeTypeName || item.overtimeTypeName || 'Normal Mesai'" class="text-xs text-gray-900">Normal Mesai</span>
+                                     <input type="hidden" :name="'Overtimes[' + index + '].TimeTypeId'" :value="defaultTimeTypeId">
                                 </td>
                                 <td class="px-4 py-2">
                                     <input type="number" min="1" step="1" inputmode="numeric" x-model="item.quantity" :name="'Overtimes[' + index + '].Quantity'" class="job-table-input job-table-input--money" style="width: 4rem;">

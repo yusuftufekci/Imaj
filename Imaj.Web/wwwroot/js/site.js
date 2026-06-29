@@ -380,6 +380,10 @@ const DateFieldEnhancer = (() => {
         };
 
     const notifyValueChange = input => {
+        if (input._x_model && typeof input._x_model.set === 'function') {
+            input._x_model.set(input.value || '');
+        }
+
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
     };
@@ -417,6 +421,11 @@ const DateFieldEnhancer = (() => {
         altInput.placeholder = input.getAttribute('placeholder') || placeholder;
         altInput.dataset.imajDateDisplay = 'true';
         altInput.autocomplete = 'off';
+
+        const trigger = altInput.closest('.imaj-date-control')?.querySelector('.imaj-date-trigger');
+        if (trigger) {
+            trigger.disabled = input.disabled;
+        }
     };
 
     const syncPickerValue = meta => {
@@ -456,6 +465,155 @@ const DateFieldEnhancer = (() => {
         button.textContent = label;
         button.addEventListener('click', onClick);
         return button;
+    };
+
+    const getYearBounds = instance => {
+        const currentYear = new Date().getFullYear();
+        const selectedYear = instance.currentYear
+            || instance.selectedDates?.[0]?.getFullYear()
+            || currentYear;
+        const minYear = instance.config.minDate instanceof Date
+            ? instance.config.minDate.getFullYear()
+            : 1970;
+        const maxYear = instance.config.maxDate instanceof Date
+            ? instance.config.maxDate.getFullYear()
+            : currentYear + 10;
+
+        return {
+            minYear: Math.min(minYear, selectedYear),
+            maxYear: Math.max(maxYear, selectedYear)
+        };
+    };
+
+    const syncYearSelect = instance => {
+        const select = instance.calendarContainer?.querySelector('.imaj-date-year-select');
+        if (!select) {
+            return;
+        }
+
+        const year = String(instance.currentYear || instance.selectedDates?.[0]?.getFullYear() || new Date().getFullYear());
+        if (select.value !== year) {
+            select.value = year;
+        }
+    };
+
+    const appendYearSelect = instance => {
+        const currentMonth = instance.calendarContainer?.querySelector('.flatpickr-current-month');
+        if (!currentMonth || currentMonth.querySelector('.imaj-date-year-select')) {
+            syncYearSelect(instance);
+            return;
+        }
+
+        const nativeYearWrapper = currentMonth.querySelector('.numInputWrapper');
+        nativeYearWrapper?.classList.add('imaj-date-native-year');
+
+        const select = document.createElement('select');
+        select.className = 'imaj-date-year-select';
+        select.setAttribute('aria-label', isTurkish() ? 'Yil sec' : 'Select year');
+
+        const bounds = getYearBounds(instance);
+        for (let year = bounds.maxYear; year >= bounds.minYear; year -= 1) {
+            const option = document.createElement('option');
+            option.value = String(year);
+            option.textContent = String(year);
+            select.appendChild(option);
+        }
+
+        select.addEventListener('change', () => {
+            const year = Number.parseInt(select.value, 10);
+            if (!Number.isFinite(year)) {
+                return;
+            }
+
+            instance.changeYear(year);
+        });
+
+        currentMonth.appendChild(select);
+        syncYearSelect(instance);
+    };
+
+    const commitTypedDate = meta => {
+        const rawValue = meta.instance.altInput?.value?.trim() || '';
+        if (!rawValue) {
+            meta.instance.clear(true);
+            meta.lastValue = '';
+            notifyValueChange(meta.input);
+            return;
+        }
+
+        const parsedDate = meta.instance.parseDate(rawValue, meta.altFormat);
+        if (!parsedDate) {
+            syncPickerValue(meta);
+            return;
+        }
+
+        meta.instance.setDate(parsedDate, true);
+        meta.lastValue = meta.input.value || '';
+        notifyValueChange(meta.input);
+        syncAltInputState(meta.input, meta.instance.altInput, meta.placeholder);
+    };
+
+    const commitWithin = root => {
+        if (!root) {
+            return;
+        }
+
+        instances.forEach(meta => {
+            const altInput = meta.instance.altInput;
+            if (root.contains(meta.input) || (altInput && root.contains(altInput))) {
+                commitTypedDate(meta);
+            }
+        });
+    };
+
+    const handleSearchTriggerClick = event => {
+        const trigger = event.target?.closest?.('[data-enter-search-trigger]');
+        if (!trigger) {
+            return;
+        }
+
+        commitWithin(trigger.closest('[data-enter-search-scope]') || document);
+    };
+
+    const appendDateTrigger = meta => {
+        const altInput = meta.instance.altInput;
+        if (!altInput || altInput.closest('.imaj-date-control')) {
+            return;
+        }
+
+        const control = document.createElement('span');
+        control.className = 'imaj-date-control';
+        altInput.parentNode.insertBefore(control, altInput);
+        control.appendChild(altInput);
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'imaj-date-trigger';
+        trigger.setAttribute('aria-label', isTurkish() ? 'Takvimi ac' : 'Open calendar');
+        trigger.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v3M17 2v3M4 9h16M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>';
+        trigger.addEventListener('click', event => {
+            event.preventDefault();
+            if (meta.input.disabled) {
+                return;
+            }
+
+            meta.instance.open(undefined, trigger);
+        });
+
+        control.appendChild(trigger);
+
+        altInput.addEventListener('blur', () => commitTypedDate(meta));
+        altInput.addEventListener('keydown', event => {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            event.preventDefault();
+            commitTypedDate(meta);
+            meta.instance.close();
+        });
+
+        syncAltInputState(meta.input, altInput, meta.placeholder);
     };
 
     const appendActionRow = meta => {
@@ -510,8 +668,8 @@ const DateFieldEnhancer = (() => {
             altInput: true,
             altInputClass: `${input.className} imaj-date-display`,
             altFormat: config.altFormat,
-            allowInput: false,
-            clickOpens: true,
+            allowInput: true,
+            clickOpens: false,
             dateFormat: config.dateFormat,
             disableMobile: true,
             enableTime: config.enableTime,
@@ -524,28 +682,31 @@ const DateFieldEnhancer = (() => {
                 const meta = instances.get(input);
                 syncAltInputState(input, fp.altInput, config.placeholder);
 
-                if (fp.altInput) {
-                    fp.altInput.addEventListener('keydown', event => {
-                        if (event.key !== 'Backspace' && event.key !== 'Delete') {
-                            return;
-                        }
-
-                        event.preventDefault();
-                        fp.clear(true);
-                        if (meta) {
-                            meta.lastValue = '';
-                        }
-                        notifyValueChange(input);
-                    });
-                }
-
                 appendActionRow(meta || {
                     input,
                     instance: fp,
+                    altFormat: config.altFormat,
                     dateFormat: config.dateFormat,
                     enableTime: config.enableTime,
-                    lastValue: input.value || ''
+                    lastValue: input.value || '',
+                    placeholder: config.placeholder
                 });
+                appendDateTrigger(meta || {
+                    input,
+                    instance: fp,
+                    altFormat: config.altFormat,
+                    dateFormat: config.dateFormat,
+                    enableTime: config.enableTime,
+                    lastValue: input.value || '',
+                    placeholder: config.placeholder
+                });
+                appendYearSelect(fp);
+            },
+            onMonthChange: (selectedDates, dateStr, fp) => syncYearSelect(fp),
+            onYearChange: (selectedDates, dateStr, fp) => syncYearSelect(fp),
+            onOpen: (selectedDates, dateStr, fp) => {
+                appendYearSelect(fp);
+                syncYearSelect(fp);
             },
             onChange: () => {
                 const meta = instances.get(input);
@@ -559,6 +720,7 @@ const DateFieldEnhancer = (() => {
         instances.set(input, {
             input,
             instance,
+            altFormat: config.altFormat,
             inputType: config.inputType,
             dateFormat: config.dateFormat,
             enableTime: config.enableTime,
@@ -626,11 +788,12 @@ const DateFieldEnhancer = (() => {
         }
 
         enhanceWithin(document);
+        document.addEventListener('click', handleSearchTriggerClick, true);
         startSyncLoop();
         startObserver();
     };
 
-    return { init };
+    return { init, commitWithin };
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -643,3 +806,4 @@ document.addEventListener('DOMContentLoaded', function () {
 window.API = API;
 window.Toast = Toast;
 window.FormHelper = FormHelper;
+window.DateFieldEnhancer = DateFieldEnhancer;

@@ -6,6 +6,8 @@ function jobCreate(config) {
         defaultWorkTypeName: config.defaultWorkTypeName || '',
         workTypeNames: config.workTypeNames || {},
         defaultTimeTypeId: config.defaultTimeTypeId || 0,
+        defaultTimeTypeName: config.defaultTimeTypeName || (config.forceDefaultTimeType ? 'Normal Mesai' : ''),
+        forceDefaultTimeType: !!config.forceDefaultTimeType,
         productPicker: config.productPicker || {},
         customerPicker: config.customerPicker || {},
         customerProductCategoriesEndpoint: config.customerProductCategoriesEndpoint || '',
@@ -265,7 +267,10 @@ function jobCreate(config) {
                 name: item.employeeName || item.name || '',
                 taskType: taskTypeId,
                 taskTypeName: item.workTypeName || item.taskTypeName || this.resolveWorkTypeName(taskTypeId) || '',
-                overtimeType: item.timeTypeId || item.overtimeType || this.defaultTimeTypeId,
+                overtimeType: this.forceDefaultTimeType
+                    ? this.defaultTimeTypeId
+                    : (item.timeTypeId || item.overtimeType || this.defaultTimeTypeId),
+                overtimeTypeName: this.forceDefaultTimeType ? (this.defaultTimeTypeName || 'Normal Mesai') : '',
                 quantity: this.parseDecimal(item.quantity, 1),
                 amount: this.parseDecimal(item.amount, 0),
                 notes: item.notes || '',

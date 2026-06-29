@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1180" viewBox="0 0 1440 1180">
+  <defs>
+    <style>
+      .bg{fill:#edf2f8}.panel{fill:#fff;stroke:#d9e1ec;stroke-width:1}.head{fill:#f9fbfe}.line{stroke:#d9e1ec;stroke-width:1}.title{font:700 28px Arial,Helvetica,sans-serif;fill:#ea580c}.h2{font:800 17px Arial,Helvetica,sans-serif;fill:#172033}.tag{font:700 12px Arial,Helvetica,sans-serif;fill:#9a3412}.text{font:700 13px Arial,Helvetica,sans-serif;fill:#334155}.small{font:700 12px Arial,Helvetica,sans-serif;fill:#64748b}.month{font:800 16px Arial,Helvetica,sans-serif;fill:#111827}.field{fill:#fff;stroke:#cbd5e1;stroke-width:1}.picker{fill:#fff;stroke:#d9e1ec;stroke-width:1}.pickerTop{fill:#f8fbff}.button{fill:#fff;stroke:#cbd5e1;stroke-width:1}.primary{fill:#2563eb;stroke:#2563eb}.primaryText{font:800 12px Arial,Helvetica,sans-serif;fill:#fff}.dayText{font:700 13px Arial,Helvetica,sans-serif;fill:#1f2937}.muted{fill:#a8b2c1}.range{fill:#e8f0ff}.selected{fill:#2563eb}.selectedText{font:800 13px Arial,Helvetica,sans-serif;fill:#fff}.soft{fill:#f8fafc}.card{fill:#fff;stroke:#d9e1ec;stroke-width:1}.big{font:800 27px Arial,Helvetica,sans-serif;fill:#172033}.green{fill:#15803d}.orange{fill:#ea580c}
+    </style>
+  </defs>
+  <rect class="bg" width="1440" height="1180"/>
+  <text x="720" y="48" text-anchor="middle" class="title">Başlangıç Tarih Aralığı Alternatifleri</text>
+
+  <!-- Option A -->
+  <g transform="translate(28 78)">
+    <rect class="panel" width="676" height="510" rx="8"/>
+    <rect class="head" width="676" height="50" rx="8"/>
+    <line class="line" x1="0" y1="50" x2="676" y2="50"/>
+    <text x="16" y="32" class="h2">A. Büyük Flatpickr</text>
+    <rect x="556" y="14" width="100" height="24" rx="12" fill="#fff7ed" stroke="#f4b183"/>
+    <text x="606" y="30" text-anchor="middle" class="tag">En az riskli</text>
+    <g transform="translate(18 70)">
+      <rect class="card" width="640" height="410" rx="6"/>
+      <rect class="soft" width="640" height="38" rx="6"/>
+      <line class="line" x1="0" y1="38" x2="640" y2="38"/>
+      <text x="12" y="25" class="text">İş Kriteri</text>
+      <text x="138" y="75" text-anchor="end" class="text">Başlangıç Tarihi Aralığı</text>
+      <rect class="field" x="160" y="55" width="128" height="44" rx="6"/><text x="224" y="82" text-anchor="middle" class="text">01.06.2026</text>
+      <rect class="field" x="298" y="55" width="128" height="44" rx="6"/><text x="362" y="82" text-anchor="middle" class="text">25.06.2026</text>
+      <g transform="translate(160 112)">
+        <rect class="picker" width="350" height="262" rx="8"/>
+        <rect class="pickerTop" width="350" height="46" rx="8"/>
+        <line class="line" x1="0" y1="46" x2="350" y2="46"/>
+        <rect class="button" x="12" y="9" width="32" height="28" rx="6"/><text x="28" y="29" text-anchor="middle" class="month">‹</text>
+        <text x="175" y="29" text-anchor="middle" class="month">Haziran 2026</text>
+        <rect class="button" x="306" y="9" width="32" height="28" rx="6"/><text x="322" y="29" text-anchor="middle" class="month">›</text>
+        <g transform="translate(10 58)">
+          <text x="20" y="12" text-anchor="middle" class="small">Pzt</text><text x="66" y="12" text-anchor="middle" class="small">Sal</text><text x="112" y="12" text-anchor="middle" class="small">Çar</text><text x="158" y="12" text-anchor="middle" class="small">Per</text><text x="204" y="12" text-anchor="middle" class="small">Cum</text><text x="250" y="12" text-anchor="middle" class="small">Cmt</text><text x="296" y="12" text-anchor="middle" class="small">Paz</text>
+          <g transform="translate(0 22)">
+            <rect class="selected" x="3" y="3" width="36" height="36" rx="6"/><text x="21" y="26" text-anchor="middle" class="selectedText">1</text>
+            <rect class="range" x="49" y="3" width="36" height="36" rx="6"/><text x="67" y="26" text-anchor="middle" class="dayText">2</text>
+            <rect class="range" x="95" y="3" width="36" height="36" rx="6"/><text x="113" y="26" text-anchor="middle" class="dayText">3</text>
+            <rect class="range" x="141" y="3" width="36" height="36" rx="6"/><text x="159" y="26" text-anchor="middle" class="dayText">4</text>
+            <rect class="range" x="187" y="3" width="36" height="36" rx="6"/><text x="205" y="26" text-anchor="middle" class="dayText">5</text>
+            <rect class="range" x="233" y="3" width="36" height="36" rx="6"/><text x="251" y="26" text-anchor="middle" class="dayText">6</text>
+            <rect class="range" x="279" y="3" width="36" height="36" rx="6"/><text x="297" y="26" text-anchor="middle" class="dayText">7</text>
+            <rect class="range" x="3" y="45" width="36" height="36" rx="6"/><text x="21" y="68" text-anchor="middle" class="dayText">8</text><rect class="range" x="49" y="45" width="36" height="36" rx="6"/><text x="67" y="68" text-anchor="middle" class="dayText">9</text><rect class="range" x="95" y="45" width="36" height="36" rx="6"/><text x="113" y="68" text-anchor="middle" class="dayText">10</text><rect class="range" x="141" y="45" width="36" height="36" rx="6"/><text x="159" y="68" text-anchor="middle" class="dayText">11</text><rect class="range" x="187" y="45" width="36" height="36" rx="6"/><text x="205" y="68" text-anchor="middle" class="dayText">12</text><rect class="range" x="233" y="45" width="36" height="36" rx="6"/><text x="251" y="68" text-anchor="middle" class="dayText">13</text><rect class="range" x="279" y="45" width="36" height="36" rx="6"/><text x="297" y="68" text-anchor="middle" class="dayText">14</text>
+            <rect class="range" x="3" y="87" width="36" height="36" rx="6"/><text x="21" y="110" text-anchor="middle" class="dayText">15</text><rect class="range" x="49" y="87" width="36" height="36" rx="6"/><text x="67" y="110" text-anchor="middle" class="dayText">16</text><rect class="range" x="95" y="87" width="36" height="36" rx="6"/><text x="113" y="110" text-anchor="middle" class="dayText">17</text><rect class="range" x="141" y="87" width="36" height="36" rx="6"/><text x="159" y="110" text-anchor="middle" class="dayText">18</text><rect class="range" x="187" y="87" width="36" height="36" rx="6"/><text x="205" y="110" text-anchor="middle" class="dayText">19</text><rect class="range" x="233" y="87" width="36" height="36" rx="6"/><text x="251" y="110" text-anchor="middle" class="dayText">20</text><rect class="range" x="279" y="87" width="36" height="36" rx="6"/><text x="297" y="110" text-anchor="middle" class="dayText">21</text>
+            <rect class="range" x="3" y="129" width="36" height="36" rx="6"/><text x="21" y="152" text-anchor="middle" class="dayText">22</text><rect class="range" x="49" y="129" width="36" height="36" rx="6"/><text x="67" y="152" text-anchor="middle" class="dayText">23</text><rect class="range" x="95" y="129" width="36" height="36" rx="6"/><text x="113" y="152" text-anchor="middle" class="dayText">24</text><rect class="selected" x="141" y="129" width="36" height="36" rx="6"/><text x="159" y="152" text-anchor="middle" class="selectedText">25</text><text x="205" y="152" text-anchor="middle" class="dayText">26</text><text x="251" y="152" text-anchor="middle" class="dayText">27</text><text x="297" y="152" text-anchor="middle" class="dayText">28</text>
+          </g>
+        </g>
+        <rect class="soft" x="0" y="218" width="350" height="44"/>
+        <rect class="button" x="10" y="226" width="58" height="28" rx="14"/><text x="39" y="245" text-anchor="middle" class="small">Bugün</text>
+        <rect class="button" x="76" y="226" width="62" height="28" rx="14"/><text x="107" y="245" text-anchor="middle" class="small">Bu Ay</text>
+        <rect class="button" x="146" y="226" width="80" height="28" rx="14"/><text x="186" y="245" text-anchor="middle" class="small">Son 30</text>
+        <rect class="primary" x="238" y="226" width="76" height="28" rx="14"/><text x="276" y="245" text-anchor="middle" class="primaryText">Uygula</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Option B -->
+  <g transform="translate(736 78)">
+    <rect class="panel" width="676" height="510" rx="8"/><rect class="head" width="676" height="50" rx="8"/><line class="line" x1="0" y1="50" x2="676" y2="50"/>
+    <text x="16" y="32" class="h2">B. Tek Alan + Açılır Aralık</text><rect x="556" y="14" width="100" height="24" rx="12" fill="#fff7ed" stroke="#f4b183"/><text x="606" y="30" text-anchor="middle" class="tag">Daha sade</text>
+    <g transform="translate(18 70)">
+      <rect class="card" width="640" height="410" rx="6"/><rect class="soft" width="640" height="38" rx="6"/><line class="line" x1="0" y1="38" x2="640" y2="38"/><text x="12" y="25" class="text">İş Kriteri</text>
+      <text x="138" y="75" text-anchor="end" class="text">Başlangıç Tarihi Aralığı</text>
+      <rect class="field" x="160" y="55" width="260" height="44" rx="6"/><text x="290" y="82" text-anchor="middle" class="text">01.06.2026 - 25.06.2026</text>
+      <g transform="translate(160 112)">
+        <rect class="picker" width="350" height="254" rx="8"/><rect class="pickerTop" width="350" height="46" rx="8"/><line class="line" x1="0" y1="46" x2="350" y2="46"/>
+        <text x="175" y="29" text-anchor="middle" class="month">Haziran 2026</text>
+        <g transform="translate(10 58)">
+          <text x="20" y="12" text-anchor="middle" class="small">Pzt</text><text x="66" y="12" text-anchor="middle" class="small">Sal</text><text x="112" y="12" text-anchor="middle" class="small">Çar</text><text x="158" y="12" text-anchor="middle" class="small">Per</text><text x="204" y="12" text-anchor="middle" class="small">Cum</text><text x="250" y="12" text-anchor="middle" class="small">Cmt</text><text x="296" y="12" text-anchor="middle" class="small">Paz</text>
+          <rect class="selected" x="3" y="25" width="36" height="36" rx="18"/><text x="21" y="49" text-anchor="middle" class="selectedText">1</text>
+          <rect class="range" x="49" y="25" width="220" height="36" rx="18"/><text x="67" y="49" text-anchor="middle" class="dayText">2</text><text x="113" y="49" text-anchor="middle" class="dayText">3</text><text x="159" y="49" text-anchor="middle" class="dayText">4</text><text x="205" y="49" text-anchor="middle" class="dayText">5</text><text x="251" y="49" text-anchor="middle" class="dayText">6</text>
+          <rect class="range" x="3" y="67" width="312" height="36" rx="18"/><text x="21" y="91" text-anchor="middle" class="dayText">8</text><text x="67" y="91" text-anchor="middle" class="dayText">9</text><text x="113" y="91" text-anchor="middle" class="dayText">10</text><text x="159" y="91" text-anchor="middle" class="dayText">11</text><text x="205" y="91" text-anchor="middle" class="dayText">12</text><text x="251" y="91" text-anchor="middle" class="dayText">13</text><text x="297" y="91" text-anchor="middle" class="dayText">14</text>
+          <rect class="range" x="3" y="109" width="174" height="36" rx="18"/><text x="21" y="133" text-anchor="middle" class="dayText">22</text><text x="67" y="133" text-anchor="middle" class="dayText">23</text><text x="113" y="133" text-anchor="middle" class="dayText">24</text><rect class="selected" x="141" y="109" width="36" height="36" rx="18"/><text x="159" y="133" text-anchor="middle" class="selectedText">25</text>
+        </g>
+        <rect class="soft" x="0" y="210" width="350" height="44"/>
+        <rect class="primary" x="206" y="218" width="64" height="28" rx="14"/><text x="238" y="237" text-anchor="middle" class="primaryText">Seç</text>
+        <rect class="button" x="278" y="218" width="62" height="28" rx="14"/><text x="309" y="237" text-anchor="middle" class="small">Temizle</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Option C -->
+  <g transform="translate(28 630)">
+    <rect class="panel" width="676" height="510" rx="8"/><rect class="head" width="676" height="50" rx="8"/><line class="line" x1="0" y1="50" x2="676" y2="50"/>
+    <text x="16" y="32" class="h2">C. İki Büyük Kart</text><rect x="556" y="14" width="100" height="24" rx="12" fill="#fff7ed" stroke="#f4b183"/><text x="606" y="30" text-anchor="middle" class="tag">En okunur</text>
+    <g transform="translate(18 70)">
+      <rect class="card" width="640" height="410" rx="6"/><rect class="soft" width="640" height="38" rx="6"/><line class="line" x1="0" y1="38" x2="640" y2="38"/><text x="12" y="25" class="text">İş Kriteri</text>
+      <text x="138" y="75" text-anchor="end" class="text">Başlangıç Tarihi Aralığı</text>
+      <rect class="card" x="160" y="55" width="142" height="72" rx="8"/><text x="174" y="78" class="small">Başlangıç</text><text x="174" y="110" class="big">01</text><text x="222" y="109" class="text">Haz 2026</text>
+      <rect class="card" x="314" y="55" width="142" height="72" rx="8"/><text x="328" y="78" class="small">Bitiş</text><text x="328" y="110" class="big">25</text><text x="376" y="109" class="text">Haz 2026</text>
+      <g transform="translate(160 140)">
+        <rect class="picker" width="350" height="214" rx="8"/><rect class="pickerTop" width="350" height="46" rx="8"/><line class="line" x1="0" y1="46" x2="350" y2="46"/><text x="175" y="29" text-anchor="middle" class="month">Haziran 2026</text>
+        <g transform="translate(10 62)">
+          <rect class="selected" x="3" y="3" width="36" height="36" rx="6"/><text x="21" y="27" text-anchor="middle" class="selectedText">1</text>
+          <rect class="range" x="49" y="3" width="220" height="36" rx="6"/><text x="67" y="27" text-anchor="middle" class="dayText">2</text><text x="113" y="27" text-anchor="middle" class="dayText">3</text><text x="159" y="27" text-anchor="middle" class="dayText">4</text><text x="205" y="27" text-anchor="middle" class="dayText">5</text><text x="251" y="27" text-anchor="middle" class="dayText">6</text>
+          <rect class="range" x="3" y="45" width="312" height="36" rx="6"/><text x="21" y="69" text-anchor="middle" class="dayText">8</text><text x="67" y="69" text-anchor="middle" class="dayText">9</text><text x="113" y="69" text-anchor="middle" class="dayText">10</text><text x="159" y="69" text-anchor="middle" class="dayText">11</text><text x="205" y="69" text-anchor="middle" class="dayText">12</text><text x="251" y="69" text-anchor="middle" class="dayText">13</text><text x="297" y="69" text-anchor="middle" class="dayText">14</text>
+          <rect class="range" x="3" y="87" width="174" height="36" rx="6"/><text x="21" y="111" text-anchor="middle" class="dayText">22</text><text x="67" y="111" text-anchor="middle" class="dayText">23</text><text x="113" y="111" text-anchor="middle" class="dayText">24</text><rect class="selected" x="141" y="87" width="36" height="36" rx="6"/><text x="159" y="111" text-anchor="middle" class="selectedText">25</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- Option D -->
+  <g transform="translate(736 630)">
+    <rect class="panel" width="676" height="510" rx="8"/><rect class="head" width="676" height="50" rx="8"/><line class="line" x1="0" y1="50" x2="676" y2="50"/>
+    <text x="16" y="32" class="h2">D. Kısayol Öncelikli</text><rect x="556" y="14" width="100" height="24" rx="12" fill="#fff7ed" stroke="#f4b183"/><text x="606" y="30" text-anchor="middle" class="tag">Hızlı filtre</text>
+    <g transform="translate(18 70)">
+      <rect class="card" width="640" height="410" rx="6"/><rect class="soft" width="640" height="38" rx="6"/><line class="line" x1="0" y1="38" x2="640" y2="38"/><text x="12" y="25" class="text">İş Kriteri</text>
+      <text x="138" y="75" text-anchor="end" class="text">Başlangıç Tarihi Aralığı</text>
+      <rect class="field" x="160" y="55" width="300" height="44" rx="6"/><text x="310" y="82" text-anchor="middle" class="text">Bu Ay: 01.06.2026 - 25.06.2026</text>
+      <g transform="translate(160 116)">
+        <g>
+          <rect class="button" x="0" y="0" width="142" height="36" rx="6"/><text x="14" y="23" class="text">Bugün</text>
+          <rect class="button" x="0" y="44" width="142" height="36" rx="6"/><text x="14" y="67" class="text">Son 7 Gün</text>
+          <rect class="button" x="0" y="88" width="142" height="36" rx="6"/><text x="14" y="111" class="text">Son 30 Gün</text>
+          <rect x="0" y="132" width="142" height="36" rx="6" fill="#eff6ff" stroke="#2563eb"/><text x="14" y="155" class="text" fill="#1d4ed8">Bu Ay</text>
+          <rect class="button" x="0" y="176" width="142" height="36" rx="6"/><text x="14" y="199" class="text">Geçen Ay</text>
+        </g>
+        <g transform="translate(160 0)">
+          <rect class="picker" width="270" height="214" rx="8"/><rect class="pickerTop" width="270" height="46" rx="8"/><line class="line" x1="0" y1="46" x2="270" y2="46"/><text x="135" y="29" text-anchor="middle" class="month">2026</text>
+          <g transform="translate(14 62)">
+            <rect class="button" x="0" y="0" width="54" height="38" rx="6"/><text x="27" y="24" text-anchor="middle" class="text">Oca</text>
+            <rect class="button" x="62" y="0" width="54" height="38" rx="6"/><text x="89" y="24" text-anchor="middle" class="text">Şub</text>
+            <rect class="button" x="124" y="0" width="54" height="38" rx="6"/><text x="151" y="24" text-anchor="middle" class="text">Mar</text>
+            <rect class="button" x="186" y="0" width="54" height="38" rx="6"/><text x="213" y="24" text-anchor="middle" class="text">Nis</text>
+            <rect class="button" x="0" y="46" width="54" height="38" rx="6"/><text x="27" y="70" text-anchor="middle" class="text">May</text>
+            <rect class="primary" x="62" y="46" width="54" height="38" rx="6"/><text x="89" y="70" text-anchor="middle" class="primaryText">Haz</text>
+            <rect class="button" x="124" y="46" width="54" height="38" rx="6"/><text x="151" y="70" text-anchor="middle" class="text">Tem</text>
+            <rect class="button" x="186" y="46" width="54" height="38" rx="6"/><text x="213" y="70" text-anchor="middle" class="text">Ağu</text>
+            <rect class="button" x="0" y="92" width="54" height="38" rx="6"/><text x="27" y="116" text-anchor="middle" class="text">Eyl</text>
+            <rect class="button" x="62" y="92" width="54" height="38" rx="6"/><text x="89" y="116" text-anchor="middle" class="text">Eki</text>
+            <rect class="button" x="124" y="92" width="54" height="38" rx="6"/><text x="151" y="116" text-anchor="middle" class="text">Kas</text>
+            <rect class="button" x="186" y="92" width="54" height="38" rx="6"/><text x="213" y="116" text-anchor="middle" class="text">Ara</text>
+          </g>
+          <rect class="primary" x="132" y="174" width="76" height="28" rx="14"/><text x="170" y="193" text-anchor="middle" class="primaryText">Uygula</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
