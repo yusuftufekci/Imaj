@@ -38,7 +38,6 @@ namespace Imaj.Service.Mapping
                 // Entity'ye özgü fieldlar - DTO'dan gelmeyenler
                 .ForMember(dest => dest.CompanyID, opt => opt.Ignore())
                 .ForMember(dest => dest.Stamp, opt => opt.Ignore())
-                .ForMember(dest => dest.Invisible, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore());
 

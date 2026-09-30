@@ -151,7 +151,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CustomerSearch([FromBody] CustomerFilterModel? filter)
+        public async Task<IActionResult> CustomerSearch([FromBody] CustomerFilterModel? filter, [FromQuery] bool selectableOnly = false)
         {
             if (!await CanUseCustomerLookupAsync())
             {
@@ -163,7 +163,9 @@ namespace Imaj.Web.Controllers
             f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
             f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : null;
 
-            var result = await _customerService.GetByFilterAsync(BuildCustomerFilter(f));
+            var customerFilter = BuildCustomerFilter(f);
+            customerFilter.SelectableOnly = selectableOnly;
+            var result = await _customerService.GetByFilterAsync(customerFilter);
 
             var items = result.IsSuccess && result.Data != null
                 ? result.Data.Items.Select(c => new CustomerSearchResult
@@ -532,7 +534,11 @@ namespace Imaj.Web.Controllers
                     SubTotal = jp.GrossAmount,
                     NetTotal = jp.NetAmount,
                     Notes = jp.Notes
-                }).ToList();
+                })
+                    .OrderBy(JobProductDisplayOrder.GetRank)
+                    .ThenBy(x => x.Code)
+                    .ThenBy(x => x.Name)
+                    .ToList();
 
                 model.TotalProductAmount = model.Products.Sum(x => x.NetTotal);
             }
@@ -704,7 +710,11 @@ namespace Imaj.Web.Controllers
                     SubTotal = jp.GrossAmount,
                     NetTotal = jp.NetAmount,
                     Notes = jp.Notes
-                }).ToList();
+                })
+                    .OrderBy(JobProductDisplayOrder.GetRank)
+                    .ThenBy(x => x.Code)
+                    .ThenBy(x => x.Name)
+                    .ToList();
 
                 model.TotalProductAmount = model.Products.Sum(x => x.NetTotal);
             }

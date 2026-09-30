@@ -10,6 +10,7 @@ function customerSelectModal() {
         targetId: null,
         searchEndpoint: '/Customer/Search',
         jobStatesEndpoint: '/Customer/GetJobStates',
+        selectableOnly: false,
 
         // Filtre alanları - Customer'a özel geniş filtre
         filter: {
@@ -71,6 +72,8 @@ function customerSelectModal() {
         async openModal(detail) {
             this.targetId = detail?.targetId || null;
             this.searchEndpoint = detail?.searchEndpoint || '/Customer/Search';
+            this.selectableOnly = new URL(this.searchEndpoint, window.location.origin)
+                .searchParams.get('selectableOnly') === 'true';
             this.jobStatesEndpoint = detail?.jobStatesEndpoint || '/Customer/GetJobStates';
             this.showModal = true;
             this.resetFilter();
@@ -115,7 +118,7 @@ function customerSelectModal() {
                 taxOffice: '',
                 taxNumber: '',
                 jobStatus: '',
-                isInvalid: null,
+                isInvalid: this.selectableOnly ? false : null,
                 page: 1,
                 pageSize: 5
             };
@@ -131,6 +134,9 @@ function customerSelectModal() {
 
             // Boş değerleri null'a çevir
             const filterToSend = { ...this.filter };
+            if (this.selectableOnly) {
+                filterToSend.isInvalid = false;
+            }
             if (filterToSend.isInvalid === "") {
                 filterToSend.isInvalid = null;
             } else if (filterToSend.isInvalid === "true") {

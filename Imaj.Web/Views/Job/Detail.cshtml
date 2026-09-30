@@ -112,10 +112,16 @@
             || normalized.Contains("CAFETERIA");
     }
 
-    bool IsServiceCategory(string? value)
+    int GetCategorySortRank(string? value)
     {
         var normalized = NormalizeCategoryLabel(value);
-        return !string.IsNullOrWhiteSpace(normalized) && !IsNonServiceChargeCategory(normalized);
+        if (normalized.Contains("KAFETERYA") || normalized.Contains("KAFE")
+            || normalized.Contains("CAFE") || normalized.Contains("CAFETERIA"))
+        {
+            return 2;
+        }
+
+        return IsNonServiceChargeCategory(value) ? 1 : 0;
     }
 
     var selectedIds = Model.SelectedIds ?? new List<string>();
@@ -155,7 +161,7 @@
     var canShowPrintJobForm = parsedReference && canPrintJobForm && (isCompleted || isPriced || isInvoiced);
     var orderedProductCategories = Model.ProductCategories
         .Select((category, index) => new { Category = category, Index = index })
-        .OrderBy(x => IsServiceCategory(x.Category.Name) ? 0 : 1)
+        .OrderBy(x => GetCategorySortRank(x.Category.Name))
         .ThenBy(x => x.Index)
         .Select(x => x.Category)
         .ToList();
@@ -274,7 +280,7 @@
                                 <input type="hidden" name="CustomerId" form="jobDetailEditForm" :value="customerId" :disabled="!isEditing">
                                 <span class="job-detail-edit-selector__value" x-text="customerName || '-'"></span>
                                 <button type="button"
-                                        @@click="$dispatch('customer-select-open', { targetId: 'jobDetailEdit', searchEndpoint: '@(endpointPrefix)/CustomerSearch', jobStatesEndpoint: '@(endpointPrefix)/CustomerJobStates' })"
+                                        @@click="$dispatch('customer-select-open', { targetId: 'jobDetailEdit', searchEndpoint: '@(endpointPrefix)/CustomerSearch?selectableOnly=true', jobStatesEndpoint: '@(endpointPrefix)/CustomerJobStates' })"
                                         class="job-picker-link">
                                     @Localizer["Select"]
                                 </button>
@@ -1427,9 +1433,14 @@
                         || normalized.includes('CAFE')
                         || normalized.includes('CAFETERIA');
                 },
-                isServiceCategoryName(value) {
+                getCategorySortRank(value) {
                     const normalized = this.normalizeSortText(value);
-                    return !!normalized && !this.isNonServiceChargeCategoryName(normalized);
+                    if (normalized.includes('KAFETERYA') || normalized.includes('KAFE')
+                        || normalized.includes('CAFE') || normalized.includes('CAFETERIA')) {
+                        return 2;
+                    }
+
+                    return this.isNonServiceChargeCategoryName(normalized) ? 1 : 0;
                 },
                 getProductSortRank(row) {
                     const combinedText = this.normalizeSortText([
@@ -1486,8 +1497,8 @@
                         .sort((left, right) => {
                             const leftName = left.querySelector('input[name$=".Name"]')?.value || left.textContent || '';
                             const rightName = right.querySelector('input[name$=".Name"]')?.value || right.textContent || '';
-                            const rankDiff = (this.isServiceCategoryName(leftName) ? 0 : 1)
-                                - (this.isServiceCategoryName(rightName) ? 0 : 1);
+                            const rankDiff = this.getCategorySortRank(leftName)
+                                - this.getCategorySortRank(rightName);
                             return rankDiff !== 0 ? rankDiff : 0;
                         })
                         .forEach(row => tbody.appendChild(row));

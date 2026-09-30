@@ -218,7 +218,8 @@ namespace Imaj.Service.Services
                 .WhereIf(filter.JobStatus == "Active", c => c.SelectFlag == true)
                 .WhereIf(filter.JobStatus == "Completed", c => c.SelectFlag == false)
                 .WhereIfHasValue(filter.JobStateId, c => _unitOfWork.Repository<Job>().Query().Any(j => j.CustomerID == c.Id && j.StateID == filter.JobStateId!.Value))
-                .WhereIfHasValue(filter.IsInvalid, c => c.Invisible == filter.IsInvalid!.Value);
+                .WhereIfHasValue(filter.IsInvalid, c => (c.Invisible || !c.SelectFlag) == filter.IsInvalid!.Value)
+                .WhereIf(filter.SelectableOnly, c => !c.Invisible && c.SelectFlag);
 
             // Sayfalama ve first kapsamı
             var page = filter.Page > 0 ? filter.Page : 1;

@@ -173,7 +173,7 @@ namespace Imaj.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CustomerSearch([FromBody] CustomerFilterModel? filter)
+        public async Task<IActionResult> CustomerSearch([FromBody] CustomerFilterModel? filter, [FromQuery] bool selectableOnly = false)
         {
             if (!await CanUseCustomerLookupAsync())
             {
@@ -185,7 +185,9 @@ namespace Imaj.Web.Controllers
             f.PageSize = f.PageSize > 0 ? f.PageSize : 20;
             f.First = f.First.HasValue && f.First.Value > 0 ? f.First.Value : null;
 
-            var result = await _customerService.GetByFilterAsync(BuildCustomerFilter(f));
+            var customerFilter = BuildCustomerFilter(f);
+            customerFilter.SelectableOnly = selectableOnly;
+            var result = await _customerService.GetByFilterAsync(customerFilter);
 
             var items = result.IsSuccess && result.Data != null
                 ? result.Data.Items.Select(c => new CustomerSearchResult
@@ -911,7 +913,7 @@ namespace Imaj.Web.Controllers
                         NetTotal = jp.NetAmount,
                         Notes = jp.Notes
                     })
-                    .OrderBy(GetJobProductDisplayRank)
+                    .OrderBy(JobProductDisplayOrder.GetRank)
                     .ThenBy(x => x.Code)
                     .ThenBy(x => x.Name)
                     .ToList();
@@ -2422,53 +2424,6 @@ namespace Imaj.Web.Controllers
                 JobWorkflowAction.UndoEvaluate => UndoEvaluateMethodId,
                 _ => null
             };
-        }
-
-        private static int GetJobProductDisplayRank(JobProductItem product)
-        {
-            var combinedText = NormalizeProductSortValue(string.Join(' ', product.Code, product.Name, product.CategoryName));
-
-            if (combinedText.Contains("OPERATOR", StringComparison.Ordinal) &&
-                combinedText.Contains("UCRETI", StringComparison.Ordinal))
-            {
-                return 90;
-            }
-
-            if (combinedText.Contains("CAFE", StringComparison.Ordinal) ||
-                combinedText.Contains("KAFE", StringComparison.Ordinal) ||
-                combinedText.Contains("KAFETERYA", StringComparison.Ordinal))
-            {
-                return 91;
-            }
-
-            if ((combinedText.Contains("FAZLA", StringComparison.Ordinal) &&
-                 combinedText.Contains("MESAI", StringComparison.Ordinal)) ||
-                combinedText.Contains("OVERTIME", StringComparison.Ordinal))
-            {
-                return 92;
-            }
-
-            if (combinedText.Contains("SUIT", StringComparison.Ordinal))
-            {
-                return 0;
-            }
-
-            return 10;
-        }
-
-        private static string NormalizeProductSortValue(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            var normalized = value.Normalize(NormalizationForm.FormD);
-            var chars = normalized
-                .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-                .ToArray();
-
-            return new string(chars).Normalize(NormalizationForm.FormC).ToUpperInvariant();
         }
 
         private string L(string key)

@@ -184,6 +184,13 @@ function jobCreate(config) {
                 return 10;
             }
 
+            if (normalized.includes('KAFETERYA')
+                || normalized.includes('KAFE')
+                || normalized.includes('CAFE')
+                || normalized.includes('CAFETERIA')) {
+                return 100;
+            }
+
             return this.isNonServiceChargeText(normalized) ? 90 : 0;
         },
 

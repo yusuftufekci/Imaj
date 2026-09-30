@@ -1282,10 +1282,17 @@ namespace Imaj.Service.Services
                 
                 // Müşterinin veritabanında var olup olmadığını kontrol et
                 var customerRepo = _unitOfWork.Repository<Customer>();
-                var customerExists = await customerRepo.Query().AnyAsync(x => x.Id == jobDto.CustomerId);
-                if (!customerExists)
+                var customer = await customerRepo.Query()
+                    .Where(x => x.Id == jobDto.CustomerId)
+                    .Select(x => new { x.Invisible, x.SelectFlag })
+                    .SingleOrDefaultAsync();
+                if (customer == null)
                 {
                     return ServiceResult<JobDto>.Fail($"Seçilen müşteri (ID: {jobDto.CustomerId}) veritabanında bulunamadı.");
+                }
+                if (customer.Invisible || !customer.SelectFlag)
+                {
+                    return ServiceResult<JobDto>.Fail("Geçersiz müşteri için iş oluşturulamaz.");
                 }
                 
                 // İş adı kontrolü
@@ -1608,11 +1615,17 @@ namespace Imaj.Service.Services
                     return ServiceResult<JobDto>.Fail("İş bulunamadı.");
                 }
 
-                var customerExists = await _unitOfWork.Repository<Customer>().Query()
-                    .AnyAsync(x => x.Id == jobDto.CustomerId);
-                if (!customerExists)
+                var customer = await _unitOfWork.Repository<Customer>().Query()
+                    .Where(x => x.Id == jobDto.CustomerId)
+                    .Select(x => new { x.Invisible, x.SelectFlag })
+                    .SingleOrDefaultAsync();
+                if (customer == null)
                 {
                     return ServiceResult<JobDto>.Fail("Seçilen müşteri bulunamadı.");
+                }
+                if (customer.Invisible || !customer.SelectFlag)
+                {
+                    return ServiceResult<JobDto>.Fail("Geçersiz müşteri için iş güncellenemez.");
                 }
 
                 var functionExists = await _unitOfWork.Repository<Function>().Query()

@@ -36,7 +36,7 @@
         },
         customerPicker = new
         {
-            searchEndpoint = "/JobEntry/CustomerSearch",
+            searchEndpoint = "/JobEntry/CustomerSearch?selectableOnly=true",
             jobStatesEndpoint = "/JobEntry/CustomerJobStates",
             defaultPageSize = 16
         },
@@ -191,7 +191,7 @@
                                     <input type="hidden" name="CustomerName" x-model="form.customerName">
                                     <span class="job-create-selector__value" x-text="form.customerName || '-'"></span>
                                     <span class="job-create-selector__separator">-</span>
-                                    <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'createJob', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="job-create-link-button">
+                                    <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'createJob', searchEndpoint: '/JobEntry/CustomerSearch?selectableOnly=true', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="job-create-link-button">
                                         @Localizer["Select"]
                                     </button>
                                 </div>

@@ -133,7 +133,7 @@ namespace Imaj.Web.Controllers
                      TaxNumber = c.TaxNumber,
                      Owner = c.Owner,
                      JobStatus = c.SelectFlag ? "Active" : "Passive", // Map SelectFlag
-                     IsInvalid = c.Invisible
+                     IsInvalid = c.Invisible || !c.SelectFlag
                 }).ToList() 
                 : new List<CustomerViewModel>();
 
@@ -389,7 +389,7 @@ namespace Imaj.Web.Controllers
                         new() { Label = L("TaxOffice"), Value = ValueOrDash(customer.TaxOffice) },
                         new() { Label = L("TaxNumber"), Value = ValueOrDash(customer.TaxNumber) },
                         new() { Label = L("InvoiceName"), Value = ValueOrDash(customer.InvoiceName) },
-                        new() { Label = L("Invalid"), Value = customer.Invisible ? L("Yes") : L("No") }
+                        new() { Label = L("Invalid"), Value = customer.Invisible || !customer.SelectFlag ? L("Yes") : L("No") }
                     }
                 })
                 .ToList();
@@ -417,11 +417,16 @@ namespace Imaj.Web.Controllers
                  City = c.City, 
                  Phone = c.Phone, 
                  Email = c.Email,
+                 RelatedPerson = c.Contact,
+                 Fax = c.Fax,
+                 AreaCode = c.AreaCode,
+                 InvoiceName = c.InvoiceName,
                  Country = c.Country, 
                  TaxOffice = c.TaxOffice, 
                  TaxNumber = c.TaxNumber, 
                  Owner = c.Owner,
                  JobStatus = c.SelectFlag ? "Active" : "Passive",
+                 IsInvalid = c.Invisible || !c.SelectFlag,
                  Address = c.Address,
                  Notes = c.Notes,
                  ProductCategories = c.ProductCategories.Select(pc => new ProductCategoryViewModel 
@@ -463,6 +468,7 @@ namespace Imaj.Web.Controllers
                 Fax = model.Fax,
                 Contact = model.RelatedPerson,
                 SelectFlag = !model.IsInvalid,
+                Invisible = model.IsInvalid,
                 ProductCategories = model.ProductCategories.Select(pc => new ProductCategoryDto 
                 {
                     Id = pc.Id,
@@ -517,9 +523,8 @@ namespace Imaj.Web.Controllers
                 AreaCode = model.AreaCode,
                 Fax = model.Fax,
                 Contact = model.RelatedPerson,
-                SelectFlag = !model.IsInvalid, // If IsInvalid is true, SelectFlag is false (Passive)? Logic needs to be consistent.
-                // Actually, if IsInvalid is "Geçersiz", usually it means "Inactive" or "Hidden".
-                // I'll assume IsInvalid == true => SelectFlag = false.
+                SelectFlag = !model.IsInvalid,
+                Invisible = model.IsInvalid,
                 ProductCategories = model.ProductCategories.Select(pc => new ProductCategoryDto 
                 {
                     Id = pc.Id,

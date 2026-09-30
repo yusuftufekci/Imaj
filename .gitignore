@@ -6,6 +6,7 @@
 [Oo]bj/
 
 # User-specific files
+.DS_Store
 *.suo
 *.user
 *.userosscache

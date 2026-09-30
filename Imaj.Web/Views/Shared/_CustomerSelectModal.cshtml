@@ -34,7 +34,7 @@
                                     <label>@Localizer["Name"]</label>
                                     <input type="text" x-model="filter.name" class="dense-input">
                                 </div>
-                                <div class="dense-form-row">
+                                <div class="dense-form-row" x-show="!selectableOnly">
                                     <label>@Localizer["Invalid"]</label>
                                     <select x-model="filter.isInvalid" class="dense-input">
                                         <option value="">@Localizer["All"]</option>
