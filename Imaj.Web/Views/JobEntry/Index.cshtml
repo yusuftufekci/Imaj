@@ -56,6 +56,9 @@
                                     <button type="button" @@click="$dispatch('customer-select-open', { targetId: 'jobFilter', searchEndpoint: '/JobEntry/CustomerSearch', jobStatesEndpoint: '/JobEntry/CustomerJobStates' })" class="inline-flex items-center px-3 py-1 border border-blue-300 rounded-md bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200">
                                         @Localizer["Select"]
                                     </button>
+                                    <button type="button" @@click="clearCustomerSelection()" class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md bg-white text-gray-700 font-semibold hover:bg-gray-50">
+                                        @Localizer["Delete"]
+                                    </button>
                                 </div>
                             </div>
                             <div class="dense-form-row">
@@ -279,6 +282,12 @@
                         document.querySelector('form[action="/JobEntry/List"] [data-enter-search-trigger]')?.focus();
                     }, 0);
                 }
+            },
+
+            clearCustomerSelection() {
+                this.filter.customerCode = '';
+                this.filter.customerId = '';
+                this.customerName = '';
             },
 
             handleProductSelection(detail) {

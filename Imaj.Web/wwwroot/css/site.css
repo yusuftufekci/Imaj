@@ -4068,6 +4068,15 @@ span.flatpickr-weekday {
     background-color: inherit;
 }
 
+/* Count only rows so Alpine templates do not offset the table stripes. */
+.job-page-shell .job-table.job-table--striped > tbody > tr:nth-of-type(odd) {
+    background-color: #fff1cc;
+}
+
+.job-page-shell .job-table.job-table--striped > tbody > tr:nth-of-type(even) {
+    background-color: #dceeff;
+}
+
 .job-legacy-detail .job-table-card--category-summary {
     width: 59.8%;
     min-width: 48rem;

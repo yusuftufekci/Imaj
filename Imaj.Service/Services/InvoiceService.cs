@@ -30,6 +30,7 @@ namespace Imaj.Service.Services
             "fazla mesai"
         };
 
+        private const decimal CreateLogActionId = 1010m;
         private const decimal ConfirmLogActionId = 1110m;
         private const decimal UndoConfirmLogActionId = 1120m;
         private const decimal IssueLogActionId = 1130m;
@@ -472,17 +473,9 @@ namespace Imaj.Service.Services
                 validationErrors.Add("Seçilen işlerde tanımsız vergi tipi var.");
             }
 
-            decimal? currentUserId = null;
-            if (selectedJobs.Any())
+            if (!_currentPermissionContext.TryGetCurrentUserId(out var currentUserId))
             {
-                if (_currentPermissionContext.TryGetCurrentUserId(out var userId))
-                {
-                    currentUserId = userId;
-                }
-                else
-                {
-                    validationErrors.Add("Kullanıcı bilgisi doğrulanamadı.");
-                }
+                validationErrors.Add("Kullanıcı bilgisi doğrulanamadı.");
             }
 
             if (validationErrors.Any())
@@ -494,6 +487,7 @@ namespace Imaj.Service.Services
             try
             {
                 var invoiceRepo = _unitOfWork.Repository<Invoice>();
+                var invoiceLogRepo = _unitOfWork.Repository<InvoiceLog>();
                 var invoiceLineRepo = _unitOfWork.Repository<InvoLine>();
                 var invoiceTaxRepo = _unitOfWork.Repository<InvoTax>();
                 var invoiceJobRepo = _unitOfWork.Repository<InvoJob>();
@@ -502,6 +496,7 @@ namespace Imaj.Service.Services
                 var jobLogRepo = _unitOfWork.Repository<JobLog>();
 
                 var nextInvoiceId = (await invoiceRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                var nextInvoiceLogId = (await invoiceLogRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
                 var nextLineId = (await invoiceLineRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
                 var nextTaxId = (await invoiceTaxRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
                 var nextInvoiceJobId = (await invoiceJobRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
@@ -594,6 +589,7 @@ namespace Imaj.Service.Services
                 var totalTaxAmount = RoundCurrency(taxRows.Sum(x => x.TaxAmount));
                 var total = RoundCurrency(subtotal + totalTaxAmount);
 
+                var actionDate = DateTime.Now;
                 await invoiceRepo.AddAsync(new Invoice
                 {
                     Id = nextInvoiceId,
@@ -614,6 +610,16 @@ namespace Imaj.Service.Services
                     SelectFlag = false,
                     Stamp = 1,
                     IssueDate = input.IssueDate == default ? DateTime.Today : input.IssueDate.Date
+                });
+
+                await invoiceLogRepo.AddAsync(new InvoiceLog
+                {
+                    Id = nextInvoiceLogId,
+                    InvoiceID = nextInvoiceId,
+                    UserID = currentUserId,
+                    LogActionID = CreateLogActionId,
+                    ActionDT = actionDate,
+                    Stamp = 1
                 });
 
                 foreach (var lineItem in lineItems)
@@ -638,7 +644,6 @@ namespace Imaj.Service.Services
 
                 if (jobLineId.HasValue)
                 {
-                    var actionDate = DateTime.Now;
                     foreach (var selectedJob in selectedJobs)
                     {
                         await invoiceJobRepo.AddAsync(new InvoJob
@@ -660,7 +665,7 @@ namespace Imaj.Service.Services
                         {
                             Id = nextJobLogId++,
                             JobID = selectedJob.Id,
-                            UserID = currentUserId!.Value,
+                            UserID = currentUserId,
                             LogActionID = InvoiceJobLogActionId,
                             ActionDT = actionDate,
                             Destination = string.Empty,

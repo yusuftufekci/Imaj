@@ -1268,6 +1268,11 @@ namespace Imaj.Service.Services
         public async Task<ServiceResult<JobDto>> AddAsync(JobDto jobDto)
         {
             if (jobDto == null) throw new ArgumentNullException(nameof(jobDto));
+
+            if (!_currentPermissionContext.TryGetCurrentUserId(out var userId))
+            {
+                return ServiceResult<JobDto>.Fail("Kullanıcı bilgisi doğrulanamadı.");
+            }
             
             using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
@@ -1284,13 +1289,13 @@ namespace Imaj.Service.Services
                 var customerRepo = _unitOfWork.Repository<Customer>();
                 var customer = await customerRepo.Query()
                     .Where(x => x.Id == jobDto.CustomerId)
-                    .Select(x => new { x.Invisible, x.SelectFlag })
+                    .Select(x => new { x.Invisible })
                     .SingleOrDefaultAsync();
                 if (customer == null)
                 {
                     return ServiceResult<JobDto>.Fail($"Seçilen müşteri (ID: {jobDto.CustomerId}) veritabanında bulunamadı.");
                 }
-                if (customer.Invisible || !customer.SelectFlag)
+                if (customer.Invisible)
                 {
                     return ServiceResult<JobDto>.Fail("Geçersiz müşteri için iş oluşturulamaz.");
                 }
@@ -1449,6 +1454,19 @@ namespace Imaj.Service.Services
                 };
 
                 await jobRepo.AddAsync(job);
+
+                var jobLogRepo = _unitOfWork.Repository<JobLog>();
+                var nextJobLogId = (await jobLogRepo.Query().MaxAsync(x => (decimal?)x.Id) ?? 0) + 1;
+                await jobLogRepo.AddAsync(new JobLog
+                {
+                    Id = nextJobLogId,
+                    JobID = job.Id,
+                    UserID = userId,
+                    LogActionID = CreateLogActionId,
+                    ActionDT = DateTime.Now,
+                    Destination = string.Empty,
+                    Stamp = 1
+                });
                 
                 // ÖNEMLİ: Job'u önce veritabanına kaydet ki FK referansları doğru çalışsın
                 await _unitOfWork.CommitAsync();
@@ -1617,13 +1635,13 @@ namespace Imaj.Service.Services
 
                 var customer = await _unitOfWork.Repository<Customer>().Query()
                     .Where(x => x.Id == jobDto.CustomerId)
-                    .Select(x => new { x.Invisible, x.SelectFlag })
+                    .Select(x => new { x.Invisible })
                     .SingleOrDefaultAsync();
                 if (customer == null)
                 {
                     return ServiceResult<JobDto>.Fail("Seçilen müşteri bulunamadı.");
                 }
-                if (customer.Invisible || !customer.SelectFlag)
+                if (customer.Invisible)
                 {
                     return ServiceResult<JobDto>.Fail("Geçersiz müşteri için iş güncellenemez.");
                 }

@@ -16,7 +16,7 @@ namespace Imaj.Service.DTOs
         public string? TaxNumber { get; set; }
         public string? JobStatus { get; set; } // Active, Completed
         public decimal? JobStateId { get; set; } // Job State ID filter
-        public bool? IsInvalid { get; set; } // Invisible veya eski kayıtlarda SelectFlag=false
+        public bool? IsInvalid { get; set; } // Customer.Invisible; SelectFlag geçersizlik belirtmez.
         public bool SelectableOnly { get; set; }
         
         public int? First { get; set; }

@@ -133,7 +133,7 @@ namespace Imaj.Web.Controllers
                      TaxNumber = c.TaxNumber,
                      Owner = c.Owner,
                      JobStatus = c.SelectFlag ? "Active" : "Passive", // Map SelectFlag
-                     IsInvalid = c.Invisible || !c.SelectFlag
+                     IsInvalid = c.Invisible
                 }).ToList() 
                 : new List<CustomerViewModel>();
 
@@ -389,7 +389,7 @@ namespace Imaj.Web.Controllers
                         new() { Label = L("TaxOffice"), Value = ValueOrDash(customer.TaxOffice) },
                         new() { Label = L("TaxNumber"), Value = ValueOrDash(customer.TaxNumber) },
                         new() { Label = L("InvoiceName"), Value = ValueOrDash(customer.InvoiceName) },
-                        new() { Label = L("Invalid"), Value = customer.Invisible || !customer.SelectFlag ? L("Yes") : L("No") }
+                        new() { Label = L("Invalid"), Value = customer.Invisible ? L("Yes") : L("No") }
                     }
                 })
                 .ToList();
@@ -426,7 +426,7 @@ namespace Imaj.Web.Controllers
                  TaxNumber = c.TaxNumber, 
                  Owner = c.Owner,
                  JobStatus = c.SelectFlag ? "Active" : "Passive",
-                 IsInvalid = c.Invisible || !c.SelectFlag,
+                 IsInvalid = c.Invisible,
                  Address = c.Address,
                  Notes = c.Notes,
                  ProductCategories = c.ProductCategories.Select(pc => new ProductCategoryViewModel 
